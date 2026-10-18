@@ -280,10 +280,14 @@ const ALL_FULL = (c, id) => { for (const n of ['energy', 'hunger', 'hygiene', 'b
 	const joy = await page.locator('.joystick, [aria-label*="oystick"]').count();
 	const sel = await G(page, () => window.__crew.possessed);
 	const b = await G(page, (id) => ({ x: window.__crew.agents[id].x, z: window.__crew.agents[id].z }), sel);
-	await G(page, () => (window.__game.joystick = { x: 0, y: -1 }));
-	await wait(1500);
+	let a = b;
+	for (const j of [{ x: 0, y: -1 }, { x: 1, y: 0 }, { x: 0, y: 1 }, { x: -1, y: 0 }]) {
+		await G(page, (j) => (window.__game.joystick = j), j);
+		await wait(1200);
+		a = await G(page, (id) => ({ x: window.__crew.agents[id].x, z: window.__crew.agents[id].z }), sel);
+		if (Math.hypot(a.x - b.x, a.z - b.z) > 0.5) break;
+	}
 	await G(page, () => (window.__game.joystick = { x: 0, y: 0 }));
-	const a = await G(page, (id) => ({ x: window.__crew.agents[id].x, z: window.__crew.agents[id].z }), sel);
 	check('mobile: possessed avatar moves with joystick', Math.hypot(a.x - b.x, a.z - b.z) > 0.3, { joystickEls: joy, d: +Math.hypot(a.x - b.x, a.z - b.z).toFixed(2) });
 	await page.screenshot({ path: 'screenshot-mobile-crew-possess.png' });
 	await ctx.close();

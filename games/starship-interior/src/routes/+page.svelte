@@ -136,6 +136,7 @@
 		<div class="top-right">
 			<button class="fab" onclick={toggleMode}>{game.mode === 'build' ? '🚶 Walk' : '🛠 Build'}</button>
 			{#if game.mode === 'build'}<button class="fab" onclick={() => (game.designer = true)} aria-label="Equipment designer">📐{mobile ? '' : ' Design'}</button>{/if}
+			{#if mobile && game.mode === 'build' && !possessed}<button class="fab crewfab" class:on={crewSheet} onclick={() => (crewSheet = !crewSheet)} aria-label="Crew sim">👥</button>{/if}
 			{#if game.mode === 'build'}
 				<CameraWidget compact={mobile} />
 			{/if}
@@ -150,7 +151,6 @@
 		{/if}
 		{#if game.mode === 'build' && crew.enabled}<AgentCard {mobile} />{/if}
 		{#if mobile && game.mode === 'build' && !possessed}
-			<button class="fab crewfab" class:on={crewSheet} onclick={() => (crewSheet = !crewSheet)} aria-label="Crew sim">👥</button>
 			{#if crewSheet}
 				<div class="crewsheet">
 					<div class="sheethead"><b>👥 Crew simulation</b><button class="fab" onclick={() => (crewSheet = false)} aria-label="Close crew sheet">✕</button></div>
@@ -346,9 +346,8 @@
 		font-size: 13px;
 	}
 	.simclock.mobile {
-		top: calc(58px + env(safe-area-inset-top));
-		left: auto;
-		right: calc(70px + env(safe-area-inset-right));
+		top: calc(112px + env(safe-area-inset-top));
+		left: calc(12px + env(safe-area-inset-left));
 		transform: none;
 		font-size: 12px;
 	}
@@ -361,12 +360,6 @@
 		min-width: 36px;
 		min-height: 32px;
 		touch-action: manipulation;
-	}
-	.crewfab {
-		position: absolute;
-		right: calc(12px + env(safe-area-inset-right));
-		bottom: calc(130px + env(safe-area-inset-bottom));
-		z-index: 11;
 	}
 	.crewfab.on {
 		border-color: #49a6ff;

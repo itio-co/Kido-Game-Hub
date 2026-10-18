@@ -76,7 +76,7 @@
 		left: 8px;
 		right: 8px;
 		width: auto;
-		top: calc(104px + env(safe-area-inset-top));
+		top: calc(156px + env(safe-area-inset-top));
 		bottom: auto;
 		padding: 8px;
 		gap: 5px;
