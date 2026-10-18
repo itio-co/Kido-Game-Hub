@@ -58,6 +58,8 @@ export interface ModuleDef {
 	/** phase in which parts use their stowed pose ('launch' for tables, 'surface' for couches) */
 	stowPhase?: Phase;
 	custom?: boolean;
+	/** crew-sim affordances (what the crew can do with it) */
+	affords?: import('./affordances').Affordance[];
 }
 
 export interface PlacedModule {

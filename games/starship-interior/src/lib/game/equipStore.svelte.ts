@@ -64,6 +64,7 @@ class EquipStore {
 			power: b.power,
 			cost: b.cost,
 			seats: b.seats,
+			affords: b.affords ? JSON.parse(JSON.stringify(b.affords)) : undefined,
 			stowable: b.stowable,
 			estimate: b.estimate,
 			launch: b.launch,

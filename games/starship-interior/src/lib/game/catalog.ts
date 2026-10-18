@@ -1,4 +1,5 @@
 import type { LayoutData, ModuleDef, ModuleId } from './types';
+import { BUILTIN_AFFORDANCES } from './affordances';
 
 /**
  * Equipment catalog. Sizes are true-to-scale estimates in metres; mass and power are
@@ -98,6 +99,8 @@ export const CATALOG: ModuleDef[] = [
 		source: '800 mm passageway – IDSS'
 	}
 ];
+
+for (const m of CATALOG) if (BUILTIN_AFFORDANCES[m.id]) m.affords = BUILTIN_AFFORDANCES[m.id];
 
 const BUILTIN_BY_ID = Object.fromEntries(CATALOG.map((m) => [m.id, m])) as Record<string, ModuleDef>;
 /** custom (Equipment Designer) definitions are looked up through this hook (set by the equipment store) */
