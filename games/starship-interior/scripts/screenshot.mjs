@@ -25,6 +25,7 @@ const summary = (page) =>
 	});
 
 async function prep(page) {
+	page.setDefaultTimeout(90000); // swiftshader can be slow on a busy box
 	page.on('console', (m) => m.type() === 'error' && errors.push(m.text()));
 	page.on('pageerror', (e) => errors.push(String(e)));
 	await page.goto(URL, { waitUntil: 'networkidle' });

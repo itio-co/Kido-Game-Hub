@@ -119,12 +119,20 @@ The app draws four simple legs and keeps the existing cabin airlock on the first
 
 **What the app computes:**
 
-- Lateral shielding at a below-ground deck = burial depth (m) × 100 × ρ (g/cm³) → g/cm². For example
-  2.5 m × 1.6 g/cm³ = 400 g/cm². This is a **simplified estimate**: it ignores the overhead path, the hull and
-  the berm geometry, and it uses the mean density.
-- The default burial depth is 2.5 m (user requirement; 2–3 m). The slider runs from 0 to 4 m.
-- The excavated pit is drawn with 45° walls (**ESTIMATE**), backfilled up to ground level, plus a 0.6 m berm
-  around the hull (**ESTIMATE**).
+- Soil line on the hull = burial depth + berm height above grade. A deck counts as shielded when its floor is at or below
+  that line (partial when the soil line falls inside the deck).
+- Lateral areal density = soil column through the 3 m berm crest × ρ (g/cm³) → g/cm². For example
+  (2.5 m burial + 4 m berm) at the crest → 480 g/cm². This is a **simplified estimate**: it ignores the overhead path,
+  the hull and the oblique paths, and it uses the mean density (1.6 g/cm³ Moon, 1.75 g/cm³ Mars).
+- Reference lines shown next to the number:
+  - Moon: 160 g/cm² (< 150 mSv per 180 d) and 405 g/cm² (SPE storm shelter), MDPI 11(9):3853.
+  - Mars: 175 and 280 g/cm² (≈ 1.0 / 1.6 m for 100 mSv/yr, JGR 2021) and 525 g/cm² (≈ 3 m, negligible GCR increase,
+    Nature Astronomy 2024; that paper is about the Moon, so applying it to Mars is an **extrapolation**).
+- Burial depth: default 2.5 m (user requirement 2–3 m), slider 0–4 m.
+- **Berm** above grade: default 0.6 m, slider 0–8 m (**ESTIMATE**). It is drawn with a 3 m crest and a 35° angle-of-repose
+  outer slope.
+- The excavated pit is drawn with 45° walls (**ESTIMATE**) and backfilled up to ground level.
+- At 2–3 m burial only the engine bay is below grade. The lowest LOX deck (≈ 5.7 m) needs a berm of about 3 m or more.
 
 ## 7. Hull-modification rules used by the app (all ESTIMATE / planning rules, not engineering)
 
