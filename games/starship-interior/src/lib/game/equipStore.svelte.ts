@@ -17,6 +17,13 @@ class EquipStore {
 	partId = $state<string | null>(null);
 	/** pose shown and edited: deployed (main) or stowed */
 	pose = $state<'deployed' | 'stowed'>('deployed');
+	/** designer: show a seated 1.75 m occupant in couches (deployed pose) */
+	occupant = $state(true);
+	/** designer camera preset request (bumped id re-applies the same preset) */
+	view = $state<{ name: 'iso' | 'side' | 'front' | 'top'; id: number }>({ name: 'iso', id: 0 });
+	setView(name: 'iso' | 'side' | 'front' | 'top') {
+		this.view = { name, id: this.view.id + 1 };
+	}
 	gizmo = $state<'translate' | 'rotate' | 'scale'>('translate');
 	modules = $derived(Object.fromEntries(this.custom.map((e) => [e.id, toModuleDef(e)])) as Record<string, ModuleDef>);
 

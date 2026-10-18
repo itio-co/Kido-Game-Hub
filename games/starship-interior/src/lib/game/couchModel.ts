@@ -28,6 +28,15 @@ export interface PartSpec extends Pose {
 }
 
 type V2 = [number, number]; // (z, y)
+/** unit normal of segment a→b in the YZ plane, on the occupant side (the perpendicular with +y) */
+function normalOf(a: V2, b: V2): V2 {
+	const dz = b[0] - a[0];
+	const dy = b[1] - a[1];
+	const L = Math.hypot(dz, dy);
+	let nz = -dy / L, ny = dz / L;
+	if (ny < 0 || (ny === 0 && nz > 0)) (nz = -nz), (ny = -ny);
+	return [nz, ny];
+}
 /** box spanning two points in the YZ plane (length along Z before rotation) */
 function beam(a: V2, b: V2, x: number, w: number, t: number, lift = 0) {
 	const dz = b[0] - a[0];
@@ -35,7 +44,7 @@ function beam(a: V2, b: V2, x: number, w: number, t: number, lift = 0) {
 	const L = Math.hypot(dz, dy);
 	const ang = Math.atan2(-dy, dz);
 	// offset along the panel normal (towards the occupant)
-	const nz = -dy / L, ny = dz / L;
+	const [nz, ny] = normalOf(a, b);
 	return {
 		args: [w, t, L],
 		pos: [x, (a[1] + b[1]) / 2 + ny * lift, (a[0] + b[0]) / 2 + nz * lift] as [number, number, number],
@@ -54,12 +63,35 @@ function rod(a: V2, b: V2, x: number, r: number) {
 	};
 }
 
-// deployed body line (z, y): head, shoulders, hips, knees, feet
-const H: V2 = [-0.92, 0.6];
-const S: V2 = [-0.5, 0.47];
-const P: V2 = [0.02, 0.34];
-const K: V2 = [0.46, 0.8];
-const F: V2 = [0.9, 0.56];
+/*
+ * Deployed SHELL line (z, y), the classic Soyuz/Dragon "knees-up" +Gx couch:
+ *   back pan  P→H  reclined to 16° head-up (torso near horizontal, back towards the floor),
+ *   thigh pan P→K  raised to ~78° (thighs near vertical, hips flexed ~90°),
+ *   leg rest  K→F  horizontal (knees bent ~90°, lower legs level).
+ * Lengths fit a 1.75 m occupant (hip→knee 0.43 m, knee→heel 0.46 m, hip→head top 0.95 m).
+ */
+const BACK_DEG = 16;
+const THIGH_DEG = 78;
+const P: V2 = [0.12, 0.3];
+const H: V2 = [P[0] - 0.95 * Math.cos((BACK_DEG * Math.PI) / 180), P[1] + 0.95 * Math.sin((BACK_DEG * Math.PI) / 180)];
+const S: V2 = [P[0] - 0.48 * Math.cos((BACK_DEG * Math.PI) / 180), P[1] + 0.48 * Math.sin((BACK_DEG * Math.PI) / 180)];
+const K: V2 = [P[0] + 0.4 * Math.cos((THIGH_DEG * Math.PI) / 180), P[1] + 0.4 * Math.sin((THIGH_DEG * Math.PI) / 180)];
+const F: V2 = [K[0] + 0.5, K[1]];
+
+/**
+ * Occupant posture for a deployed couch (local space of one couch, x = 0): hip joint (z, y) and the
+ * segment angles used by the crew avatar (world angles in the YZ plane, 0 = +Z, 90° = up).
+ */
+export function couchOccupant() {
+	const nb = normalOf(P, H);
+	const nt = normalOf(P, K);
+	const nl = normalOf(K, F);
+	const hip: V2 = [P[0] + nb[0] * 0.13 + nt[0] * 0.02, P[1] + nb[1] * 0.13];
+	const knee: V2 = [K[0] + nt[0] * 0.08 + nl[0] * 0.02, K[1] + nl[1] * 0.1];
+	const torso = 180 - BACK_DEG; // head towards −Z, 16° up
+	const thigh = (Math.atan2(knee[1] - hip[1], knee[0] - hip[0]) * 180) / Math.PI;
+	return { hip, torsoDeg: torso, thighDeg: thigh, shinDeg: 0 };
+}
 
 /** one couch centred at x0; `pilot` adds the display arm */
 export function couchParts(x0 = 0, pilot = false, seatW = 0.8): PartSpec[] {
@@ -104,7 +136,8 @@ export function couchParts(x0 = 0, pilot = false, seatW = 0.8): PartSpec[] {
 	// struts with stroking energy attenuators (landing loads)
 	const strutPts: { z: number; top: number }[] = [
 		{ z: H[0] + 0.1, top: H[1] - 0.06 },
-		{ z: K[0] - 0.02, top: K[1] - 0.05 }
+		{ z: K[0] - 0.02, top: K[1] - 0.05 },
+		{ z: F[0] - 0.06, top: F[1] - 0.05 }
 	];
 	for (const s of [-1, 1])
 		for (const p of strutPts) {
@@ -127,10 +160,11 @@ export function couchParts(x0 = 0, pilot = false, seatW = 0.8): PartSpec[] {
 	add('controller base', 'cyl', 'grey', { args: [0.04, 0.045, 0.03], pos: [xr, P[1] + 0.235, P[0] + 0.02], rot: [0.12, 0, 0] }, flat(0.335, 0.14, 1, xr));
 	if (pilot) {
 		// display arm swings over the knees; screen faces the occupant (looking "up")
-		add('display post', 'cyl', 'steelDark', rod([0.05, 0.04], [0.05, 1.18], x0 + sw / 2 + 0.09, 0.025), { pos: [x0 + sw / 2 - 0.0, 0.46, 0], rot: [Math.PI / 2, 0, 0], scale: [1, 0.45, 1] });
-		add('display arm', 'box', 'steelDark', { args: [sw / 2 + 0.09, 0.04, 0.05], pos: [x0 + (sw / 2 + 0.09) / 2, 1.18, 0.05], rot: [0, 0, 0] }, flat(0.46, 0.25, 1, x0 + 0.1));
-		add('display', 'rbox', 'dark', { args: [0.5, 0.03, 0.34], pos: [x0, 1.13, -0.2], rot: [-0.35, 0, 0] }, flat(0.475, -0.05));
-		add('screen', 'plane', 'screen', { args: [0.46, 0.3, 1], pos: [x0, 1.112, -0.2], rot: [Math.PI / 2 - 0.35, 0, 0] }, { pos: [x0, 0.492, -0.05], rot: [-Math.PI / 2, 0, 0] });
+		// display arm swings over the chest; screen tilted towards the occupant's face (looking "up")
+		add('display post', 'cyl', 'steelDark', rod([-0.4, 0.04], [-0.4, 1.2], x0 + sw / 2 + 0.09, 0.025), { pos: [x0 + sw / 2 - 0.0, 0.46, 0], rot: [Math.PI / 2, 0, 0], scale: [1, 0.45, 1] });
+		add('display arm', 'box', 'steelDark', { args: [sw / 2 + 0.09, 0.04, 0.05], pos: [x0 + (sw / 2 + 0.09) / 2, 1.2, -0.4], rot: [0, 0, 0] }, flat(0.46, 0.25, 1, x0 + 0.1));
+		add('display', 'rbox', 'dark', { args: [0.5, 0.03, 0.34], pos: [x0, 1.15, -0.5], rot: [0.3, 0, 0] }, flat(0.475, -0.05));
+		add('screen', 'plane', 'screen', { args: [0.46, 0.3, 1], pos: [x0, 1.132, -0.5], rot: [Math.PI / 2 + 0.3, 0, 0] }, { pos: [x0, 0.492, -0.05], rot: [-Math.PI / 2, 0, 0] });
 	}
 	return out;
 }

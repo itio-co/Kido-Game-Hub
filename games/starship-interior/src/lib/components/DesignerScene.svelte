@@ -7,7 +7,8 @@
 	import { T, useThrelte } from '@threlte/core';
 	import { HTML, OrbitControls, TransformControls, interactivity } from '@threlte/extras';
 	import { tick, untrack } from 'svelte';
-	import { Group, PMREMGenerator, type Material, type Texture } from 'three';
+	import { Group, PMREMGenerator, PerspectiveCamera, type Material, type Texture } from 'three';
+	import type { OrbitControls as OrbitControlsImpl } from 'three/examples/jsm/controls/OrbitControls.js';
 	import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 	import { equip } from '$lib/game/equipStore.svelte';
 	import { extractParts, poseOf } from '$lib/game/equipment';
@@ -17,6 +18,11 @@
 	import ModuleMesh from './ModuleMesh.svelte';
 	import Silhouette from './Silhouette.svelte';
 	import Outline from './Outline.svelte';
+	import Avatar from '$lib/sim/Avatar.svelte';
+	import { couchFrame, type AvatarState } from '$lib/sim/avatarPose';
+	import { couchOccupant } from '$lib/game/couchModel';
+
+	const COUCH = couchFrame(couchOccupant());
 
 	const { renderer, scene, invalidate } = useThrelte();
 	interactivity();
@@ -32,6 +38,32 @@
 	}
 
 	const def = $derived(equip.selected);
+	const occupants = $derived.by((): AvatarState[] => {
+		if (!def || !equip.occupant || equip.pose === 'stowed' || !def.seats || (def.stowPhase ?? 'launch') !== 'surface') return [];
+		const n = def.seats;
+		return Array.from({ length: n }, (_, i) => ({ x: (i - (n - 1) / 2) * 0.8, y: 0, z: 0, yaw: 0, pose: 'couch', t: i, visible: true, couch: COUCH }));
+	});
+	// camera presets (Iso / Side / Front / Top)
+	let camRef = $state<PerspectiveCamera>();
+	let orbit = $state<OrbitControlsImpl>();
+	$effect(() => {
+		const v = equip.view;
+		const c = camRef;
+		const o = orbit;
+		if (!c || !o || v.id === 0) return;
+		const d = untrack(() => Math.max(2.4, Math.max(def?.d ?? 1, def?.launch?.d ?? 0, def?.w ?? 1) * 1.9));
+		const ty = 0.55;
+		const pos: Record<string, [number, number, number]> = {
+			iso: [d * 0.8, ty + d * 0.6, d],
+			side: [d * 0.8, ty + 0.05, 0],
+			front: [0, ty + 0.05, d * 0.9],
+			top: [0, ty + d * 1.5, 0.001]
+		};
+		c.position.set(...pos[v.name]);
+		o.target.set(0, ty, 0);
+		o.update();
+		invalidate();
+	});
 	const stowed = $derived(equip.pose === 'stowed');
 	const parts = $derived(def?.parts ?? []);
 	const editable = $derived(equip.editable);
@@ -96,8 +128,8 @@
 <T.HemisphereLight args={['#e4ecff', '#30302c', 0.5]} />
 <T.DirectionalLight position={[3, 5, 4]} intensity={2.2} castShadow shadow.mapSize={[2048, 2048]} shadow.camera.left={-3} shadow.camera.right={3} shadow.camera.top={3} shadow.camera.bottom={-3} shadow.bias={-0.0004} />
 
-<T.PerspectiveCamera makeDefault position={[2.6, 2.0, 3.2]} fov={40} near={0.01} far={100}>
-	<OrbitControls enableDamping target={[0, 0.55, 0]} minDistance={0.3} maxDistance={14} maxPolarAngle={Math.PI - 0.05} />
+<T.PerspectiveCamera makeDefault position={[2.6, 2.0, 3.2]} fov={40} near={0.01} far={100} bind:ref={camRef}>
+	<OrbitControls bind:ref={orbit} enableDamping target={[0, 0.55, 0]} minDistance={0.3} maxDistance={14} maxPolarAngle={Math.PI - 0.05} />
 </T.PerspectiveCamera>
 
 <!-- floor + cm grid (1 cm / 10 cm / 1 m) -->
@@ -110,7 +142,7 @@
 <T.GridHelper args={[8, 8, '#6f93bf', '#5c7ea8']} position.y={0.0015} />
 
 {#if def}
-	<Silhouette x={-(Math.max(def.w, def.launch?.w ?? 0) / 2 + 0.55)} />
+	<Silhouette x={-(Math.max(def.w, def.launch?.w ?? 0) / 2 + 0.55)} z={-(Math.max(def.d, def.launch?.d ?? 0) / 2) + 0.15} />
 	{#if fp}
 		<!-- footprint (auto-fit or entered) and front access zone (+Z) -->
 		<Outline points={[[-fp.w / 2, -fp.d / 2], [fp.w / 2, -fp.d / 2], [fp.w / 2, fp.d / 2], [-fp.w / 2, fp.d / 2]]} color="#49a6ff" y={0.004} />
@@ -150,6 +182,10 @@
 			onmouseUp={onEnd}
 		/>
 	{/if}
+
+	{#each occupants as o, i (i)}
+		<Avatar av={o} color={['#3f7fd6', '#d6643f', '#3fae6a', '#b04fc4'][i % 4]} id={100 + i} />
+	{/each}
 
 	<!-- hidden procedural renders used once to convert a built-in into parts -->
 	{#if needsExtract}

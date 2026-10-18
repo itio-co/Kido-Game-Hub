@@ -151,10 +151,16 @@
 
 		{#if def}
 			<section>
-				<h2>Pose & gizmo</h2>
+				<h2>View, pose & gizmo</h2>
+				<div class="seg">
+					{#each [['iso', 'Iso'], ['side', 'Side'], ['front', 'Front'], ['top', 'Top']] as [v, l]}
+						<button onclick={() => equip.setView(v as 'iso' | 'side' | 'front' | 'top')}>{l}</button>
+					{/each}
+				</div>
 				<div class="seg">
 					<button class:active={equip.pose === 'deployed'} onclick={() => (equip.pose = 'deployed')}>Deployed</button>
 					<button class:active={equip.pose === 'stowed'} onclick={() => (equip.pose = 'stowed')}>Stowed</button>
+					{#if def.seats}<label class="chk"><input type="checkbox" bind:checked={equip.occupant} /> 🧑‍🚀 Occupant</label>{/if}
 				</div>
 				{#if editable}
 					<div class="seg">

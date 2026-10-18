@@ -5,12 +5,13 @@
 	import { MeshStandardMaterial } from 'three';
 	interface Props {
 		x?: number;
+		z?: number;
 	}
-	let { x = -1 }: Props = $props();
+	let { x = -1, z = 0 }: Props = $props();
 	const m = new MeshStandardMaterial({ color: '#7f9bbd', transparent: true, opacity: 0.55, roughness: 0.8 });
 </script>
 
-<T.Group position.x={x} name="1.75 m human">
+<T.Group position.x={x} position.z={z} name="1.75 m human">
 	<T.Mesh position.y={1.635} material={m}><T.SphereGeometry args={[0.115, 20, 14]} /></T.Mesh>
 	<T.Mesh position.y={1.49} material={m}><T.CylinderGeometry args={[0.05, 0.055, 0.08, 12]} /></T.Mesh>
 	<T.Mesh position.y={1.2} material={m}><T.CapsuleGeometry args={[0.17, 0.36, 4, 12]} /></T.Mesh>
