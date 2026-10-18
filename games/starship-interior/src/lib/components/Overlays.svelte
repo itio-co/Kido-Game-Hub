@@ -104,6 +104,15 @@
 	</HTML>
 {/if}
 
+<!-- placements invalidated by an equipment edit: flagged in red (never deleted) -->
+{#each game.invalidPlacements.filter((w) => w.deck === game.current) as w (w.uid)}
+	{@const m = game.modules.find((x) => x.uid === w.uid)}
+	{#if m && CATALOG_BY_ID[m.type]}
+		<Zone f={footprintOf(m.type, m.x, m.z, m.angle)} color="#ff3b4e" opacity={0.3} y={0.025} />
+		<Outline points={outline(footprintOf(m.type, m.x, m.z, m.angle))} color="#ff3b4e" y={0.035} />
+	{/if}
+{/each}
+
 <!-- access zones + warnings -->
 {#if game.clearance}
 	{#each game.modules as m (m.uid)}

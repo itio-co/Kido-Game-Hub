@@ -65,9 +65,9 @@
 <rect x="110" y="158.40000000000003" width="22.5" height="1.25" fill="#555"/>
 <text x="111.5" y="154.40000000000003" font-size="2.4">Cabin-3 FFL +40.32 · 2.4 m</text>
 <rect x="110" y="145.15000000000003" width="22.389706396028473" height="1.25" fill="#555"/>
-<text x="111.5" y="141.15000000000006" font-size="2.4">Nose-4 FFL +42.97 · 2.4 m</text>
+<text x="111.5" y="141.15000000000006" font-size="2.4">Nose-1 FFL +42.97 · 2.4 m</text>
 <rect x="110" y="131.90000000000003" width="20.70809474589881" height="1.25" fill="#555"/>
-<text x="111.5" y="127.90000000000006" font-size="2.4">Nose-5 FFL +45.62 · 2.4 m</text>
+<text x="111.5" y="127.90000000000006" font-size="2.4">Nose-2 FFL +45.62 · 2.4 m</text>
 <rect x="132.5" y="296.525" width="1.25" height="8" fill="#fff" stroke="#c00" stroke-width="0.4"/>
 <rect x="133.75" y="295.525" width="25" height="10" fill="none" stroke="#c00" stroke-width="0.4"/>
 <text x="161.25" y="301.525" font-size="2.6" fill="#c00" text-anchor="start">P1/T1 1.2×1.6</text>

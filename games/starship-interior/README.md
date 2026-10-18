@@ -153,6 +153,42 @@ The crew lies semi-supine in the **+Gx** posture with the back to the floor, bec
 - **Pre-launch checklist** (automatic, GO / NO-GO) and a manual **cargo restraint** checklist.
 - The BOM lists both footprints (`W/D/H` and `W/D/H_launch`), stowable and seats. Floor-plan SVGs are exported **per phase**.
 
+## Equipment Designer
+
+Open it with **📐 Design** (sidebar Mode row, or the top-right button; also on mobile). The planner is replaced by a workbench;
+**◀ Planner** goes back.
+
+- **Workbench:** cm grid (1 cm / 10 cm / 1 m lines), a translucent **1.75 m human** for scale, the footprint (blue) and front
+  access zone (green, +Z = front), and a size label for the current pose. Orbit with drag, zoom with the wheel or a pinch.
+- **Library:** all built-ins (🔒 read-only) and your custom designs. **Duplicate to edit** converts a built-in procedural model
+  into editable parts. The model is rendered once offscreen in both phases, and the deployed and stowed meshes are paired.
+  The Launch Couch becomes 35 parts, each with a stowed pose. **＋ New** starts from a single rounded box.
+- **Parts** are data, not code. Shapes: `box`, `rbox` (rounded box), `cyl`, `sphere`, `capsule`, `plane`, `torus`, and `glb`.
+  Material presets (17): white, grey, steel, steelDark, dark, fabric, mattress, screen, led, glass, rubber, yellow, green, amber, blue, grow, plant. Each part has a deployed
+  transform and an optional **stowed** transform.
+- **Editing** (custom designs only):
+  - Click a part (or pick it in the list) to get **TransformControls**: Move `T`, Rotate `R`, Size `S`. Snaps are
+    **1 cm / 5° / 1 cm**. Size is applied when you release.
+  - Numeric fields: position and size in cm, rotation in °.
+  - Nudge buttons (±1 cm per axis, ±5° yaw).
+  - Add, duplicate (`D`), mirror across X (`M`), delete (`Del`); `Esc` deselects.
+  - The **Deployed / Stowed** toggle previews and edits either pose. *Stowed in* says which phase uses the stowed pose:
+    Launch/Landing for tables and the treadmill, Surface/Cruise for couches.
+- **Metadata form:** name, icon, category, mass, power, cost, access depth, seats, stowable, ESTIMATE flag, description.
+  **Auto-fit footprint** keeps W/D/H (and the launch footprint) fitted to the parts, symmetric about the origin and rounded
+  up to 1 cm. Duplicates of built-ins keep the reference footprint until you turn Auto-fit on or press **Fit now**. A warning
+  appears when parts stick out of a manual footprint.
+- **Placing:** **➕ Place on Deck N** returns to the planner with the design selected. Custom designs also appear at the
+  end of the Equipment list (tagged *custom*). They follow every rule (both phases, access, egress, seats).
+- **Propagation:** edits apply live to every placed instance. A placement that no longer fits is **flagged, not deleted**:
+  a red marker and a ⛔ warning in Stats naming the deck and reason. The designer shows "N placed · N no longer fit".
+  A custom design that is still placed can't be deleted.
+- **Storage:** custom designs are saved in `localStorage` (`starship-equipment-v1`) and embedded in save files (`equipment`
+  array), so a shared layout carries its designs. **Export JSON** / **Import JSON** exchanges a single design
+  (`format: "starship-equipment", version: 1`). Imported files are sanitised: shapes, materials and sizes are clamped.
+- **GLB import (optional):** **📦 Import GLB part** adds a `.glb` (≤ 1.5 MB) as one part. It is normalised to a unit box and
+  then scaled like any other part. It is stored as a data URL.
+
 ## Controls
 
 ### Camera (build mode)
@@ -178,6 +214,9 @@ The crew lies semi-supine in the **+Gx** posture with the back to the floor, bec
 | Measure | Click two points to see the distance (m). `Esc` clears |
 | Camera | Middle-drag orbits, wheel zooms (Camera tool: left orbit, right pan) |
 | Decks | Deck buttons / `PgUp` `PgDn`, ＋ adds a deck, height slider, ✂ section view |
+| Section cut | ✂ on: Half/Quarter, Follow camera, cut-angle slider and ⟲/⟳ 15° in the Decks panel, optional cut height |
+| Mission phase | Crew panel: Surface/Cruise ↔ Launch/Landing (couches deploy, stowables fold) |
+| Equipment designer | 📐 Design · `T`/`R`/`S` gizmo mode · `D` duplicate part · `M` mirror · `Del` delete part · `Esc` deselect |
 | Walk | `F`; click to look around, `WASD` move, `Shift` run, `E`/`Space` climb the ladder up, `Q`/`C` climb down through a floor hatch |
 
 ### Mobile (touch)
@@ -189,6 +228,8 @@ The crew lies semi-supine in the **+Gx** posture with the back to the floor, bec
 - **Two fingers** always control the camera: pinch zooms, drag orbits (or pans, under *View & checks*).
   A second finger cancels any build action in progress, so camera gestures never place anything.
 - **Walk:** joystick to move, drag to look, ⬆ Up / ⬇ Down buttons when standing in a ladder or hatch zone.
+- **Designer:** 📐 opens it. The ▲ bottom sheet holds the library, parts, numeric fields, ±1 cm / ±5° nudge buttons and
+  the metadata form. Tap a part to get the gizmo; one finger orbits, pinch zooms.
 - Phones start in **Low** quality (no shadows or reflections, 1× pixel ratio). The page doesn't scroll or zoom (`touch-action: none`).
 
 ## Exports (all offline; files download)
@@ -244,9 +285,12 @@ src/lib/game/geometry.ts    footprints, SAT/circle collision, ray picking
 src/lib/game/clearance.ts   access zones + 0.1 m flood-fill path check
 src/lib/game/state.svelte.ts  decks, rules, selection, persistence (runes)
 src/lib/game/exporters.ts   SVG 1:50 plan, BOM CSV, download helper
+src/lib/game/equipment.ts   data-driven equipment parts, auto-fit, mirror, extraction, sanitising
+src/lib/game/equipStore.svelte.ts  custom equipment library + designer state (localStorage)
 src/lib/three/              materials/textures, hull geometry
 src/lib/components/         Scene, Hull, DeckModules, ModuleMesh, Part, Overlays, BuildInput,
-                            WalkControls, Sidebar, StatsPanel, Joystick, Outline, Zone
+                            WalkControls, Sidebar, StatsPanel, Joystick, Outline, Zone,
+                            DesignerScene/DesignerPanel/EquipModel/EquipPartMesh/Silhouette (designer)
 scripts/screenshot.mjs      Playwright test: screenshots, rule checks, sample exports
 ```
 
@@ -267,3 +311,9 @@ scripts/screenshot.mjs      Playwright test: screenshots, rule checks, sample ex
 - The couch design is a concept. There are no load-path or certification checks, and the posture assumes the axis stays vertical.
 - Decks are added to the top of their section. You can't insert one between existing decks of the same section.
 - GLB export uses the current material setup (no texture baking).
+- **Designer:**
+  - Built-ins keep their procedural model in the planner. Only duplicates use the part data.
+  - Extracted parts get generic names such as `12 · white rbox`.
+  - Meshes in a built-in that are not primitives (lathe, extrude, tube) are skipped during extraction.
+  - There is no undo.
+  - Imported GLBs are stored inline, which bloats saves and localStorage. The GLB path is not covered by the headless test.

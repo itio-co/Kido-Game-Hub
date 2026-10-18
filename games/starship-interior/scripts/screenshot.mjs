@@ -329,6 +329,93 @@ async function prep(page) {
 	await ctx.close();
 }
 
+// ---------------- equipment designer ----------------
+{
+	const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+	const page = await ctx.newPage();
+	await prep(page);
+	await page.getByRole('button', { name: 'Equipment designer' }).click();
+	await wait(1200);
+	await page.locator('.lib button', { hasText: 'Launch Couch' }).first().click();
+	await page.waitForFunction(() => !!window.__equip.builtinParts.couch, null, { timeout: 15000 });
+	const ro = await G(page, () => ({ editable: window.__equip.editable, parts: window.__equip.selected.parts.length }));
+	await page.getByRole('button', { name: /Duplicate to edit/ }).click();
+	await wait(600);
+	const dup = await G(page, () => {
+		const e = window.__equip;
+		const d = e.selected;
+		// pick the headrest-ish part (highest part) for the gizmo
+		const top = [...d.parts].sort((a, b) => b.pos[1] - a.pos[1])[0];
+		e.partId = top.id;
+		e.gizmo = 'translate';
+		return { id: d.id, name: d.name, editable: e.editable, parts: d.parts.length, withStowed: d.parts.filter((p) => p.stowed).length, fp: [d.w, d.d, d.height], launch: d.launch, stowPhase: d.stowPhase };
+	});
+	console.log('designer duplicate', JSON.stringify({ builtin: ro, dup }));
+	// numeric input → +5 cm on X through the form
+	const xIn = page.locator('.vec').first().locator('input').first();
+	const x0 = Number(await xIn.inputValue());
+	await xIn.fill(String(x0 + 5));
+	await xIn.press('Enter');
+	await page.getByRole('button', { name: 'Nudge Y +1 cm' }).click();
+	const after = await G(page, () => window.__equip.part.pos);
+	console.log('designer edit', JSON.stringify({ x0cm: x0, posAfter: after }));
+	await G(page, () => window.__equip.duplicatePart(window.__equip.partId, true)); // mirror
+	await wait(1200);
+	await page.screenshot({ path: 'screenshot-equipment-designer.png' });
+	await G(page, () => (window.__equip.pose = 'stowed'));
+	await wait(900);
+	await page.screenshot({ path: 'screenshot-equipment-designer-stowed.png' });
+	await G(page, () => (window.__equip.pose = 'deployed'));
+
+	await page.getByRole('checkbox', { name: 'Auto-fit footprint' }).check();
+	console.log('designer auto-fit', JSON.stringify(await G(page, () => { const d = window.__equip.selected; return { autoFit: d.autoFit, w: d.w, d: d.d, h: d.height, launch: d.launch }; })));
+	// place the custom couch on deck 2, then grow it in the designer → placement flagged, not deleted
+	const prop = await G(page, () => {
+		const g = window.__game, e = window.__equip;
+		const id = e.selectedId;
+		g.selectDeck(1);
+		g.setPhase('launch');
+		let placed = null;
+		for (let a = 0; a < 360 && !placed; a += 15)
+			for (const r of [2.6, 2.2, 1.8, 3.0]) {
+				const x = Math.sin((a * Math.PI) / 180) * r, z = Math.cos((a * Math.PI) / 180) * r;
+				if (g.check(id, x, z, a + 90).ok) { g.selectedModule = id; g.tool = 'module'; g.rotation = a + 90; g.placeAt({ x, z }); placed = { x, z, a: a + 90 }; break; }
+			}
+		const n0 = g.decks[1].modules.filter((m) => m.type === id).length;
+		const inv0 = g.invalidPlacements.length;
+		// widen the biggest part to 2.6 m → auto-fit footprint grows
+		const big = [...e.selected.parts].sort((p, q) => q.size[0] * q.size[2] - p.size[0] * p.size[2])[0];
+		const old = [...big.size];
+		e.setPose(big.id, { size: [2.6, old[1], old[2]] });
+		const grown = { w: e.selected.w, launch: e.selected.launch };
+		const flagged = g.invalidPlacements.map((w) => w.text);
+		const n1 = g.decks[1].modules.filter((m) => m.type === id).length;
+		e.setPose(big.id, { size: old });
+		const inv2 = g.invalidPlacements.length;
+		// JSON export/import + save round trip keeps the definition
+		const json = e.exportJSON(id);
+		const imported = e.importJSON(json);
+		const save = JSON.parse(JSON.stringify(g.toJSON()));
+		g.load(save);
+		return { placed, n0, inv0, grown, flagged, keptAfterGrow: n1, invAfterRevert: inv2, imported, saveEquipment: save.equipment.length, resolvesAfterLoad: !!window.__game.decks[1].modules.find((m) => m.type === id) && g.invalidPlacements.length === 0 };
+	});
+	console.log('designer propagation', JSON.stringify(prop));
+	await page.getByRole('button', { name: /Planner/ }).first().click();
+	await wait(1500);
+	await G(page, () => {
+		const g = window.__game;
+		g.selectDeck(1);
+		g.setPhase('launch');
+		g.tool = 'select';
+		g.selectedUid = g.decks[1].modules.find((m) => m.type.startsWith('custom:'))?.uid ?? null;
+		const y = g.floorY[1];
+		window.__rig.animateTo({ az: 0.2, polar: 0.75, dist: 7 }, [0, y + 0.3, 1.2], 10);
+	});
+	await wait(1600);
+	await page.screenshot({ path: 'screenshot-designer-placed.png' });
+	await ctx.close();
+}
+
 // ---------------- mobile (iPhone 13) ----------------
 {
 	const ctx = await browser.newContext({ ...devices['iPhone 13'] });
@@ -405,6 +492,27 @@ async function prep(page) {
 	await wait(400);
 	await page.screenshot({ path: 'screenshot-mobile-habitat-panel.png' });
 	console.log('mobile habitat', JSON.stringify(await G(page, () => ({ mode: window.__game.shipMode, decks: window.__game.decks.map((_, k) => window.__game.deckLabel(k)) }))));
+
+	// equipment designer on the phone: bottom sheet + nudge buttons
+	await G(page, () => { window.__game.section = false; });
+	await page.getByRole('button', { name: /Toggle panel/ }).click().catch(() => {});
+	await page.getByRole('button', { name: 'Equipment designer' }).click();
+	await wait(1200);
+	await page.getByRole('button', { name: /Toggle designer panel/ }).click();
+	await page.locator('.lib button', { hasText: 'Launch Couch' }).first().click();
+	await page.waitForFunction(() => !!window.__equip.builtinParts.couch, null, { timeout: 15000 });
+	await page.getByRole('button', { name: /Duplicate to edit/ }).click();
+	await wait(500);
+	await G(page, () => { const e = window.__equip; e.partId = [...e.selected.parts].sort((a, b) => b.pos[1] - a.pos[1])[0].id; });
+	await page.getByRole('button', { name: /Toggle designer panel/ }).click();
+	await wait(1200);
+	await page.screenshot({ path: 'screenshot-mobile-designer.png' });
+	await page.getByRole('button', { name: /Toggle designer panel/ }).click();
+	await page.getByRole('button', { name: 'Nudge X +1 cm' }).scrollIntoViewIfNeeded();
+	await page.getByRole('button', { name: 'Nudge X +1 cm' }).click();
+	await wait(600);
+	await page.screenshot({ path: 'screenshot-mobile-designer-panel.png' });
+	console.log('mobile designer', JSON.stringify(await G(page, () => ({ sel: window.__equip.selected.name, editable: window.__equip.editable }))));
 	await ctx.close();
 }
 

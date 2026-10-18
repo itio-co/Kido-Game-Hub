@@ -11,6 +11,7 @@
 	const vPct = $derived(Math.min(100, (s.volume / (s.volumeLimit ?? Math.max(s.volume, 1))) * 100));
 	const warnings = $derived([
 		...game.unreachableDecks.map((k) => ({ uid: -1, text: `${game.deckLabel(k)} is unreachable – no ladder chain from the airlock deck` })),
+		...game.invalidPlacements.map((w) => ({ uid: w.deck === game.current ? w.uid : -1, text: '⛔ ' + w.text })),
 		...(game.seats < game.crew ? [{ uid: -1, text: `Only ${game.seats} launch seats for ${game.crew} crew` }] : []),
 		...(game.analysis?.warnings ?? [])
 	]);

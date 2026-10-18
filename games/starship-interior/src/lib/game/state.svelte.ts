@@ -1,6 +1,7 @@
 import { CATALOG_BY_ID, LADDER_EXTENSION, SHAFT_MASS_PER_M, footprintArea, starterLayout } from './catalog';
 import { analyzeDeck, type DeckAnalysis } from './clearance';
 import { bomCSV, elevationSVG, floorPlanSVG } from './exporters';
+import { equip } from './equipStore.svelte';
 import { PHASE, dimsOf, footprintOf, insideDeck, normAngle, overlaps, shaftFootprint, snapTo } from './geometry';
 import {
 	BURIAL_MAX,
@@ -116,6 +117,8 @@ class GameState {
 		this.cutFollow = on;
 	}
 
+	/** Equipment Design mode (workbench replaces the deck view) */
+	designer = $state(false);
 	tool = $state<Tool>('module');
 	selectedModule = $state<ModuleId>('bunk');
 	/** placement yaw in degrees */
@@ -154,9 +157,9 @@ class GameState {
 	/** set by WalkControls while walk mode is active */
 	travel: ((dir: 1 | -1) => void) | undefined = undefined;
 	/** set by the equipment library: receives custom equipment from a save file */
-	onEquipment: ((items: unknown[]) => void) | undefined = undefined;
+	onEquipment: ((items: unknown[]) => void) | undefined = (items) => equip.merge(items);
 	/** set by the equipment library: custom equipment for save files */
-	getEquipment: (() => unknown[]) | undefined = undefined;
+	getEquipment: (() => unknown[]) | undefined = () => $state.snapshot(equip.custom);
 	/** set by Scene: exports all decks as GLB, returns byte size */
 	exportGLB: (() => Promise<number>) | undefined = undefined;
 
@@ -320,6 +323,22 @@ class GameState {
 			stowables,
 			powerOk: this.stats.powerOk
 		};
+	});
+
+	/** placed modules that no longer fit (e.g. after editing a custom design): flagged, never deleted */
+	invalidPlacements = $derived.by(() => {
+		const out: { deck: number; uid: number; text: string }[] = [];
+		this.decks.forEach((d, k) => {
+			for (const m of d.modules) {
+				if (!CATALOG_BY_ID[m.type]) {
+					out.push({ deck: k, uid: m.uid, text: `${this.deckLabel(k)}: missing equipment definition ${m.type}` });
+					continue;
+				}
+				const c = this.check(m.type, m.x, m.z, m.angle, m.uid, k);
+				if (!c.ok) out.push({ deck: k, uid: m.uid, text: `${this.deckLabel(k)}: ${CATALOG_BY_ID[m.type].name} no longer fits – ${c.reason}` });
+			}
+		});
+		return out;
 	});
 
 	/** Decks not reachable from deck 1 (airlock) through shafts. */

@@ -8,6 +8,9 @@
 	import { DISCLAIMER } from '$lib/game/specs';
 	import type { Tool } from '$lib/game/types';
 	import Scene from '$lib/components/Scene.svelte';
+	import DesignerScene from '$lib/components/DesignerScene.svelte';
+	import DesignerPanel from '$lib/components/DesignerPanel.svelte';
+	import { equip } from '$lib/game/equipStore.svelte';
 	import Sidebar from '$lib/components/Sidebar.svelte';
 	import StatsPanel from '$lib/components/StatsPanel.svelte';
 	import Joystick from '$lib/components/Joystick.svelte';
@@ -23,6 +26,7 @@
 		game.loadLocal(true);
 		window.__game = game;
 		(window as unknown as { __rig: typeof rig }).__rig = rig;
+		(window as unknown as { __equip: typeof equip }).__equip = equip;
 		window.__exports = {
 			svg: (k: number, phase?: 'surface' | 'launch') => game.planSVG(k, phase),
 			csv: () => game.bom(),
@@ -42,6 +46,7 @@
 		}
 		const t = e.target as HTMLElement;
 		if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA')) return;
+		if (game.designer) return; // designer has its own keys (DesignerPanel)
 		if (e.code === 'KeyF') return toggleMode();
 		if (game.mode !== 'build') return;
 		const fine = e.shiftKey && !game.snap ? 1 : 15;
@@ -85,15 +90,25 @@
 
 <div class="app" class:mobile>
 	{#if !mobile}
-		<Sidebar />
+		{#if game.designer}<DesignerPanel />{:else}<Sidebar />{/if}
 	{/if}
 
 	<main class="viewport">
 		<div class="canvas-wrap">
-			<Canvas dpr={Math.min(window.devicePixelRatio, 2)} shadows={PCFShadowMap} toneMapping={ACESFilmicToneMapping}>
-				<Scene {portrait} />
-			</Canvas>
+			{#key game.designer}
+				<Canvas dpr={Math.min(window.devicePixelRatio, 2)} shadows={PCFShadowMap} toneMapping={ACESFilmicToneMapping}>
+					{#if game.designer}<DesignerScene />{:else}<Scene {portrait} />{/if}
+				</Canvas>
+			{/key}
 		</div>
+	{#if game.designer}
+		<div class="top-right">
+			<button class="fab" onclick={() => (game.designer = false)}>◀ Planner</button>
+		</div>
+		{#if game.isTouch}<div class="tip" class:mobile>Tap a part to select · drag gizmo · 1 finger orbit · pinch zoom</div>{/if}
+		{#if game.toast}<div class="toast">{game.toast}</div>{/if}
+		{#if mobile}<DesignerPanel mobile />{/if}
+	{:else}
 
 		<div class="top-left">
 			{#if mobile}<StatsPanel compact />{/if}
@@ -112,6 +127,7 @@
 
 		<div class="top-right">
 			<button class="fab" onclick={toggleMode}>{game.mode === 'build' ? '🚶 Walk' : '🛠 Build'}</button>
+			{#if game.mode === 'build'}<button class="fab" onclick={() => (game.designer = true)} aria-label="Equipment designer">📐{mobile ? '' : ' Design'}</button>{/if}
 			{#if game.mode === 'build'}
 				<CameraWidget compact={mobile} />
 			{/if}
@@ -167,6 +183,7 @@
 		{#if mobile && game.mode === 'build'}
 			<Sidebar mobile />
 		{/if}
+	{/if}
 	</main>
 </div>
 
@@ -229,6 +246,8 @@
 	}
 	.pills button,
 	.deckname {
+		flex-shrink: 0;
+		white-space: nowrap;
 		font: inherit;
 		font-weight: 600;
 		font-size: 13px;

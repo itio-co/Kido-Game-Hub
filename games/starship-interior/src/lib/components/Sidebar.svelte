@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { CATALOG, CATALOG_BY_ID, sizeLabel } from '$lib/game/catalog';
 	import { download } from '$lib/game/exporters';
-	import { footprintOf, maxRadius } from '$lib/game/geometry';
+	import { dimsOf, footprintOf, maxRadius } from '$lib/game/geometry';
 	import {
 		DECK_HEIGHT_MAX,
 		DECK_HEIGHT_MIN,
@@ -17,6 +17,7 @@
 	import ShipPanel from './ShipPanel.svelte';
 	import CutPanel from './CutPanel.svelte';
 	import CrewPanel from './CrewPanel.svelte';
+	import { equip } from '$lib/game/equipStore.svelte';
 
 	interface Props {
 		mobile?: boolean;
@@ -152,6 +153,7 @@
 				<div class="seg">
 					<button class:active={game.mode === 'build'} onclick={() => (game.mode = 'build')}>🛠 Build</button>
 					<button class:active={game.mode === 'walk'} onclick={() => (game.mode = 'walk')}>🚶 Walk (F)</button>
+					<button onclick={() => (game.designer = true)}>📐 Design</button>
 				</div>
 			</section>
 			<section>
@@ -195,7 +197,7 @@
 				<h2>Selected</h2>
 				<div class="selname">{selInfo.def.icon} {selInfo.def.name}</div>
 				<div class="kv">
-					<span>Size</span><b>{sizeLabel(selInfo.def, game.deck.height)}</b>
+					<span>Size</span><b>{#if selInfo.def.launch}{@const dm = dimsOf(selInfo.def, game.phase)}{dm.w.toFixed(2)} × {dm.d.toFixed(2)} × {dm.height.toFixed(2)} m ({game.phase}){:else}{sizeLabel(selInfo.def, game.deck.height)}{/if}</b>
 					<span>Position</span><b>x {sel.x.toFixed(3)} · z {sel.z.toFixed(3)} m</b>
 					<span>From axis</span><b>{selInfo.r.toFixed(3)} m</b>
 					<span>To hull wall</span><b>{selInfo.wall.toFixed(3)} m</b>
@@ -214,7 +216,7 @@
 		<section>
 			<h2>Equipment <span class="rot">place rot {game.rotation.toFixed(0)}°</span></h2>
 			<div class="catalog">
-				{#each CATALOG as m}
+				{#each [...CATALOG, ...Object.values(equip.modules)] as m (m.id)}
 					{@const tooTall = !m.fullHeight && Math.max(m.height, m.launch?.height ?? 0) > game.deck.height}
 					<button
 						class="mod"
@@ -224,7 +226,7 @@
 						title={m.description + (m.source ? ` (${m.source})` : '')}
 					>
 						<span class="swatch">{m.icon}</span>
-						<span class="mname">{m.name}</span>
+						<span class="mname">{m.name}{#if m.custom}<i class="cus">custom</i>{/if}</span>
 						<span class="meta">{sizeLabel(m)} · {m.power} W{m.seats ? ` · ${m.seats} seat${m.seats > 1 ? 's' : ''}` : ''}{m.stowable ? ' · stowable' : ''}{tooTall ? ' · too tall' : ''}{#if m.estimate}<i class="est">EST</i>{/if}</span>
 					</button>
 				{/each}
@@ -607,5 +609,11 @@
 	.mobile .catalog {
 		display: grid;
 		grid-template-columns: 1fr 1fr;
+	}
+	.cus {
+		font-style: normal;
+		font-size: 9px;
+		color: #9cf0b8;
+		margin-left: 5px;
 	}
 </style>

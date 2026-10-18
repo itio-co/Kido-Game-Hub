@@ -169,14 +169,15 @@ export function extractParts(root: Object3D, matName: (m: Material) => string | 
 		const e = new Euler().setFromQuaternion(q, 'XYZ');
 		const mat = Array.isArray(mesh.material) ? mesh.material[0] : mesh.material;
 		const r = (n: number) => Math.round(n * 10000) / 10000;
+		const mn = matName(mat);
 		out.push({
 			id: uidPart(),
-			name: mesh.name || `${s.shape} ${out.length + 1}`,
+			name: mesh.name || `${out.length + 1} · ${mn ?? ''} ${s.shape}`.replace(/\s+/g, ' '),
 			shape: s.shape,
 			pos: [r(pos.x), r(pos.y), r(pos.z)],
 			rot: [r(e.x / DEG), r(e.y / DEG), r(e.z / DEG)],
 			size: [r(s.size[0] * sc.x), r(s.size[1] * sc.y), r(s.size[2] * sc.z)],
-			m: (matName(mat) as MatName) ?? 'grey'
+			m: (mn as MatName) ?? 'grey'
 		});
 	});
 	return out;

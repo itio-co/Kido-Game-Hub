@@ -8,6 +8,8 @@
 	import { couchParts, couchRowParts } from '$lib/game/couchModel';
 	import Part from './Part.svelte';
 	import PartsModel from './PartsModel.svelte';
+	import EquipModel from './EquipModel.svelte';
+	import { CATALOG_BY_ID } from '$lib/game/catalog';
 
 	interface Props {
 		type: ModuleId;
@@ -19,6 +21,7 @@
 	}
 	let { type, ghost = null, deckHeight = 2.4, phase = 'surface' }: Props = $props();
 	const launch = $derived(phase === 'launch');
+	const customDef = $derived(type.startsWith('custom:') ? CATALOG_BY_ID[type] : null);
 	const couch = $derived(
 		type === 'couch' ? couchParts(0) : type === 'pilotcouch' ? couchParts(0, true, 0.9) : type === 'couchrow3' ? couchRowParts(3) : type === 'couchrow4' ? couchRowParts(4) : null
 	);
@@ -28,7 +31,9 @@
 </script>
 
 <T.Group>
-	{#if couch}
+	{#if customDef?.parts}
+		<EquipModel parts={customDef.parts} stowed={phase === (customDef.stowPhase ?? 'launch')} {ghost} />
+	{:else if couch}
 		<PartsModel parts={couch} stowed={!launch} {ghost} />
 	{:else if type === 'table' && launch}
 		<!-- stowed for launch/landing: top folded vertical against its rail, benches folded -->
