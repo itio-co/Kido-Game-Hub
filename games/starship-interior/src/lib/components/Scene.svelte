@@ -22,6 +22,9 @@
 	import Overlays from './Overlays.svelte';
 	import ShaftMesh from './ShaftMesh.svelte';
 	import WalkControls from './WalkControls.svelte';
+	import CrewLayer from '$lib/sim/CrewLayer.svelte';
+	import PossessControls from '$lib/sim/PossessControls.svelte';
+	import { crew } from '$lib/sim/crewSim.svelte';
 
 	interface Props {
 		portrait?: boolean;
@@ -232,6 +235,9 @@
 {#if habitat && !game.exportAll}
 	<Terrain />
 {/if}
+{#if crew.enabled && !game.exportAll}
+	<CrewLayer deckVisible={(k) => allDecks || k === game.current} />
+{/if}
 {#if game.mode === 'build' && !game.exportAll}
 	<T.Group position.y={game.floorY[game.current]}>
 		<Overlays />
@@ -242,7 +248,9 @@
 	<CutCaps faces={cut.faces} />
 {/if}
 
-{#if game.mode === 'build'}
+{#if game.mode === 'build' && crew.possessed !== null}
+	<PossessControls />
+{:else if game.mode === 'build'}
 	{#key camKey}
 		<T.PerspectiveCamera makeDefault position={untrack(() => view.pos)} fov={45} near={0.05} far={400}>
 			<OrbitControls

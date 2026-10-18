@@ -17,6 +17,7 @@
 	import ShipPanel from './ShipPanel.svelte';
 	import CutPanel from './CutPanel.svelte';
 	import CrewPanel from './CrewPanel.svelte';
+	import CrewSimPanel from '$lib/sim/CrewSimPanel.svelte';
 	import { equip } from '$lib/game/equipStore.svelte';
 
 	interface Props {
@@ -247,6 +248,11 @@
 		<section>
 			<h2>Crew & launch seating</h2>
 			<CrewPanel />
+		</section>
+
+		<section class="crewsim">
+			<h2>👥 Crew simulation</h2>
+			<CrewSimPanel />
 		</section>
 
 		<section>

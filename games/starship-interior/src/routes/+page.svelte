@@ -14,6 +14,9 @@
 	import Sidebar from '$lib/components/Sidebar.svelte';
 	import StatsPanel from '$lib/components/StatsPanel.svelte';
 	import Joystick from '$lib/components/Joystick.svelte';
+	import AgentCard from '$lib/sim/AgentCard.svelte';
+	import CrewSimPanel from '$lib/sim/CrewSimPanel.svelte';
+	import { crew, fmtClock } from '$lib/sim/crewSim.svelte';
 
 	let innerWidth = $state(1280);
 	let innerHeight = $state(800);
@@ -25,6 +28,7 @@
 		if (game.isTouch) game.quality = 'low'; // phones start in Low quality (toggle in View & checks)
 		game.loadLocal(true);
 		window.__game = game;
+		(window as unknown as { __crew: typeof crew }).__crew = crew;
 		(window as unknown as { __rig: typeof rig }).__rig = rig;
 		(window as unknown as { __equip: typeof equip }).__equip = equip;
 		window.__exports = {
@@ -47,6 +51,7 @@
 		const t = e.target as HTMLElement;
 		if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA')) return;
 		if (game.designer) return; // designer has its own keys (DesignerPanel)
+		if (crew.possessed !== null) return; // PossessControls owns the keyboard
 		if (e.code === 'KeyF') return toggleMode();
 		if (game.mode !== 'build') return;
 		const fine = e.shiftKey && !game.snap ? 1 : 15;
@@ -78,8 +83,11 @@
 		game.hover = null;
 		game.drag = null;
 		game.joystick = { x: 0, y: 0 };
+		if (crew.possessed !== null) crew.possess(null);
 		game.mode = game.mode === 'build' ? 'walk' : 'build';
 	}
+	let crewSheet = $state(false);
+	const possessed = $derived(crew.possessed !== null && game.mode === 'build');
 	function confirmPending() {
 		if (game.pending && game.placeAt(game.pending)) game.pending = null;
 	}
@@ -133,7 +141,38 @@
 			{/if}
 		</div>
 
-		{#if game.mode === 'build'}
+		{#if crew.enabled && !game.designer}
+			<div class="simclock" class:mobile>
+				<button onclick={() => (crew.running = !crew.running)} aria-label={crew.running ? 'Pause sim' : 'Play sim'}>{crew.running ? '⏸' : '▶'}</button>
+				<b>{fmtClock(crew.ui.clock)}</b>
+				<button onclick={() => (crew.speed = crew.speed === 60 ? 1 : crew.speed === 1 ? 4 : crew.speed === 4 ? 16 : 60)} aria-label="Sim speed">{crew.speed}×</button>
+			</div>
+		{/if}
+		{#if game.mode === 'build' && crew.enabled}<AgentCard {mobile} />{/if}
+		{#if mobile && game.mode === 'build' && !possessed}
+			<button class="fab crewfab" class:on={crewSheet} onclick={() => (crewSheet = !crewSheet)} aria-label="Crew sim">👥</button>
+			{#if crewSheet}
+				<div class="crewsheet">
+					<div class="sheethead"><b>👥 Crew simulation</b><button class="fab" onclick={() => (crewSheet = false)} aria-label="Close crew sheet">✕</button></div>
+					<CrewSimPanel />
+				</div>
+			{/if}
+		{/if}
+		{#if possessed}
+			{#if crew.ui.prompt}<div class="prompt" class:mobile>{crew.ui.prompt}</div>{/if}
+			<div class="possess-actions" class:mobile>
+				<button class="fab ok" onclick={() => crew.interact(false)} aria-label="Use / climb up">E {game.isTouch ? 'Use ⬆' : 'Use / ⬆'}</button>
+				<button class="fab" onclick={() => crew.interact(true)} aria-label="Climb down">⬇</button>
+				<button class="fab" onclick={() => (crew.firstPerson = !crew.firstPerson)} aria-label="Camera view">{crew.firstPerson ? '3rd' : '1st'}</button>
+				<button class="fab del" onclick={() => crew.possess(null)} aria-label="Release">⏏ Release</button>
+			</div>
+			{#if game.isTouch}
+				<Joystick />
+				<div class="tip walk">Joystick: move · drag: look</div>
+			{:else}
+				<div class="center-hint low">WASD move · Shift run · drag look · wheel zoom · E use / climb up · Q down · V 1st/3rd person · Esc release</div>
+			{/if}
+		{:else if game.mode === 'build'}
 			<div class="build-actions" class:mobile>
 				{#if game.tool === 'module' && game.pending}
 					<button class="fab ok" onclick={confirmPending} aria-label="Place">✓ Place</button>
@@ -180,7 +219,7 @@
 		{#if game.toast}<div class="toast">{game.toast}</div>{/if}
 		{#if !mobile}<div class="disclaimer">{DISCLAIMER}</div>{/if}
 
-		{#if mobile && game.mode === 'build'}
+		{#if mobile && game.mode === 'build' && !possessed && !crewSheet}
 			<Sidebar mobile />
 		{/if}
 	{/if}
@@ -289,6 +328,108 @@
 		cursor: pointer;
 		touch-action: manipulation;
 		box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+	}
+	.simclock {
+		position: absolute;
+		top: calc(12px + env(safe-area-inset-top));
+		left: 50%;
+		transform: translateX(-50%);
+		z-index: 11;
+		display: flex;
+		align-items: center;
+		gap: 6px;
+		background: rgba(14, 22, 36, 0.9);
+		border: 1px solid #2c4466;
+		border-radius: 12px;
+		padding: 3px 5px;
+		font-variant-numeric: tabular-nums;
+		font-size: 13px;
+	}
+	.simclock.mobile {
+		top: calc(58px + env(safe-area-inset-top));
+		left: auto;
+		right: calc(70px + env(safe-area-inset-right));
+		transform: none;
+		font-size: 12px;
+	}
+	.simclock button {
+		font: inherit;
+		color: inherit;
+		background: #131c2c;
+		border: 1px solid #24344e;
+		border-radius: 8px;
+		min-width: 36px;
+		min-height: 32px;
+		touch-action: manipulation;
+	}
+	.crewfab {
+		position: absolute;
+		right: calc(12px + env(safe-area-inset-right));
+		bottom: calc(130px + env(safe-area-inset-bottom));
+		z-index: 11;
+	}
+	.crewfab.on {
+		border-color: #49a6ff;
+	}
+	.crewsheet {
+		position: absolute;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		max-height: 58%;
+		overflow-y: auto;
+		z-index: 13;
+		background: rgba(9, 13, 22, 0.97);
+		border-top: 1px solid #2c4466;
+		border-radius: 14px 14px 0 0;
+		padding: 10px 12px calc(14px + env(safe-area-inset-bottom));
+		overscroll-behavior: contain;
+	}
+	.sheethead {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		margin-bottom: 6px;
+	}
+	.sheethead .fab {
+		min-height: 36px;
+		min-width: 36px;
+		padding: 0 8px;
+	}
+	.prompt {
+		position: absolute;
+		left: 50%;
+		bottom: 140px;
+		transform: translateX(-50%);
+		z-index: 11;
+		background: rgba(10, 18, 30, 0.9);
+		border: 1px solid #49a6ff;
+		border-radius: 10px;
+		padding: 7px 14px;
+		font-weight: 600;
+		white-space: nowrap;
+		pointer-events: none;
+	}
+	.prompt.mobile {
+		bottom: calc(210px + env(safe-area-inset-bottom));
+		font-size: 13px;
+	}
+	.possess-actions {
+		position: absolute;
+		right: calc(12px + env(safe-area-inset-right));
+		bottom: calc(60px + env(safe-area-inset-bottom));
+		z-index: 11;
+		display: flex;
+		gap: 8px;
+	}
+	.possess-actions.mobile {
+		flex-direction: column;
+		align-items: flex-end;
+		bottom: calc(40px + env(safe-area-inset-bottom));
+	}
+	.center-hint.low {
+		top: auto;
+		bottom: 14px;
 	}
 	.fab small {
 		font-size: 11px;
