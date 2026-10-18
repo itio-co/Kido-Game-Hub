@@ -158,14 +158,20 @@ const ALL_FULL = (c, id) => { for (const n of ['energy', 'hunger', 'hygiene', 'b
 	await page.getByRole('button', { name: /Take control/ }).click();
 	await wait(1500);
 	const before = await G(page, (id) => ({ x: window.__crew.agents[id].x, z: window.__crew.agents[id].z, deck: window.__crew.agents[id].deck }), pid);
-	await page.keyboard.down('KeyW');
-	await wait(1800);
-	await page.keyboard.up('KeyW');
-	await page.keyboard.down('KeyD');
-	await wait(700);
-	await page.keyboard.up('KeyD');
-	const after = await G(page, (id) => ({ x: window.__crew.agents[id].x, z: window.__crew.agents[id].z, possessed: window.__crew.possessed }), pid);
-	const dist = Math.hypot(after.x - before.x, after.z - before.z);
+	// try each direction (a wall may block one); track the farthest point from the start
+	let maxD = 0;
+	for (const key of ['KeyW', 'KeyD', 'KeyS', 'KeyA']) {
+		await page.keyboard.down(key);
+		for (let i = 0; i < 4; i++) {
+			await wait(300);
+			const p = await G(page, (id) => ({ x: window.__crew.agents[id].x, z: window.__crew.agents[id].z }), pid);
+			maxD = Math.max(maxD, Math.hypot(p.x - before.x, p.z - before.z));
+		}
+		await page.keyboard.up(key);
+		if (maxD > 0.6) break;
+	}
+	const after = { possessed: await G(page, () => window.__crew.possessed) };
+	const dist = maxD;
 	check('possessed avatar moves with WASD', after.possessed === pid && dist > 0.4, { dist: +dist.toFixed(2) });
 	// walk to the nearest interactable to show an "E: …" prompt
 	await G(page, (id) => {
