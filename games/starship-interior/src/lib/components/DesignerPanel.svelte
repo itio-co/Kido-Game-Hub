@@ -6,6 +6,7 @@
 	import { game } from '$lib/game/state.svelte';
 	import { glbAspect } from '$lib/three/glbPart';
 	import type { ModuleId } from '$lib/game/types';
+	import AffordanceEditor from './AffordanceEditor.svelte';
 
 	interface Props {
 		mobile?: boolean;
@@ -272,6 +273,7 @@
 					<span class="hint">{placed} placed{flagged ? ` · ⛔ ${flagged} no longer fit (flagged)` : ''}</span>
 				</div>
 			</section>
+			<AffordanceEditor />
 		{/if}
 	</div>
 </aside>

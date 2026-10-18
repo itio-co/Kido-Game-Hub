@@ -258,7 +258,8 @@ class CrewSim {
 			game.phase + '|' + game.shipMode + '|' +
 			game.decks.map((d, k) => `${game.deckRadius[k]?.toFixed(2)}:${d.modules.map((m) => `${m.type}${m.x.toFixed(2)}${m.z.toFixed(2)}${m.angle}`).join(',')}`).join('/') +
 			'|' + game.shafts.map((s) => `${s.from}-${s.to}@${s.x.toFixed(2)},${s.z.toFixed(2)},${s.angle}`).join(',') +
-			'|' + Object.keys(CATALOG_BY_ID).length;
+			'|' + Object.keys(CATALOG_BY_ID).length +
+			'|' + [...new Set(game.decks.flatMap((d) => d.modules.map((m) => m.type)))].filter((t) => t.startsWith('custom:')).map((t) => JSON.stringify(CATALOG_BY_ID[t]?.affords ?? null)).join(';');
 		if (!force && key === this.navKey) return;
 		this.navKey = key;
 		const prevPhase = PHASE.v;
