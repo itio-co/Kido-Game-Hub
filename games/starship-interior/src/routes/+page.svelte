@@ -411,7 +411,11 @@
 		pointer-events: none;
 	}
 	.prompt.mobile {
-		bottom: calc(210px + env(safe-area-inset-bottom));
+		left: calc(12px + env(safe-area-inset-left));
+		transform: none;
+		bottom: calc(232px + env(safe-area-inset-bottom));
+		max-width: 62%;
+		white-space: normal;
 		font-size: 13px;
 	}
 	.possess-actions {

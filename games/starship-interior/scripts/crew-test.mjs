@@ -101,11 +101,13 @@ const ALL_FULL = (c, id) => { for (const n of ['energy', 'hunger', 'hygiene', 'b
 	await G(page, () => {
 		const c = window.__crew;
 		// let the toilet queue dissolve so the crew spread over different activities
-		for (const a of c.agents) if (a.state === 'queue') { c.setNeed(a.id, 'bladder', 70); c.think(a.id); }
+		const want = ['hunger', 'fitness', 'fun', 'work', 'hygiene'];
+		let k = 0;
+		for (const a of c.agents) if (a.state === 'queue') { c.setNeed(a.id, 'bladder', 70); c.setNeed(a.id, want[k++ % want.length], 15); c.think(a.id); }
 		window.__game.selectDeck(0);
 		c.speed = 16;
 	});
-	await wait(6000);
+	await wait(3000);
 	await G(page, () => (window.__crew.speed = 4));
 	await wait(1000);
 	const pickId = await G(page, () => {
@@ -247,7 +249,13 @@ const ALL_FULL = (c, id) => { for (const n of ['energy', 'hunger', 'hygiene', 'b
 	await G(page, () => window.__game.selectDeck(0));
 	await wait(1500);
 	await G(page, () => { const g = window.__game; g.tool = 'select'; g.pending = null; });
-	const id = await G(page, () => window.__crew.agents.find((a) => a.deck === 0 && a.av.visible && !a.hidden)?.id ?? null);
+	await G(page, () => (window.__crew.running = false)); // freeze so the tap target does not walk away
+	await wait(400);
+	const id = await G(page, () => {
+		const c = window.__crew;
+		const ok = c.agents.filter((a) => a.deck === 0 && a.av.visible && !a.hidden).map((a) => ({ id: a.id, p: window.__crewDebug.screenOf(a.id) }));
+		return (ok.find((o) => o.p.y > 260 && o.p.y < 700 && o.p.x > 30 && o.p.x < 360) ?? ok[0])?.id ?? null;
+	});
 	let tapped = false;
 	if (id !== null) {
 		const p = await G(page, (id) => window.__crewDebug.screenOf(id), id);
@@ -257,8 +265,10 @@ const ALL_FULL = (c, id) => { for (const n of ['energy', 'hunger', 'hygiene', 'b
 	}
 	if (!tapped) await G(page, (id) => (window.__crew.selected = id ?? 0), id);
 	check('mobile: tap avatar opens card', tapped, { id });
+	await G(page, () => (window.__crew.running = true));
 	await wait(800);
 	await page.screenshot({ path: 'screenshot-mobile-crew.png' });
+	check('mobile: tap does not ghost-click the card', (await G(page, () => window.__crew.possessed)) === null);
 	await page.getByRole('button', { name: /Take control/ }).tap();
 	await wait(1200);
 	const joy = await page.locator('.joystick, [aria-label*="oystick"]').count();

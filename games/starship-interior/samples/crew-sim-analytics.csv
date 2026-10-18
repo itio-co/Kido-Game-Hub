@@ -1,36 +1,36 @@
-# Crew sim analytics,"Day 1 · 16:24",sim hours,9.4,crew,6,mode,cabin,phase,surface
+# Crew sim analytics,"Day 1 · 15:51",sim hours,8.9,crew,6,mode,cabin,phase,surface
 
 EQUIPMENT
 deck,equipment,uid,capacity,utilization_pct,uses,waits,avg_wait_min,max_queue,reachable
-"Deck 1","Life Support (ECLSS) Rack",1,1,7,1,0,0.0,0,true
-"Deck 1","Galley Counter",2,2,5,3,0,0.0,0,true
-"Deck 1","Table + 4 Seats",3,4,9,10,0,0.0,0,true
-"Deck 1","Hygiene / Toilet",4,1,36,19,10,14.3,3,true
-"Deck 1","Hydroponics Rack",5,1,38,4,1,34.8,1,true
+"Deck 1","Life Support (ECLSS) Rack",1,1,8,1,0,0.0,0,true
+"Deck 1","Galley Counter",2,2,0,0,0,0.0,0,true
+"Deck 1","Table + 4 Seats",3,4,11,15,0,0.0,0,true
+"Deck 1","Hygiene / Toilet",4,1,37,20,8,11.4,3,true
+"Deck 1","Hydroponics Rack",5,1,30,4,1,0.0,1,true
 "Deck 1","Storage Locker",6,1,0,0,0,0.0,0,true
-"Deck 2","Workstation",8,1,65,3,1,103.4,1,true
-"Deck 2","Sleep Bunk",9,1,88,2,0,0.0,0,true
-"Deck 2","Crew Quarters Pod",10,1,10,1,0,0.0,0,true
-"Deck 2","Crew Quarters Pod",11,1,22,2,0,0.0,0,true
-"Deck 2","Exercise Treadmill",12,1,7,1,0,0.0,0,true
+"Deck 2","Workstation",8,1,78,4,2,32.8,2,true
+"Deck 2","Sleep Bunk",9,1,77,1,0,0.0,0,true
+"Deck 2","Crew Quarters Pod",10,1,31,1,0,0.0,0,true
+"Deck 2","Crew Quarters Pod",11,1,28,2,0,0.0,0,true
+"Deck 2","Exercise Treadmill",12,1,11,1,0,0.0,0,true
 "Deck 2","Storage Locker",13,1,0,0,0,0.0,0,true
-"Deck 3","Sleep Bunk",14,1,53,2,0,0.0,0,true
-"Deck 3","Sleep Bunk",15,1,0,0,0,0.0,0,true
+"Deck 3","Sleep Bunk",14,1,13,1,0,0.0,0,true
+"Deck 3","Sleep Bunk",15,1,17,1,0,0.0,0,true
 "Deck 3","Storage Locker",16,1,0,0,0,0.0,0,true
-"Deck 3","Hygiene / Toilet",17,1,9,5,0,0.0,0,true
-"Deck 3","Table + 4 Seats",18,4,7,9,0,0.0,0,true
+"Deck 3","Hygiene / Toilet",17,1,16,8,3,4.3,1,true
+"Deck 3","Table + 4 Seats",18,4,6,6,0,0.0,0,true
 
 LADDERS
 ladder,climbs,wait_min
-"L1-2",16,86.8
-"L2-3",5,0.0
+"L1-2",14,8.3
+"L2-3",8,22.9
 
 UNMET NEEDS
 need,critical_hours,pct_of_crew_time
-energy,1.54,2.7
+energy,1.54,2.9
 hunger,0.00,0.0
 hygiene,0.00,0.0
-bladder,1.58,2.8
+bladder,1.28,2.4
 fitness,0.00,0.0
 fun,0.00,0.0
 work,0.00,0.0
@@ -38,16 +38,16 @@ comfort,0.00,0.0
 
 DESIGN ISSUES
 severity,issue
-high,"Hygiene / Toilet (Deck 1): average wait 14.3 min over 10 waits, max queue 3 – consider a second unit"
-med,"Sleep Bunk (Deck 2) is a bottleneck: 88% utilization"
-med,"Ladder L1-2: 87 min of waiting in total (16 climbs) – add a second connection?"
-low,"Congestion on Deck 1 near (-1.6, 1.6) m – crew had to squeeze past each other"
+high,"Hygiene / Toilet (Deck 1): average wait 11.4 min over 8 waits, max queue 3 – consider a second unit"
+high,"Workstation (Deck 2): average wait 32.8 min over 2 waits, max queue 2 – consider a second unit"
+med,"Hygiene / Toilet (Deck 3): average wait 4.3 min over 3 waits, max queue 1 – consider a second unit"
+low,"Ladder L2-3: 23 min of waiting in total (8 climbs) – add a second connection?"
 
 CREW
 name,role,deck,action,mood,energy,hunger,hygiene,bladder,fitness,fun,work,comfort
-"Crew 1",Commander,"Deck 1","Waiting for the Hydroponics Rack",90,87,92,97,85,92,89,87,92
-"Crew 2",Pilot,"Deck 1","Tend plants (Hydroponics Rack)",89,92,82,91,78,85,95,97,96
-"Crew 3",Engineer,"Deck 2","Work at console (Workstation)",83,67,80,91,67,82,92,100,98
-"Crew 4",Scientist,"Deck 2","Sleep (Sleep Bunk)",86,76,85,96,76,83,97,84,100
-"Crew 5",Medic,"Deck 3","Sleep (Sleep Bunk)",86,72,94,72,89,83,83,94,100
-"Crew 6",Specialist,"Deck 2","Exercise (Exercise Treadmill)",80,69,91,69,64,85,94,80,88
+"Crew 1",Commander,"Deck 3","Wash up (Hygiene / Toilet)",93,91,96,85,92,94,95,90,99
+"Crew 2",Pilot,"Deck 2","Work at console (Workstation)",78,57,81,72,66,83,84,100,94
+"Crew 3",Engineer,"Deck 1","Tend plants (Hydroponics Rack)",91,88,92,88,84,85,100,98,96
+"Crew 4",Scientist,"Deck 3","Sleep (Sleep Bunk)",87,78,94,75,89,85,86,94,100
+"Crew 5",Medic,"Deck 1","Waiting for the Hydroponics Rack",92,91,92,91,95,86,92,87,96
+"Crew 6",Specialist,"Deck 2","Sleep (private) (Crew Quarters Pod)",83,68,89,67,81,83,94,88,100

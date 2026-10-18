@@ -8,6 +8,14 @@
 	}
 	let { mobile = false }: Props = $props();
 	const u = $derived(crew.selected !== null ? crew.ui.agents.find((a) => a.id === crew.selected) : undefined);
+	// a tap that opens the card must not also "click" a button that appears under the finger
+	let shownAt = 0;
+	$effect(() => {
+		void crew.selected;
+		shownAt = performance.now();
+	});
+	const fresh = () => performance.now() - shownAt < 450;
+	const compact = $derived(mobile && crew.possessed !== null);
 </script>
 
 {#if u}
@@ -24,8 +32,9 @@
 				<span>{u.role} · {u.where}</span>
 				<span class="mood">{u.moodLabel} mood {u.mood}%</span>
 			</div>
-			<button class="x" onclick={() => (crew.selected = null)} aria-label="Close">✕</button>
+			<button class="x" onclick={() => !fresh() && (crew.selected = null)} aria-label="Close">✕</button>
 		</div>
+		{#if !compact}
 		<div class="act">▶ {u.action}{#if u.queue}<br /><small>⏳ {u.queue}</small>{/if}</div>
 		<div class="needs">
 			{#each NEEDS as n (n.id)}
@@ -36,10 +45,11 @@
 				</div>
 			{/each}
 		</div>
+		{/if}
 		{#if crew.possessed === u.id}
-			<button class="ctl rel" onclick={() => crew.possess(null)}>⏏ Release to AI</button>
+			{#if !compact}<button class="ctl rel" onclick={() => !fresh() && crew.possess(null)}>⏏ Release to AI</button>{/if}
 		{:else}
-			<button class="ctl" onclick={() => crew.possess(u.id)}>🎮 Take control</button>
+			<button class="ctl" onclick={() => !fresh() && crew.possess(u.id)}>🎮 Take control</button>
 		{/if}
 	</div>
 {/if}
