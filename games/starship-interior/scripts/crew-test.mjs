@@ -105,6 +105,8 @@ const ALL_FULL = (c, id) => { for (const n of ['energy', 'hunger', 'hygiene', 'b
 		let k = 0;
 		for (const a of c.agents) if (a.state === 'queue') { c.setNeed(a.id, 'bladder', 70); c.setNeed(a.id, want[k++ % want.length], 15); c.think(a.id); }
 		window.__game.selectDeck(0);
+		window.__game.tool = 'select'; // no placement ghost under the cursor in the screenshot
+		window.__game.pending = null;
 		c.speed = 16;
 	});
 	await wait(3000);
@@ -257,20 +259,22 @@ const ALL_FULL = (c, id) => { for (const n of ['energy', 'hunger', 'hygiene', 'b
 	await G(page, () => { const g = window.__game; g.tool = 'select'; g.pending = null; });
 	await G(page, () => (window.__crew.running = false)); // freeze so the tap target does not walk away
 	await wait(400);
-	const id = await G(page, () => {
-		const c = window.__crew;
-		const ok = c.agents.filter((a) => a.deck === 0 && a.av.visible && !a.hidden).map((a) => ({ id: a.id, p: window.__crewDebug.screenOf(a.id) }));
-		return (ok.find((o) => o.p.y > 260 && o.p.y < 700 && o.p.x > 30 && o.p.x < 360) ?? ok[0])?.id ?? null;
-	});
+	// centre the camera on a visible crew member on deck 1, then tap its avatar
+	const id = await G(page, () => window.__crew.agents.find((a) => a.deck === 0 && a.av.visible && !a.hidden)?.id ?? null);
 	let tapped = false;
 	if (id !== null) {
+		await G(page, (id) => { const a = window.__crew.agents[id]; window.__rig.animateTo({ az: 0.4, polar: 0.85, dist: 6.5 }, [a.x, window.__game.floorY[0], a.z], 10); }, id);
+		await wait(1800);
 		const p = await G(page, (id) => window.__crewDebug.screenOf(id), id);
 		await page.touchscreen.tap(p.x, p.y);
 		await wait(600);
-		tapped = (await G(page, () => window.__crew.selected)) !== null;
+		tapped = (await G(page, () => window.__crew.selected)) === id;
 	}
 	if (!tapped) await G(page, (id) => (window.__crew.selected = id ?? 0), id);
 	check('mobile: tap avatar opens card', tapped, { id });
+	// frame the selected crew member and the deck around them
+	await G(page, (id) => { const a = window.__crew.agents[id ?? 0]; window.__rig.animateTo({ az: 0.4, polar: 0.85, dist: 6.5 }, [a.x * 0.5, window.__game.floorY[0], a.z * 0.5], 10); }, id);
+	await wait(1500);
 	await G(page, () => (window.__crew.running = true));
 	await wait(800);
 	await page.screenshot({ path: 'screenshot-mobile-crew.png' });

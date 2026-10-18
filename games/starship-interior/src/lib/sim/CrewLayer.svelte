@@ -108,7 +108,7 @@
 				const v = h[j * M + i] + (c?.[j * M + i] ?? 0) * 20;
 				const o = (j * M + i) * 4;
 				if (v <= 0 || max <= 0) continue;
-				const [r, g, b, a] = ramp(Math.sqrt(v / max));
+				const [r, g, b, a] = ramp(Math.log1p(v) / Math.log1p(max)); // log scale: corridors stay visible next to long seated stays
 				img.data[o] = r;
 				img.data[o + 1] = g;
 				img.data[o + 2] = b;

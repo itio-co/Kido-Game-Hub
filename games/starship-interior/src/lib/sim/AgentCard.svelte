@@ -19,7 +19,7 @@
 </script>
 
 {#if u}
-	<div class="card" class:mobile data-testid="agent-card">
+	<div class="card" class:mobile class:compact data-testid="agent-card">
 		<div class="head">
 			<svg class="portrait" viewBox="0 0 40 40" aria-hidden="true">
 				<circle cx="20" cy="20" r="19" fill="#0d1626" stroke={u.color} stroke-width="2" />
@@ -76,10 +76,14 @@
 		left: 8px;
 		right: 8px;
 		width: auto;
-		top: calc(156px + env(safe-area-inset-top));
-		bottom: auto;
+		top: auto;
+		bottom: calc(186px + env(safe-area-inset-bottom));
 		padding: 8px;
 		gap: 5px;
+	}
+	.card.mobile.compact {
+		top: calc(156px + env(safe-area-inset-top));
+		bottom: auto;
 	}
 	.card.mobile .needs {
 		grid-template-columns: repeat(4, 1fr);
