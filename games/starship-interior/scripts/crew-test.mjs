@@ -98,8 +98,16 @@ const ALL_FULL = (c, id) => { for (const n of ['energy', 'hunger', 'hygiene', 'b
 	check('crew queue at a busy item', !!queued, { queued, log: qlog });
 
 	// screenshot: several crew doing different things, inspect card open (picked by clicking an avatar)
-	await G(page, () => { const g = window.__game; g.selectDeck(0); window.__crew.speed = 4; });
-	await wait(2500);
+	await G(page, () => {
+		const c = window.__crew;
+		// let the toilet queue dissolve so the crew spread over different activities
+		for (const a of c.agents) if (a.state === 'queue') { c.setNeed(a.id, 'bladder', 70); c.think(a.id); }
+		window.__game.selectDeck(0);
+		c.speed = 16;
+	});
+	await wait(6000);
+	await G(page, () => (window.__crew.speed = 4));
+	await wait(1000);
 	const pickId = await G(page, () => {
 		const c = window.__crew;
 		const vis = c.agents.filter((a) => a.deck === 0 && a.av.visible && !a.hidden).map((a) => a.id);
@@ -200,6 +208,19 @@ const ALL_FULL = (c, id) => { for (const n of ['energy', 'hunger', 'hygiene', 'b
 	// save includes roster + settings
 	const save = await G(page, () => { window.__crew.roster[0].name = 'Cmdr Ada'; return window.__game.toJSON().crewSim; });
 	check('save includes crew roster + settings', save?.roster?.[0]?.name === 'Cmdr Ada' && !!save.settings, { roster: save?.roster?.length });
+
+	// performance: 12 agents on desktop – CPU cost of the sim step (rendering excluded)
+	const perf = await G(page, () => {
+		const g = window.__game, c = window.__crew;
+		g.crew = 12;
+		c.step(0.6); // roster sync spawns the extra agents
+		c.speed = 16;
+		c.running = true;
+		const t0 = performance.now();
+		for (let i = 0; i < 300; i++) c.step(1 / 60);
+		return { agents: c.agents.length, msPerFrame: +((performance.now() - t0) / 300).toFixed(3) };
+	});
+	check('12 agents: sim step cost per frame < 4 ms (16×)', perf.agents === 12 && perf.msPerFrame < 4, perf);
 
 	// launch couch side view with a 1.75 m silhouette + seated occupant
 	await G(page, () => { window.__crew.stop(); window.__game.designer = true; });

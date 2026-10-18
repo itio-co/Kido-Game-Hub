@@ -72,6 +72,7 @@
 
 	// ---- heat map (presence minutes per 0.25 m cell, current deck) ----
 	const canvas = typeof document !== 'undefined' ? document.createElement('canvas') : null;
+	const raw = typeof document !== 'undefined' ? document.createElement('canvas') : null;
 	const tex = canvas ? new CanvasTexture(canvas) : null;
 	const R = $derived(game.deckRadius[game.current] ?? 4.5);
 	const ramp = (t: number): [number, number, number, number] => {
@@ -86,19 +87,19 @@
 		while (k < stops.length - 2 && t > stops[k + 1][0]) k++;
 		const [t0, c0] = stops[k], [t1, c1] = stops[k + 1];
 		const u = Math.min(1, Math.max(0, (t - t0) / (t1 - t0)));
-		return [c0[0] + (c1[0] - c0[0]) * u, c0[1] + (c1[1] - c0[1]) * u, c0[2] + (c1[2] - c0[2]) * u, Math.min(0.85, 0.25 + t * 0.7)];
+		return [c0[0] + (c1[0] - c0[0]) * u, c0[1] + (c1[1] - c0[1]) * u, c0[2] + (c1[2] - c0[2]) * u, Math.min(0.9, 0.45 + t * 0.5)];
 	};
 	$effect(() => {
 		void crew.ui.heatVersion;
 		const on = crew.heatmap && crew.enabled;
 		const k = game.current;
-		if (!on || !canvas || !tex) return;
+		if (!on || !canvas || !raw || !tex) return;
 		const h = crew.heat[k];
 		const c = crew.congestion[k];
 		if (!h) return;
 		const M = Math.round(Math.sqrt(h.length));
-		canvas.width = canvas.height = M;
-		const ctx = canvas.getContext('2d')!;
+		raw.width = raw.height = M;
+		const ctx = raw.getContext('2d')!;
 		const img = ctx.createImageData(M, M);
 		let max = 0;
 		for (let i = 0; i < h.length; i++) max = Math.max(max, h[i] + (c?.[i] ?? 0) * 20);
@@ -114,6 +115,16 @@
 				img.data[o + 3] = a * 255;
 			}
 		ctx.putImageData(img, 0, 0);
+		// upscale with a soft blur so the 0.25 m cells read as a smooth heat map
+		const S = 8;
+		canvas.width = canvas.height = M * S;
+		const out = canvas.getContext('2d')!;
+		out.imageSmoothingEnabled = true;
+		out.filter = 'blur(6px)';
+		out.drawImage(raw, 0, 0, M * S, M * S);
+		out.filter = 'none';
+		out.globalAlpha = 0.6;
+		out.drawImage(raw, 0, 0, M * S, M * S);
 		tex.needsUpdate = true;
 		invalidate();
 	});
