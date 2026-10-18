@@ -68,6 +68,7 @@ const ALL_FULL = (c, id) => { for (const n of ['energy', 'hunger', 'hygiene', 'b
 		window.__climbWatch = setInterval(() => { if (c.agents[0].climbPhase === 1) window.__climbSeen = true; }, 50);
 	});
 	const climbed = await until(page, () => window.__climbSeen && window.__crew.agents[0].deck !== 0 && window.__crew.agents[0].climbPhase === 0 ? { deck: window.__crew.agents[0].deck, action: window.__crew.agents[0].action } : null, null, 60000);
+	await G(page, () => clearInterval(window.__climbWatch));
 	check('agent climbs a ladder between decks', !!climbed, climbed ?? (await G(page, () => window.__crew.agentSnapshot(0))));
 
 	// 4) queue at a busy item: four crew on deck 1 all need the single toilet
@@ -92,6 +93,7 @@ const ALL_FULL = (c, id) => { for (const n of ['energy', 'hunger', 'hygiene', 'b
 		}, 50);
 	}, ALL_FULL.toString());
 	const queued = await until(page, () => window.__queueSeen, null, 40000);
+	await G(page, () => clearInterval(window.__queueWatch));
 	const qlog = await G(page, () => window.__crew.ui.log.find((l) => /waiting for/.test(l.text))?.text ?? null);
 	check('crew queue at a busy item', !!queued, { queued, log: qlog });
 
@@ -170,14 +172,29 @@ const ALL_FULL = (c, id) => { for (const n of ['energy', 'hunger', 'hygiene', 'b
 	await wait(800);
 	const used = await G(page, (id) => window.__crew.agents[id].state, pid);
 	check('possessed interact (E) uses equipment', used === 'use', { state: used });
-	await page.getByRole('button', { name: 'Release' }).click();
+	await page.getByRole('button', { name: 'Release', exact: true }).click();
 	await wait(500);
 	check('release hands back to AI', (await G(page, () => window.__crew.possessed)) === null);
 
 	// launch phase: crew strap in
-	await G(page, () => window.__game.setPhase('launch'));
+	const seatRes = await G(page, () => {
+		const g = window.__game;
+		const cur = g.current;
+		g.selectDeck(1);
+		g.setPhase('launch');
+		const put = (type, x, z, rot) => { g.selectedModule = type; g.tool = 'module'; g.rotation = rot; return g.placeAt({ x, z }) || g.toast; };
+		const r = { pilot: put('pilotcouch', 2.3, -1.2, 270), row3: put('couchrow3', 0, 2.2, 180) };
+		g.tool = 'select';
+		g.selectDeck(cur);
+		return r;
+	});
+	console.log('launch seats placed', JSON.stringify(seatRes));
 	const strapped = await until(page, () => { const c = window.__crew; const s = c.agents.filter((a) => a.state === 'strapped').length; return s >= Math.min(c.agents.length, window.__game.seats) ? s : null; }, null, 60000);
-	check('launch phase: crew strap into couches', !!strapped, { strapped, seats: await G(page, () => window.__game.seats) });
+	const noseat = await G(page, () => window.__crew.ui.log.find((l) => /no couch/i.test(l.text))?.text ?? null);
+	await G(page, () => { const g = window.__game; g.selectDeck(1); window.__rig.animateTo({ az: 0.55, polar: 0.82, dist: 6.4 }, [0.4, g.floorY[1] + 0.3, 0.6], 10); });
+	await wait(2000);
+	await page.screenshot({ path: 'screenshot-crew-launch.png' });
+	check('launch phase: crew strap into couches', !!strapped && (await G(page, () => window.__game.seats)) > 0, { strapped, seats: await G(page, () => window.__game.seats), log: noseat });
 	await G(page, () => window.__game.setPhase('surface'));
 
 	// save includes roster + settings
@@ -208,7 +225,8 @@ const ALL_FULL = (c, id) => { for (const n of ['energy', 'hunger', 'hygiene', 'b
 	await page.getByRole('button', { name: 'Close crew sheet' }).tap();
 	await G(page, () => window.__game.selectDeck(0));
 	await wait(1500);
-	const id = await G(page, () => window.__crew.agents.find((a) => a.deck === 0 && a.av.visible)?.id ?? null);
+	await G(page, () => { const g = window.__game; g.tool = 'select'; g.pending = null; });
+	const id = await G(page, () => window.__crew.agents.find((a) => a.deck === 0 && a.av.visible && !a.hidden)?.id ?? null);
 	let tapped = false;
 	if (id !== null) {
 		const p = await G(page, (id) => window.__crewDebug.screenOf(id), id);

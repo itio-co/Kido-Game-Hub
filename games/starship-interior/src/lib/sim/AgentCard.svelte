@@ -31,7 +31,7 @@
 			{#each NEEDS as n (n.id)}
 				{@const v = u.needs[n.id]}
 				<div class="need" title={`${n.label} ${Math.round(v)}`}>
-					<span>{n.icon} {n.label}</span>
+					<span>{n.icon}{#if !mobile} {n.label}{/if}</span>
 					<span class="bar"><span style:width="{v}%" style:background={v < 20 ? '#ff5a5a' : v < 45 ? '#ffb43a' : n.color}></span></span>
 				</div>
 			{/each}
@@ -72,7 +72,17 @@
 		gap: 5px;
 	}
 	.card.mobile .needs {
-		grid-template-columns: 1fr 1fr;
+		grid-template-columns: repeat(4, 1fr);
+	}
+	.card.mobile .need {
+		grid-template-columns: auto 1fr;
+	}
+	.card.mobile .portrait {
+		width: 34px;
+		height: 34px;
+	}
+	.card.mobile .ctl {
+		min-height: 34px;
 	}
 	.head {
 		display: flex;

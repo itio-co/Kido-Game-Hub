@@ -1038,6 +1038,11 @@ class CrewSim {
 			return;
 		}
 		const { f, s } = this.input;
+		if (Math.hypot(f, s) > 0.05 && a.state !== 'use' && !nav.isFree(a.x, a.z)) {
+			// standing inside an inflated obstacle (e.g. just left an enclosed unit): step out first
+			const c = nav.nearestFree(a.x, a.z, 1.5);
+			if (c >= 0) [a.x, a.z] = nav.pt(c);
+		}
 		if (Math.hypot(f, s) > 0.05) {
 			if (a.state === 'use') {
 				this.release(a, false);
