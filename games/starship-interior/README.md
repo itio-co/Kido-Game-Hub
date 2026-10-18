@@ -16,6 +16,7 @@ npm run dev                    # http://localhost:5173 (bound to 0.0.0.0 → rea
 npm run check                  # svelte-check
 npm run build                  # static site in ./build (adapter-static)
 npx playwright install chromium && node scripts/screenshot.mjs   # headless test → screenshots + samples/
+node scripts/crew-test.mjs     # crew-sim test (desktop + iPhone 13): move, use, ladder, queue, possession, launch
 ```
 
 ## Hard limits and sources (all in `src/lib/game/specs.ts`)
@@ -144,6 +145,9 @@ The crew lies semi-supine in the **+Gx** posture with the back to the floor, bec
 - The procedural model has a composite shell with a moulded liner, side bolsters, headrest with cheek pads, 5-point harness
   and rotary buckle, leg rest, floor rails, struts with **stroking attenuators**, a diagonal hip attenuator, and armrests with
   a keypad and hand controller. The pilot couch adds a swing-arm display. The front (access side) is the foot end.
+- **Posture** (semi-supine, knees up): horizontal seat pan, back about 16° head-up, thighs about 78° (near vertical),
+  knees about 90°, and lower legs horizontal on the leg rest. The designer's **Side** view shows a seated 1.75 m occupant
+  (🧑‍🚀 Occupant toggle) next to the silhouette (`screenshot-couch-side.png`).
 - **Mission phase** toggle in the Crew panel: *Surface / cruise* and *Launch / landing*. In Launch, couches deploy and
   stowables fold away (table top folded against its rail, treadmill rails folded down).
 - Every placement must be valid in **both** phases. The ghost reason names the failing phase, e.g.
@@ -188,6 +192,55 @@ Open it with **📐 Design** (sidebar Mode row, or the top-right button; also on
   (`format: "starship-equipment", version: 1`). Imported files are sanitised: shapes, materials and sizes are clamped.
 - **GLB import (optional):** **📦 Import GLB part** adds a `.glb` (≤ 1.5 MB) as one part. It is normalised to a unit box and
   then scaled like any other part. It is stored as a data URL.
+
+## Crew simulation (Sims-like)
+
+Open **👥 Crew simulation** in the sidebar, or the **👥** button on a phone, and press **▶ Start crew sim**. It works in
+Cabin and Surface Habitat modes, runs on top of build mode, and replans live when you move equipment.
+
+- **Crew:** one member per crew-count seat (default 6; the sim runs up to 24). Each has an editable **name**,
+  a **role** (Commander, Pilot, Engineer, Scientist, Medic or Specialist) and a **colour**. The low-poly 1.75 m avatar has
+  walk, climb, sit, sit-work, eat, sleep, exercise, work, wash and couch poses. Gravity (Earth, Mars, Moon, or Auto from the
+  habitat location) changes the walk cadence and bounce. This is cosmetic only.
+- **Needs** (0–100, decaying per sim hour): Energy, Hunger, Hygiene, Bladder, Fitness, Fun/Social, Work/Purpose, Comfort.
+- **Affordances** belong to the equipment data. Each one has a label, a need-restore rate per sim hour, minutes, a pose,
+  and slots (capacity), plus social, enclosed and *until-full* flags. Built-ins provide bunk/pod sleep, galley cooking,
+  table meals and chat (4 seats, social), workstation, hydroponics, toilet and wash, treadmill, ECLSS maintenance, locker
+  supplies, and couch relaxing. Custom designs edit them in **📐 Design → Crew sim affordances**. Duplicates copy them.
+- **Utility AI:**
+  - Score = need urgency × restore gain × personality × schedule bias ÷ (travel + expected wait).
+  - Free will: a weighted pick among the top 3 options.
+  - Schedule: sleep and work shift, configurable under ⚙.
+  - Slots are reserved. When an item is busy the crew member queues in front of it, may give up, and the event is logged.
+    Sharing a social table gives extra Fun/Social.
+- **Navigation:**
+  - A per-deck 0.1 m grid with obstacles inflated by the body radius, inside the hull radius minus 0.3 m.
+  - Dijkstra distance fields with line-of-sight path smoothing.
+  - Multi-deck routing over a ladder graph. In habitat mode this includes the dome-hatch ladders.
+  - Climbing has its own animation, and only one climber is allowed per ladder (others wait, logged).
+  - Agents steer to keep apart while walking.
+- **Controls:** ▶/⏸, speeds **1× / 4× / 16× / 60×** (at 1×, one real second is one sim minute), a "Day N · HH:MM" clock
+  (also a HUD pill), an event log, and ↺ Reset / ■ Stop.
+- **Inspect:** click or tap an avatar to open its card: portrait, role, mood, current action, queue position, need bars
+  and **🎮 Take control**.
+- **Possess:**
+  - A third-person follow camera; **V** switches to first person.
+  - Drag to look, wheel to zoom. **WASD** or the arrows move (joystick on touch), Shift runs.
+  - **E** uses the nearest equipment or climbs up a ladder; the prompt reads, e.g., "E: Prepare & eat (Galley Counter)".
+    **Q/C** climbs down.
+  - **Esc** or **⏏ Release** hands the crew member back to the AI. The others keep living.
+- **Analytics (📊 Issues):**
+  - Utilisation % per item, average wait, max queue, unreachable items.
+  - Ladder climbs and waits, and crew time spent with critical needs.
+  - **Design issues found by crew sim**, e.g. "Hygiene / Toilet (Deck 1): average wait 12 min over 9 waits – consider a
+    second unit", "No reachable equipment satisfies Fitness", congestion hot spots.
+  - **🔥** toggles a congestion and presence heat map on the current deck.
+  - **⬇ CSV** exports everything (`samples/crew-sim-analytics.csv` comes from the test).
+- **Launch / landing phase:** the crew walks to the couches and straps in (couch pose). Needs freeze while strapped.
+  A crew member without a seat is logged as a design issue.
+- **Save:** the roster (names, roles, colours) and the schedule and gravity settings are stored in save files and JSON
+  exports (`crewSim`).
+- **Performance:** the sim step costs about 0.3 ms per frame for 12 agents (headless measurement). Phones start in Low quality.
 
 ## Controls
 
@@ -291,10 +344,23 @@ src/lib/three/              materials/textures, hull geometry
 src/lib/components/         Scene, Hull, DeckModules, ModuleMesh, Part, Overlays, BuildInput,
                             WalkControls, Sidebar, StatsPanel, Joystick, Outline, Zone,
                             DesignerScene/DesignerPanel/EquipModel/EquipPartMesh/Silhouette (designer)
+src/lib/game/affordances.ts needs, decay rates, built-in affordances (crew sim)
+src/lib/game/couchModel.ts  launch couch shell geometry + occupant posture
+src/lib/sim/                crew sim: nav.ts (grid, Dijkstra, ladder portals), crewSim.svelte.ts (needs, utility AI,
+                            queues, possession, analytics), avatarPose.ts/Avatar.svelte (procedural avatar),
+                            CrewLayer (render, picking, heat map), PossessControls, AgentCard, CrewSimPanel
 scripts/screenshot.mjs      Playwright test: screenshots, rule checks, sample exports
+scripts/crew-test.mjs       Playwright crew-sim test + crew screenshots
 ```
 
 ## Limitations / next steps
+- **Crew sim:**
+  - Movement runs at visual speed scaled by the sim speed. Walking and climbing therefore take more sim minutes than
+    real life, which inflates ladder waits.
+  - Needs, rates and schedules are game-style heuristics, not human-factors data.
+  - Avoidance is local steering only. Two agents can briefly overlap in a tight aisle.
+  - Avatars are hidden on decks that are not displayed. Enclosed units (pods, toilet) hide the user.
+  - There is no zero-g / microgravity mode, and the couch occupant does not follow custom couch geometry.
 - Equipment is generic and procedural, not real flight hardware. Mass, power and cost are placeholders.
 - There is no structural, thermal, acoustic, radiation-transport, fire-safety or emergency-egress analysis. The path check is 2D and
   inflates the body with rough square corners.
