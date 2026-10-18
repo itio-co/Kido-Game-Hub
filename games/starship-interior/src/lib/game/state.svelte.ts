@@ -156,6 +156,9 @@ class GameState {
 	isTouch = $state(false);
 	/** set by WalkControls while walk mode is active */
 	travel: ((dir: 1 | -1) => void) | undefined = undefined;
+	/** set by the crew sim: roster + settings for save files / restore */
+	getCrewSim: (() => unknown) | undefined;
+	onCrewSim: ((d: unknown) => void) | undefined;
 	/** set by the equipment library: receives custom equipment from a save file */
 	onEquipment: ((items: unknown[]) => void) | undefined = (items) => equip.merge(items);
 	/** set by the equipment library: custom equipment for save files */
@@ -912,7 +915,8 @@ class GameState {
 				modules: d.modules.map(({ type, x, z, angle }) => ({ type, x, z, angle }))
 			})),
 			shafts: this.shafts.map(({ x, z, angle, from, to }) => ({ x, z, angle, from, to })),
-			equipment: this.getEquipment?.() ?? []
+			equipment: this.getEquipment?.() ?? [],
+			crewSim: this.getCrewSim?.()
 		};
 	}
 
@@ -994,6 +998,7 @@ class GameState {
 			this.crew = Math.max(1, Math.min(100, Math.round(Number(d.crew) || 6)));
 			this.setPhase(d.phase === 'launch' ? 'launch' : 'surface');
 			if (Array.isArray(d.equipment)) this.onEquipment?.(d.equipment);
+			if (d.crewSim) this.onCrewSim?.(d.crewSim);
 		} else {
 			this.shipMode = 'cabin';
 			this.hab = defaultHabitat();

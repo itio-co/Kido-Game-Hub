@@ -112,6 +112,8 @@ export interface SaveData {
 	decks: SaveDeck[];
 	shafts: Omit<Shaft, 'uid'>[];
 	equipment?: unknown[];
+	/** crew-sim roster and settings (optional) */
+	crewSim?: unknown;
 }
 
 export interface LayoutData {

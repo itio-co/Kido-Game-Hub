@@ -1179,3 +1179,5 @@ function hint(n: NeedId) {
 }
 
 export const crew = new CrewSim();
+game.getCrewSim = () => (crew.roster.length ? crew.toJSON() : undefined);
+game.onCrewSim = (d) => crew.load(d);
