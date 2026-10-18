@@ -6,7 +6,7 @@
 	 */
 	import { T, useTask, useThrelte } from '@threlte/core';
 	import { onMount } from 'svelte';
-	import { CanvasTexture, Group, Raycaster, Vector2 } from 'three';
+	import { CanvasTexture, Group, Raycaster, Vector2, Vector3 } from 'three';
 	import { game } from '$lib/game/state.svelte';
 	import Avatar from './Avatar.svelte';
 	import { crew } from './crewSim.svelte';
@@ -55,6 +55,17 @@
 	}
 	onMount(() => {
 		dom.addEventListener('pointerdown', onDown, { capture: true });
+		// test hook: screen position of an avatar's chest
+		const v = new Vector3();
+		(window as unknown as { __crewDebug: unknown }).__crewDebug = {
+			screenOf(id: number) {
+				const a = crew.agents[id];
+				if (!a) return null;
+				v.set(a.av.x, a.av.y + (a.av.pose === 'sleep' ? 0.6 : a.av.pose.startsWith('sit') || a.av.pose === 'eat' ? 0.85 : 1.15), a.av.z).project(camera.current);
+				const r = dom.getBoundingClientRect();
+				return { x: r.left + ((v.x + 1) / 2) * r.width, y: r.top + ((1 - v.y) / 2) * r.height, visible: a.av.visible };
+			}
+		};
 		return () => dom.removeEventListener('pointerdown', onDown, { capture: true });
 	});
 	void down;
