@@ -1,0 +1,282 @@
+{
+  "version": 5,
+  "specs": {
+    "innerRadius": 4.5,
+    "volumeLimit": 600,
+    "slab": 0.25
+  },
+  "shipMode": "habitat",
+  "habitat": {
+    "location": "moon",
+    "burial": 2.5,
+    "berm": 4,
+    "domes": {
+      "aft": "intact",
+      "common": "hatch",
+      "forward": "cut"
+    },
+    "converted": {
+      "lox": true,
+      "ch4": true
+    },
+    "inserts": [
+      {
+        "section": "crew",
+        "joint": 1,
+        "count": 1
+      }
+    ],
+    "openings": [
+      {
+        "ring": 6,
+        "angle": 90,
+        "w": 1.2,
+        "h": 1.6,
+        "spanWeld": false,
+        "tunnel": true,
+        "tunnelLen": 5,
+        "uid": 1
+      }
+    ]
+  },
+  "crew": 6,
+  "phase": "surface",
+  "decks": [
+    {
+      "height": 2.4,
+      "section": "lox",
+      "modules": []
+    },
+    {
+      "height": 2.4,
+      "section": "lox",
+      "modules": []
+    },
+    {
+      "height": 2.4,
+      "section": "ch4",
+      "modules": [
+        {
+          "type": "bunk",
+          "x": -2.3,
+          "z": -2.6,
+          "angle": 30
+        },
+        {
+          "type": "bunk",
+          "x": 2.3,
+          "z": -2.6,
+          "angle": 330
+        },
+        {
+          "type": "locker",
+          "x": -3.6,
+          "z": 1.2,
+          "angle": 75
+        },
+        {
+          "type": "galley",
+          "x": 2.2,
+          "z": 2.6,
+          "angle": 200
+        },
+        {
+          "type": "hydroponics",
+          "x": -1.6,
+          "z": 3.4,
+          "angle": 170
+        }
+      ]
+    },
+    {
+      "height": 2.4,
+      "section": "ch4",
+      "modules": []
+    },
+    {
+      "height": 2.4,
+      "section": "crew",
+      "modules": [
+        {
+          "type": "eclss",
+          "x": -2.9,
+          "z": -2.4,
+          "angle": 50
+        },
+        {
+          "type": "galley",
+          "x": 1.5,
+          "z": -3.3,
+          "angle": 0
+        },
+        {
+          "type": "table",
+          "x": 2.3,
+          "z": 0.4,
+          "angle": 90
+        },
+        {
+          "type": "hygiene",
+          "x": -2.7,
+          "z": 2.5,
+          "angle": 135
+        },
+        {
+          "type": "hydroponics",
+          "x": 0.9,
+          "z": 3.65,
+          "angle": 180
+        },
+        {
+          "type": "locker",
+          "x": -0.6,
+          "z": 3.85,
+          "angle": 180
+        },
+        {
+          "type": "partition",
+          "x": 3.6,
+          "z": -1.2,
+          "angle": 70
+        }
+      ]
+    },
+    {
+      "height": 2.4,
+      "section": "crew",
+      "modules": [
+        {
+          "type": "workstation",
+          "x": 0,
+          "z": -3.6,
+          "angle": 0
+        },
+        {
+          "type": "bunk",
+          "x": 2.9,
+          "z": 1.9,
+          "angle": 210
+        },
+        {
+          "type": "crewpod",
+          "x": -2.6,
+          "z": 2.6,
+          "angle": 135
+        },
+        {
+          "type": "crewpod",
+          "x": 2.6,
+          "z": -2.6,
+          "angle": 315
+        },
+        {
+          "type": "treadmill",
+          "x": -2.9,
+          "z": -1,
+          "angle": 90
+        },
+        {
+          "type": "locker",
+          "x": 0.6,
+          "z": 3.9,
+          "angle": 180
+        },
+        {
+          "type": "pilotcouch",
+          "x": 2.3,
+          "z": -1.2,
+          "angle": 270
+        },
+        {
+          "type": "couchrow3",
+          "x": 0,
+          "z": 2.2,
+          "angle": 180
+        },
+        {
+          "type": "table",
+          "x": -2.6,
+          "z": 0.6,
+          "angle": 90
+        }
+      ]
+    },
+    {
+      "height": 2.4,
+      "section": "crew",
+      "modules": [
+        {
+          "type": "bunk",
+          "x": 0,
+          "z": -3.4,
+          "angle": 0
+        },
+        {
+          "type": "bunk",
+          "x": 0.9,
+          "z": 3.4,
+          "angle": 180
+        },
+        {
+          "type": "locker",
+          "x": 3.6,
+          "z": 0.6,
+          "angle": 270
+        },
+        {
+          "type": "hygiene",
+          "x": -3,
+          "z": 1,
+          "angle": 90
+        },
+        {
+          "type": "table",
+          "x": 2.2,
+          "z": -1.3,
+          "angle": 90
+        }
+      ]
+    },
+    {
+      "height": 2.4,
+      "section": "crew",
+      "modules": []
+    },
+    {
+      "height": 2.4,
+      "section": "crew",
+      "modules": []
+    }
+  ],
+  "shafts": [
+    {
+      "x": 0,
+      "z": 0,
+      "angle": 0,
+      "from": 4,
+      "to": 5
+    },
+    {
+      "x": -1,
+      "z": -1.4,
+      "angle": 0,
+      "from": 5,
+      "to": 6
+    },
+    {
+      "x": 0,
+      "z": 0,
+      "angle": 90,
+      "from": 0,
+      "to": 1
+    },
+    {
+      "x": 0,
+      "z": 0,
+      "angle": 90,
+      "from": 1,
+      "to": 2
+    }
+  ],
+  "equipment": []
+}
