@@ -72,6 +72,62 @@ export class DeckNav {
 			}
 		return best;
 	}
+	private _comp: Int32Array | null = null;
+	private _sizes: number[] = [];
+	/** connected-component label per free cell (−1 blocked), 8-connected without corner cutting */
+	get comp(): Int32Array {
+		if (this._comp) return this._comp;
+		const N = this.N;
+		const lab = new Int32Array(N * N).fill(-1);
+		const sizes: number[] = [];
+		const st: number[] = [];
+		for (let c0 = 0; c0 < N * N; c0++) {
+			if (!this.free[c0] || lab[c0] >= 0) continue;
+			const id = sizes.length;
+			let n = 0;
+			lab[c0] = id;
+			st.push(c0);
+			while (st.length) {
+				const c = st.pop()!;
+				n++;
+				const i = c % N, j = (c - i) / N;
+				for (let dj = -1; dj <= 1; dj++)
+					for (let di = -1; di <= 1; di++) {
+						if (!di && !dj) continue;
+						const ii = i + di, jj = j + dj;
+						if (ii < 0 || jj < 0 || ii >= N || jj >= N) continue;
+						const k = jj * N + ii;
+						if (!this.free[k] || lab[k] >= 0) continue;
+						if (di && dj && (!this.free[j * N + ii] || !this.free[jj * N + i])) continue;
+						lab[k] = id;
+						st.push(k);
+					}
+			}
+			sizes.push(n);
+		}
+		this._comp = lab;
+		this._sizes = sizes;
+		return lab;
+	}
+	get compSizes() {
+		void this.comp;
+		return this._sizes;
+	}
+	/** a free cell in the largest connected area (−1 if the deck has no free cell) */
+	mainCell(): number {
+		const lab = this.comp;
+		const s = this._sizes;
+		if (!s.length) return -1;
+		const big = s.indexOf(Math.max(...s));
+		let best = -1, bd = Infinity;
+		for (let c = 0; c < lab.length; c++) {
+			if (lab[c] !== big) continue;
+			const [x, z] = this.pt(c);
+			const d = x * x + z * z;
+			if (d < bd) (bd = d), (best = c);
+		}
+		return best;
+	}
 	/** Dijkstra distance field (metres) from a free cell; cached per source cell */
 	field(src: number): Float32Array {
 		const hit = this.fields.get(src);
@@ -115,7 +171,7 @@ export class DeckNav {
 		const D = NAV_CELL, DD = NAV_CELL * Math.SQRT2;
 		while (hc.length) {
 			const [c, d] = pop();
-			if (d > dist[c]) continue;
+			if (d > dist[c] + 1e-4) continue; // dist is Float32: allow rounding
 			const i = c % N, j = (c - i) / N;
 			for (let dj = -1; dj <= 1; dj++)
 				for (let di = -1; di <= 1; di++) {
@@ -125,7 +181,7 @@ export class DeckNav {
 					const nc = nj * N + ni;
 					if (!this.free[nc]) continue;
 					if (di && dj && (!this.free[j * N + ni] || !this.free[nj * N + i])) continue; // no corner cutting
-					const nd = d + (di && dj ? DD : D);
+					const nd = Math.fround(d + (di && dj ? DD : D));
 					if (nd < dist[nc]) (dist[nc] = nd), push(nc, nd);
 				}
 		}

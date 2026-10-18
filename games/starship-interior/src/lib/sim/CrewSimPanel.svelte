@@ -72,7 +72,7 @@
 			</div>
 		{:else if tab === 'log'}
 			<div class="log">
-				{#each crew.ui.log.slice().reverse() as e, i (i)}
+				{#each crew.ui.log as e, i (i)}
 					<div><time>{fmtClock(e.t).replace('Day ', 'D')}</time> {e.text}</div>
 				{:else}<div class="hint">No events yet.</div>{/each}
 			</div>

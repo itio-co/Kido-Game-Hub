@@ -230,9 +230,13 @@ class CrewSim {
 		const deck = w.navs.length ? (i % w.navs.length + game.airlockDeck) % w.navs.length : 0;
 		const nav = w.navs[deck];
 		let x = 0, z = 0;
+		const main = nav.mainCell();
+		if (main >= 0) [x, z] = nav.pt(main);
+		const big = main >= 0 ? nav.comp[main] : -1;
 		for (let t = 0; t < 200; t++) {
 			const a = Math.random() * Math.PI * 2, r = Math.sqrt(Math.random()) * (nav.R - 0.5);
-			if (nav.isFree(Math.cos(a) * r, Math.sin(a) * r)) {
+			const c = nav.cell(Math.cos(a) * r, Math.sin(a) * r);
+			if (c >= 0 && nav.free[c] && (big < 0 || nav.comp[c] === big)) {
 				x = Math.cos(a) * r;
 				z = Math.sin(a) * r;
 				break;
@@ -328,7 +332,7 @@ class CrewSim {
 		const k0 = game.airlockDeck;
 		const n0 = w.navs[k0];
 		if (n0) {
-			const c = n0.nearestFree(0, 0, n0.R);
+			const c = n0.mainCell();
 			if (c >= 0) seeds.push({ deck: k0, cell: c });
 		}
 		for (const it of this.items) {
@@ -382,7 +386,7 @@ class CrewSim {
 	// ---------- main step ----------
 	step(dtReal: number) {
 		if (!this.enabled) return;
-		dtReal = Math.min(dtReal, 0.1);
+		dtReal = Math.min(dtReal, 0.25);
 		this.navTimer -= dtReal;
 		if (this.navTimer <= 0) {
 			this.navTimer = 0.5;
