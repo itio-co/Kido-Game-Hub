@@ -128,6 +128,10 @@ await G(() => {
 	c.reset();
 	c.speed = 60;
 	for (let k = 0; k < (16 * 60) / 15; k++) c.step(0.25);
+	// evening peak with an empty battery → deficit + shedding visible
+	c.settings.powerSurfaceKW = 2.0;
+	c.bus.soc = 0;
+	c.step(0.25);
 	c.speed = 1;
 	c.badges = true;
 	window.__game.selectDeck(0);

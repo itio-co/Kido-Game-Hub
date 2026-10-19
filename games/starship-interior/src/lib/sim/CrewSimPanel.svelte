@@ -249,6 +249,7 @@
 		font-weight: 400;
 	}
 	.mn {
+		grid-column: 2;
 		display: flex;
 		flex-wrap: wrap;
 		gap: 1px 5px;
