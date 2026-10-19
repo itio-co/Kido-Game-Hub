@@ -174,7 +174,7 @@
 		<div class="bar">
 			<button class="handle" onclick={() => (open = !open)} aria-label="Toggle panel">
 				<span class="grip"></span>
-				<span class="hint">{open ? '▼ Close' : '▲ Equipment · Decks · Stats · Export'}</span>
+				<span class="hint">{open ? '▼ Close' : '▲ Ship · Decks · Stats · Export'}</span>
 			</button>
 			{@render toolButtons()}
 		</div>
@@ -273,26 +273,6 @@
 				{/if}
 			</section>
 		{/if}
-
-		<section>
-			<h2>Equipment <span class="rot">place rot {game.rotation.toFixed(0)}°</span></h2>
-			<div class="catalog">
-				{#each [...CATALOG, ...Object.values(equip.modules)] as m (m.id)}
-					{@const tooTall = !m.fullHeight && Math.max(m.height, m.launch?.height ?? 0) > game.deck.height}
-					<button
-						class="mod"
-						class:active={game.tool === 'module' && game.selectedModule === m.id}
-						class:dim={tooTall}
-						onclick={() => pickModule(m.id)}
-						title={m.description + (m.source ? ` (${m.source})` : '')}
-					>
-						<span class="swatch">{m.icon}</span>
-						<span class="mname">{m.name}{#if m.custom}<i class="cus">custom</i>{/if}</span>
-						<span class="meta">{sizeLabel(m)} · {m.power} W{m.seats ? ` · ${m.seats} seat${m.seats > 1 ? 's' : ''}` : ''}{m.stowable ? ' · stowable' : ''}{tooTall ? ' · too tall' : ''}{#if m.estimate}<i class="est">EST</i>{/if}</span>
-					</button>
-				{/each}
-			</div>
-		</section>
 
 		{#if game.tool === 'module' && game.selectedModule !== 'hatch' && (CATALOG_BY_ID[game.selectedModule]?.mount ?? 'floor') !== 'floor'}
 			{@const mt = CATALOG_BY_ID[game.selectedModule]?.mount}
