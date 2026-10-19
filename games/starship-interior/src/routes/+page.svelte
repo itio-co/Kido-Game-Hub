@@ -556,9 +556,9 @@
 	}
 	.build-actions.mobile {
 		bottom: calc(272px + env(safe-area-inset-bottom));
-		right: calc(10px + env(safe-area-inset-right));
+		right: calc(170px + env(safe-area-inset-right));
 		left: 10px;
-		justify-content: flex-end;
+		justify-content: flex-start;
 		flex-wrap: wrap;
 	}
 	.build-actions.mobile .fab {
@@ -581,6 +581,11 @@
 	}
 	.tip.mobile {
 		bottom: calc(334px + env(safe-area-inset-bottom));
+		left: 8px;
+		transform: none;
+		max-width: calc(100% - 180px);
+		white-space: normal;
+		border-radius: 10px;
 		font-size: 11px;
 	}
 	.tip.walk {

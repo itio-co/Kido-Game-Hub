@@ -1,0 +1,54 @@
+SURFACE {
+ "avg": {
+  "energy": 65.4,
+  "hunger": 74.3,
+  "hygiene": 67.9,
+  "bladder": 58.8,
+  "fitness": 61.2,
+  "fun": 63.1,
+  "work": 61.9,
+  "comfort": 66.6
+ },
+ "workPerAgent": "Commander:75 Pilot:61 Engineer:64 Scientist:66 Medic:46 Specialist:60",
+ "serviced": 0,
+ "workShift": 64.5,
+ "overCap": 0,
+ "issues": [
+  "high: Spares shortfall: mission (180 d cruise + 500 d surface) needs ≈95 spare kits, lockers hold 18 – short 77 (worst: Exercise Treadmill 32, Hygiene / Toilet 16, Life Support (ECLSS) Rack 14)",
+  "med: Bottleneck: Hygiene / Toilet (Deck 1) queue avg 6.3 min over 4 waits, max queue 1 – add another unit",
+  "med: Bottleneck: Hygiene / Toilet (Deck 3) queue avg 6.0 min over 2 waits, max queue 1 – add another unit",
+  "med: Crew spent 6.6 h (5% of crew time) with critical Hygiene",
+  "med: Crew spent 8.3 h (6% of crew time) with critical Bladder",
+  "med: Ladder L1-2: 52 min of waiting in total (34 climbs) – add a second connection?",
+  "med: Only 5 usable sleep places for 6 crew – crew queue ~7.5 h for a bed",
+  "med: Galley storage holds 170 crew-days = 28 days for 6 crew (mission 500 d) – the rest must come from cargo / resupply"
+ ]
+}
+CRUISE {
+ "avg": {
+  "energy": 30,
+  "hunger": 64.1,
+  "hygiene": 21.1,
+  "bladder": 9.9,
+  "fitness": 64.2,
+  "fun": 51.6,
+  "work": 51.7,
+  "comfort": 33.2
+ },
+ "workPerAgent": "Commander:65 Pilot:59 Engineer:41 Scientist:36 Medic:62 Specialist:47",
+ "serviced": 0,
+ "workShift": 65.1,
+ "overCap": 0,
+ "issues": [
+  "high: Bottleneck: Crew Quarters Pod (Deck 2) queue avg 358.5 min over 4 waits, max queue 2 – add another unit",
+  "high: Crew spent 67.0 h (47% of crew time) with critical Energy",
+  "high: Crew spent 18.2 h (13% of crew time) with critical Hunger",
+  "high: Crew spent 86.2 h (60% of crew time) with critical Hygiene",
+  "high: Crew spent 115.9 h (80% of crew time) with critical Bladder",
+  "high: Crew spent 55.4 h (38% of crew time) with critical Comfort",
+  "high: Only 2 usable sleep places for 6 crew in micro-g (bunks need a restraint / handrail within 1.5 m; crew pods and sleeping bags work as-is) – crew queue ~7.5 h for a bed",
+  "high: Spares shortfall: mission (180 d cruise + 500 d surface) needs ≈64 spare kits, lockers hold 18 – short 46 (worst: Exercise Treadmill 25, Life Support (ECLSS) Rack 14, Trash Compactor / Waste Station 8)"
+ ]
+}
+errors []
+exit 0 20s
