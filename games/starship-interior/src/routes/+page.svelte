@@ -62,6 +62,14 @@
 		if (crew.possessed !== null) return; // PossessControls owns the keyboard
 		if (e.code === 'KeyF') return toggleMode();
 		if (game.mode !== 'build') return;
+		// lock history: Ctrl+Z undo / Ctrl+Shift+Z or Ctrl+Y redo (lock changes)
+		if ((e.ctrlKey || e.metaKey) && (e.code === 'KeyZ' || e.code === 'KeyY')) {
+			e.preventDefault();
+			if (e.code === 'KeyY' || e.shiftKey) game.redoLock();
+			else game.undoLock();
+			return;
+		}
+		if (e.code === 'KeyL' && !e.ctrlKey && !e.metaKey) return void game.toggleLock();
 		// Q/E: rotate while placing (Place tool) or with a module / ladder selected; otherwise switch
 		// the viewed deck (E up, Q down). Shift+Q/E always switches deck; Alt+Q/E rotates 1°.
 		const rotating = !e.shiftKey && (game.tool === 'module' ? !!(game.pending || game.hover) : game.tool === 'select' && (game.selectedUid !== null || !!game.selectedShaft));
@@ -263,6 +271,7 @@
 					<button class="fab" onclick={() => (game.pending = null)} aria-label="Cancel">✕</button>
 				{/if}
 				{#if game.tool === 'select' && game.selectedUid !== null && !game.selected}
+					<button class="fab" class:on={game.isLocked(game.selectedUid)} onclick={() => game.toggleLock()} aria-label={game.isLocked(game.selectedUid) ? 'Unlock' : 'Lock'} title="Lock / unlock (L)">{game.isLocked(game.selectedUid) ? '🔒' : '🔓'}</button>
 					<button class="fab del" onclick={() => game.deleteSelected()} aria-label="Delete">🗑</button>
 				{/if}
 				{#if game.tool === 'module' && game.selectedModule === 'hatch'}

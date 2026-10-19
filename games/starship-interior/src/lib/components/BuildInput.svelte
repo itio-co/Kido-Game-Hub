@@ -63,7 +63,7 @@
 
 	function startDrag(uid: number, p: Pt | null) {
 		const m = game.modules.find((mm) => mm.uid === uid) ?? game.shafts.find((s) => s.uid === uid);
-		if (!m || !p) return null;
+		if (!m || !p || m.locked) return null; // locked: a drag orbits the camera instead
 		return { uid, ox: m.x - p.x, oz: m.z - p.z };
 	}
 	function updateDrag(off: { uid: number; ox: number; oz: number }, p: Pt) {
@@ -86,6 +86,8 @@
 	/** left/right button gesture on empty space: 'pending' until it moves past ORBIT_PX */
 	let camGesture: 'none' | 'pending' | 'orbit' | 'pan' = 'none';
 	let rightUid: number | null = null;
+	/** a locked item was pressed: a click keeps it selected, a drag orbits */
+	let lockedPick: number | null = null;
 
 	// ---- touch ----
 	const touches = new Set<number>();
@@ -144,8 +146,9 @@
 			if (game.tool === 'select') {
 				const uid = pickModule(e.clientX, e.clientY);
 				mouseDrag = uid !== null ? startDrag(uid, p) : null;
+				lockedPick = uid !== null && game.isLocked(uid) ? uid : null;
 				if (uid !== null) game.selectedUid = uid;
-				else camGesture = 'pending'; // click = deselect, drag = orbit
+				if (uid === null || lockedPick !== null) camGesture = 'pending'; // click = (de)select, drag = orbit
 			} else camGesture = 'pending'; // Place / Measure: click acts on release, drag orbits
 		} else if (e.button === 2) {
 			mouseDown = 2;
@@ -239,7 +242,7 @@
 			if (mouseDown === 0) {
 				if (game.tool === 'module' && p) game.placeAt(p);
 				else if (game.tool === 'measure' && p) measureClick(p);
-				else if (game.tool === 'select') game.selectedUid = null;
+				else if (game.tool === 'select') game.selectedUid = lockedPick;
 			} else if (mouseDown === 2 && rightUid !== null) game.removeModule(rightUid);
 		}
 		if (mouseDown === 0 && game.drag) game.commitDrag();

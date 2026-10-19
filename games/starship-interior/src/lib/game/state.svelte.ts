@@ -191,6 +191,13 @@ class GameState {
 	ctxProvider: (() => CtxAction[]) | null = null;
 	/** set by WalkControls while walk mode is active */
 	travel: ((dir: 1 | -1) => void) | undefined = undefined;
+	/** new ladders / hatches start locked (persisted in the layout) */
+	lockStructural = $state(false);
+	/** lock-change history (Ctrl+Z / Ctrl+Shift+Z in build mode) */
+	lockUndo: { changes: { uid: number; prev: boolean }[]; on: boolean; label: string }[] = [];
+	lockRedo: { changes: { uid: number; prev: boolean }[]; on: boolean; label: string }[] = [];
+	/** bumps on every lock change (for UI that reads plain fields) */
+	lockTick = $state(0);
 	/** set by the crew sim: roster + settings for save files / restore */
 	getCrewSim: (() => unknown) | undefined;
 	onCrewSim: ((d: unknown) => void) | undefined;
@@ -549,7 +556,7 @@ class GameState {
 			this.flash(plan.reason);
 			return false;
 		}
-		this.shafts.push({ uid: this.nextUid++, x: plan.x, z: plan.z, angle: normAngle(plan.angle), from: plan.from, to: plan.to });
+		this.shafts.push({ uid: this.nextUid++, x: plan.x, z: plan.z, angle: normAngle(plan.angle), from: plan.from, to: plan.to, ...(this.lockStructural ? { locked: true } : {}) });
 		const lbl = this.shaftLabel(this.shafts[this.shafts.length - 1]);
 		this.flash(`Ladder ${lbl} placed (${this.deckLabel(plan.from)} → ${this.deckLabel(plan.to)})` + (plan.alignedWith !== null ? ` · aligned with ${this.shaftLabel(plan.alignedWith)}` : ''));
 		this.autosave();
@@ -685,7 +692,108 @@ class GameState {
 		return true;
 	}
 
+	// ---------------- lock / unlock ----------------
+	/** placed module (current deck first, then any deck) or ladder connection by uid */
+	itemByUid(uid: number): { kind: 'module'; m: PlacedModule; deck: number } | { kind: 'shaft'; s: Shaft } | null {
+		const s = this.shafts.find((x) => x.uid === uid);
+		if (s) return { kind: 'shaft', s };
+		const order = [this.current, ...this.decks.map((_, i) => i).filter((i) => i !== this.current)];
+		for (const k of order) {
+			const m = this.decks[k]?.modules.find((x) => x.uid === uid);
+			if (m) return { kind: 'module', m, deck: k };
+		}
+		return null;
+	}
+	itemName(uid: number): string {
+		const it = this.itemByUid(uid);
+		if (!it) return 'Item';
+		return it.kind === 'shaft' ? `Ladder ${this.shaftLabel(it.s)}` : (CATALOG_BY_ID[it.m.type]?.name ?? it.m.type);
+	}
+	isLocked(uid: number | null): boolean {
+		if (uid === null) return false;
+		const it = this.itemByUid(uid);
+		return !!(it && (it.kind === 'shaft' ? it.s.locked : it.m.locked));
+	}
+	/** true (and a toast) when the item is locked: moving / rotating / deleting is refused */
+	lockedGuard(uid: number, verb: 'move' | 'rotate' | 'delete' | 'mirror'): boolean {
+		if (!this.isLocked(uid)) return false;
+		this.flash(`${this.itemName(uid)} is locked – unlock it first (🔒 / L) to ${verb} it`);
+		return true;
+	}
+	/** set the lock flag on items (one undo step) */
+	setLocked(uids: number[], on: boolean, label?: string): number {
+		const changes: { uid: number; prev: boolean }[] = [];
+		for (const uid of uids) {
+			const it = this.itemByUid(uid);
+			if (!it) continue;
+			const o = it.kind === 'shaft' ? it.s : it.m;
+			const prev = !!o.locked;
+			if (prev === on) continue;
+			changes.push({ uid, prev });
+			if (on) o.locked = true;
+			else delete o.locked;
+		}
+		if (!changes.length) return 0;
+		this.lockUndo.push({ changes, on, label: label ?? (changes.length === 1 ? this.itemName(changes[0].uid) : `${changes.length} items`) });
+		if (this.lockUndo.length > 50) this.lockUndo.shift();
+		this.lockRedo = [];
+		this.lockTick++;
+		this.autosave();
+		return changes.length;
+	}
+	toggleLock(uid: number | null = this.selectedUid): boolean {
+		if (uid === null) {
+			this.flash('Select an item to lock / unlock it');
+			return false;
+		}
+		const on = !this.isLocked(uid);
+		this.setLocked([uid], on);
+		this.flash(`${on ? '🔒' : '🔓'} ${this.itemName(uid)} ${on ? 'locked' : 'unlocked'}`);
+		return on;
+	}
+	/** lock / unlock everything on a deck (modules + ladders touching it) */
+	lockAll(on: boolean, k = this.current): number {
+		const uids = [...(this.decks[k]?.modules ?? []).map((m) => m.uid), ...this.shafts.filter((s) => s.from === k || s.to === k).map((s) => s.uid)];
+		const n = this.setLocked(uids, on, `${this.deckLabel(k)} (all)`);
+		this.flash(n ? `${on ? '🔒 Locked' : '🔓 Unlocked'} ${n} item${n > 1 ? 's' : ''} on ${this.deckLabel(k)}` : `Nothing to ${on ? 'lock' : 'unlock'} on ${this.deckLabel(k)}`);
+		return n;
+	}
+	/** lock all ladders / hatches now and lock new ones by default */
+	setLockStructural(on: boolean) {
+		this.lockStructural = on;
+		if (on) this.setLocked(this.shafts.map((s) => s.uid), true, 'ladders & hatches');
+		this.autosave();
+	}
+	private applyLock(e: { changes: { uid: number; prev: boolean }[]; on: boolean }, undo: boolean) {
+		for (const c of e.changes) {
+			const it = this.itemByUid(c.uid);
+			if (!it) continue;
+			const o = it.kind === 'shaft' ? it.s : it.m;
+			if (undo ? c.prev : e.on) o.locked = true;
+			else delete o.locked;
+		}
+		this.lockTick++;
+		this.autosave();
+	}
+	undoLock(): boolean {
+		const e = this.lockUndo.pop();
+		if (!e) return (this.flash('Nothing to undo (lock changes)'), false);
+		this.applyLock(e, true);
+		this.lockRedo.push(e);
+		this.flash(`Undo: ${e.on ? 'lock' : 'unlock'} ${e.label}`);
+		return true;
+	}
+	redoLock(): boolean {
+		const e = this.lockRedo.pop();
+		if (!e) return (this.flash('Nothing to redo'), false);
+		this.applyLock(e, false);
+		this.lockUndo.push(e);
+		this.flash(`Redo: ${e.on ? 'lock' : 'unlock'} ${e.label}`);
+		return true;
+	}
+
 	removeModule(uid: number) {
+		if (this.lockedGuard(uid, 'delete')) return;
 		const si = this.shafts.findIndex((s) => s.uid === uid);
 		if (si >= 0) {
 			this.shafts.splice(si, 1); // removed from every deck it touched
@@ -715,7 +823,7 @@ class GameState {
 				const x = +(m.x + Math.cos(a) * r).toFixed(3), z = +(m.z + Math.sin(a) * r).toFixed(3);
 				if (!this.check(m.type, x, z, m.angle, null, this.current, m.y ?? 0).ok) continue;
 				const uid = this.nextUid++;
-				this.modules.push({ ...m, uid, x, z });
+				this.modules.push({ ...m, uid, x, z, locked: undefined });
 				this.selectedUid = uid;
 				this.autosave();
 				this.flash(`Duplicated ${def.name}`);
@@ -729,6 +837,7 @@ class GameState {
 	rotate(delta: number) {
 		const sel = this.tool === 'select' ? this.selected : null;
 		const sh = this.tool === 'select' ? this.selectedShaft : null;
+		if ((sh || sel) && this.lockedGuard((sh ?? sel)!.uid, 'rotate')) return;
 		if (sh) {
 			const a = normAngle(this.snap ? snapTo(sh.angle + delta, SNAP_ANGLE) : sh.angle + delta);
 			const c = this.checkShaft(sh.x, sh.z, a, sh.from, sh.uid);
@@ -751,6 +860,7 @@ class GameState {
 		const d = this.drag;
 		this.drag = null;
 		if (!d || !d.moved) return false;
+		if (this.lockedGuard(d.uid, 'move')) return false;
 		const sh = this.shafts.find((s) => s.uid === d.uid);
 		if (sh) {
 			const t = this.shaftDragTarget(sh.uid, d);
@@ -1101,9 +1211,10 @@ class GameState {
 			decks: this.decks.map((d) => ({
 				height: d.height,
 				section: d.section,
-				modules: d.modules.map(({ type, x, z, angle, y, mount }) => (mount ? { type, x, z, angle, y, mount } : { type, x, z, angle }))
+				modules: d.modules.map(({ type, x, z, angle, y, mount, locked }) => ({ ...(mount ? { type, x, z, angle, y, mount } : { type, x, z, angle }), ...(locked ? { locked: true } : {}) }))
 			})),
-			shafts: this.shafts.map(({ x, z, angle, from, to }) => ({ x, z, angle, from, to })),
+			shafts: this.shafts.map(({ x, z, angle, from, to, locked }) => ({ x, z, angle, from, to, ...(locked ? { locked: true } : {}) })),
+			...(this.lockStructural ? { lockStructural: true } : {}),
 			equipment: this.getEquipment?.() ?? [],
 			crewSim: this.getCrewSim?.()
 		};
@@ -1148,7 +1259,7 @@ class GameState {
 				const mount = m.mount === 'wall' || m.mount === 'ceiling' ? m.mount : undefined;
 				const y = mount ? Math.max(0, Math.min(height, Number(m.y) || 0)) : 0;
 				if (this.check(m.type, x, z, angle, null, k, y).ok)
-					this.decks[k].modules.push(mount ? { uid: this.nextUid++, type: m.type, x, z, angle, y, mount } : { uid: this.nextUid++, type: m.type, x, z, angle });
+					this.decks[k].modules.push({ ...(mount ? { uid: this.nextUid++, type: m.type, x, z, angle, y, mount } : { uid: this.nextUid++, type: m.type, x, z, angle }), ...(m.locked === true ? { locked: true } : {}) });
 				else skipped++;
 			}
 		}
@@ -1159,7 +1270,7 @@ class GameState {
 			const angle = normAngle(Number(s.angle) || 0);
 			const from = Math.max(0, Math.floor(Number(s.from)));
 			const c = this.checkShaft(x, z, angle, from);
-			if (c.ok) this.shafts.push({ uid: this.nextUid++, x, z, angle, from, to: from + 1 });
+			if (c.ok) this.shafts.push({ uid: this.nextUid++, x, z, angle, from, to: from + 1, ...(s.locked === true ? { locked: true } : {}) });
 			else {
 				skipped++;
 				console.info(`[starship] ladder connection at (${x}, ${z}) deck ${from + 1}→${from + 2} dropped: ${c.reason}`);
@@ -1170,6 +1281,8 @@ class GameState {
 		this.selectedUid = null;
 		this.pending = null;
 		this.drag = null;
+		this.lockUndo = [];
+		this.lockRedo = [];
 		return skipped;
 	}
 
@@ -1191,6 +1304,7 @@ class GameState {
 			if (d.mission === 'launch' || d.mission === 'cruise' || d.mission === 'landing' || d.mission === 'surface') this.setMission(d.mission);
 			if (Array.isArray(d.equipment)) this.onEquipment?.(d.equipment);
 			if (d.crewSim) this.onCrewSim?.(d.crewSim);
+			this.lockStructural = d.lockStructural === true;
 		} else {
 			this.shipMode = 'cabin';
 			this.hab = defaultHabitat();

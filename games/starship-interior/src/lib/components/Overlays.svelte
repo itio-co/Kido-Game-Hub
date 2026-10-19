@@ -140,12 +140,21 @@
 	{/each}
 {/if}
 
+<!-- small lock badges on locked items (build mode, current deck) -->
+{#if game.mode === 'build' && !game.section}
+	{#each game.modules.filter((m) => m.locked && m.uid !== game.selectedUid) as m (m.uid)}
+		<HTML position={[m.x, (m.y ?? 0) + 0.06, m.z]} center pointerEvents="none" zIndexRange={[4, 0]}>
+			<div class="lockbadge" title="Locked">🔒</div>
+		</HTML>
+	{/each}
+{/if}
+
 <!-- ladder labels on this deck -->
 {#each game.shaftsOn(game.current) as sh (sh.uid)}
 	{#if sh.uid !== game.drag?.uid && !game.section}
 		<HTML position={[sh.x, 0.05, sh.z]} center pointerEvents="none" zIndexRange={[5, 0]}>
 			<div class="lad" class:up={sh.from === game.current}>
-				{game.shaftLabel(sh)}
+				{sh.locked ? '🔒 ' : ''}{game.shaftLabel(sh)}
 				{sh.from === game.current ? `↑ to ${game.deckLabel(sh.to)}` : `from ${game.deckLabel(sh.from)}`}
 			</div>
 		</HTML>
@@ -157,6 +166,11 @@
 	{@const h = game.modules.find((m) => m.uid === game.hoverUid)}
 	{#if h}
 		<Outline points={outline(footprintOf(h.type, h.x, h.z, h.angle, 0.03))} color="#ffffff" opacity={0.6} />
+		{#if h.locked}
+			<HTML position={[h.x, Math.max(0.3, (CATALOG_BY_ID[h.type]?.height ?? 0.5)) + 0.2, h.z]} center pointerEvents="none" zIndexRange={[6, 0]}>
+				<div class="lad" data-testid="hover-locked">🔒 {CATALOG_BY_ID[h.type]?.name} · locked</div>
+			</HTML>
+		{/if}
 	{/if}
 {/if}
 {#if game.tool === 'select' && game.hoverUid !== null && game.hoverUid !== game.selectedUid}
@@ -166,20 +180,21 @@
 	{/if}
 {/if}
 {#if selSh}
-	<Outline points={outline(shaftFootprint(selSh.x, selSh.z, selSh.angle))} color="#3ce0ff" y={0.035} />
+	<Outline points={outline(shaftFootprint(selSh.x, selSh.z, selSh.angle))} color={selSh.locked ? '#ffc857' : '#3ce0ff'} y={0.035} />
 	<HTML position={[selSh.x, 1.4, selSh.z]} center pointerEvents="none" zIndexRange={[5, 0]}>
 		<div class="dim">
-			<b>Ladder {game.shaftLabel(selSh)}</b> · deck {selSh.from + 1} → {selSh.to + 1}<br />
+			<b>{selSh.locked ? '🔒 ' : ''}Ladder {game.shaftLabel(selSh)}</b> · deck {selSh.from + 1} → {selSh.to + 1}<br />
 			ladder {game.shaftLength(selSh).toFixed(2)} m · opening Ø0.80 m<br />
 			x {selSh.x.toFixed(2)} z {selSh.z.toFixed(2)} · wall {((game.deckRadius[game.current] ?? HULL_INNER_RADIUS) - maxRadius(shaftFootprint(selSh.x, selSh.z, selSh.angle))).toFixed(2)} m · {selSh.angle.toFixed(0)}°
 		</div>
 	</HTML>
 {/if}
 {#if sel}
-	<Outline points={outline(footprintOf(sel.m.type, sel.m.x, sel.m.z, sel.m.angle, 0.04))} color="#3ce0ff" y={0.035} />
+	<Outline points={outline(footprintOf(sel.m.type, sel.m.x, sel.m.z, sel.m.angle, 0.04))} color={sel.m.locked ? '#ffc857' : '#3ce0ff'} y={0.035} />
+	{#if sel.m.locked}<Outline points={outline(footprintOf(sel.m.type, sel.m.x, sel.m.z, sel.m.angle, 0.09))} color="#ffc857" opacity={0.35} y={0.034} />{/if}
 	<HTML position={[sel.m.x, sel.labelY, sel.m.z]} center pointerEvents="none" zIndexRange={[5, 0]}>
 		<div class="dim">
-			<b>{CATALOG_BY_ID[sel.m.type].name}</b><br />
+			<b>{sel.m.locked ? '🔒 ' : ''}{CATALOG_BY_ID[sel.m.type].name}</b><br />
 			{sel.size}<br />
 			r {sel.r.toFixed(2)} m · wall {sel.wall.toFixed(2)} m · {sel.m.angle.toFixed(0)}°
 		</div>
@@ -319,5 +334,14 @@
 		border: 1px solid #ffd23f;
 		color: #ffe9a0;
 		font-weight: 700;
+	}
+	.lockbadge {
+		font-size: 11px;
+		line-height: 1;
+		padding: 2px 3px;
+		border-radius: 6px;
+		background: rgba(10, 16, 28, 0.7);
+		border: 1px solid rgba(255, 200, 87, 0.6);
+		opacity: 0.85;
 	}
 </style>

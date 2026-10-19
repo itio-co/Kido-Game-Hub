@@ -94,7 +94,7 @@
 	const selSpec = $derived(lifeOf(selInfo?.def));
 	function nudgeSel() {
 		const m = sel;
-		if (!m) return;
+		if (!m || game.lockedGuard(m.uid, 'move')) return;
 		const ctx = game.egressCtx(game.current, game.deck.modules.filter((x) => x.uid !== m.uid));
 		const n = nudgeFor(ctx, m, game.phase, (x, z) => game.check(m.type, x, z, m.angle, m.uid, game.current, m.y ?? 0).ok);
 		if (!n) return game.flash('No clear spot within 1.2 m – move the blocking items instead');
@@ -153,6 +153,15 @@
 	</div>
 	<div class="seg">
 		<button class:active={game.section} onclick={() => (game.section = !game.section)}>✂ Section view</button>
+	</div>
+	<div class="seg" data-testid="lock-controls">
+		<button onclick={() => game.lockAll(true)} title="Lock every item and ladder on this deck (undo: Ctrl+Z)">🔒 Lock all on deck</button>
+		<button onclick={() => game.lockAll(false)} title="Unlock every item and ladder on this deck">🔓 Unlock all</button>
+	</div>
+	<label class="chk" title="New ladders / hatches start locked; ticking it also locks the existing ones">
+		<input type="checkbox" checked={game.lockStructural} onchange={(e) => game.setLockStructural((e.currentTarget as HTMLInputElement).checked)} /> Lock ladders / hatches by default
+	</label>
+	<div class="seg">
 		<button class="danger" disabled={game.decks.length < 2} onclick={() => confirmThen(`Remove ${game.deckLabel(game.current)} and its modules?`, () => game.removeDeck())}>🗑 Remove deck</button>
 	</div>
 	{#if game.section && game.mode === 'build'}
@@ -203,7 +212,7 @@
 			{@const sh = game.selectedShaft}
 			<section class="selbox">
 				<h2>Selected</h2>
-				<div class="selname">🪜 Ladder {game.shaftLabel(sh)}</div>
+				<div class="selname">{#if sh.locked}🔒 {/if}🪜 Ladder {game.shaftLabel(sh)}</div>
 				<div class="kv">
 					<span>Connects</span><b>{game.deckLabel(sh.from)} (ladder) → {game.deckLabel(sh.to)} (opening)</b>
 					<span>Position</span><b>x {sh.x.toFixed(3)} · z {sh.z.toFixed(3)} m</b>
@@ -212,6 +221,7 @@
 					<span>Rotation</span><b>{sh.angle.toFixed(1)}°</b>
 				</div>
 				<div class="seg">
+					<button onclick={() => game.toggleLock(sh.uid)} aria-label={sh.locked ? 'Unlock ladder' : 'Lock ladder'} data-testid="shaft-lock">{sh.locked ? '🔒' : '🔓'}</button>
 					<button onclick={() => game.rotate(-15)}>⟲ 15°</button>
 					<button onclick={() => game.rotate(15)}>⟳ 15°</button>
 					<button onclick={() => game.rotate(90)}>90°</button>
@@ -222,7 +232,7 @@
 		{#if selInfo && sel}
 			<section class="selbox">
 				<h2>Selected</h2>
-				<div class="selname">{selInfo.def.icon} {selInfo.def.name}</div>
+				<div class="selname">{#if sel.locked}🔒 {/if}{selInfo.def.icon} {selInfo.def.name}</div>
 				<div class="kv">
 					<span>Size</span><b>{#if selInfo.def.launch}{@const dm = dimsOf(selInfo.def, game.phase)}{dm.w.toFixed(2)} × {dm.d.toFixed(2)} × {dm.height.toFixed(2)} m ({game.phase}){:else}{sizeLabel(selInfo.def, game.deck.height)}{/if}</b>
 					<span>Position</span><b>x {sel.x.toFixed(3)} · z {sel.z.toFixed(3)} m</b>
@@ -377,6 +387,7 @@
 				<ul>
 					<li><b>Place</b>: click to place · <b>Q/E</b> or <b>Shift+wheel</b> rotate 15° (Shift+Q/E 1°) · <b>R</b> 90°</li>
 					<li><b>Select</b>: click a module, drag to move · <b>Del</b> delete · right-click delete</li>
+					<li><b>Lock</b>: 🔒 on the selection card or <b>L</b> – a locked item can't be dragged (drag orbits), rotated or deleted · Decks panel: Lock all / Unlock all · <b>Ctrl+Z</b>/<b>Ctrl+Shift+Z</b> undo/redo lock changes</li>
 					<li><b>Measure</b>: click two points · <b>Esc</b> clear · <b>G</b> snap</li>
 					<li><b>Camera</b>: left-drag empty space orbit (360°) · right-drag pan · middle-drag orbit · wheel zoom · <b>←/→</b> orbit · <b>↑/↓</b> tilt · <b>+/−</b> zoom · widget top-right: ⟲⟳ 45°, Top, Iso, Reset</li>
 					<li><b>Decks</b>: <b>PgUp/PgDn</b>, <b>Shift+Q/E</b> (or Q/E with nothing selected/placing) · ▼▲ pills · <b>F</b> walk: WASD, Shift run, <b>Space</b> ▲ up, <b>Q/C</b> ▼ down at a ladder</li>
@@ -710,5 +721,13 @@
 		font-size: 9px;
 		color: #9cf0b8;
 		margin-left: 5px;
+	}
+	.chk {
+		display: flex;
+		align-items: center;
+		gap: 6px;
+		font-size: 12px;
+		color: #9fb6d6;
+		margin: 4px 0;
 	}
 </style>

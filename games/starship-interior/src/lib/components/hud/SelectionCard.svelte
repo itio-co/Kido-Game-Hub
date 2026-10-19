@@ -18,10 +18,14 @@
 		void tick;
 		return sel && crew.enabled ? crew.itemInfo(game.current, sel.uid) : null;
 	});
+	const locked = $derived.by(() => {
+		void game.lockTick;
+		return !!sel?.locked;
+	});
 	const eg = $derived(sel && def?.seats ? game.egressOf(sel.uid) : null);
 	function nudge() {
 		const m = sel;
-		if (!m) return;
+		if (!m || game.lockedGuard(m.uid, 'move')) return;
 		const ctx = game.egressCtx(game.current, game.deck.modules.filter((x) => x.uid !== m.uid));
 		const n = nudgeFor(ctx, m, game.phase, (x, z) => game.check(m.type, x, z, m.angle, m.uid, game.current, m.y ?? 0).ok);
 		if (!n) return game.flash('No clear spot within 1.2 m – move the blocking items instead');
@@ -33,10 +37,10 @@
 
 {#if sel && def}
 	{@const dm = dimsOf(def, game.phase)}
-	<div class="selcard glass" class:mobile data-testid="selection-card">
+	<div class="selcard glass" class:mobile class:locked data-testid="selection-card">
 		<div class="hd">
 			<span class="ico">{def.icon}</span>
-			<div class="t"><b>{def.name}</b><small>{dm.w.toFixed(2)} × {dm.d.toFixed(2)} × {dm.height.toFixed(2)} m · {def.power} W · {game.deckLabel(game.current)}</small></div>
+			<div class="t"><b>{#if locked}🔒 {/if}{def.name}</b><small>{dm.w.toFixed(2)} × {dm.d.toFixed(2)} × {dm.height.toFixed(2)} m · {def.power} W · {game.deckLabel(game.current)}</small></div>
 			<button class="x" onclick={() => (game.selectedUid = null)} aria-label="Deselect">✕</button>
 		</div>
 		{#if life}
@@ -50,18 +54,29 @@
 		{/if}
 		{#if def.group}<div class="row">🪑 {game.seatsOf(sel.uid).length + (def.restraint ? 2 : 0)} seats</div>{/if}
 		<div class="acts">
-			<button onclick={() => game.rotate(-15)} aria-label="Rotate left 15°" title="Rotate −15° (Q)">⟲</button>
-			<button onclick={() => game.rotate(15)} aria-label="Rotate right 15°" title="Rotate +15° (E)">⟳</button>
-			<button onclick={() => game.rotate(90)} aria-label="Rotate 90°" title="Rotate 90° (R)">90°</button>
+			<button class="lock" class:on={locked} onclick={() => game.toggleLock(sel.uid)} aria-label={locked ? 'Unlock' : 'Lock'} aria-pressed={locked} title={locked ? 'Unlock – allow moving / rotating / deleting (L)' : 'Lock – prevent moving / rotating / deleting (L)'} data-testid="selcard-lock">{locked ? '🔒' : '🔓'}</button>
+			<button class:dim={locked} onclick={() => game.rotate(-15)} aria-label="Rotate left 15°" title="Rotate −15° (Q)">⟲</button>
+			<button class:dim={locked} onclick={() => game.rotate(15)} aria-label="Rotate right 15°" title="Rotate +15° (E)">⟳</button>
+			<button class:dim={locked} onclick={() => game.rotate(90)} aria-label="Rotate 90°" title="Rotate 90° (R)">90°</button>
 			<button onclick={() => game.duplicateSelected()} aria-label="Duplicate" title="Duplicate next to it" data-testid="selcard-duplicate">📋</button>
 			{#if def.group}<button onclick={() => game.addSeats(sel.uid)} aria-label="Add seats" title="Add chairs around the table">🪑＋</button>{/if}
 			{#if eg && !eg.ok}<button onclick={nudge} aria-label="Move to clear spot" title="Move to the nearest spot with clear egress">🧭</button>{/if}
-			<button class="del" onclick={() => game.deleteSelected()} aria-label="Delete" title="Delete (Del)" data-testid="selcard-delete">🗑</button>
+			<button class="del" class:dim={locked} onclick={() => game.deleteSelected()} aria-label="Delete" title="Delete (Del)" data-testid="selcard-delete">🗑</button>
 		</div>
 	</div>
 {/if}
 
 <style>
+	.selcard.locked {
+		border-color: rgba(255, 200, 87, 0.55);
+	}
+	.acts .lock.on {
+		border-color: #ffc857;
+		background: rgba(255, 200, 87, 0.18);
+	}
+	.acts .dim {
+		opacity: 0.4;
+	}
 	.selcard {
 		position: absolute;
 		right: calc(12px + env(safe-area-inset-right));

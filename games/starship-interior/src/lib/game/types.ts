@@ -114,6 +114,8 @@ export interface PlacedModule {
 	y?: number;
 	/** mounted on the hull wall or under the ceiling (default: floor) */
 	mount?: 'wall' | 'ceiling';
+	/** locked against moving / rotating / deleting (still selectable and usable by crew) */
+	locked?: boolean;
 }
 
 /**
@@ -128,6 +130,8 @@ export interface Shaft {
 	angle: number;
 	from: number;
 	to: number;
+	/** locked against moving / rotating / deleting */
+	locked?: boolean;
 }
 
 export interface Deck {
@@ -160,6 +164,8 @@ export interface SaveData {
 	equipment?: unknown[];
 	/** crew-sim roster and settings (optional) */
 	crewSim?: unknown;
+	/** new ladders / hatches start locked */
+	lockStructural?: boolean;
 }
 
 export interface LayoutData {
