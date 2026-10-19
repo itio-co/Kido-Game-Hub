@@ -157,6 +157,16 @@ The crew lies semi-supine in the **+Gx** posture with the back to the floor, bec
 - **Pre-launch checklist** (automatic, GO / NO-GO) and a manual **cargo restraint** checklist.
 - The BOM lists both footprints (`W/D/H` and `W/D/H_launch`), stowable and seats. Floor-plan SVGs are exported **per phase**.
 
+### Layout changes while the crew sim runs
+Moving, adding, rotating or deleting equipment no longer resets the crew. Nav (2D grid and micro-g voxels) rebuilds incrementally, throttled to 0.5 s, and the planner writes changes on drop. Crew keep their position, action, needs, effects and reservations. Only affected crew are repaired:
+- Someone standing inside new equipment gets a minimal nudge (≤1.2 m, same deck).
+- A blocked path is re-planned from where the crew member is now.
+- If the target item moved, the use point is updated and the route re-planned.
+- If the target was deleted or can't be reached, the reservation is released and a new action chosen.
+- Someone using a moved item moves with it.
+- Someone climbing a moved ladder steps off at the nearest valid point.
+The log lists only affected crew (🧭 nudged / ↪ re-routed). A toast shows "Layout changed: N crew re-routed". The CSV SAFETY line gains layout_changes/nudged/replanned. Test: `node scripts/layout-change-test.mjs`.
+
 ## Equipment Designer
 
 Open it with **📐 Design** (sidebar Mode row, or the top-right button; also on mobile). The planner is replaced by a workbench;
