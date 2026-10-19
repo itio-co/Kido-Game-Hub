@@ -15,7 +15,7 @@
 	import { PerspectiveCamera, Quaternion, Vector3 } from 'three';
 	import { game } from '$lib/game/state.svelte';
 	import { crew } from './crewSim.svelte';
-	import { isTyping } from '$lib/util/keys';
+	import { isTyping, keyCode } from '$lib/util/keys';
 
 	const { dom } = useThrelte();
 	const cam = new PerspectiveCamera(60, 1, 0.05, 400);
@@ -23,34 +23,36 @@
 	let dist = 2.8;
 	const keys = new Set<string>();
 	function onKeyDown(e: KeyboardEvent) {
+		const code = keyCode(e);
 		if (isTyping(e)) return;
-		keys.add(e.code);
-		if (e.code === 'PageUp' || e.code === 'PageDown') {
+		keys.add(code);
+		if (code === 'PageUp' || code === 'PageDown') {
 			e.preventDefault();
-			crew.climb(e.code === 'PageUp');
+			crew.climb(code === 'PageUp');
 			return;
 		}
 		if (crew.micro) {
-			if (e.code === 'Space' || e.code.startsWith('Control')) e.preventDefault();
-			if (e.code === 'KeyX') crew.stopAction();
-			else if (e.code === 'KeyG') crew.input.grab = true;
-			else if (e.code === 'KeyT') crew.reorient();
-			else if (e.code === 'KeyV') crew.firstPerson = !crew.firstPerson;
-			else if (e.code === 'Escape') crew.possess(null);
+			if (code === 'Space' || code.startsWith('Control')) e.preventDefault();
+			if (code === 'KeyX') crew.stopAction();
+			else if (code === 'KeyG') crew.input.grab = true;
+			else if (code === 'KeyT') crew.reorient();
+			else if (code === 'KeyV') crew.firstPerson = !crew.firstPerson;
+			else if (code === 'Escape') crew.possess(null);
 			return;
 		}
 		// gravity (E = interact lives in InteractHud): Space climbs up, Q/C climb down, X stops
-		if (e.code === 'Space') {
+		if (code === 'Space') {
 			e.preventDefault();
 			crew.climb(true);
-		} else if (e.code === 'KeyQ' || e.code === 'KeyC') {
+		} else if (code === 'KeyQ' || code === 'KeyC') {
 			e.preventDefault();
 			crew.climb(false);
-		} else if (e.code === 'KeyX') crew.stopAction();
-		else if (e.code === 'KeyV') crew.firstPerson = !crew.firstPerson;
-		else if (e.code === 'Escape') crew.possess(null);
+		} else if (code === 'KeyX') crew.stopAction();
+		else if (code === 'KeyV') crew.firstPerson = !crew.firstPerson;
+		else if (code === 'Escape') crew.possess(null);
 	}
-	const onKeyUp = (e: KeyboardEvent) => keys.delete(e.code);
+	const onKeyUp = (e: KeyboardEvent) => keys.delete(keyCode(e));
+	const clearKeys = () => keys.clear();
 	let dragId: number | null = null;
 	let lx = 0, ly = 0;
 	function onDown(e: PointerEvent) {
@@ -84,6 +86,7 @@
 		(window as unknown as { __possessCam: unknown }).__possessCam = () => cam.position.toArray();
 		window.addEventListener('keydown', onKeyDown);
 		window.addEventListener('keyup', onKeyUp);
+		window.addEventListener('blur', clearKeys);
 		dom.addEventListener('pointerdown', onDown);
 		window.addEventListener('pointermove', onMove);
 		window.addEventListener('pointerup', onUp);
@@ -92,6 +95,7 @@
 		return () => {
 			window.removeEventListener('keydown', onKeyDown);
 			window.removeEventListener('keyup', onKeyUp);
+			window.removeEventListener('blur', clearKeys);
 			dom.removeEventListener('pointerdown', onDown);
 			window.removeEventListener('pointermove', onMove);
 			window.removeEventListener('pointerup', onUp);

@@ -14,8 +14,8 @@
 	import { Euler, PerspectiveCamera, Vector3 } from 'three';
 	import { PointerLockControls } from 'three/examples/jsm/controls/PointerLockControls.js';
 	import { CATALOG_BY_ID } from '$lib/game/catalog';
-	import { footprintOf, localToWorld, overlaps, shaftAccess } from '$lib/game/geometry';
-	import { isTyping } from '$lib/util/keys';
+	import { footprintOf, localToWorld, overlaps, shaftAccess, worldToLocal } from '$lib/game/geometry';
+	import { isTyping, keyCode, releaseFocus } from '$lib/util/keys';
 	import type { Shaft } from '$lib/game/types';
 	import { HULL_INNER_RADIUS } from '$lib/game/specs';
 	import { game, type CtxAction } from '$lib/game/state.svelte';
@@ -107,6 +107,8 @@
 	game.travel = travel;
 
 	const SEAT_POSES = new Set(['sit', 'sitwork', 'eat']);
+	/** equipment interaction reach (m, from the footprint edge) */
+	const INTERACT_REACH = 1.5;
 	/** context actions for E (best first): ladders by look direction, then equipment in front */
 	function actions(): CtxAction[] {
 		if (climb) return [];
@@ -133,16 +135,37 @@
 		if (u) out.push({ label: `Climb up to Deck ${u.to + 1}`, kind: 'climb', score: distTo(u) - 0.4 - cross(u) - (lookUp ? 0.6 : 0), run: () => ((seated = null), travel(1)) });
 		if (dn) out.push({ label: `Climb down to Deck ${dn.from + 1}`, kind: 'climb', score: distTo(dn) - 0.4 - cross(dn) - (!lookUp ? 0.6 : 0), run: () => ((seated = null), travel(-1)) });
 		const mods = game.decks[k].modules;
+		// equipment: distance to the footprint edge (not the centre, so long bunks / galleys count from
+		// their nearest side), direction to that nearest point; in front within 1.5 m, or anything
+		// within 0.8 m whatever the heading (fallback when you stand right next to it looking away)
 		for (const m of mods) {
 			const def = CATALOG_BY_ID[m.type];
 			if (!def || m.type === 'hatch') continue;
-			const dx = m.x - cam.position.x,
-				dz = m.z - cam.position.z;
-			const dc = Math.hypot(dx, dz);
-			const d = Math.max(0, dc - Math.min(def.w ?? 0.5, def.d ?? 0.5) / 2 - (def.r ?? 0));
-			if (d > 1.2) continue;
-			const ang = dc < 0.2 ? 0 : Math.acos(Math.max(-1, Math.min(1, (dx * fx + dz * fz) / dc)));
-			if (ang > 1.75 && d > 0.4) continue;
+			const fp = footprintOf(m.type, m.x, m.z, m.angle);
+			let d: number, nx: number, nz: number;
+			if (fp.kind === 'circle') {
+				const dc = Math.hypot(cam.position.x - fp.cx, cam.position.z - fp.cz);
+				d = Math.max(0, dc - fp.r);
+				const t = dc > 1e-6 ? fp.r / dc : 0;
+				nx = fp.cx + (cam.position.x - fp.cx) * t;
+				nz = fp.cz + (cam.position.z - fp.cz) * t;
+			} else {
+				const [lx, lz] = worldToLocal(fp.cx, fp.cz, fp.angle, cam.position.x, cam.position.z);
+				const qx = Math.max(-fp.hw, Math.min(fp.hw, lx)),
+					qz = Math.max(-fp.hd, Math.min(fp.hd, lz));
+				d = Math.hypot(lx - qx, lz - qz);
+				[nx, nz] = localToWorld(fp.cx, fp.cz, fp.angle, qx, qz);
+			}
+			if (d > INTERACT_REACH) continue;
+			// angle to the nearest point and to the centre – whichever is closer to the crosshair
+			const angOf = (x: number, z: number) => {
+				const dx = x - cam.position.x,
+					dz = z - cam.position.z,
+					l = Math.hypot(dx, dz);
+				return l < 0.2 ? 0 : Math.acos(Math.max(-1, Math.min(1, (dx * fx + dz * fz) / l)));
+			};
+			const ang = Math.min(angOf(nx, nz), angOf(m.x, m.z));
+			if (ang > 1.75 && d > 0.8) continue;
 			const score = d + ang * 0.5 - (ang < 0.35 ? 0.8 : 0);
 			const same = mods.filter((o) => o.type === m.type);
 			const tag = same.length > 1 ? ` ${same.indexOf(m) + 1}/${same.length}` : '';
@@ -167,17 +190,20 @@
 
 	const keys = new Set<string>();
 	const onKeyDown = (e: KeyboardEvent) => {
+		const code = keyCode(e);
 		if (isTyping(e)) return;
-		keys.add(e.code);
-		if (e.code === 'Space' || e.code === 'PageUp') {
+		keys.add(code);
+		if (code === 'Space' || code === 'PageUp') {
 			e.preventDefault();
 			travel(1);
-		} else if (e.code === 'KeyQ' || e.code === 'KeyC' || e.code === 'PageDown') {
+		} else if (code === 'KeyQ' || code === 'KeyC' || code === 'PageDown') {
 			e.preventDefault();
 			travel(-1);
 		}
 	};
-	const onKeyUp = (e: KeyboardEvent) => keys.delete(e.code);
+	const onKeyUp = (e: KeyboardEvent) => keys.delete(keyCode(e));
+	/** key-ups are lost when the window loses focus: don't keep walking */
+	const clearKeys = () => keys.clear();
 
 	let controls: PointerLockControls | undefined;
 	let lookId: number | null = null;
@@ -185,6 +211,7 @@
 	let lastY = 0;
 	const euler = new Euler(0, 0, 0, 'YXZ');
 	function onDown(e: PointerEvent) {
+		releaseFocus();
 		if (e.pointerType === 'mouse') {
 			if (!game.isTouch) controls?.lock();
 			return;
@@ -233,6 +260,7 @@
 		game.ctxProvider = actions;
 		window.addEventListener('keydown', onKeyDown);
 		window.addEventListener('keyup', onKeyUp);
+		window.addEventListener('blur', clearKeys);
 		dom.addEventListener('pointerdown', onDown);
 		window.addEventListener('pointermove', onMove);
 		window.addEventListener('pointerup', onUp);
@@ -246,6 +274,7 @@
 			game.hatchHere = { up: false, down: false, upTo: -1, downTo: -1 };
 			window.removeEventListener('keydown', onKeyDown);
 			window.removeEventListener('keyup', onKeyUp);
+			window.removeEventListener('blur', clearKeys);
 			dom.removeEventListener('pointerdown', onDown);
 			window.removeEventListener('pointermove', onMove);
 			window.removeEventListener('pointerup', onUp);

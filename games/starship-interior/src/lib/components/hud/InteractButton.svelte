@@ -15,10 +15,10 @@
 	title="Interact (E · Shift+E / hold for more)"
 	onpointerdown={(e) => {
 		(e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId);
-		interact.pressStart();
+		interact.pressStart(e.timeStamp || performance.now());
 	}}
-	onpointerup={() => interact.pressEnd()}
-	onpointercancel={() => interact.cancelHold()}
+	onpointerup={(e) => interact.pressEnd(e.timeStamp || performance.now())}
+	onpointercancel={() => interact.cancel()}
 	onkeydown={(e) => (e.code === 'Enter' || e.code === 'Space') && (e.preventDefault(), interact.primary())}
 >
 	<b>{mobile ? 'Interact' : 'E Interact'}</b>
