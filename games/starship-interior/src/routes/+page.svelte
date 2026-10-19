@@ -4,6 +4,7 @@
 	import { rig } from '$lib/three/cameraRig.svelte';
 	import { ACESFilmicToneMapping, PCFShadowMap } from 'three';
 	import { onMount } from 'svelte';
+	import { isTyping } from '$lib/util/keys';
 	import { game } from '$lib/game/state.svelte';
 	import { DISCLAIMER } from '$lib/game/specs';
 	import type { Tool } from '$lib/game/types';
@@ -48,20 +49,30 @@
 			game.altHeld = true;
 			e.preventDefault();
 		}
-		const t = e.target as HTMLElement;
-		if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA')) return;
+		if (isTyping(e)) return;
 		if (game.designer) return; // designer has its own keys (DesignerPanel)
 		if (crew.possessed !== null) return; // PossessControls owns the keyboard
 		if (e.code === 'KeyF') return toggleMode();
 		if (game.mode !== 'build') return;
-		const fine = e.shiftKey && !game.snap ? 1 : 15;
+		// Q/E: rotate while placing (Place tool) or with a module / ladder selected; otherwise switch
+		// the viewed deck (E up, Q down). Shift+Q/E always switches deck; Alt+Q/E rotates 1°.
+		const rotating = !e.shiftKey && (game.tool === 'module' ? !!(game.pending || game.hover) : game.tool === 'select' && (game.selectedUid !== null || !!game.selectedShaft));
+		const fine = e.altKey ? 1 : 15;
 		if (e.code === 'KeyR') game.rotate(90);
-		else if (e.code === 'KeyQ') game.rotate(-fine);
-		else if (e.code === 'KeyE') game.rotate(fine);
+		else if ((e.code === 'KeyQ' || e.code === 'KeyE') && rotating) {
+			e.preventDefault();
+			game.rotate(e.code === 'KeyQ' ? -fine : fine);
+		} else if (e.code === 'KeyQ') deckStep(-1);
+		else if (e.code === 'KeyE') deckStep(1);
 		else if (e.code === 'KeyG') game.snap = !game.snap;
 		else if (e.code === 'Delete' || e.code === 'Backspace') game.deleteSelected();
-		else if (e.code === 'PageUp') game.selectDeck(game.current + 1);
-		else if (e.code === 'PageDown') game.selectDeck(game.current - 1);
+		else if (e.code === 'PageUp') {
+			e.preventDefault();
+			deckStep(1);
+		} else if (e.code === 'PageDown') {
+			e.preventDefault();
+			deckStep(-1);
+		}
 		else if (e.code === 'ArrowLeft') rig.orbitStep(-Math.PI / 12);
 		else if (e.code === 'ArrowRight') rig.orbitStep(Math.PI / 12);
 		else if (e.code === 'ArrowUp') rig.pitchStep(-0.1);
@@ -78,6 +89,30 @@
 		}
 	}
 
+	/** build mode: view the deck above / below */
+	function deckStep(d: 1 | -1) {
+		const k = game.current + d;
+		if (k < 0 || k >= game.decks.length) return game.flash(d > 0 ? 'Already on the top deck' : 'Already on the bottom deck');
+		game.selectDeck(k);
+		game.flash(`Viewing ${game.deckLabel(k)}`);
+	}
+	/** walk / possessed: change deck (climb at a ladder, auto-fly in micro-g) */
+	function deckMove(up: boolean) {
+		if (crew.possessed !== null) crew.climb(up);
+		else game.travel?.(up ? 1 : -1);
+	}
+	// mouse clicks on buttons must not leave focus there (Space/Enter would re-trigger them and
+	// steal game keys); keyboard activation keeps focus for accessibility
+	onMount(() => {
+		const blur = (e: MouseEvent) => {
+			const b = (e.target as HTMLElement | null)?.closest?.('button');
+			if (b && e.detail > 0) setTimeout(() => b.blur(), 0);
+		};
+		window.addEventListener('click', blur, true);
+		return () => window.removeEventListener('click', blur, true);
+	});
+	const climbUp = $derived(!!crew.ui.prompt?.includes('E ▲'));
+	const climbDown = $derived(!!crew.ui.prompt?.includes('Q ▼'));
 	function toggleMode() {
 		game.pending = null;
 		game.hover = null;
@@ -125,6 +160,8 @@
 					{#each game.decks as d, k (d.id)}
 						<button class:active={k === game.current} onclick={() => game.selectDeck(k)}>{game.shipMode === 'habitat' ? game.deckLabel(k) : `D${k + 1}`}</button>
 					{/each}
+					<button onclick={() => deckStep(-1)} disabled={game.current <= 0} aria-label="Deck down" title="Deck down (Q / PgDn)">▼</button>
+					<button onclick={() => deckStep(1)} disabled={game.current >= game.decks.length - 1} aria-label="Deck up" title="Deck up (E / PgUp)">▲</button>
 					<button onclick={() => game.addDeck()} aria-label="Add deck">＋</button>
 					<button class:active={game.section} onclick={() => (game.section = !game.section)} aria-label="Section view">✂</button>
 				</div>
@@ -162,7 +199,9 @@
 			{#if crew.ui.prompt}<div class="prompt" class:mobile>{crew.ui.prompt}</div>{/if}
 			{#if game.microG}
 				<div class="possess-actions" class:mobile>
-					<button class="fab ok" onclick={() => crew.interact(false)} aria-label="Use">{game.isTouch ? 'Use' : 'X Use'}</button>
+					<button class="fab" onclick={() => crew.climb(true)} aria-label="Deck up" title="Auto-fly up (PgUp)">▲ <small>Deck</small></button>
+					<button class="fab" onclick={() => crew.climb(false)} aria-label="Deck down" title="Auto-fly down (PgDn)">▼ <small>Deck</small></button>
+					<button class="fab ok" onclick={() => crew.interact()} aria-label="Use">{game.isTouch ? 'Use' : 'X Use'}</button>
 					<button class="fab" onclick={() => crew.reorient()} aria-label="Reorient to deck up">⊙ <small>Deck up</small></button>
 					<button class="fab" onclick={() => (crew.firstPerson = !crew.firstPerson)} aria-label="Camera view">{crew.firstPerson ? '3rd' : '1st'}</button>
 					<button class="fab del" onclick={() => crew.possess(null)} aria-label="Release">⏏ Release</button>
@@ -184,8 +223,9 @@
 				{/if}
 			{:else}
 				<div class="possess-actions" class:mobile>
-					<button class="fab ok" onclick={() => crew.interact(false)} aria-label="Use / climb up">E {game.isTouch ? 'Use ⬆' : 'Use / ⬆'}</button>
-					<button class="fab" onclick={() => crew.interact(true)} aria-label="Climb down">⬇</button>
+					<button class="fab" class:on={climbUp} onclick={() => crew.climb(true)} aria-label="Deck up" title="Climb up (E / Space / PgUp)">▲ <small>{game.isTouch ? 'Deck' : 'E Deck'}</small></button>
+					<button class="fab" class:on={climbDown} onclick={() => crew.climb(false)} aria-label="Deck down" title="Climb down (Q / C / PgDn)">▼ <small>{game.isTouch ? 'Deck' : 'Q Deck'}</small></button>
+					<button class="fab ok" onclick={() => crew.interact()} aria-label="Use">{game.isTouch ? 'Use' : 'X Use'}</button>
 					<button class="fab" onclick={() => (crew.firstPerson = !crew.firstPerson)} aria-label="Camera view">{crew.firstPerson ? '3rd' : '1st'}</button>
 					<button class="fab del" onclick={() => crew.possess(null)} aria-label="Release">⏏ Release</button>
 				</div>
@@ -194,9 +234,9 @@
 				<Joystick />
 				<div class="tip walk">{game.microG ? 'Joystick: translate · drag: look' : 'Joystick: move · drag: look'}</div>
 			{:else if game.microG}
-				<div class="center-hint low">Micro-g · WASD translate · Space/R up · Ctrl/F down · Q/E roll · drag look · Shift push harder · G grab · X use · Z deck-up · V 1st/3rd · Esc release</div>
+				<div class="center-hint low">Micro-g · WASD translate · Space/R up · Ctrl/F down · Q/E roll · drag look · Shift push harder · G grab · X use · Z deck-up · PgUp/PgDn fly to next deck · V 1st/3rd · Esc release</div>
 			{:else}
-				<div class="center-hint low">WASD move · Shift run · drag look · wheel zoom · E use / climb up · Q down · V 1st/3rd person · Esc release</div>
+				<div class="center-hint low">WASD move · Shift run · drag look · at a ladder: E/Space ▲ climb up, Q/C ▼ down (PgUp/PgDn) · X use · V 1st/3rd · Esc release</div>
 			{/if}
 		{:else if game.mode === 'build'}
 			<div class="build-actions" class:mobile>
@@ -235,14 +275,17 @@
 				<Joystick />
 				<div class="tip walk">Joystick: move · drag: look</div>
 			{:else if !game.pointerLocked}
-				<div class="center-hint">Click to look · WASD move · Shift run · E/Space up · Q/C down a hatch · F build</div>
+				<div class="center-hint">Click to look · WASD move · Shift run · at a ladder: E/Space ▲ up, Q/C ▼ down (PgUp/PgDn) · F build</div>
 			{/if}
 			{#if game.hatchHere.up || game.hatchHere.down}
-				<div class="travel">
-					{#if game.hatchHere.up}<button class="fab" onclick={() => game.travel?.(1)}>⬆ Up</button>{/if}
-					{#if game.hatchHere.down}<button class="fab" onclick={() => game.travel?.(-1)}>⬇ Down</button>{/if}
+				<div class="prompt" class:mobile>
+					{#if game.hatchHere.up}E ▲ climb to Deck {game.hatchHere.upTo + 1}{/if}{#if game.hatchHere.up && game.hatchHere.down} · {/if}{#if game.hatchHere.down}Q ▼ climb down to Deck {game.hatchHere.downTo + 1}{/if}
 				</div>
 			{/if}
+			<div class="travel">
+				<button class="fab" class:on={game.hatchHere.up} onclick={() => deckMove(true)} aria-label="Deck up" title="Climb up (E / Space / PgUp)">▲ <small>{game.isTouch ? 'Up' : 'E Up'}</small></button>
+				<button class="fab" class:on={game.hatchHere.down} onclick={() => deckMove(false)} aria-label="Deck down" title="Climb down (Q / C / PgDn)">▼ <small>{game.isTouch ? 'Down' : 'Q Down'}</small></button>
+			</div>
 		{/if}
 
 		{#if game.toast}<div class="toast">{game.toast}</div>{/if}

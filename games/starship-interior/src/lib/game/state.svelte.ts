@@ -163,7 +163,10 @@ class GameState {
 	walkDeck = $state(0);
 	joystick = $state({ x: 0, y: 0 });
 	pointerLocked = $state(false);
-	hatchHere = $state<{ up: boolean; down: boolean }>({ up: false, down: false });
+	/** walk mode: ladder / hatch within reach (target deck indices, −1 none) */
+	hatchHere = $state<{ up: boolean; down: boolean; upTo: number; downTo: number }>({ up: false, down: false, upTo: -1, downTo: -1 });
+	/** "go to a ladder" highlight ring (world deck + xz; shown until `until`, performance.now ms) */
+	ladderHint = $state<{ deck: number; x: number; z: number; until: number } | null>(null);
 	isTouch = $state(false);
 	/** set by WalkControls while walk mode is active */
 	travel: ((dir: 1 | -1) => void) | undefined = undefined;

@@ -2,42 +2,51 @@
 	/**
 	 * Possession camera + input: third-person follow camera behind the controlled crew member
 	 * (drag to orbit, wheel to zoom) or first-person (V). WASD / arrows / joystick move, Shift runs,
-	 * E interacts or climbs up, Q/C climbs down, Esc releases.
+	 * Gravity: E/Space climb up at a ladder (priority) else use, Q/C climb down, X/Enter use,
+	 * PgUp/PgDn climb, Esc releases. Keys match e.code (any keyboard layout).
 	 * Cruise (micro-g, 6-DOF): WASD translate in the body frame, Space/R up, Ctrl/F/C down, Q/E roll,
 	 * drag to look (relative to the body), Shift = stronger push-off, G grab, X/Enter use,
-	 * Z reorient to deck-up, V first/third person.
+	 * Z reorient to deck-up, V first/third person, PgUp/PgDn auto-fly through the nearest hatch.
 	 */
 	import { T, useTask, useThrelte } from '@threlte/core';
 	import { onMount } from 'svelte';
 	import { PerspectiveCamera, Quaternion, Vector3 } from 'three';
 	import { game } from '$lib/game/state.svelte';
 	import { crew } from './crewSim.svelte';
+	import { isTyping } from '$lib/util/keys';
 
 	const { dom } = useThrelte();
 	const cam = new PerspectiveCamera(60, 1, 0.05, 400);
 	let pitch = 0.42;
 	let dist = 2.8;
 	const keys = new Set<string>();
-	const isField = (e: Event) => {
-		const t = e.target as HTMLElement | null;
-		return !!t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT');
-	};
 	function onKeyDown(e: KeyboardEvent) {
-		if (isField(e)) return;
+		if (isTyping(e)) return;
 		keys.add(e.code);
+		if (e.code === 'PageUp' || e.code === 'PageDown') {
+			e.preventDefault();
+			crew.climb(e.code === 'PageUp');
+			return;
+		}
 		if (crew.micro) {
 			if (e.code === 'Space' || e.code.startsWith('Control')) e.preventDefault();
-			if (e.code === 'KeyX' || e.code === 'Enter') crew.interact(false);
+			if (e.code === 'KeyX' || e.code === 'Enter') crew.interact();
 			else if (e.code === 'KeyG') crew.input.grab = true;
 			else if (e.code === 'KeyZ') crew.reorient();
 			else if (e.code === 'KeyV') crew.firstPerson = !crew.firstPerson;
 			else if (e.code === 'Escape') crew.possess(null);
 			return;
 		}
+		// gravity: E/Space climb up when a ladder is in reach (priority), otherwise use equipment
 		if (e.code === 'KeyE' || e.code === 'Space') {
 			e.preventDefault();
-			crew.interact(false);
-		} else if (e.code === 'KeyQ' || e.code === 'KeyC') crew.interact(true);
+			if (crew.canClimb(true)) crew.climb(true);
+			else if (crew.canClimb(false) && e.code === 'KeyE') crew.climb(true); // explains "only goes down"
+			else if (!crew.interact() && e.code === 'Space') crew.climb(true);
+		} else if (e.code === 'KeyQ' || e.code === 'KeyC') {
+			e.preventDefault();
+			crew.climb(false);
+		} else if (e.code === 'KeyX' || e.code === 'Enter') crew.interact();
 		else if (e.code === 'KeyV') crew.firstPerson = !crew.firstPerson;
 		else if (e.code === 'Escape') crew.possess(null);
 	}

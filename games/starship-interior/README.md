@@ -226,8 +226,10 @@ Cabin and Surface Habitat modes, runs on top of build mode, and replans live whe
 - **Possess:**
   - A third-person follow camera; **V** switches to first person.
   - Drag to look, wheel to zoom. **WASD** or the arrows move (joystick on touch), Shift runs.
-  - **E** uses the nearest equipment or climbs up a ladder; the prompt reads, e.g., "E: Prepare & eat (Galley Counter)".
-    **Q/C** climbs down.
+  - At a ladder (within ~1 m) **E/Space** climbs up and **Q/C** climbs down (also `PgUp`/`PgDn` and the ▲/▼ Deck buttons);
+    climbing has priority over equipment. **X/Enter** (or **E** when no ladder is in reach) uses the nearest equipment;
+    the prompt reads e.g. "E ▲ climb to Deck 2 · X: Prepare & eat (Galley Counter)". Away from a ladder, Q/E show where the
+    nearest ladder is and ring it.
   - **Esc** or **⏏ Release** hands the crew member back to the AI. The others keep living.
 - **Analytics (📊 Issues):**
   - Utilisation % per item, average wait, max queue, unreachable items.
@@ -292,7 +294,8 @@ The mission is saved with the layout.
   - Desktop: **WASD** translate in the body frame, **Space/R** up and **Ctrl/F/C** down along the body axis, **Q/E** roll,
     drag to look relative to the body.
   - **Shift** gives a stronger push-off (1.0 m/s). **G** grabs (stops) when something is in reach. **X/Enter** uses
-    equipment, **Z** or **⊙ Deck up** reorients to deck-up, **Esc** releases.
+    equipment, **Z** or **⊙ Deck up** reorients to deck-up, **PgUp/PgDn** (or ▲/▼ Deck) auto-fly to the next/previous deck
+    through the nearest hatch (flying through manually works too; a prompt appears near a hatch), **Esc** releases.
   - Momentum persists. With nothing in reach you only drift, or wriggle slowly.
   - Mobile: the joystick translates and dragging looks. The pad has ▲/▼ (up/down), ⟲/⟳ (roll) and ✊ (grab), plus
     Use, Deck up, 1st/3rd and Release.
@@ -319,15 +322,16 @@ The mission is saved with the layout.
 | --- | --- |
 | Tools | `1` Select · `2` Place · `3` Measure · `4` Camera · `G` snap on/off (0.25 m / 15°) |
 | Place | Pick equipment, then left-click. The ghost is green when valid, red with the reason when not |
-| Rotate | `Q`/`E` or `Shift`+wheel 15° · `Shift+Q/E` 1° (snap off) · `R` 90° · on-screen ⟲ ⟳ 90° buttons |
+| Rotate | While placing (Place tool with a ghost/preview) or with a module/ladder selected: `Q`/`E` or `Shift`+wheel 15° · `Alt+Q/E` 1° · `R` 90° · on-screen ⟲ ⟳ 90° buttons |
 | Select / move / delete | Select tool: click a module, drag to move. `Delete`/`Backspace` or 🗑 deletes; right-click deletes in any tool |
 | Measure | Click two points to see the distance (m). `Esc` clears |
 | Camera | Middle-drag orbits, wheel zooms (Camera tool: left orbit, right pan) |
-| Decks | Deck buttons / `PgUp` `PgDn`, ＋ adds a deck, height slider, ✂ section view |
+| Decks | Deck pills, **▼ ▲** buttons, `PgUp`/`PgDn`, `Shift+Q`/`Shift+E`, or plain `Q`/`E` when nothing is selected or being placed · ＋ adds a deck, height slider, ✂ section view |
 | Section cut | ✂ on: Half/Quarter, Follow camera, cut-angle slider and ⟲/⟳ 15° in the Decks panel, optional cut height |
 | Mission phase | Crew panel: Surface/Cruise ↔ Launch/Landing (couches deploy, stowables fold) |
 | Equipment designer | 📐 Design · `T`/`R`/`S` gizmo mode · `D` duplicate part · `M` mirror · `Del` delete part · `Esc` deselect |
-| Walk | `F`; click to look around, `WASD` move, `Shift` run, `E`/`Space` climb the ladder up, `Q`/`C` climb down through a floor hatch |
+| Walk | `F`; click to look around, `WASD` move, `Shift` run. Within ~1 m of a ladder (lower deck) or hatch opening (upper deck) the prompt shows **E ▲ climb to Deck N** / **Q ▼ climb down to Deck N-1**: `E`/`Space`/`PgUp` climb up, `Q`/`C`/`PgDn` climb down (short climb animation), or the on-screen **▲ / ▼** buttons. Elsewhere a hint names the nearest ladder and rings it |
+| Keyboard layouts | All shortcuts use the physical key (`KeyboardEvent.code`), so they work on Thai, AZERTY etc. layouts. Keys are ignored only while typing in a text field; clicked buttons release focus |
 
 ### Mobile (touch)
 - Below 760 px wide the sidebar becomes a **bottom sheet**: the tools row is always visible, and ▲ opens equipment, decks, stats and export.
@@ -337,7 +341,7 @@ The mission is saved with the layout.
 - **Measure:** tap two points.
 - **Two fingers** always control the camera: pinch zooms, drag orbits (or pans, under *View & checks*).
   A second finger cancels any build action in progress, so camera gestures never place anything.
-- **Walk:** joystick to move, drag to look, ⬆ Up / ⬇ Down buttons when standing in a ladder or hatch zone.
+- **Walk:** joystick to move, drag to look, ▲ Up / ▼ Down buttons (lit when a ladder or hatch is within reach).
 - **Designer:** 📐 opens it. The ▲ bottom sheet holds the library, parts, numeric fields, ±1 cm / ±5° nudge buttons and
   the metadata form. Tap a part to get the gizmo; one finger orbits, pinch zooms.
 - Phones start in **Low** quality (no shadows or reflections, 1× pixel ratio). The page doesn't scroll or zoom (`touch-action: none`).

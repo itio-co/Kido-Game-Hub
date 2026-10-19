@@ -26,6 +26,7 @@
 	import PossessControls from '$lib/sim/PossessControls.svelte';
 	import TrackballCam from './TrackballCam.svelte';
 	import Dust from './Dust.svelte';
+	import LadderHint from './LadderHint.svelte';
 	import { crew } from '$lib/sim/crewSim.svelte';
 
 	interface Props {
@@ -252,6 +253,9 @@
 
 {#if game.microG && !game.exportAll}
 	<Dust />
+{/if}
+{#if !game.exportAll}
+	<LadderHint />
 {/if}
 {#if game.mode === 'build' && crew.possessed !== null}
 	<PossessControls />
