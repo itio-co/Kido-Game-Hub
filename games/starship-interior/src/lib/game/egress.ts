@@ -206,12 +206,31 @@ export function egressSolve(ctx: EgressCtx, g: Grid, m: PlacedModule, phase: Pha
 			bset.set(t, { uid: o.uid, name: CATALOG_BY_ID[o.type]?.name ?? o.type, x: o.x, z: o.z });
 		}
 	}
-	// simplify: keep corners and blocked/free transitions
-	const sp: Vec2[] = [], sb: boolean[] = [];
-	for (let n = 0; n < pts.length; n++) {
-		const a = pts[n - 1], b = pts[n], c = pts[n + 1];
-		const turn = !a || !c || (b[0] - a[0]) * (c[1] - b[1]) - (b[1] - a[1]) * (c[0] - b[0]) !== 0;
-		if (turn || blocked[n] !== blocked[n - 1] || blocked[n] !== blocked[n + 1]) (sp.push(b), sb.push(blocked[n]));
+	// string-pull: straight runs through free cells (line of sight), blocked runs kept as they are
+	const cellOf = (x: number, z: number) => {
+		const i = Math.floor((x + g.R) / EGRESS_GRID), j = Math.floor((z + g.R) / EGRESS_GRID);
+		return i < 0 || j < 0 || i >= N || j >= N ? -1 : j * N + i;
+	};
+	const los = (p: Vec2, q: Vec2) => {
+		const L = Math.hypot(q[0] - p[0], q[1] - p[1]);
+		const n = Math.max(1, Math.ceil(L / (EGRESS_GRID / 2)));
+		for (let t = 0; t <= n; t++) {
+			const x = p[0] + ((q[0] - p[0]) * t) / n, z = p[1] + ((q[1] - p[1]) * t) / n;
+			const k = cellOf(x, z);
+			if (k < 0 || tag[k] !== 0 || selfCell(x, z)) return false;
+		}
+		return true;
+	};
+	const sp: Vec2[] = [pts[0]], sb: boolean[] = [blocked[0]];
+	let n0 = 0;
+	while (n0 < pts.length - 1) {
+		let n1 = n0 + 1;
+		if (!blocked[n0] && !blocked[n1]) {
+			while (n1 + 1 < pts.length && !blocked[n1 + 1] && los(pts[n0], pts[n1 + 1])) n1++;
+		}
+		sp.push(pts[n1]);
+		sb.push(blocked[n1]);
+		n0 = n1;
 	}
 	const length = cells.length * EGRESS_GRID;
 	for (const b of accBlock) if (![...bset.values()].some((x) => x.uid === b.uid)) bset.set(-b.uid - 1, b);
