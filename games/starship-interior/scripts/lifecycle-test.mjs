@@ -23,15 +23,15 @@ await page.waitForFunction(() => !!window.__crew && !!window.__game);
 await page.getByRole('button', { name: /Start crew sim/ }).click();
 await page.waitForFunction(() => window.__crew.enabled && window.__crew.agents.length > 0);
 
-// run 2 sim days at 60× with accelerated wear (MTBF 6 h, service every 4 h) on treadmill + toilets
+// run 2 sim days at 60× with accelerated wear (MTBF 12 h, service every 3 h) on treadmill + toilets
 const run = (seed) =>
 	G((seed) => {
 		const c = window.__crew;
-		c.running = false;
+		c.running = true;
 		c.seed(seed);
 		c.reset();
 		c.speed = 60;
-		const fast = (i) => (i.life = { ...i.life, mtbf: 6, service: 4 });
+		const fast = (i) => (i.life = { ...i.life, mtbf: 12, service: 3 });
 		for (const i of c.items) if (['treadmill', 'hygiene'].includes(i.def.id)) fast(i);
 		let brokenUse = 0, maxBroken = 0, wasBroken = new Set();
 		for (let k = 0; k < (2 * 1440) / 15; k++) {
@@ -68,6 +68,7 @@ check('maintenance done during the run', r1.serviced > 0, { serviced: r1.service
 // maintenance restores condition: wear one item down, wait for the engineer
 const m = await G(() => {
 	const c = window.__crew;
+	c.running = true;
 	c.seed(7);
 	c.reset();
 	c.speed = 60;
@@ -115,7 +116,7 @@ await G(() => {
 	c.running = true;
 	c.badges = true;
 	for (const i of c.items) {
-		if (i.def.id === 'hygiene' && i.deck === 0) (i.broken = true), (i.failures = 1), (i.hours = 212.4);
+		if (i.def.id === 'hygiene' && i.deck === 0) (i.broken = true), (i.failures = 1), (i.hours = 212.4), (i.cond = 18);
 		if (i.def.id === 'treadmill') (i.cond = 41), (i.hours = 160), (i.sinceService = 38);
 		if (i.def.id === 'foodwarmer') (i.cond = 28), (i.hours = 140), (i.sinceService = 151);
 	}

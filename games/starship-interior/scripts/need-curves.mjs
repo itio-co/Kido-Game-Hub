@@ -25,7 +25,7 @@ await page.getByRole('button', { name: /Start crew sim/ }).click();
 await page.waitForFunction(() => window.__crew.enabled && window.__crew.agents.length > 0);
 const R = await G(() => {
 	const c = window.__crew;
-	c.running = false;
+	c.running = true;
 	c.seed(2026);
 	c.reset();
 	c.speed = 60;
