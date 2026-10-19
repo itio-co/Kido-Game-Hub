@@ -5,7 +5,7 @@
 	const pf = $derived(game.preflight);
 	const auto = $derived([
 		{ ok: pf.seatsOk, text: `Launch couches ≥ crew (${game.seats} / ${game.crew})` },
-		{ ok: pf.couchIssues.length === 0, text: pf.couchIssues.length ? `Couch egress blocked: ${pf.couchIssues.join('; ')}` : 'Every couch has front access + 0.8 m egress path' },
+		{ ok: pf.couchIssues.length === 0, text: pf.couchIssues.length ? `Couch egress blocked (${pf.envelope} envelope): ${pf.couchIssues.length} couch${pf.couchIssues.length > 1 ? 'es' : ''} – click to inspect` : `Every couch has front access + 0.8 m egress path (${pf.envelope} envelope)` },
 		{ ok: pf.underHatch.length === 0, text: pf.underHatch.length ? `Near a hatch opening above: ${pf.underHatch.join('; ')}` : 'No couch under / next to a hatch opening' },
 		{ ok: true, text: `${pf.stowables} stowable item(s) shown stowed in Launch/Landing` },
 		{ ok: pf.powerOk, text: 'Electrical load within budget' }
@@ -43,8 +43,13 @@
 	</label>
 	<div class="list">
 		<div class="hd">Pre-launch checklist {ready ? '✅ GO' : '⛔ NO-GO'}</div>
-		{#each auto as a}
+		{#each auto as a, i}
 			<div class="it" class:bad={!a.ok}>{a.ok ? '✓' : '✗'} {a.text}</div>
+			{#if i === 1}
+				{#each pf.couchBlocked as c (c.deck + ':' + c.uid)}
+					<button class="it issue" data-testid="egress-issue" onclick={() => game.focusCouch(c.deck, c.uid)} title="Show this couch, its envelope and egress path">🔍 {c.text}</button>
+				{/each}
+			{/if}
 		{/each}
 		<div class="hd">Cargo restraint</div>
 		{#each cargo as [k, t]}
@@ -62,6 +67,21 @@
 		flex-direction: column;
 		gap: 6px;
 		font-size: 12px;
+	}
+	.issue {
+		text-align: left;
+		font: inherit;
+		font-size: 11px;
+		color: #ffb4b4;
+		background: rgba(239, 68, 68, 0.12);
+		border: 1px solid rgba(239, 68, 68, 0.45);
+		border-radius: 6px;
+		padding: 4px 6px;
+		cursor: pointer;
+		margin: 1px 0 1px 10px;
+	}
+	.issue:hover {
+		background: rgba(239, 68, 68, 0.22);
 	}
 	.row {
 		display: flex;

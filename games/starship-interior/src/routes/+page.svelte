@@ -165,6 +165,7 @@
 					<button onclick={() => deckStep(1)} disabled={game.current >= game.decks.length - 1} aria-label="Deck up" title="Deck up (E / PgUp)">▲</button>
 					<button onclick={() => game.addDeck()} aria-label="Add deck">＋</button>
 					<button class:active={game.section} onclick={() => (game.section = !game.section)} aria-label="Section view">✂</button>
+					<button class:active={game.showClearances} onclick={() => (game.showClearances = !game.showClearances)} aria-label="Show clearances" title="Show clearances: couch envelopes (stowed / deployed), egress paths, keep-out zones" data-testid="show-clearances">📐</button>
 				</div>
 			{:else}
 				<div class="pills"><span class="deckname">{game.deckLabel(game.walkDeck)}</span></div>

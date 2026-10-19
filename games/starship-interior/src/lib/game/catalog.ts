@@ -12,7 +12,7 @@ export const CATALOG: ModuleDef[] = [
 		description: 'Single bunk with mattress, reading light and curtain frame.'
 	},
 	{
-		id: 'crewpod', name: 'Crew Quarters Pod', icon: '🚪', shape: 'rect', w: 1.0, d: 1.0, height: 2.1,
+		id: 'crewpod', keepout: { d: 0.75, label: 'door swing' }, name: 'Crew Quarters Pod', icon: '🚪', shape: 'rect', w: 1.0, d: 1.0, height: 2.1,
 		access: 0.9, mass: 250, power: 80, cost: 40000,
 		description: 'Private enclosed quarters, 2.1 m³ like the ISS CQ.',
 		source: 'ISS CQ 2.1 m³ – NASA NTRS 20130011142'
@@ -38,7 +38,7 @@ export const CATALOG: ModuleDef[] = [
 		description: 'Two-seat console desk (shared work area), 2 × two displays.'
 	},
 	{
-		id: 'locker', name: 'Storage Locker', icon: '🗄️', shape: 'rect', w: 0.6, d: 0.6, height: 2.0,
+		id: 'locker', keepout: { d: 0.6, label: 'door swing' }, name: 'Storage Locker', icon: '🗄️', shape: 'rect', w: 0.6, d: 0.6, height: 2.0,
 		access: 0.75, mass: 40, power: 0, cost: 1500,
 		description: 'Tall two-door stowage locker.'
 	},
@@ -48,7 +48,7 @@ export const CATALOG: ModuleDef[] = [
 		description: 'Four shelves with LED grow lights.'
 	},
 	{
-		id: 'hygiene', name: 'Hygiene / Toilet', icon: '🚽', shape: 'rect', w: 1.0, d: 1.0, height: 2.1,
+		id: 'hygiene', keepout: { d: 0.75, label: 'door swing' }, name: 'Hygiene / Toilet', icon: '🚽', shape: 'rect', w: 1.0, d: 1.0, height: 2.1,
 		access: 0.9, mass: 200, power: 250, cost: 60000,
 		description: 'Enclosed toilet and hygiene station.'
 	},
@@ -140,13 +140,13 @@ export const CATALOG: ModuleDef[] = [
 		source: 'ISS Potable Water Dispenser (PWD) – NASA; size/power ESTIMATE'
 	},
 	{
-		id: 'fridge', name: 'Galley Refrigerator / Freezer', icon: '🧊', shape: 'rect', w: 0.6, d: 0.65, height: 1.8,
+		id: 'fridge', keepout: { d: 0.6, label: 'door swing' }, name: 'Galley Refrigerator / Freezer', icon: '🧊', shape: 'rect', w: 0.6, d: 0.65, height: 1.8,
 		access: 0.8, mass: 95, power: 250, cost: 80000, foodDays: 20, category: 'Galley', estimate: true,
 		description: 'Fridge (top) and freezer (bottom) for fresh food and drinks; ~20 crew-days of fresh items. Latched doors and nets keep items in place in micro-g.',
 		source: 'ISS Galley refrigerator / MELFI analogs; ESTIMATE'
 	},
 	{
-		id: 'pantry', name: 'Food Storage Lockers (pantry)', icon: '🥫', shape: 'rect', w: 1.2, d: 0.6, height: 2.0,
+		id: 'pantry', keepout: { d: 0.55, label: 'locker doors' }, name: 'Food Storage Lockers (pantry)', icon: '🥫', shape: 'rect', w: 1.2, d: 0.6, height: 2.0,
 		access: 0.8, mass: 85, power: 0, cost: 6000, foodDays: 150, category: 'Galley', estimate: true,
 		description: 'Bulk pantry: 8 soft-goods bays of ISS-style food containers; ~150 crew-days (≈1.8 kg / 0.005 m³ packaged food per crew-day).',
 		source: 'ISS food system ~1.8 kg/crew-day incl. packaging (NASA); volume ESTIMATE'

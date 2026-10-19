@@ -1,3 +1,5 @@
+import { egressFor, type EgressCtx, type EgressResult } from './egress';
+import { rig } from '$lib/three/cameraRig.svelte';
 import { seatSpots, groupSeats } from './groups';
 import { CATALOG_BY_ID, LADDER_EXTENSION, SHAFT_MASS_PER_M, footprintArea, starterLayout } from './catalog';
 import { analyzeDeck, type DeckAnalysis } from './clearance';
@@ -153,6 +155,10 @@ class GameState {
 
 	selectedUid = $state<number | null>(null);
 	hoverUid = $state<number | null>(null);
+	/** HUD toggle: show couch envelopes / egress paths / keep-out zones on the current deck */
+	showClearances = $state(false);
+	/** couch whose egress zones are shown because its issue row was clicked */
+	focusEgress = $state<number | null>(null);
 	/** module being dragged to a new position */
 	drag = $state<{ uid: number; x: number; z: number; moved: boolean } | null>(null);
 
@@ -315,9 +321,41 @@ class GameState {
 		return r;
 	}
 	seats = $derived(this.decks.reduce((s, d) => s + d.modules.reduce((a, m) => a + (CATALOG_BY_ID[m.type]?.seats ?? 0), 0), 0));
-	/** launch/landing readiness (checked in the Launch/Landing phase geometry) */
+	egressCtx(k: number, modules = this.decks[k].modules): EgressCtx {
+		return {
+			modules: modules.filter((m) => (m.y ?? 0) < HEAD_CLEAR),
+			shafts: this.shaftsOn(k),
+			label: (sh) => this.shaftLabel(sh),
+			R: this.deckRadius[k] ?? HULL_INNER_RADIUS,
+			hasAirlock: k === this.airlockDeck,
+			deckLabel: this.deckLabel(k)
+		};
+	}
+	/** couch egress per deck in the envelope of the current phase (deployed in Launch/Landing, stowed otherwise) */
+	egress = $derived.by(() =>
+		this.decks.map((d, k) => {
+			const couches = d.modules.filter((m) => CATALOG_BY_ID[m.type]?.seats);
+			if (!couches.length) return [] as EgressResult[];
+			const ctx = this.egressCtx(k);
+			return couches.map((m) => egressFor(ctx, m, this.phase));
+		})
+	);
+	egressOf(uid: number, k = this.current) {
+		return this.egress[k]?.find((e) => e.uid === uid) ?? null;
+	}
+	/** issue row clicked: go to the couch's deck, select it, frame it and show its zones */
+	focusCouch(k: number, uid: number) {
+		this.selectDeck(k);
+		this.tool = 'select';
+		this.selectedUid = uid;
+		this.focusEgress = uid;
+		const m = this.decks[k].modules.find((mm) => mm.uid === uid);
+		if (m) rig.animateTo({ polar: 0.75, dist: 6.5 }, [m.x * 0.7, this.floorY[k] ?? 0, m.z * 0.7], 500);
+	}
+	/** launch/landing readiness (couch egress in the current phase's envelope) */
 	preflight = $derived.by(() => {
 		const couchIssues: string[] = [];
+		const couchBlocked: { deck: number; uid: number; text: string }[] = [];
 		const underHatch: string[] = [];
 		this.decks.forEach((d, k) => {
 			if (!d.modules.some((m) => CATALOG_BY_ID[m.type]?.seats)) return;
@@ -325,8 +363,11 @@ class GameState {
 			for (const m of d.modules) {
 				const def = CATALOG_BY_ID[m.type];
 				if (!def?.seats) continue;
-				if (a.blocked.has(m.uid) || a.unreachable.has(m.uid) || !a.hasEntry)
-					couchIssues.push(`${this.deckLabel(k)}: ${def.name} at (${m.x.toFixed(1)}, ${m.z.toFixed(1)})`);
+				const e = this.egress[k]?.find((x) => x.uid === m.uid);
+				if (e && !e.ok) {
+					couchIssues.push(e.text);
+					couchBlocked.push({ deck: k, uid: m.uid, text: e.text });
+				}
 				// falling-object risk: within 1.0 m of the opening above (ladder rising from this deck)
 				for (const sh of this.shafts)
 					if (sh.from === k && Math.hypot(sh.x - m.x, sh.z - m.z) < 1.0 + Math.max(dimsOf(def, 'launch').d, dimsOf(def, 'launch').w) / 2)
@@ -337,6 +378,8 @@ class GameState {
 		return {
 			seatsOk: this.seats >= this.crew,
 			couchIssues,
+			couchBlocked,
+			envelope: this.phase === 'launch' ? 'deployed' : 'stowed',
 			underHatch,
 			stowables,
 			powerOk: this.stats.powerOk

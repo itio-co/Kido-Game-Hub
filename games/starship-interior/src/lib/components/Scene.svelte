@@ -28,6 +28,7 @@
 	import Dust from './Dust.svelte';
 	import LadderHint from './LadderHint.svelte';
 	import GroupLinks from './GroupLinks.svelte';
+	import ClearanceOverlay from './ClearanceOverlay.svelte';
 	import OccupancyBadges from '$lib/sim/OccupancyBadges.svelte';
 	import NavOverlay from '$lib/sim/NavOverlay.svelte';
 	import { crew } from '$lib/sim/crewSim.svelte';
@@ -254,6 +255,7 @@
 	<T.Group position.y={game.floorY[game.current]}>
 		<Overlays />
 		<GroupLinks />
+		<ClearanceOverlay />
 	</T.Group>
 {/if}
 </T.Group>

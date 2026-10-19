@@ -21,6 +21,7 @@
 	import { equip } from '$lib/game/equipStore.svelte';
 	import { crew } from '$lib/sim/crewSim.svelte';
 	import { lifeOf, LIFE_ICON } from '$lib/sim/lifecycle';
+	import { nudgeFor } from '$lib/game/egress';
 
 	interface Props {
 		mobile?: boolean;
@@ -91,6 +92,17 @@
 		return { def, r: Math.hypot(sel.x, sel.z), wall: (game.deckRadius[game.current] ?? HULL_INNER_RADIUS) - maxRadius(f) };
 	});
 	const selSpec = $derived(lifeOf(selInfo?.def));
+	function nudgeSel() {
+		const m = sel;
+		if (!m) return;
+		const ctx = game.egressCtx(game.current, game.deck.modules.filter((x) => x.uid !== m.uid));
+		const n = nudgeFor(ctx, m, game.phase, (x, z) => game.check(m.type, x, z, m.angle, m.uid, game.current, m.y ?? 0).ok);
+		if (!n) return game.flash('No clear spot within 1.2 m – move the blocking items instead');
+		m.x = n.x;
+		m.z = n.z;
+		game.autosave();
+		game.flash(`Moved ${(n.d * 100).toFixed(0)} cm – egress clear`);
+	}
 
 </script>
 
@@ -237,6 +249,13 @@
 					<span>MTBF / life</span><b>{selSpec.mtbf.toLocaleString()} h / {selSpec.life.toLocaleString()} h{selSpec.alwaysOn ? ' (always on)' : ''}</b>
 					<span>Repair</span><b>{selSpec.repair} min · {selSpec.spares} spare kit{selSpec.spares > 1 ? 's' : ''}{life ? ` (${life.spares} in lockers)` : ''}</b>
 				</div>
+				{#if selInfo.def.seats}
+					{@const eg = game.egressOf(sel.uid)}
+					{#if eg}
+						<div class="egress" class:bad={!eg.ok} data-testid="sel-egress">{eg.ok ? '✓' : '✖'} {eg.text}</div>
+						{#if !eg.ok}<button onclick={() => nudgeSel()} data-testid="nudge-couch">🧭 Move to nearest clear spot</button>{/if}
+					{/if}
+				{/if}
 				{#if selInfo.def.group}
 					{@const seats = game.seatsOf(sel.uid)}
 					<div class="kv"><span>Seats (capacity)</span><b data-testid="table-seats">{seats.length + (selInfo.def.restraint ? 2 : 0)}{selInfo.def.restraint ? ' (2 built-in)' : ''}</b></div>
@@ -532,6 +551,20 @@
 	.selname {
 		font-weight: 700;
 		margin-bottom: 6px;
+	}
+	.egress {
+		font-size: 11px;
+		line-height: 1.3;
+		padding: 4px 6px;
+		border-radius: 6px;
+		background: rgba(34, 197, 94, 0.12);
+		border: 1px solid rgba(34, 197, 94, 0.4);
+		color: #c9f7d8;
+	}
+	.egress.bad {
+		background: rgba(239, 68, 68, 0.12);
+		border-color: rgba(239, 68, 68, 0.5);
+		color: #ffc9c9;
 	}
 	.kv {
 		display: grid;
