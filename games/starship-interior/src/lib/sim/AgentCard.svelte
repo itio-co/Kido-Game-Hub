@@ -57,7 +57,7 @@
 	.card {
 		position: absolute;
 		left: calc(12px + env(safe-area-inset-left));
-		bottom: 40px;
+		bottom: 176px;
 		width: 250px;
 		z-index: 12;
 		background: rgba(9, 14, 24, 0.94);
@@ -76,7 +76,7 @@
 		right: 8px;
 		width: auto;
 		top: auto;
-		bottom: calc(186px + env(safe-area-inset-bottom));
+		bottom: calc(124px + env(safe-area-inset-bottom));
 		padding: 8px;
 		gap: 5px;
 	}

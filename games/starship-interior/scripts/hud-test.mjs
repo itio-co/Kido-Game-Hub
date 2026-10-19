@@ -1,7 +1,7 @@
 // Game HUD: top resource bar (power meter, clearances toggle, sim clock), bottom build bar (tabs + cards → placement),
 // contextual selection card (rotate / duplicate / delete), side-panel drawer, mobile layout.
 // Screenshots: screenshot-hud-desktop.png, screenshot-hud-mobile.png. Usage: node scripts/hud-test.mjs [url]
-import { chromium } from 'playwright';
+import { chromium, devices } from 'playwright';
 const URL = process.argv[2] ?? 'http://localhost:5173/';
 const browser = await chromium.launch({ args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -84,7 +84,7 @@ await page.locator('[data-testid=drawer-toggle]').click();
 await page.close();
 
 // ---------- mobile ----------
-page = await open({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
+page = await open({ ...devices['iPhone 13'] });
 const M = (fn, a) => page.evaluate(fn, a);
 await M(() => window.__crew.start());
 await page.waitForTimeout(500);

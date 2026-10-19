@@ -240,7 +240,7 @@
 				<div class="center-hint low">WASD move · Shift run · drag look · at a ladder: E/Space ▲ climb up, Q/C ▼ down (PgUp/PgDn) · X use · V 1st/3rd · Esc release</div>
 			{/if}
 		{:else if game.mode === 'build'}
-			{#if !(mobile && crewSheet)}
+			{#if !(mobile && (crewSheet || (crew.enabled && crew.selected !== null)))}
 				{#if !mobile || !(game.tool === 'select' && game.selected)}<BuildBar {mobile} />{/if}
 				<SelectionCard {mobile} />
 			{/if}
