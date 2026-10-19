@@ -238,11 +238,18 @@ export interface BomOpts {
 	hab?: HabitatConfig;
 	crew?: number;
 }
+/** BOM note for data-driven (custom) equipment: parts and edited meshes */
+function geomNote(def: { parts?: { shape: string; mesh?: { v: number[]; f: number[][] } }[]; custom?: boolean }): string {
+	if (!def.custom || !def.parts) return '';
+	const meshes = def.parts.filter((p) => p.shape === 'mesh' && p.mesh);
+	const faces = meshes.reduce((n, p) => n + (p.mesh?.f.length ?? 0), 0);
+	return `${def.parts.length} parts${meshes.length ? ` · ${meshes.length} edited mesh (${faces} faces)` : ''}`;
+}
 export function bomCSV(decks: Deck[], shafts: Shaft[] = [], floorY: number[] = [], label: (s: Shaft) => string = () => 'L', opts: BomOpts = {}): string {
 	const q = (v: string | number) => `"${String(v).replace(/"/g, '""')}"`;
 	const dl = opts.deckLabel ?? ((k: number) => String(k + 1));
 	const rows: (string | number)[][] = [
-		['deck', 'item_no', 'module', 'module_id', 'quantity', 'W_m', 'D_m', 'H_m', 'x_m', 'y_m', 'rotation_deg', 'mass_kg_est', 'power_W_est', 'unit_cost_est', 'length_m', 'W_launch_m', 'D_launch_m', 'H_launch_m', 'stowable', 'seats']
+		['deck', 'item_no', 'module', 'module_id', 'quantity', 'W_m', 'D_m', 'H_m', 'x_m', 'y_m', 'rotation_deg', 'mass_kg_est', 'power_W_est', 'unit_cost_est', 'length_m', 'W_launch_m', 'D_launch_m', 'H_launch_m', 'stowable', 'seats', 'geometry']
 	];
 	const totals = new Map<string, { qty: number; mass: number; power: number; cost: number }>();
 	decks.forEach((d, k) =>
@@ -250,7 +257,7 @@ export function bomCSV(decks: Deck[], shafts: Shaft[] = [], floorY: number[] = [
 			const def = CATALOG_BY_ID[m.type];
 			const h = def.fullHeight ? d.height : def.height;
 			const L = def.launch;
-			rows.push([dl(k), n + 1, def.name, def.id, 1, def.w.toFixed(3), def.d.toFixed(3), h.toFixed(3), m.x.toFixed(3), m.z.toFixed(3), m.angle.toFixed(1), def.mass, def.power, def.cost, '', L ? L.w.toFixed(3) : '', L ? L.d.toFixed(3) : '', L ? L.height.toFixed(3) : '', def.stowable ? 'yes' : '', def.seats ?? '']);
+			rows.push([dl(k), n + 1, def.name, def.id, 1, def.w.toFixed(3), def.d.toFixed(3), h.toFixed(3), m.x.toFixed(3), m.z.toFixed(3), m.angle.toFixed(1), def.mass, def.power, def.cost, '', L ? L.w.toFixed(3) : '', L ? L.d.toFixed(3) : '', L ? L.height.toFixed(3) : '', def.stowable ? 'yes' : '', def.seats ?? '', geomNote(def)]);
 			const t = totals.get(def.name) ?? { qty: 0, mass: 0, power: 0, cost: 0 };
 			t.qty++;
 			t.mass += def.mass;

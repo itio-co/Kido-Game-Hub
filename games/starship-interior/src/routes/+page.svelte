@@ -10,6 +10,7 @@
 	import type { Tool } from '$lib/game/types';
 	import Scene from '$lib/components/Scene.svelte';
 	import DesignerScene from '$lib/components/DesignerScene.svelte';
+	import EditToolbar from '$lib/components/EditToolbar.svelte';
 	import DesignerPanel from '$lib/components/DesignerPanel.svelte';
 	import { equip } from '$lib/game/equipStore.svelte';
 	import Sidebar from '$lib/components/Sidebar.svelte';
@@ -157,6 +158,7 @@
 		</div>
 		{#if game.isTouch}<div class="tip" class:mobile>Tap a part to select · drag gizmo · 1 finger orbit · pinch zoom</div>{/if}
 		{#if game.toast}<div class="toast">{game.toast}</div>{/if}
+		<EditToolbar {mobile} />
 		{#if mobile}<DesignerPanel mobile />{/if}
 	{:else}
 

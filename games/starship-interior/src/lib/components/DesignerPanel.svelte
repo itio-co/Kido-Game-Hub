@@ -10,6 +10,8 @@
 	import { lifeOf } from '$lib/sim/lifecycle';
 	import { PRIORITIES, powerOf, type Priority } from '$lib/sim/power';
 	import type { ModuleDef } from '$lib/game/types';
+	import { centroidOf, meshBounds, selVerts, transformVerts, validateMesh } from '$lib/game/editMesh';
+	import { Euler, Matrix4, Quaternion, Vector3 } from 'three';
 
 	interface Props {
 		mobile?: boolean;
@@ -117,9 +119,76 @@
 		game.tool = 'module';
 		game.flash(`Place ${def?.name} on ${game.deckLabel(game.current)}`);
 	}
+	// ---- component editing (selection centroid in equipment space, validation) ----
+	const comp = $derived(equip.editMode !== 'object');
+	const DEG = Math.PI / 180;
+	const partMat = $derived(part ? new Matrix4().compose(new Vector3(...part.pos), new Quaternion().setFromEuler(new Euler(part.rot[0] * DEG, part.rot[1] * DEG, part.rot[2] * DEG)), new Vector3(1, 1, 1)) : null);
+	const selC = $derived.by(() => {
+		const m = equip.workMesh;
+		if (!comp || !m || !partMat) return null;
+		const idx = selVerts(m, equip.editMode as 'vertex', equip.sel);
+		return idx.length ? { idx, w: centroidOf(m, idx).applyMatrix4(partMat) } : null;
+	});
+	function moveSel(axis: number, valueCm: number) {
+		const m = equip.workMesh;
+		if (!m || !selC || !partMat || !isFinite(valueCm)) return;
+		const target = selC.w.clone();
+		target.setComponent(axis, Math.round(valueCm / (equip.snap * 100)) * equip.snap);
+		const inv = partMat.clone().invert();
+		const d = target.applyMatrix4(inv).sub(selC.w.clone().applyMatrix4(inv));
+		equip.setMesh(transformVerts(m, selC.idx, new Matrix4().makeTranslation(d.x, d.y, d.z)));
+	}
+	function nudgeSel(axis: number, sign: number) {
+		if (selC) moveSel(axis, (selC.w.getComponent(axis) + sign * equip.snap) * 100);
+	}
+	const meshWarn = $derived.by(() => {
+		if (!part || part.shape !== 'mesh' || !part.mesh || !partMat) return [] as string[];
+		const w = validateMesh(part.mesh);
+		const b = meshBounds(part.mesh);
+		const lo = new Vector3(Infinity, Infinity, Infinity);
+		for (let i = 0; i < part.mesh.v.length; i += 3) lo.min(new Vector3(part.mesh.v[i], part.mesh.v[i + 1], part.mesh.v[i + 2]).applyMatrix4(partMat));
+		if (lo.y < -0.005) w.push(`Mesh goes ${Math.round(-lo.y * 100)} cm below the floor`);
+		const maxDeck = Math.max(...game.decks.map((d) => d.height), 2.4);
+		if (def && def.height > maxDeck) w.push(`Taller (${def.height.toFixed(2)} m) than the tallest deck (${maxDeck.toFixed(2)} m)`);
+		void b;
+		return w;
+	});
 	function onKey(e: KeyboardEvent) {
 		const t = e.target as HTMLElement;
 		if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT')) return;
+		if (!game.designer) return;
+		const ctrl = e.ctrlKey || e.metaKey;
+		if (ctrl && e.code === 'KeyZ') {
+			e.preventDefault();
+			if (e.shiftKey ? equip.redo() : equip.undo()) game.flash(e.shiftKey ? 'Redo' : 'Undo');
+			return;
+		}
+		if (ctrl && e.code === 'KeyY') {
+			e.preventDefault();
+			if (equip.redo()) game.flash('Redo');
+			return;
+		}
+		if (ctrl) return;
+		const canEdit = editable && !!part && part.shape !== 'glb';
+		if (e.code === 'Tab' && canEdit) {
+			e.preventDefault();
+			equip.setEditMode(comp ? 'object' : equip.lastComp);
+			return;
+		}
+		const modeKeys: Record<string, 'object' | 'vertex' | 'edge' | 'face'> = { Digit1: 'object', Digit2: 'vertex', Digit3: 'edge', Digit4: 'face' };
+		if (modeKeys[e.code] && canEdit) return void equip.setEditMode(modeKeys[e.code]);
+		if (comp && canEdit) {
+			const ops: Record<string, Parameters<typeof equip.op>[0]> = { KeyE: 'extrude', KeyI: 'inset', KeyB: 'bevel', KeyM: 'merge', KeyX: 'delete', Delete: 'delete', Backspace: 'delete', KeyA: 'all' };
+			if (ops[e.code]) {
+				e.preventDefault();
+				return void game.flash(equip.op(ops[e.code]));
+			}
+			if (e.code === 'Escape') {
+				if (equip.selCount) equip.sel = { v: [], e: [], f: [] };
+				else equip.setEditMode('object');
+				return;
+			}
+		}
 		if (e.code === 'KeyT') equip.gizmo = 'translate';
 		else if (e.code === 'KeyR') equip.gizmo = 'rotate';
 		else if (e.code === 'KeyS') equip.gizmo = 'scale';
@@ -214,6 +283,7 @@
 							<select value={part.shape} disabled={!editable || part.shape === 'glb'} onchange={(e) => partField('shape', e.currentTarget.value)}>
 								{#each SHAPES as s}<option value={s}>{s}</option>{/each}
 								{#if part.shape === 'glb'}<option value="glb">glb</option>{/if}
+								{#if part.shape === 'mesh'}<option value="mesh">mesh (edited)</option>{/if}
 							</select>
 							<select value={part.m} disabled={!editable} onchange={(e) => partField('m', e.currentTarget.value)}>
 								{#each MATERIALS as m}<option value={m}>{m}</option>{/each}
@@ -247,6 +317,44 @@
 								<button onclick={() => nudge('rot', 1, -5)} aria-label="Yaw −5°">−5°</button>
 								<button onclick={() => nudge('rot', 1, 5)} aria-label="Yaw +5°">+5°</button>
 							</div>
+							{#if part.shape !== 'glb'}
+								<div class="comp" data-testid="component-panel">
+									<div class="row">
+										<b>Edit</b>
+										{#each [['object', 'Object'], ['vertex', 'Vertex'], ['edge', 'Edge'], ['face', 'Face']] as [m, l], i (m)}
+											<button class:active={equip.editMode === m} onclick={() => equip.setEditMode(m as 'object')} title="{l} mode ({i + 1})">{l}</button>
+										{/each}
+									</div>
+									{#if comp}
+										<div class="hint">
+											{equip.selCount} {equip.editMode}{equip.selCount === 1 ? '' : 's'} selected · click / Shift-click / Shift-drag box · gizmo T/R/S moves the selection ·
+											{equip.editMode === 'face' ? 'E extrude · I inset · ' : equip.editMode === 'edge' ? 'B bevel · ' : ''}M merge · X delete · A all · Esc back · Ctrl+Z undo
+										</div>
+										{#if selC}
+											<div class="vec">
+												<span>Selection cm</span>
+												{#each ['X', 'Y', 'Z'] as ax, i}
+													<label>{ax}<input type="number" step={equip.snap * 100} value={Math.round(selC.w.getComponent(i) * 1000) / 10} data-testid="sel-pos-{ax.toLowerCase()}" onchange={(e) => moveSel(i, Number(e.currentTarget.value))} /></label>
+												{/each}
+											</div>
+											<div class="nudge">
+												{#each ['X', 'Y', 'Z'] as ax, i}
+													<span>{ax}</span>
+													<button onclick={() => nudgeSel(i, -1)} aria-label="Move selection {ax} −{equip.snap * 100} cm">−</button>
+													<button onclick={() => nudgeSel(i, 1)} aria-label="Move selection {ax} +{equip.snap * 100} cm">+</button>
+												{/each}
+												<button onclick={() => (equip.snap = equip.snap === 0.01 ? 0.05 : 0.01)} title="Snap / nudge step">{equip.snap * 100} cm</button>
+											</div>
+										{/if}
+									{:else if part.shape !== 'mesh'}
+										<div class="hint">Tab or 2/3/4 to edit vertices, edges or faces – the {part.shape} becomes an editable mesh on the first edit.</div>
+									{/if}
+									{#if part.shape === 'mesh' && part.mesh}
+										<div class="hint" data-testid="mesh-stats">Mesh: {part.mesh.v.length / 3} vertices · {part.mesh.f.length} faces · bounds {part.size.map((x) => (x * 100).toFixed(0)).join(' × ')} cm</div>
+									{/if}
+									{#each meshWarn as w (w)}<div class="warn" data-testid="mesh-warn">⚠ {w}</div>{/each}
+								</div>
+							{/if}
 						{/if}
 					</div>
 				{/if}
@@ -324,6 +432,19 @@
 		display: flex;
 		flex-direction: column;
 		font: 13px/1.35 system-ui, sans-serif;
+	}
+	.comp {
+		margin-top: 8px;
+		padding-top: 8px;
+		border-top: 1px solid #22324a;
+		display: flex;
+		flex-direction: column;
+		gap: 5px;
+	}
+	.comp button.active {
+		background: #ff9a3c;
+		color: #1a0d00;
+		border-color: #ffd7a8;
 	}
 	.content {
 		overflow-y: auto;
