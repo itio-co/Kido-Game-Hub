@@ -15,6 +15,8 @@
 	import { isBuiltin } from '$lib/game/catalog';
 	import type { ModuleId } from '$lib/game/types';
 	import EquipPartMesh from './EquipPartMesh.svelte';
+	import EditOverlay from './EditOverlay.svelte';
+	import { emptySel } from '$lib/game/editMesh';
 	import ModuleMesh from './ModuleMesh.svelte';
 	import Silhouette from './Silhouette.svelte';
 	import Outline from './Outline.svelte';
@@ -91,9 +93,23 @@
 		});
 	});
 
+	// ---- component edit mode (Vertex / Edge / Face) on the selected part ----
+	const editing = $derived(editable && equip.editMode !== 'object' && !!equip.part && equip.part.shape !== 'glb');
+	let lastPart: string | null = null;
+	$effect(() => {
+		const id = equip.partId;
+		untrack(() => {
+			if (id !== lastPart && equip.editMode !== 'object') {
+				equip.editMode = 'object';
+				equip.sel = emptySel();
+			}
+			lastPart = id;
+		});
+	});
+
 	// ---- transform gizmo on the selected part (custom designs only) ----
 	let refs = $state<Record<string, Group | undefined>>({});
-	const target = $derived(editable && equip.partId ? refs[equip.partId] : undefined);
+	const target = $derived(editable && equip.partId && equip.editMode === 'object' ? refs[equip.partId] : undefined);
 	const D = 180 / Math.PI;
 	const r3 = (n: number, k = 1000) => Math.round(n * k) / k;
 	function onChange() {
@@ -133,7 +149,7 @@
 </T.PerspectiveCamera>
 
 <!-- floor + cm grid (1 cm / 10 cm / 1 m) -->
-<T.Mesh rotation.x={-Math.PI / 2} position.y={-0.001} receiveShadow onclick={() => (equip.partId = null)}>
+<T.Mesh rotation.x={-Math.PI / 2} position.y={-0.001} receiveShadow onclick={() => !editing && (equip.partId = null)}>
 	<T.PlaneGeometry args={[8, 8]} />
 	<T.MeshStandardMaterial color="#1a222d" roughness={0.95} />
 </T.Mesh>
@@ -162,14 +178,19 @@
 	{/if}
 
 	{#each parts as p (p.id)}
-		<EquipPartMesh
-			part={p}
-			pose={poseOf(p, stowed)}
-			selected={p.id === equip.partId}
-			onpick={(id) => (equip.partId = id)}
-			bind:ref={refs[p.id]}
-		/>
+		{#if !(editing && p.id === equip.partId)}
+			<EquipPartMesh
+				part={p}
+				pose={poseOf(p, stowed)}
+				selected={!editing && p.id === equip.partId}
+				onpick={editing ? undefined : (id) => (equip.partId = id)}
+				bind:ref={refs[p.id]}
+			/>
+		{/if}
 	{/each}
+	{#if editing && equip.part}
+		<EditOverlay part={equip.part} {orbit} />
+	{/if}
 	{#if target}
 		<TransformControls
 			object={target}

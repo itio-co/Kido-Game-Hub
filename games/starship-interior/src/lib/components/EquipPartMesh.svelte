@@ -5,6 +5,7 @@
 	import type { EquipPart } from '$lib/game/equipment';
 	import { ghostMat, mat } from '$lib/three/materials';
 	import { loadGlbPart } from '$lib/three/glbPart';
+	import { meshBounds, toGeometry } from '$lib/game/editMesh';
 
 	interface Props {
 		part: EquipPart;
@@ -42,6 +43,19 @@
 		const g = special;
 		return () => g?.dispose();
 	});
+	// edited polygon mesh: flat-shaded, one material per face group; a stowed size scales it
+	const meshed = $derived(part.shape === 'mesh' && part.mesh ? toGeometry(part.mesh, part.m) : null);
+	$effect(() => {
+		const g = meshed?.geo;
+		return () => g?.dispose();
+	});
+	const meshMats = $derived(meshed ? (ghost ? meshed.mats.map(() => material) : meshed.mats.map((m) => mat(m))) : null);
+	const meshScale = $derived<[number, number, number]>(part.shape === 'mesh' ? [pose.size[0] / part.size[0], pose.size[1] / part.size[1], pose.size[2] / part.size[2]] : [1, 1, 1]);
+	const hiBox = $derived.by(() => {
+		if (!(part.shape === 'mesh' && part.mesh)) return { c: [0, 0, 0] as [number, number, number], s: pose.size };
+		const b = meshBounds(part.mesh);
+		return { c: [((b.min.x + b.max.x) / 2) * meshScale[0], ((b.min.y + b.max.y) / 2) * meshScale[1], ((b.min.z + b.max.z) / 2) * meshScale[2]] as [number, number, number], s: pose.size };
+	});
 	const unitScale = $derived(special ? ([1, 1, 1] as [number, number, number]) : pose.size);
 
 	let glb = $state<Object3D | null>(null);
@@ -62,7 +76,9 @@
 </script>
 
 <T.Group bind:ref position={pose.pos} rotation={[pose.rot[0] * D, pose.rot[1] * D, pose.rot[2] * D]} name={part.name}>
-	{#if part.shape === 'glb'}
+	{#if meshed && meshMats}
+		<T.Mesh geometry={meshed.geo} material={meshMats} scale={meshScale} castShadow={!ghost} receiveShadow={!ghost} onclick={pick} name="edited-mesh" />
+	{:else if part.shape === 'glb'}
 		{#if glb}
 			<T is={glb} scale={pose.size} onclick={pick} />
 		{:else}
@@ -84,7 +100,7 @@
 		</T.Mesh>
 	{/if}
 	{#if selected}
-		<T.Mesh scale={[pose.size[0] + 0.012, pose.size[1] + 0.012, Math.max(pose.size[2], 0.004) + 0.012]} material={hi}>
+		<T.Mesh position={hiBox.c} scale={[hiBox.s[0] + 0.012, hiBox.s[1] + 0.012, Math.max(hiBox.s[2], 0.004) + 0.012]} material={hi}>
 			<T.BoxGeometry />
 		</T.Mesh>
 	{/if}

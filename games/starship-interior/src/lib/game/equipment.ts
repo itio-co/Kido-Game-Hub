@@ -14,8 +14,9 @@ import { sanitizePower, type PowerSpec } from '$lib/sim/power';
 import { Box3, Euler, Matrix4, Mesh, Quaternion, Vector3, type BufferGeometry, type Material, type Object3D } from 'three';
 import type { MatName } from '$lib/three/materials';
 import type { ModuleDef, Phase } from './types';
+import { meshBounds, sanitizeMesh, vcount, type EditMesh } from './editMesh';
 
-export type EquipShape = 'box' | 'rbox' | 'cyl' | 'sphere' | 'capsule' | 'plane' | 'torus' | 'glb';
+export type EquipShape = 'box' | 'rbox' | 'cyl' | 'sphere' | 'capsule' | 'plane' | 'torus' | 'glb' | 'mesh';
 export const SHAPES: EquipShape[] = ['box', 'rbox', 'cyl', 'sphere', 'capsule', 'plane', 'torus'];
 export const MATERIALS: MatName[] = ['white', 'grey', 'steel', 'steelDark', 'dark', 'fabric', 'mattress', 'screen', 'led', 'glass', 'rubber', 'yellow', 'green', 'amber', 'blue', 'grow', 'plant'];
 
@@ -35,6 +36,8 @@ export interface EquipPart {
 	stowed?: EquipPose;
 	/** imported GLB (data URL), only for shape 'glb' */
 	glb?: string;
+	/** editable polygon mesh in part-local metres (shape 'mesh'; size = its bounding box, a stowed size scales it) */
+	mesh?: EditMesh;
 }
 /** the editable equipment definition (also the JSON export format) */
 export interface EquipDef {
@@ -123,6 +126,12 @@ export function partsBounds(parts: EquipPart[], stowed: boolean) {
 	for (const p of parts) {
 		const { pos, rot, size } = poseOf(p, stowed);
 		m.compose(new Vector3(...pos), new Quaternion().setFromEuler(new Euler(rot[0] * DEG, rot[1] * DEG, rot[2] * DEG)), new Vector3(...size));
+		if (p.shape === 'mesh' && p.mesh) {
+			const k = [size[0] / p.size[0], size[1] / p.size[1], size[2] / p.size[2]];
+			m.compose(new Vector3(...pos), new Quaternion().setFromEuler(new Euler(rot[0] * DEG, rot[1] * DEG, rot[2] * DEG)), new Vector3(k[0], k[1], k[2]));
+			for (let i = 0; i < vcount(p.mesh); i++) b.expandByPoint(v.set(p.mesh.v[3 * i], p.mesh.v[3 * i + 1], p.mesh.v[3 * i + 2]).applyMatrix4(m));
+			continue;
+		}
 		const flat = p.shape === 'plane' ? 0 : 0.5;
 		for (const x of [-0.5, 0.5]) for (const y of [-0.5, 0.5]) for (const z of [-flat, flat]) b.expandByPoint(v.set(x, y, z).applyMatrix4(m));
 	}
@@ -147,7 +156,8 @@ export function fitFootprint(e: EquipDef): Pick<EquipDef, 'w' | 'd' | 'height' |
 /** mirror a part across the YZ plane (x → −x) */
 export function mirrorPart(p: EquipPart): EquipPart {
 	const mp = (q: EquipPose): EquipPose => ({ ...q, pos: [-q.pos[0], q.pos[1], q.pos[2]], rot: [q.rot[0], -q.rot[1], -q.rot[2]] });
-	return { ...p, id: uidPart(), name: p.name + ' (mirror)', pos: [-p.pos[0], p.pos[1], p.pos[2]], rot: [p.rot[0], -p.rot[1], -p.rot[2]], stowed: p.stowed ? mp(p.stowed) : undefined };
+	const mesh = p.mesh ? { v: p.mesh.v.map((x, i) => (i % 3 === 0 ? -x : x)), f: p.mesh.f.map((f) => f.slice().reverse()), fm: p.mesh.fm?.slice() } : undefined;
+	return { ...p, mesh, id: uidPart(), name: p.name + ' (mirror)', pos: [-p.pos[0], p.pos[1], p.pos[2]], rot: [p.rot[0], -p.rot[1], -p.rot[2]], stowed: p.stowed ? mp(p.stowed) : undefined };
 }
 
 // ---------- extraction of built-in procedural models (rendered once into a hidden group) ----------
@@ -211,7 +221,9 @@ export function sanitizeEquip(raw: unknown): EquipDef | null {
 	if (!Array.isArray(r.parts)) return null;
 	const parts: EquipPart[] = r.parts.slice(0, 400).flatMap((p): EquipPart[] => {
 		if (!p || typeof p !== 'object') return [];
-		const shape = (SHAPES as string[]).includes(p.shape) || p.shape === 'glb' ? p.shape : 'box';
+		const mesh = p.shape === 'mesh' ? sanitizeMesh(p.mesh) : undefined;
+		if (mesh?.fm) mesh.fm = mesh.fm.map((x) => (x && (MATERIALS as string[]).includes(x) ? x : null));
+		const shape = (SHAPES as string[]).includes(p.shape) || p.shape === 'glb' || (p.shape === 'mesh' && mesh) ? p.shape : 'box';
 		const part: EquipPart = {
 			id: typeof p.id === 'string' ? p.id.slice(0, 20) : uidPart(),
 			name: String(p.name ?? shape).slice(0, 60),
@@ -223,6 +235,10 @@ export function sanitizeEquip(raw: unknown): EquipDef | null {
 		};
 		if (p.stowed && typeof p.stowed === 'object') part.stowed = { pos: v3(p.stowed.pos, part.pos), rot: v3(p.stowed.rot, part.rot, -720, 720), size: p.stowed.size ? v3(p.stowed.size, part.size, 0.001, 20) : undefined };
 		if (shape === 'glb' && typeof p.glb === 'string' && p.glb.startsWith('data:')) part.glb = p.glb;
+		if (shape === 'mesh' && mesh) {
+			part.mesh = mesh;
+			part.size = meshBounds(mesh).size;
+		}
 		return [part];
 	});
 	const id = typeof r.id === 'string' && r.id.startsWith('custom:') ? r.id.slice(0, 80) : `custom:${uidPart()}`;

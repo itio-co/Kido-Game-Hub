@@ -5,6 +5,7 @@
 import { CATALOG, CATALOG_BY_ID, isBuiltin, setCustomLookup } from './catalog';
 import { EQUIP_FORMAT, EQUIP_VERSION, fitFootprint, mirrorPart, sanitizeEquip, toModuleDef, uidPart, type EquipDef, type EquipPart } from './equipment';
 import type { ModuleDef } from './types';
+import { bevelEdges, deleteEdges, deleteFaces, deleteVerts, edgesOf, emptySel, extrudeFaces, insetFaces, meshBounds, mergeVerts, primitiveToMesh, selVerts, vcount, type CompMode, type CompSel, type EditMesh } from './editMesh';
 
 const KEY = 'starship-equipment-v1';
 
@@ -25,6 +26,132 @@ class EquipStore {
 		this.view = { name, id: this.view.id + 1 };
 	}
 	gizmo = $state<'translate' | 'rotate' | 'scale'>('translate');
+	// ---- component (sub-object) editing ----
+	editMode = $state<'object' | CompMode>('object');
+	/** last component mode (Tab returns to it) */
+	lastComp = $state<CompMode>('vertex');
+	sel = $state<CompSel>(emptySel());
+	/** mobile: taps toggle instead of replacing the selection */
+	multi = $state(false);
+	/** plain drag = box select (orbit with right / two fingers) */
+	boxSelect = $state(false);
+	/** component move snap (m) */
+	snap = $state<0.01 | 0.05>(0.01);
+	undoStack: string[] = [];
+	redoStack: string[] = [];
+	undoN = $state(0);
+	get selCount() {
+		return this.editMode === 'vertex' ? this.sel.v.length : this.editMode === 'edge' ? this.sel.e.length : this.editMode === 'face' ? this.sel.f.length : 0;
+	}
+	/** the selected part's editable mesh (its primitive's mesh until the first edit) */
+	get workMesh(): EditMesh | null {
+		const p = this.part;
+		if (!p || p.shape === 'glb') return null;
+		return p.shape === 'mesh' && p.mesh ? p.mesh : primitiveToMesh(p.shape, p.size);
+	}
+	setEditMode(m: 'object' | CompMode) {
+		const p = this.part;
+		if (m !== 'object' && (!this.editable || !p || p.shape === 'glb')) return false;
+		if (m !== 'object') {
+			this.lastComp = m;
+			this.pose = 'deployed';
+		}
+		if (m !== this.editMode) this.sel = emptySel();
+		this.editMode = m;
+		return true;
+	}
+	private snapshot() {
+		return JSON.stringify(this.selected?.parts ?? []);
+	}
+	pushUndo() {
+		this.undoStack.push(this.snapshot());
+		if (this.undoStack.length > 60) this.undoStack.shift();
+		this.redoStack = [];
+		this.undoN++;
+	}
+	private restore(json: string) {
+		this.update(this.selectedId, (e) => (e.parts = JSON.parse(json)));
+		this.sel = emptySel();
+		this.undoN++;
+	}
+	undo() {
+		const s = this.undoStack.pop();
+		if (!s || !this.editable) return false;
+		this.redoStack.push(this.snapshot());
+		this.restore(s);
+		return true;
+	}
+	redo() {
+		const s = this.redoStack.pop();
+		if (!s || !this.editable) return false;
+		this.undoStack.push(this.snapshot());
+		this.restore(s);
+		return true;
+	}
+	/** write a new mesh to the selected part (converts a primitive on first edit); live = no undo / persist */
+	setMesh(m: EditMesh, opts: { undo?: boolean; live?: boolean } = {}) {
+		const pid = this.partId;
+		if (!pid || !this.editable) return;
+		if (opts.undo !== false && !opts.live) this.pushUndo();
+		const e = this.custom.find((x) => x.id === this.selectedId);
+		const p = e?.parts.find((x) => x.id === pid);
+		if (!e || !p || p.shape === 'glb') return;
+		const wasSize = p.size;
+		const ratio = p.stowed?.size ? [p.stowed.size[0] / wasSize[0], p.stowed.size[1] / wasSize[1], p.stowed.size[2] / wasSize[2]] : null;
+		p.shape = 'mesh';
+		p.mesh = m;
+		p.size = meshBounds(m).size;
+		if (ratio && p.stowed) p.stowed.size = [p.size[0] * ratio[0], p.size[1] * ratio[1], p.size[2] * ratio[2]];
+		if (opts.live) return;
+		if (e.autoFit) Object.assign(e, fitFootprint(e));
+		this.persist();
+	}
+	/** component operation by name; returns a short message for the toast */
+	op(name: 'extrude' | 'inset' | 'delete' | 'bevel' | 'merge' | 'all'): string {
+		const m = this.workMesh;
+		const mode = this.editMode;
+		if (!m || mode === 'object') return 'Enter Vertex / Edge / Face mode first (Tab)';
+		if (name === 'all') {
+			const any = this.selCount > 0;
+			this.sel =
+				mode === 'vertex' ? { ...emptySel(), v: any ? [] : [...Array(vcount(m)).keys()] } : mode === 'edge' ? { ...emptySel(), e: any ? [] : [...edgesOf(m).keys()] } : { ...emptySel(), f: any ? [] : [...m.f.keys()] };
+			return any ? 'Selection cleared' : 'All selected';
+		}
+		if (!this.selCount) return 'Select components first';
+		if (name === 'extrude') {
+			if (mode !== 'face') return 'Extrude works on faces (Face mode, 4)';
+			const r = extrudeFaces(m, this.sel.f, 0.05);
+			this.setMesh(r.mesh);
+			this.sel = { ...emptySel(), f: r.faces };
+			return `Extruded ${r.faces.length} face(s) 5 cm – move them with the gizmo`;
+		}
+		if (name === 'inset') {
+			if (mode !== 'face') return 'Inset works on faces (Face mode, 4)';
+			const r = insetFaces(m, this.sel.f);
+			this.setMesh(r.mesh);
+			this.sel = { ...emptySel(), f: r.faces };
+			return `Inset ${r.faces.length} face(s)`;
+		}
+		if (name === 'bevel') {
+			if (mode !== 'edge') return 'Bevel works on edges (Edge mode, 3)';
+			const n = this.sel.e.length;
+			this.setMesh(bevelEdges(m, this.sel.e, 0.02));
+			this.sel = emptySel();
+			return `Chamfered ${n} edge(s) 2 cm`;
+		}
+		if (name === 'merge') {
+			const v = selVerts(m, mode, this.sel);
+			if (v.length < 2) return 'Select 2+ vertices to merge';
+			this.setMesh(mergeVerts(m, v));
+			this.sel = emptySel();
+			return `Merged ${v.length} vertices`;
+		}
+		const out = mode === 'vertex' ? deleteVerts(m, this.sel.v) : mode === 'edge' ? deleteEdges(m, this.sel.e) : deleteFaces(m, this.sel.f);
+		if (!out.f.length) return 'Cannot delete every face – delete the part instead';
+		this.setMesh(out);
+		this.sel = emptySel();
+		return 'Deleted';
+	}
 	modules = $derived(Object.fromEntries(this.custom.map((e) => [e.id, toModuleDef(e)])) as Record<string, ModuleDef>);
 
 	constructor() {
@@ -86,6 +213,11 @@ class EquipStore {
 	select(id: string) {
 		this.selectedId = id;
 		this.partId = null;
+		this.editMode = 'object';
+		this.sel = emptySel();
+		this.undoStack = [];
+		this.redoStack = [];
+		this.undoN++;
 	}
 	/** write a pose change to the selected part (deployed or stowed pose) */
 	setPose(partId: string, ch: { pos?: [number, number, number]; rot?: [number, number, number]; size?: [number, number, number] }) {
@@ -101,7 +233,11 @@ class EquipStore {
 			} else {
 				if (ch.pos) p.pos = ch.pos;
 				if (ch.rot) p.rot = ch.rot;
-				if (ch.size) p.size = ch.size;
+				if (ch.size && p.shape === 'mesh' && p.mesh) {
+					const k = [ch.size[0] / p.size[0], ch.size[1] / p.size[1], ch.size[2] / p.size[2]];
+					p.mesh = { ...p.mesh, v: p.mesh.v.map((x, i) => Math.round(x * k[i % 3] * 1e5) / 1e5) };
+					p.size = meshBounds(p.mesh).size;
+				} else if (ch.size) p.size = ch.size;
 			}
 		});
 	}
