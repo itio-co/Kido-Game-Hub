@@ -102,6 +102,16 @@
 					<span>{n?.icon} {n?.label} <b>{c.pct.toFixed(1)}%</b></span>
 				{/each}
 			</div>
+			{#if game.microG || report.micro.trips}
+				<h3>Micro-g (cruise)</h3>
+				<div class="needs">
+					<span>🧭 {report.micro.trips} translations · avg {report.micro.avgPath.toFixed(1)} m</span>
+					<span>🤚 Handrail coverage <b>{report.micro.coveragePct.toFixed(0)}%</b></span>
+					<span>{report.micro.toilet ? '✅' : '⛔'} Zero-g toilet</span>
+					<span>{report.micro.exercise ? '✅' : '⛔'} Micro-g exercise</span>
+					{#each report.micro.hatches as h (h.label)}<span>⭕ {h.label}: {h.passes} passages · {h.congestion.toFixed(1)}′ congestion</span>{/each}
+				</div>
+			{/if}
 			{#if report.ladders.length}
 				<h3>Ladders</h3>
 				<div class="needs">
