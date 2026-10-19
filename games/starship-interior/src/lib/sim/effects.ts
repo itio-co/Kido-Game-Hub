@@ -94,3 +94,11 @@ export function sanitizeAfter(v: unknown): AfterEffect[] | undefined {
 		.map((x) => ({ id: x.id as string, minutes: typeof x.minutes === 'number' && x.minutes > 0 ? Math.min(2000, x.minutes) : undefined, k: typeof x.k === 'number' && x.k > 0 ? Math.min(3, x.k) : undefined }));
 	return out.length ? out : undefined;
 }
+/** default noise sources (ESTIMATE): radius m; always = runs even when nobody uses it */
+export const NOISE: Record<string, { r: number; always?: boolean }> = {
+	treadmill: { r: 2.5 },
+	ared: { r: 2.5 },
+	eclss: { r: 1.8, always: true },
+	trash: { r: 2.0 },
+	foodwarmer: { r: 1.2 }
+};

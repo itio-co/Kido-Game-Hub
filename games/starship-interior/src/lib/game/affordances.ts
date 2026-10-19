@@ -5,6 +5,7 @@
  * Values are gameplay ESTIMATES tuned for plausible daily routines, not physiology.
  */
 import type { PoseName } from '$lib/sim/avatarPose';
+import { sanitizeAfter, type AfterEffect } from '$lib/sim/effects';
 
 export type NeedId = 'energy' | 'hunger' | 'hygiene' | 'bladder' | 'fitness' | 'fun' | 'work' | 'comfort';
 export const NEEDS: { id: NeedId; label: string; icon: string; color: string }[] = [
@@ -49,6 +50,10 @@ export interface Affordance {
 	step?: MealStep[];
 	/** steps a crew member does before this (meal) – food & water required, heat & trash optional */
 	requires?: MealStep[];
+	/** max gain per session per need (diminishing returns apply too) */
+	cap?: Partial<Record<NeedId, number>>;
+	/** status effects granted when the session ends (scaled by the fraction completed) */
+	after?: AfterEffect[];
 }
 export type MealStep = 'food' | 'water' | 'heat' | 'trash';
 export const STEP_LABEL: Record<MealStep, string> = { food: 'get food', water: 'rehydrate', heat: 'heat food', trash: 'dispose of packaging' };
@@ -121,12 +126,60 @@ export const BUILTIN_AFFORDANCES: Record<string, Affordance[]> = {
 	ared: [{ id: 'exercise', label: 'Resistive exercise', needs: { fitness: 55, fun: 6, hygiene: -12, energy: -5, comfort: -3 }, minutes: 45, pose: 'exercise', slots: [[0, 0.1, 0.12, 180]], micro: 'ok' }]
 };
 
+/**
+ * Realistic timescales (ESTIMATE): sleep restores Energy over ~7.5 h; a meal (20–30 min) fills Hunger
+ * partially (cap) and digestion keeps it up for ~3.5 h; a wash takes ~12 min; exercise ~75 min with an
+ * afterglow but a hygiene penalty until the next wash; work raises Work/Purpose gradually over multi-hour blocks.
+ * Rates = need points per sim hour at full condition, before diminishing returns near 100.
+ */
+const TUNE: Record<string, Partial<Affordance>> = {
+	'bunk.sleep': { needs: { energy: 13, comfort: 5 }, minutes: 450, after: [{ id: 'rested' }] },
+	'crewpod.sleep': { needs: { energy: 13.5, comfort: 7, fun: 1 }, minutes: 450, after: [{ id: 'rested' }] },
+	'sleepingbag.sleep': { needs: { energy: 13, comfort: 5 }, minutes: 450, after: [{ id: 'rested' }] },
+	'crewpod.privacy': { needs: { fun: 20, comfort: 22 }, minutes: 45 },
+	'galley.cook': { needs: { hunger: 110, fun: 4 }, minutes: 22, cap: { hunger: 40 }, after: [{ id: 'digest', k: 0.8 }] },
+	'galley.cookcrew': { needs: { work: 18, fun: 6, hunger: 10 }, minutes: 45, after: [{ id: 'accomplished', k: 0.5 }] },
+	'table.meal': { needs: { hunger: 120, comfort: 14, fun: 12 }, minutes: 28, cap: { hunger: 50 }, after: [{ id: 'digest' }] },
+	'galleytable.meal': { needs: { hunger: 120, comfort: 14, fun: 12 }, minutes: 28, cap: { hunger: 50 }, after: [{ id: 'digest' }] },
+	'foodstation.meal': { needs: { hunger: 125, comfort: 8, fun: 10 }, minutes: 22, cap: { hunger: 48 }, after: [{ id: 'digest' }] },
+	'table.checkup': { needs: { work: 20, fun: 6 }, minutes: 30 },
+	'galleytable.checkup': { needs: { work: 20, fun: 6 }, minutes: 30 },
+	'table.chat': { needs: { fun: 30, comfort: 14 }, minutes: 30 },
+	'galleytable.chat': { needs: { fun: 30, comfort: 14 }, minutes: 30 },
+	'foodstation.chat': { needs: { fun: 26, comfort: 10 }, minutes: 15, label: 'Coffee & chat', after: [{ id: 'caffeine' }] },
+	'workstation.work': { needs: { work: 16, comfort: 2, fun: 1 }, minutes: 180, after: [{ id: 'accomplished', k: 0.6 }] },
+	'workstation2.work': { needs: { work: 16, comfort: 2, fun: 2 }, minutes: 180, after: [{ id: 'accomplished', k: 0.6 }] },
+	'hydroponics.tend': { needs: { work: 18, fun: 6 }, minutes: 90, after: [{ id: 'accomplished', k: 0.5 }] },
+	'eclss.maintain': { needs: { work: 18 }, minutes: 90, after: [{ id: 'accomplished', k: 0.5 }] },
+	'locker.inventory': { needs: { work: 16, comfort: 2 }, minutes: 60 },
+	'pantry.inventory': { needs: { work: 16 }, minutes: 50 },
+	'locker.supplies': { needs: { work: 6, comfort: 10 }, minutes: 6 },
+	'foodwarmer.cookcrew': { needs: { work: 18, fun: 5 }, minutes: 30 },
+	'prepcounter.cookcrew': { needs: { work: 18, fun: 6 }, minutes: 40, after: [{ id: 'accomplished', k: 0.4 }] },
+	'hygiene.toilet': { needs: { bladder: 900 }, minutes: 6, after: [{ id: 'relieved' }] },
+	'zerogtoilet.toilet': { needs: { bladder: 800 }, minutes: 7, after: [{ id: 'relieved' }] },
+	'hygiene.wash': { needs: { hygiene: 300, comfort: 8 }, minutes: 12, cap: { hygiene: 70 }, after: [{ id: 'refreshed' }] },
+	'zerogtoilet.wash': { needs: { hygiene: 240, comfort: 5 }, minutes: 15, cap: { hygiene: 60 }, after: [{ id: 'refreshed', k: 0.7 }] },
+	'treadmill.exercise': { needs: { fitness: 34, fun: 5, hygiene: -8, energy: -4, comfort: -3 }, minutes: 75, after: [{ id: 'exercised' }, { id: 'sweaty' }, { id: 'tired' }] },
+	'ared.exercise': { needs: { fitness: 38, fun: 4, hygiene: -7, energy: -4, comfort: -2 }, minutes: 70, after: [{ id: 'exercised' }, { id: 'sweaty' }, { id: 'tired' }] },
+	'couch.relax': { needs: { comfort: 30, fun: 6 }, minutes: 30 },
+	'pilotcouch.relax': { needs: { comfort: 30, fun: 6 }, minutes: 30 },
+	'couchrow3.relax': { needs: { comfort: 30, fun: 8 }, minutes: 30 },
+	'couchrow4.relax': { needs: { comfort: 30, fun: 8 }, minutes: 30 }
+};
+for (const [k, t] of Object.entries(TUNE)) {
+	const [m, a] = k.split('.');
+	for (const af of BUILTIN_AFFORDANCES[m] ?? []) if (af.id === a) Object.assign(af, t);
+}
+// coffee at the water dispenser (short boost, then a crash)
+BUILTIN_AFFORDANCES.waterdispenser.push({ id: 'coffee', label: 'Coffee break', needs: { fun: 12, comfort: 10 }, minutes: 8, pose: 'work', slots: front(0.4), micro: 'ok', after: [{ id: 'caffeine' }] });
+
 /** dynamic task added to equipment that needs servicing (engineers prefer it) */
-export const SERVICE_AF: Affordance = { id: 'service', label: 'Service / repair', needs: { work: 44 }, minutes: 35, pose: 'work', roles: ['Engineer'] };
+export const SERVICE_AF: Affordance = { id: 'service', label: 'Maintenance', needs: { work: 22 }, minutes: 45, pose: 'work', roles: ['Engineer'], micro: 'ok', after: [{ id: 'accomplished', k: 0.6 }] };
+/** dynamic task on broken equipment: repair with spare kits from the lockers (engineers) */
+export const REPAIR_AF: Affordance = { id: 'repair', label: 'Repair', needs: { work: 24 }, minutes: 90, pose: 'work', roles: ['Engineer'], micro: 'ok', after: [{ id: 'accomplished' }] };
 /** virtual "anywhere" work: housekeeping spots on each deck (specialists prefer it) */
-export const HOUSEKEEPING_AF: Affordance = { id: 'clean', label: 'Clean & organise', needs: { work: 26, comfort: 4 }, minutes: 30, pose: 'work', roles: ['Specialist'], micro: 'ok' };
-/** equipment types that periodically need servicing */
-export const SERVICEABLE = new Set(['eclss', 'hygiene', 'zerogtoilet', 'galley', 'treadmill', 'ared']);
+export const HOUSEKEEPING_AF: Affordance = { id: 'clean', label: 'Clean & organise', needs: { work: 15, comfort: 3 }, minutes: 45, pose: 'work', roles: ['Specialist'], micro: 'ok' };
 
 /** couch seat x offsets (launch: crew strapped in, deployed couch) */
 export function seatOffsets(seats: number): number[] {
@@ -172,6 +225,8 @@ export function sanitizeAffordances(raw: unknown): Affordance[] | undefined {
 			roleOnly: o.roleOnly === true ? true : undefined,
 			step: Array.isArray(o.step) ? (o.step as unknown[]).filter((x): x is MealStep => ['food', 'water', 'heat', 'trash'].includes(x as string)) : undefined,
 			requires: Array.isArray(o.requires) ? (o.requires as unknown[]).filter((x): x is MealStep => ['food', 'water', 'heat', 'trash'].includes(x as string)) : undefined,
+			cap: o.cap && typeof o.cap === 'object' ? Object.fromEntries(Object.entries(o.cap as Record<string, unknown>).filter(([k, v]) => NEED_IDS.includes(k as NeedId) && typeof v === 'number' && v > 0).map(([k, v]) => [k, Math.min(100, v as number)])) : undefined,
+			after: sanitizeAfter(o.after),
 			slots: slots?.length ? slots : undefined
 		});
 	}

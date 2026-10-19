@@ -93,6 +93,10 @@ export interface ModuleDef {
 	foodDays?: number;
 	/** works in micro-g without extra restraints (built-in clips / foot rails) – informational */
 	microNote?: string;
+	/** life-cycle overrides (service life, MTBF, maintenance interval, repair time, spares) */
+	life?: Partial<import('$lib/sim/lifecycle').LifeSpec>;
+	/** noisy: crew within r metres get a Comfort debuff while it runs (always = even when idle) */
+	noise?: { r: number; always?: boolean };
 }
 
 export interface PlacedModule {
