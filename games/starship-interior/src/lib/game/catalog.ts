@@ -33,6 +33,11 @@ export const CATALOG: ModuleDef[] = [
 		description: 'Desk with two displays and a chair.'
 	},
 	{
+		id: 'workstation2', name: 'Dual Workstation', icon: '🖥️', shape: 'rect', w: 2.4, d: 0.9, height: 1.4,
+		access: 0.6, mass: 120, power: 550, cost: 22000, estimate: true,
+		description: 'Two-seat console desk (shared work area), 2 × two displays.'
+	},
+	{
 		id: 'locker', name: 'Storage Locker', icon: '🗄️', shape: 'rect', w: 0.6, d: 0.6, height: 2.0,
 		access: 0.75, mass: 40, power: 0, cost: 1500,
 		description: 'Tall two-door stowage locker.'

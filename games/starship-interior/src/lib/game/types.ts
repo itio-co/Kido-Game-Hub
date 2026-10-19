@@ -4,6 +4,7 @@ export type BuiltinId =
 	| 'galley'
 	| 'table'
 	| 'workstation'
+	| 'workstation2'
 	| 'locker'
 	| 'hydroponics'
 	| 'hygiene'

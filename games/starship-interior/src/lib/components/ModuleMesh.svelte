@@ -9,6 +9,7 @@
 	import Part from './Part.svelte';
 	import PartsModel from './PartsModel.svelte';
 	import EquipModel from './EquipModel.svelte';
+	import Self from './ModuleMesh.svelte';
 	import { CATALOG_BY_ID } from '$lib/game/catalog';
 
 	interface Props {
@@ -114,6 +115,10 @@
 			<Part args={[1.0, 0.4, 0.32]} position={[0, 0.2, s * 0.64]} m="grey" {ghost} />
 			<Part args={[1.1, 0.06, 0.4]} position={[0, 0.43, s * 0.65]} m="fabric" {ghost} />
 			<Part args={[1.1, 0.5, 0.06]} position={[0, 0.7, s * 0.87]} m="fabric" {ghost} />
+		{/each}
+	{:else if type === 'workstation2'}
+		{#each [-1, 1] as s}
+			<T.Group position={[s * 0.6, 0, 0]} scale={[0.857, 1, 1]}><Self type="workstation" {ghost} {deckHeight} {phase} /></T.Group>
 		{/each}
 	{:else if type === 'workstation'}
 		<Part args={[1.4, 0.035, 0.6]} position={[0, 0.74, -0.15]} m="white" {ghost} />
