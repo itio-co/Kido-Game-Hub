@@ -242,6 +242,63 @@ Cabin and Surface Habitat modes, runs on top of build mode, and replans live whe
   exports (`crewSim`).
 - **Performance:** the sim step costs about 0.3 ms per frame for 12 agents (headless measurement). Phones start in Low quality.
 
+## Mission phases and Cruise (micro-g)
+
+The **Crew / Ship** panel has a mission selector: **🚀 Launch → 🪐 Cruise (micro-g) → 🛬 Landing → 🌕 Surface**.
+Launch and Landing deploy the couches (the existing launch geometry). Surface uses the gravity sim. Cruise is weightless.
+The mission is saved with the layout.
+
+- **Micro-g equipment** (category *Micro-g*, ESTIMATE sizes):
+  - Handrail (0.8 m; wall, ceiling or floor)
+  - Foot restraint
+  - Sleeping bag (wall-mounted, 2.0 × 0.8 × 0.2 m)
+  - Zero-g toilet
+  - Resistive exercise device (ARED)
+- **Mounting:** equipment data has `mount: floor | wall | ceiling | any`. When the selected item allows it, the sidebar
+  shows **Mounting**: Floor / Wall / Ceiling, plus a height slider for wall mounts.
+  - **Wall** snaps to the hull's inner surface, facing inward, with its base at the slider height.
+  - **Ceiling** hangs under the slab above.
+  - Collision checks are 3D (vertical ranges must overlap). Items mounted at 1.9 m or higher don't count for the 2D
+    clearance check or for walking navigation.
+- **Weightless crew:**
+  - Avatars float with free 3D orientation. When idle they hold the NASA neutral body posture (hips and knees flexed,
+    arms floating forward) and slowly drift and tumble.
+  - They translate head-first in a glide pose.
+- **Locomotion:**
+  - A crew member can only change velocity when a surface or handrail is within reach (about 0.6 m beyond a padded
+    surface, or 0.7 m from a handrail or ladder): it pushes off, then **coasts with momentum** at up to 0.6 m/s.
+  - It brakes on approach and grabs at the destination. Hitting a surface stops or slides it (grab).
+  - Hatches (and habitat dome hatches) are open passages that crew fly through head-first. Ladders act as handrails.
+- **3D navigation:**
+  - One 0.2 m voxel grid covers the whole deck stack. Free voxels lie inside the hull minus 0.35 m and inside a deck's
+    habitable band (0.3 m clearance from floor and ceiling) or a hatch column (r 0.3 m) through the slab.
+  - Equipment boxes are inflated by 0.25 m. Handrails and foot restraints are not obstacles.
+  - Routing uses a Dijkstra distance field (26-neighbourhood, bucket queue), gradient descent and 3D line-of-sight
+    smoothing.
+  - Floating crew keep a 0.6 m separation in 3D.
+- **What works in micro-g** (affordance `micro: ok | restraint | no`, `gravity: false` = micro-g only):
+  - Sleep needs a sleeping bag or a crew pod. Bunks work only with a restraint within 1.5 m.
+  - Table, galley, workstation, hydroponics and similar items need a handrail or foot restraint within 1.5 m. Crew then
+    work standing in foot restraints.
+  - The gravity toilet is unusable. A **Zero-g toilet** is required.
+  - Exercise needs the harnessed treadmill or the ARED.
+  - The sleeping bag is unusable in gravity.
+- **Cruise analytics (📊 Issues + CSV `MICRO-G` section):**
+  - Hatch passages and congestion, number of translations and average path length.
+  - **Handrail coverage:** % of crew paths with a handrail within 1 m along at least 80% of the path.
+  - Equipment unusable in micro-g, e.g. "Sleep Bunk without restraints".
+  - Missing zero-g toilet or micro-g exercise (high-severity issues).
+- **Possessing a crew member in Cruise (6-DOF):** first person by default; **V** switches to third person (no fixed horizon).
+  - Desktop: **WASD** translate in the body frame, **Space/R** up and **Ctrl/F/C** down along the body axis, **Q/E** roll,
+    drag to look relative to the body.
+  - **Shift** gives a stronger push-off (1.0 m/s). **G** grabs (stops) when something is in reach. **X/Enter** uses
+    equipment, **Z** or **⊙ Deck up** reorients to deck-up, **Esc** releases.
+  - Momentum persists. With nothing in reach you only drift, or wriggle slowly.
+  - Mobile: the joystick translates and dragging looks. The pad has ▲/▼ (up/down), ⟲/⟳ (roll) and ✊ (grab), plus
+    Use, Deck up, 1st/3rd and Release.
+- **Build camera in Cruise:** tick **Free 6-DOF camera** in the panel to swap the orbit camera for a trackball that allows
+  roll and upside-down views. **⬆ Reset up** (panel or HUD) restores the deck-up view. Dust motes drift in the current deck.
+
 ## Controls
 
 ### Camera (build mode)
@@ -346,11 +403,12 @@ src/lib/components/         Scene, Hull, DeckModules, ModuleMesh, Part, Overlays
                             DesignerScene/DesignerPanel/EquipModel/EquipPartMesh/Silhouette (designer)
 src/lib/game/affordances.ts needs, decay rates, built-in affordances (crew sim)
 src/lib/game/couchModel.ts  launch couch shell geometry + occupant posture
-src/lib/sim/                crew sim: nav.ts (grid, Dijkstra, ladder portals), crewSim.svelte.ts (needs, utility AI,
+src/lib/sim/                crew sim: nav.ts (grid, Dijkstra, ladder portals), nav3d.ts (micro-g voxel nav), crewSim.svelte.ts (needs, utility AI,
                             queues, possession, analytics), avatarPose.ts/Avatar.svelte (procedural avatar),
                             CrewLayer (render, picking, heat map), PossessControls, AgentCard, CrewSimPanel
 scripts/screenshot.mjs      Playwright test: screenshots, rule checks, sample exports
 scripts/crew-test.mjs       Playwright crew-sim test + crew screenshots
+scripts/cruise-test.mjs     Playwright Cruise (micro-g) test + cruise / wall-mount screenshots
 ```
 
 ## Limitations / next steps
@@ -360,7 +418,15 @@ scripts/crew-test.mjs       Playwright crew-sim test + crew screenshots
   - Needs, rates and schedules are game-style heuristics, not human-factors data.
   - Avoidance is local steering only. Two agents can briefly overlap in a tight aisle.
   - Avatars are hidden on decks that are not displayed. Enclosed units (pods, toilet) hide the user.
-  - There is no zero-g / microgravity mode, and the couch occupant does not follow custom couch geometry.
+  - The couch occupant does not follow custom couch geometry.
+- **Cruise (micro-g):**
+  - The physics is a simple, deterministic kinematic model (push-off, coast, grab, stop on contact). There is no
+    angular momentum, and bodies don't collide with each other (only separation steering).
+  - Docking into a slot is an animated glide. Feet-in-restraint is a pose, not a contact model.
+  - The voxel grid is 0.2 m and the hatch column 0.3 m, so very tight gaps may be closed or open differently than in reality.
+  - Wall items above the 1.1 m build cutaway can look like they float in build view.
+  - Loose floating items (the optional cosmetic extra) are not implemented. The torus "loops" of the foot restraint are full rings.
+  - First-person camera in build mode keeps the hull cutaway, so looking up shows the sky.
 - Equipment is generic and procedural, not real flight hardware. Mass, power and cost are placeholders.
 - There is no structural, thermal, acoustic, radiation-transport, fire-safety or emergency-egress analysis. The path check is 2D and
   inflates the body with rough square corners.
