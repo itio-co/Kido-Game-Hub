@@ -11,6 +11,8 @@
 	import { equip } from '$lib/game/equipStore.svelte';
 	import { centroidOf, cloneMesh, edgesOf, eparse, faceCentroid, selVerts, toGeometry, transformVerts, vcount, type EditMesh } from '$lib/game/editMesh';
 	import type { EquipPart } from '$lib/game/equipment';
+	import { mat as libMat, type MatName } from '$lib/three/materials';
+	import type { Material } from 'three';
 
 	let { part, orbit }: { part: EquipPart; orbit?: OrbitControlsImpl } = $props();
 	const { camera, renderer, invalidate } = useThrelte();
@@ -25,6 +27,24 @@
 	// ---------- render data ----------
 	const faces = $derived(M ? toGeometry(M, part.m) : null);
 	const editMat = new MeshStandardMaterial({ color: '#c3cedc', roughness: 0.7, metalness: 0.05, flatShading: true, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 });
+	// per-face materials show their real look (offset so edges / dots stay on top); the part material stays neutral grey-blue
+	const faceMats = new Map<string, Material>();
+	function editMatFor(name: MatName): Material {
+		let m = faceMats.get(name);
+		if (!m) {
+			m = libMat(name).clone();
+			Object.assign(m, { polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 });
+			faceMats.set(name, m);
+		}
+		return m;
+	}
+	$effect(() => () => faceMats.forEach((m) => m.dispose()));
+	const smooth = $derived(!!M?.sm);
+	$effect(() => {
+		editMat.flatShading = !smooth;
+		editMat.needsUpdate = true;
+	});
+	const faceMatList = $derived(faces ? faces.mats.map((n) => (n === part.m ? editMat : editMatFor(n))) : []);
 	const selMat = new MeshStandardMaterial({ color: '#ff9a3c', emissive: '#ff7a1a', emissiveIntensity: 0.55, transparent: true, opacity: 0.55, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 });
 	const hovMat = new MeshStandardMaterial({ color: '#7cc4ff', emissive: '#2f8cff', emissiveIntensity: 0.4, transparent: true, opacity: 0.35, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 });
 	function subGeo(m: EditMesh, list: number[]) {
@@ -297,7 +317,7 @@
 
 <T.Group bind:ref={group} position={part.pos} rotation={[part.rot[0] * D, part.rot[1] * D, part.rot[2] * D]} name="edit-overlay">
 	{#if faces}
-		<T.Mesh bind:ref={faceMesh} geometry={faces.geo} material={editMat} castShadow receiveShadow />
+		<T.Mesh bind:ref={faceMesh} geometry={faces.geo} material={faceMatList} castShadow receiveShadow name="edit-mesh" />
 	{/if}
 	{#if selFaceGeo}<T.Mesh geometry={selFaceGeo} material={selMat} renderOrder={2} raycast={() => null} />{/if}
 	{#if hovGeo}<T.Mesh geometry={hovGeo} material={hovMat} renderOrder={3} raycast={() => null} />{/if}

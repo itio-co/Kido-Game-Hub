@@ -167,8 +167,8 @@
 		<div class="top-right">
 			<button class="fab" onclick={() => (game.designer = false)}>◀ Planner</button>
 		</div>
-		{#if game.isTouch}<div class="tip" class:mobile>Tap a part to select · drag gizmo · 1 finger orbit · pinch zoom</div>{/if}
-		{#if game.toast}<div class="toast">{game.toast}</div>{/if}
+		{#if game.isTouch}<div class="tip dtip" class:mobile>{equip.editMode === 'object' ? 'Tap a part to select · drag gizmo · 1 finger orbit · pinch zoom' : `Tap ${equip.editMode === 'vertex' ? 'dots' : equip.editMode === 'edge' ? 'edges' : 'faces'} to select (＋ Multi adds) · drag gizmo · 1 finger orbit (⬚ Box on: drag box-selects, 2 fingers orbit) · pinch zoom`}</div>{/if}
+		{#if game.toast}<div class="toast" class:dtoast={mobile}>{game.toast}</div>{/if}
 		<EditToolbar {mobile} />
 		{#if mobile}<DesignerPanel mobile />{/if}
 	{:else}
@@ -597,6 +597,13 @@
 		white-space: nowrap;
 		pointer-events: none;
 		z-index: 5;
+	}
+	.tip.dtip.mobile {
+		bottom: calc(64px + env(safe-area-inset-bottom));
+	}
+	.toast.dtoast {
+		top: auto;
+		bottom: calc(120px + env(safe-area-inset-bottom));
 	}
 	.tip.mobile {
 		bottom: calc(334px + env(safe-area-inset-bottom));

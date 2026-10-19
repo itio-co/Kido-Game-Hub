@@ -10,6 +10,8 @@
 	import { Group, PMREMGenerator, PerspectiveCamera, type Material, type Texture } from 'three';
 	import type { OrbitControls as OrbitControlsImpl } from 'three/examples/jsm/controls/OrbitControls.js';
 	import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
+	import { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter.js';
+	import { download } from '$lib/game/exporters';
 	import { equip } from '$lib/game/equipStore.svelte';
 	import { extractParts, poseOf } from '$lib/game/equipment';
 	import { isBuiltin } from '$lib/game/catalog';
@@ -129,6 +131,22 @@
 		o.scale.set(1, 1, 1);
 	}
 
+	// ---- GLB export of the equipment (parts incl. edited meshes and per-face materials; no helpers) ----
+	let partsGroup = $state<Group>();
+	equip.exportGLB = async () => {
+		const prevPart = equip.partId;
+		equip.partId = null;
+		equip.editMode = 'object';
+		await tick();
+		await new Promise((r) => requestAnimationFrame(() => r(null)));
+		try {
+			const glb = (await new GLTFExporter().parseAsync(partsGroup!, { binary: true })) as ArrayBuffer;
+			download(`${(def?.name ?? 'equipment').toLowerCase().replace(/[^a-z0-9]+/g, '-')}.glb`, glb, 'model/gltf-binary');
+			return glb.byteLength;
+		} finally {
+			equip.partId = prevPart;
+		}
+	};
 	const fp = $derived.by(() => {
 		if (!def) return null;
 		// footprint shown for the current pose (deployed vs stowed → surface / launch dims)
@@ -177,6 +195,7 @@
 		</HTML>
 	{/if}
 
+	<T.Group bind:ref={partsGroup} name="equipment">
 	{#each parts as p (p.id)}
 		{#if !(editing && p.id === equip.partId)}
 			<EquipPartMesh
@@ -188,6 +207,7 @@
 			/>
 		{/if}
 	{/each}
+	</T.Group>
 	{#if editing && equip.part}
 		<EditOverlay part={equip.part} {orbit} />
 	{/if}

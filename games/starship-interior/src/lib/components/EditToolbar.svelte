@@ -30,25 +30,30 @@
 			<div class="seg">
 				{#if equip.editMode === 'face'}
 					<button onclick={() => run('extrude')} title="Extrude faces (E)" aria-label="Extrude" data-testid="op-extrude">⇡{#if !mobile}<small>Extrude</small>{/if}</button>
-					<button onclick={() => run('inset')} title="Inset faces (I)" aria-label="Inset">⧈{#if !mobile}<small>Inset</small>{/if}</button>
+					<button onclick={() => run('inset')} title="Inset faces (I)" aria-label="Inset" data-testid="op-inset">⧈{#if !mobile}<small>Inset</small>{/if}</button>
+					<button onclick={() => run('flip')} title="Flip normals of the selected faces (N)" aria-label="Flip normals" data-testid="op-flip">⇅{#if !mobile}<small>Flip</small>{/if}</button>
 				{/if}
 				{#if equip.editMode === 'edge'}
-					<button onclick={() => run('bevel')} title="Bevel / chamfer edges 2 cm (B)" aria-label="Bevel">◩{#if !mobile}<small>Bevel</small>{/if}</button>
+					<button onclick={() => run('bevel')} title="Bevel / chamfer edges 2 cm (B)" aria-label="Bevel" data-testid="op-bevel">◩{#if !mobile}<small>Bevel</small>{/if}</button>
 				{/if}
-				<button onclick={() => run('merge')} title="Merge selected vertices at their centre (M)" aria-label="Merge">⊕{#if !mobile}<small>Merge</small>{/if}</button>
-				<button onclick={() => run('delete')} title="Delete selection (X / Del)" aria-label="Delete components">✕{#if !mobile}<small>Delete</small>{/if}</button>
-				<button onclick={() => run('all')} title="Select all / none (A)" aria-label="Select all">▣{#if !mobile}<small>All</small>{/if}</button>
+				<button onclick={() => run('merge')} title="Merge selected vertices at their centre (M)" aria-label="Merge" data-testid="op-merge">⊕{#if !mobile}<small>Merge</small>{/if}</button>
+				<button onclick={() => run('delete')} title="Delete selection (X / Del)" aria-label="Delete components" data-testid="op-delete">✕{#if !mobile}<small>Delete</small>{/if}</button>
+				<button onclick={() => run('all')} title="Select all / none (A)" aria-label="Select all" data-testid="op-all">▣{#if !mobile}<small>All</small>{/if}</button>
+			</div>
+			<div class="seg">
+				<button onclick={() => run('recalc')} title="Recalculate normals outside (Shift+N)" aria-label="Recalculate normals" data-testid="op-recalc">⟳{#if !mobile}<small>Normals</small>{/if}</button>
+				<button class:active={!!equip.workMesh?.sm} onclick={() => run('shade')} title="Flat / smooth shading" aria-label="Smooth shading" data-testid="op-shade">◐{#if !mobile}<small>{equip.workMesh?.sm ? 'Smooth' : 'Flat'}</small>{/if}</button>
 			</div>
 			<div class="seg">
 				<button class:active={equip.multi} onclick={() => (equip.multi = !equip.multi)} title="Multi-select: taps / clicks add or remove (same as Shift)" aria-label="Multi-select" data-testid="edit-multi">＋{#if !mobile}<small>Multi</small>{/if}</button>
-				<button class:active={equip.boxSelect} onclick={() => (equip.boxSelect = !equip.boxSelect)} title="Box select with a plain drag (Shift+drag always works on desktop); orbit with right-drag / two fingers" aria-label="Box select">⬚{#if !mobile}<small>Box</small>{/if}</button>
+				<button class:active={equip.boxSelect} onclick={() => (equip.boxSelect = !equip.boxSelect)} title="Box select with a plain drag (Shift+drag always works on desktop); orbit with right-drag / two fingers" aria-label="Box select" data-testid="edit-box">⬚{#if !mobile}<small>Box</small>{/if}</button>
 				<button onclick={() => (equip.snap = equip.snap === 0.01 ? 0.05 : 0.01)} title="Gizmo / nudge snap" aria-label="Snap step" data-testid="edit-snap">{equip.snap === 0.01 ? '1' : '5'} cm</button>
 				<span class="n" data-testid="edit-count">{equip.selCount}</span>
 			</div>
 		{/if}
 		<div class="seg">
-			<button disabled={!canUndo} onclick={() => equip.undo()} title="Undo (Ctrl+Z)" aria-label="Undo">↶</button>
-			<button disabled={!canRedo} onclick={() => equip.redo()} title="Redo (Ctrl+Shift+Z)" aria-label="Redo">↷</button>
+			<button disabled={!canUndo} onclick={() => equip.undo()} title="Undo (Ctrl+Z)" aria-label="Undo" data-testid="edit-undo">↶</button>
+			<button disabled={!canRedo} onclick={() => equip.redo()} title="Redo (Ctrl+Shift+Z)" aria-label="Redo" data-testid="edit-redo">↷</button>
 		</div>
 	</div>
 {/if}

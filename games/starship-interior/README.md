@@ -200,6 +200,42 @@ Open it with **📐 Design** (sidebar Mode row, or the top-right button; also on
 - **Storage:** custom designs are saved in `localStorage` (`starship-equipment-v1`) and embedded in save files (`equipment`
   array), so a shared layout carries its designs. **Export JSON** / **Import JSON** exchanges a single design
   (`format: "starship-equipment", version: 1`). Imported files are sanitised: shapes, materials and sizes are clamped.
+- **Component editing (Blender-style, custom designs):**
+  - **Modes:**
+    - Select a part, then pick **Object / Vertex / Edge / Face** with `1`–`4`, the floating toolbar, or the panel.
+    - `Tab` toggles between Object and the last component mode.
+    - `Esc` steps back: it first clears the selection, then returns to Object mode.
+    - A primitive stays a primitive until the first component edit. That edit converts it to an editable polygon mesh
+      (`shape: "mesh"`, `mesh: {v, f, fm?, sm?}` in part-local metres). Rounded-box rounding is dropped at that point.
+  - **Selection:**
+    - Vertices show as dots and edges as lines. Faces highlight on hover and turn orange when selected.
+    - Click to select, Shift-click to add or remove, and **Shift+drag** to box-select. Box select only picks components
+      you can see; occluded ones are skipped.
+    - On a phone, **＋ Multi** makes taps toggle, and **⬚ Box** makes a one-finger drag box-select (orbit with two fingers).
+  - **Moving:**
+    - The gizmo sits at the selection's centroid: move `T`, rotate `R`, scale `S`.
+    - Numeric X/Y/Z fields (cm, equipment space) and ± nudge buttons move the selection. Snap is **1 cm or 5 cm**,
+      toggled with the cm button.
+  - **Operations:**
+    - **Extrude** `E` (faces, 5 cm along the normal). **Inset** `I` (faces).
+    - **Bevel** `B`: a 2 cm chamfer on edges shared by two faces.
+    - **Merge** `M`: merges the selected vertices at their centre.
+    - **Delete** `X`/`Del`.
+    - **Select all/none** `A`.
+    - **Flip normals** `N` (faces). **Recalculate normals outward** `Shift+N`.
+    - **Flat/Smooth** shading.
+    - **Per-face material**: in Face mode, pick it in the panel.
+  - **Validation:** warnings in the panel for open edges (holes), non-manifold edges, zero-area faces, an inside-out or
+    flat mesh, geometry below the floor, and a design taller than the tallest deck.
+  - **Undo/redo:** `Ctrl+Z` / `Ctrl+Shift+Z` (or `Ctrl+Y`), or the ↶ ↷ buttons.
+  - **Persistence:** edited meshes are saved in localStorage, save files and Export JSON. Older files without meshes load
+    unchanged, and a corrupt mesh falls back to a box.
+  - **Exports:**
+    - **⬇ Export GLB** exports the design: parts, edited meshes and per-face materials.
+    - The ship GLB export includes placed custom designs.
+    - The BOM CSV has a `geometry` column, e.g. "3 parts · 1 edited mesh (17 faces)".
+  - **Test:** `node scripts/designer-edit-test.mjs`. Screenshots: screenshot-designer-vertex.png,
+    screenshot-designer-face.png, screenshot-mobile-designer-edit.png.
 - **GLB import (optional):** **📦 Import GLB part** adds a `.glb` (≤ 1.5 MB) as one part. It is normalised to a unit box and
   then scaled like any other part. It is stored as a data URL.
 
@@ -523,11 +559,12 @@ src/lib/game/clearance.ts   access zones + 0.1 m flood-fill path check
 src/lib/game/state.svelte.ts  decks, rules, selection, persistence (runes)
 src/lib/game/exporters.ts   SVG 1:50 plan, BOM CSV, download helper
 src/lib/game/equipment.ts   data-driven equipment parts, auto-fit, mirror, extraction, sanitising
-src/lib/game/equipStore.svelte.ts  custom equipment library + designer state (localStorage)
+src/lib/game/equipStore.svelte.ts  custom equipment library + designer state (localStorage), component edit ops + undo
+src/lib/game/editMesh.ts    editable polygon meshes: primitive → mesh, extrude/inset/bevel/merge/delete, normals, validation
 src/lib/three/              materials/textures, hull geometry
 src/lib/components/         Scene, Hull, DeckModules, ModuleMesh, Part, Overlays, BuildInput,
                             WalkControls, Sidebar, StatsPanel, Joystick, Outline, Zone,
-                            DesignerScene/DesignerPanel/EquipModel/EquipPartMesh/Silhouette (designer)
+                            DesignerScene/DesignerPanel/EquipModel/EquipPartMesh/Silhouette, EditOverlay/EditToolbar (designer)
 src/lib/game/affordances.ts needs, decay rates, built-in affordances (crew sim)
 src/lib/game/couchModel.ts  launch couch shell geometry + occupant posture
 src/lib/sim/                crew sim: nav.ts (grid, Dijkstra, ladder portals), nav3d.ts (micro-g voxel nav), crewSim.svelte.ts (needs, utility AI,
@@ -544,6 +581,7 @@ scripts/lifecycle-test.mjs  wear, failures, repairs, maintenance, spares plan
 scripts/need-curves.mjs     working rates, status effects, trend symbols (2 days at 60×)
 scripts/couch-egress-test.mjs couch envelopes, egress blockers, nudge, Show clearances
 scripts/power-test.mjs      power bus, shedding order, brownout, deficit issues
+scripts/designer-edit-test.mjs designer vertex/edge/face editing, ops, validation, undo, exports
 scripts/interior-test.mjs   interior view: walls/ceilings, no clipping, lights, camera containment, mobile budget
 scripts/hud-test.mjs        HUD top bar, build bar, selection card, drawer (desktop + iPhone 13)
 src/lib/sim/effects.ts      status effects, diminishing returns, trend symbols

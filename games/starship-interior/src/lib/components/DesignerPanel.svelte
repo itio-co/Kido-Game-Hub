@@ -2,6 +2,7 @@
 	/** Equipment Designer: library, parts, transforms (numeric + nudge), metadata, import/export. */
 	import { equip } from '$lib/game/equipStore.svelte';
 	import { MATERIALS, SHAPES, fitFootprint, poseOf, type EquipShape } from '$lib/game/equipment';
+	import type { MatName } from '$lib/three/materials';
 	import { download } from '$lib/game/exporters';
 	import { game } from '$lib/game/state.svelte';
 	import { glbAspect } from '$lib/three/glbPart';
@@ -178,7 +179,7 @@
 		const modeKeys: Record<string, 'object' | 'vertex' | 'edge' | 'face'> = { Digit1: 'object', Digit2: 'vertex', Digit3: 'edge', Digit4: 'face' };
 		if (modeKeys[e.code] && canEdit) return void equip.setEditMode(modeKeys[e.code]);
 		if (comp && canEdit) {
-			const ops: Record<string, Parameters<typeof equip.op>[0]> = { KeyE: 'extrude', KeyI: 'inset', KeyB: 'bevel', KeyM: 'merge', KeyX: 'delete', Delete: 'delete', Backspace: 'delete', KeyA: 'all' };
+			const ops: Record<string, Parameters<typeof equip.op>[0]> = { KeyE: 'extrude', KeyI: 'inset', KeyB: 'bevel', KeyM: 'merge', KeyX: 'delete', Delete: 'delete', Backspace: 'delete', KeyA: 'all', KeyN: e.shiftKey ? 'recalc' : 'flip' };
 			if (ops[e.code]) {
 				e.preventDefault();
 				return void game.flash(equip.op(ops[e.code]));
@@ -226,6 +227,7 @@
 				<button onclick={() => equip.create()}>＋ New</button>
 				<button class="prim" onclick={dup}>⎘ Duplicate{def?.builtin ? ' to edit' : ''}</button>
 				<button onclick={exportJSON}>⬇ Export JSON</button>
+				<button onclick={async () => { const n = await equip.exportGLB?.(); if (n) game.flash(`GLB exported (${Math.round(n / 1024)} kB)`); }} data-testid="designer-export-glb">⬇ Export GLB</button>
 				<button onclick={() => jsonInput.click()}>⬆ Import JSON</button>
 				<button disabled={!editable} onclick={() => glbInput.click()}>📦 Import GLB part</button>
 				<button class="danger" disabled={!editable} onclick={del}>🗑 Delete</button>
@@ -327,7 +329,7 @@
 									</div>
 									{#if comp}
 										<div class="hint">
-											{equip.selCount} {equip.editMode}{equip.selCount === 1 ? '' : 's'} selected · click / Shift-click / Shift-drag box · gizmo T/R/S moves the selection ·
+											{equip.selCount} {equip.selCount === 1 ? equip.editMode : equip.editMode === 'vertex' ? 'vertices' : equip.editMode + 's'} selected · click / Shift-click / Shift-drag box · gizmo T/R/S moves the selection ·
 											{equip.editMode === 'face' ? 'E extrude · I inset · ' : equip.editMode === 'edge' ? 'B bevel · ' : ''}M merge · X delete · A all · Esc back · Ctrl+Z undo
 										</div>
 										{#if selC}
@@ -349,7 +351,22 @@
 									{:else if part.shape !== 'mesh'}
 										<div class="hint">Tab or 2/3/4 to edit vertices, edges or faces – the {part.shape} becomes an editable mesh on the first edit.</div>
 									{/if}
+									{#if comp && equip.editMode === 'face' && equip.sel.f.length}
+										<div class="row">
+											<span>Face material</span>
+											<select data-testid="face-mat" value={(part.mesh?.fm?.[equip.sel.f[0]] ?? '') as string} onchange={(e) => game.flash(equip.setFaceMaterial((e.currentTarget.value || null) as MatName | null))}>
+												<option value="">(part: {part.m})</option>
+												{#each MATERIALS as m}<option value={m}>{m}</option>{/each}
+											</select>
+										</div>
+									{/if}
 									{#if part.shape === 'mesh' && part.mesh}
+										<div class="row">
+											<span>Shading</span>
+											<button class:active={!part.mesh.sm} onclick={() => part.mesh?.sm && game.flash(equip.op('shade'))} data-testid="shade-flat">Flat</button>
+											<button class:active={!!part.mesh.sm} onclick={() => !part.mesh?.sm && game.flash(equip.op('shade'))} data-testid="shade-smooth">Smooth</button>
+											<button onclick={() => game.flash(equip.op('recalc'))} title="Recalculate normals outside (Shift+N)">⟳ Normals</button>
+										</div>
 										<div class="hint" data-testid="mesh-stats">Mesh: {part.mesh.v.length / 3} vertices · {part.mesh.f.length} faces · bounds {part.size.map((x) => (x * 100).toFixed(0)).join(' × ')} cm</div>
 									{/if}
 									{#each meshWarn as w (w)}<div class="warn" data-testid="mesh-warn">⚠ {w}</div>{/each}

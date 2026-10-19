@@ -5,7 +5,8 @@
 import { CATALOG, CATALOG_BY_ID, isBuiltin, setCustomLookup } from './catalog';
 import { EQUIP_FORMAT, EQUIP_VERSION, fitFootprint, mirrorPart, sanitizeEquip, toModuleDef, uidPart, type EquipDef, type EquipPart } from './equipment';
 import type { ModuleDef } from './types';
-import { bevelEdges, deleteEdges, deleteFaces, deleteVerts, edgesOf, emptySel, extrudeFaces, insetFaces, meshBounds, mergeVerts, primitiveToMesh, selVerts, vcount, type CompMode, type CompSel, type EditMesh } from './editMesh';
+import { bevelEdges, cloneMesh, deleteEdges, deleteFaces, deleteVerts, edgesOf, emptySel, extrudeFaces, flipFaces, insetFaces, meshBounds, mergeVerts, primitiveToMesh, recalcNormals, selVerts, setFaceMat, vcount, type CompMode, type CompSel, type EditMesh } from './editMesh';
+import type { MatName } from '$lib/three/materials';
 
 const KEY = 'starship-equipment-v1';
 
@@ -37,6 +38,8 @@ class EquipStore {
 	boxSelect = $state(false);
 	/** component move snap (m) */
 	snap = $state<0.01 | 0.05>(0.01);
+	/** set by the designer scene: export the current equipment as GLB (returns bytes) */
+	exportGLB: (() => Promise<number>) | null = null;
 	undoStack: string[] = [];
 	redoStack: string[] = [];
 	undoN = $state(0);
@@ -107,10 +110,27 @@ class EquipStore {
 		this.persist();
 	}
 	/** component operation by name; returns a short message for the toast */
-	op(name: 'extrude' | 'inset' | 'delete' | 'bevel' | 'merge' | 'all'): string {
+	op(name: 'extrude' | 'inset' | 'delete' | 'bevel' | 'merge' | 'all' | 'flip' | 'recalc' | 'shade'): string {
 		const m = this.workMesh;
 		const mode = this.editMode;
+		if (m && name === 'recalc') {
+			this.setMesh(recalcNormals(m));
+			return 'Normals recalculated (consistent, pointing outwards)';
+		}
+		if (m && name === 'shade') {
+			const out = cloneMesh(m);
+			if (m.sm) delete out.sm;
+			else out.sm = true;
+			this.setMesh(out);
+			return out.sm ? 'Smooth shading' : 'Flat shading';
+		}
 		if (!m || mode === 'object') return 'Enter Vertex / Edge / Face mode first (Tab)';
+		if (name === 'flip') {
+			if (mode !== 'face') return 'Flip works on faces (Face mode, 4)';
+			if (!this.sel.f.length) return 'Select faces first';
+			this.setMesh(flipFaces(m, this.sel.f));
+			return `Flipped ${this.sel.f.length} face normal(s)`;
+		}
 		if (name === 'all') {
 			const any = this.selCount > 0;
 			this.sel =
@@ -151,6 +171,13 @@ class EquipStore {
 		this.setMesh(out);
 		this.sel = emptySel();
 		return 'Deleted';
+	}
+	/** per-face material for the selected faces (null = part material) */
+	setFaceMaterial(mat: MatName | null): string {
+		const m = this.workMesh;
+		if (!m || this.editMode !== 'face' || !this.sel.f.length) return 'Select faces first (Face mode, 4)';
+		this.setMesh(setFaceMat(m, this.sel.f, mat));
+		return `${this.sel.f.length} face(s) → ${mat ?? 'part material'}`;
 	}
 	modules = $derived(Object.fromEntries(this.custom.map((e) => [e.id, toModuleDef(e)])) as Record<string, ModuleDef>);
 

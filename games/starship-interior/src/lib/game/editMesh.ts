@@ -14,6 +14,8 @@ export interface EditMesh {
 	f: number[][];
 	/** per-face material (null / missing = the part material) */
 	fm?: (MatName | null)[];
+	/** smooth shading (averaged vertex normals); default flat */
+	sm?: boolean;
 }
 export type CompMode = 'vertex' | 'edge' | 'face';
 export interface CompSel {
@@ -24,7 +26,7 @@ export interface CompSel {
 export const emptySel = (): CompSel => ({ v: [], e: [], f: [] });
 export const ekey = (a: number, b: number) => (a < b ? `${a}-${b}` : `${b}-${a}`);
 export const eparse = (k: string): [number, number] => k.split('-').map(Number) as [number, number];
-export const cloneMesh = (m: EditMesh): EditMesh => ({ v: m.v.slice(), f: m.f.map((x) => x.slice()), fm: m.fm ? m.fm.slice() : undefined });
+export const cloneMesh = (m: EditMesh): EditMesh => ({ v: m.v.slice(), f: m.f.map((x) => x.slice()), fm: m.fm ? m.fm.slice() : undefined, ...(m.sm ? { sm: true } : {}) });
 export const vcount = (m: EditMesh) => m.v.length / 3;
 export const vget = (m: EditMesh, i: number, out = new Vector3()) => out.set(m.v[3 * i], m.v[3 * i + 1], m.v[3 * i + 2]);
 const vset = (m: EditMesh, i: number, p: Vector3) => ((m.v[3 * i] = r5(p.x)), (m.v[3 * i + 1] = r5(p.y)), (m.v[3 * i + 2] = r5(p.z)));
@@ -210,7 +212,26 @@ export function toGeometry(m: EditMesh, base: MatName): { geo: BufferGeometry; m
 		start += n;
 	}
 	geo.setAttribute('position', new Float32BufferAttribute(pos, 3));
-	geo.computeVertexNormals();
+	if (m.sm) {
+		// smooth: area-weighted face normals averaged per shared vertex index
+		const vn = new Float32Array(m.v.length);
+		m.f.forEach((f) => {
+			const n = faceNormal(m, f);
+			for (const i of f) (vn[3 * i] += n.x), (vn[3 * i + 1] += n.y), (vn[3 * i + 2] += n.z);
+		});
+		const nrm: number[] = [];
+		const t = new Vector3();
+		for (const [, faces] of byMat)
+			for (const fi of faces) {
+				const f = m.f[fi];
+				for (let k = 1; k < f.length - 1; k++)
+					for (const i of [f[0], f[k], f[k + 1]]) {
+						t.set(vn[3 * i], vn[3 * i + 1], vn[3 * i + 2]).normalize();
+						nrm.push(t.x, t.y, t.z);
+					}
+			}
+		geo.setAttribute('normal', new Float32BufferAttribute(nrm, 3));
+	} else geo.computeVertexNormals();
 	geo.computeBoundingSphere();
 	return { geo, mats, triFace };
 }
@@ -246,16 +267,16 @@ export function compact(m: EditMesh): EditMesh {
 			}
 			f[k] = map.get(i)!;
 		}
-	return { v, f: faces, fm: fm.some((x) => x) ? fm : undefined };
+	return { v, f: faces, fm: fm.some((x) => x) ? fm : undefined, ...(m.sm ? { sm: true } : {}) };
 }
 export function deleteFaces(m: EditMesh, faces: number[]): EditMesh {
 	const s = new Set(faces);
-	return compact({ v: m.v, f: m.f.filter((_, i) => !s.has(i)), fm: m.fm?.filter((_, i) => !s.has(i)) });
+	return compact({ v: m.v, f: m.f.filter((_, i) => !s.has(i)), fm: m.fm?.filter((_, i) => !s.has(i)), sm: m.sm });
 }
 export function deleteVerts(m: EditMesh, verts: number[]): EditMesh {
 	const s = new Set(verts);
 	const keep = m.f.map((f) => !f.some((i) => s.has(i)));
-	return compact({ v: m.v, f: m.f.filter((_, i) => keep[i]), fm: m.fm?.filter((_, i) => keep[i]) });
+	return compact({ v: m.v, f: m.f.filter((_, i) => keep[i]), fm: m.fm?.filter((_, i) => keep[i]), sm: m.sm });
 }
 export function deleteEdges(m: EditMesh, edges: string[]): EditMesh {
 	const map = edgesOf(m);
@@ -379,6 +400,57 @@ export function bevelEdges(m: EditMesh, edges: string[], w = 0.02): EditMesh {
 	return out;
 }
 
+/** reverse the winding (normal direction) of the given faces */
+export function flipFaces(m: EditMesh, faces: number[]): EditMesh {
+	const out = cloneMesh(m);
+	for (const fi of faces) if (out.f[fi]) out.f[fi] = out.f[fi].slice().reverse();
+	return out;
+}
+/** make windings consistent across shared edges (flood fill per connected piece), then point each closed piece outwards */
+export function recalcNormals(m: EditMesh): EditMesh {
+	const out = cloneMesh(m);
+	const map = edgesOf(out);
+	const seen = new Array(out.f.length).fill(false);
+	const has = (f: number[], a: number, b: number) => f.some((x, k) => x === a && f[(k + 1) % f.length] === b);
+	for (let s0 = 0; s0 < out.f.length; s0++) {
+		if (seen[s0]) continue;
+		const piece: number[] = [];
+		const queue = [s0];
+		seen[s0] = true;
+		while (queue.length) {
+			const fi = queue.shift()!;
+			piece.push(fi);
+			const f = out.f[fi];
+			f.forEach((a, k) => {
+				const b = f[(k + 1) % f.length];
+				for (const g of map.get(ekey(a, b)) ?? []) {
+					if (seen[g]) continue;
+					seen[g] = true;
+					// a neighbour must run b→a; if it also runs a→b it is flipped
+					if (has(out.f[g], a, b)) out.f[g] = out.f[g].slice().reverse();
+					queue.push(g);
+				}
+			});
+		}
+		let vol = 0;
+		const a = new Vector3(), b = new Vector3(), c = new Vector3();
+		for (const fi of piece) {
+			const f = out.f[fi];
+			for (let k = 1; k < f.length - 1; k++) vol += vget(out, f[0], a).dot(vget(out, f[k], b).cross(vget(out, f[k + 1], c)));
+		}
+		if (vol < 0) for (const fi of piece) out.f[fi] = out.f[fi].slice().reverse();
+	}
+	return out;
+}
+/** assign a material to faces (null = the part material) */
+export function setFaceMat(m: EditMesh, faces: number[], mat: MatName | null): EditMesh {
+	const out = cloneMesh(m);
+	out.fm = out.fm ?? Array(out.f.length).fill(null);
+	for (const fi of faces) if (fi < out.f.length) out.fm[fi] = mat;
+	if (!out.fm.some((x) => x)) out.fm = undefined;
+	return out;
+}
+
 // ---------------------------------------------------------------- validation
 export function validateMesh(m: EditMesh): string[] {
 	const w: string[] = [];
@@ -405,12 +477,12 @@ export function validateMesh(m: EditMesh): string[] {
 }
 export function sanitizeMesh(raw: unknown): EditMesh | undefined {
 	if (!raw || typeof raw !== 'object') return undefined;
-	const r = raw as { v?: unknown; f?: unknown; fm?: unknown };
+	const r = raw as { v?: unknown; f?: unknown; fm?: unknown; sm?: unknown };
 	if (!Array.isArray(r.v) || !Array.isArray(r.f) || r.v.length % 3 || r.v.length > 60000) return undefined;
 	const v = r.v.map((x) => (typeof x === 'number' && isFinite(x) ? Math.max(-50, Math.min(50, x)) : 0));
 	const n = v.length / 3;
 	const f = r.f.slice(0, 20000).filter((x): x is number[] => Array.isArray(x) && x.length >= 3 && x.length <= 64 && x.every((i) => Number.isInteger(i) && i >= 0 && i < n));
 	if (!f.length) return undefined;
 	const fm = Array.isArray(r.fm) ? r.fm.slice(0, f.length).map((x) => (typeof x === 'string' ? (x as MatName) : null)) : undefined;
-	return { v, f, fm: fm?.some((x) => x) ? fm : undefined };
+	return { v, f, fm: fm?.some((x) => x) ? fm : undefined, ...(r.sm === true ? { sm: true } : {}) };
 }
