@@ -55,9 +55,15 @@
 		r.visible = av.visible;
 		if (!av.visible) return;
 		r.position.set(av.x, av.y, av.z);
-		r.rotation.y = av.yaw;
 		const f = frameFor(av.pose, av.t, g, av.couch, av.seatY);
-		hips.position.set(0, f.hipY, f.hipZ);
+		if (av.q) {
+			// free-floating: root = hip joint, full 3D orientation
+			r.quaternion.set(av.q[0], av.q[1], av.q[2], av.q[3]);
+			hips.position.set(0, 0, 0);
+		} else {
+			r.rotation.set(0, av.yaw, 0);
+			hips.position.set(0, f.hipY, f.hipZ);
+		}
 		hips.rotation.x = f.root;
 		spine.rotation.x = f.spine;
 		head.rotation.x = f.head;

@@ -19,7 +19,7 @@ export const BODY = {
 	radius: 0.3 // navigation body radius (incl. personal space)
 };
 
-export type PoseName = 'stand' | 'walk' | 'climb' | 'sit' | 'sitwork' | 'sleep' | 'exercise' | 'work' | 'couch' | 'wait' | 'eat' | 'wash';
+export type PoseName = 'stand' | 'walk' | 'climb' | 'sit' | 'sitwork' | 'sleep' | 'exercise' | 'work' | 'couch' | 'wait' | 'eat' | 'wash' | 'float' | 'fly' | 'fsleep' | 'fwork';
 
 export interface PoseFrame {
 	/** hip joint offset above the avatar origin (origin = floor point / slot point) */
@@ -164,6 +164,52 @@ export function frameFor(pose: PoseName, t: number, g = 1, couch?: PoseFrame, se
 			f.hipY = BODY.hipY - 0.005;
 			break;
 		}
+		case 'float':
+		case 'fsleep': {
+			// NASA neutral body posture: hips/knees flexed ~50°, arms floating forward, head tilted
+			const b = Math.sin(t * 0.7), c = Math.sin(t * 0.53 + 1);
+			const sl = pose === 'fsleep';
+			f.thighL = (sl ? -40 : -50) * D + b * 0.05;
+			f.thighR = (sl ? -45 : -55) * D - b * 0.05;
+			f.kneeL = (sl ? 50 : 60) * D + c * 0.06;
+			f.kneeR = (sl ? 55 : 66) * D - c * 0.05;
+			f.armL = (sl ? -30 : -55) * D + c * 0.06;
+			f.armR = (sl ? -30 : -60) * D - b * 0.06;
+			f.elbowL = (sl ? -70 : -75) * D + b * 0.05;
+			f.elbowR = (sl ? -70 : -80) * D;
+			f.splay = sl ? 0.12 : 0.42;
+			f.spine = 10 * D;
+			f.head = 22 * D + b * 0.03;
+			break;
+		}
+		case 'fly': {
+			// gliding head-first: arms reaching ahead, legs trailing
+			const b = Math.sin(t * 1.3);
+			f.armL = -165 * D + b * 0.05;
+			f.armR = -160 * D - b * 0.05;
+			f.elbowL = f.elbowR = -0.15;
+			f.splay = 0.12;
+			f.thighL = 0.08 + b * 0.06;
+			f.thighR = -0.06 - b * 0.06;
+			f.kneeL = 0.25;
+			f.kneeR = 0.35;
+			f.head = -0.3;
+			break;
+		}
+		case 'fwork': {
+			// feet in foot restraints, knees slightly bent, hands forward on the work surface
+			const w = Math.sin(t * 2.2);
+			f.thighL = f.thighR = -18 * D;
+			f.kneeL = f.kneeR = 32 * D;
+			f.root = 10 * D;
+			f.hipY = BODY.hipY - 0.07;
+			f.armL = -0.95 + w * 0.12;
+			f.armR = -0.95 - w * 0.12;
+			f.elbowL = f.elbowR = -0.8;
+			f.splay = 0.2;
+			f.head = 0.2;
+			break;
+		}
 		case 'couch':
 			if (couch) return { ...couch, head: couch.head + Math.sin(t * 0.6) * 0.03 };
 			break;
@@ -197,4 +243,6 @@ export interface AvatarState {
 	visible: boolean;
 	couch?: PoseFrame;
 	seatY?: number;
+	/** micro-g: free body orientation (x, y, z, w); when set, (x, y, z) is the hip joint */
+	q?: [number, number, number, number] | null;
 }
