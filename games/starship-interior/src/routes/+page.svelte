@@ -17,10 +17,12 @@
 	import Joystick from '$lib/components/Joystick.svelte';
 	import AgentCard from '$lib/sim/AgentCard.svelte';
 	import CrewHoverTip from '$lib/sim/CrewHoverTip.svelte';
-	import PowerMeter from '$lib/sim/PowerMeter.svelte';
 	import PowerPanel from '$lib/sim/PowerPanel.svelte';
 	import CrewSimPanel from '$lib/sim/CrewSimPanel.svelte';
-	import { crew, fmtClock } from '$lib/sim/crewSim.svelte';
+	import { crew } from '$lib/sim/crewSim.svelte';
+	import HudTopBar from '$lib/components/hud/HudTopBar.svelte';
+	import BuildBar from '$lib/components/hud/BuildBar.svelte';
+	import SelectionCard from '$lib/components/hud/SelectionCard.svelte';
 
 	let innerWidth = $state(1280);
 	let innerHeight = $state(800);
@@ -135,9 +137,9 @@
 
 <svelte:window bind:innerWidth bind:innerHeight onkeydown={onKey} onkeyup={onKeyUp} onblur={() => (game.altHeld = false)} />
 
-<div class="app" class:mobile>
+<div class="app" class:mobile class:drawerless={!mobile && !game.designer && !game.sidebarOpen}>
 	{#if !mobile}
-		{#if game.designer}<DesignerPanel />{:else}<Sidebar />{/if}
+		{#if game.designer}<DesignerPanel />{:else if game.sidebarOpen}<Sidebar />{/if}
 	{/if}
 
 	<main class="viewport">
@@ -161,6 +163,7 @@
 			{#if mobile}<StatsPanel compact />{/if}
 			{#if game.mode === 'build'}
 				<div class="pills">
+					{#if !mobile}<button class="drawer" class:active={game.sidebarOpen} onclick={() => (game.sidebarOpen = !game.sidebarOpen)} aria-label="Toggle side panel" title="Side panel: tools, catalog, crew sim, checks" data-testid="drawer-toggle">☰</button>{/if}
 					{#each game.decks as d, k (d.id)}
 						<button class:active={k === game.current} onclick={() => game.selectDeck(k)}>{game.shipMode === 'habitat' ? game.deckLabel(k) : `D${k + 1}`}</button>
 					{/each}
@@ -168,7 +171,6 @@
 					<button onclick={() => deckStep(1)} disabled={game.current >= game.decks.length - 1} aria-label="Deck up" title="Deck up (E / PgUp)">▲</button>
 					<button onclick={() => game.addDeck()} aria-label="Add deck">＋</button>
 					<button class:active={game.section} onclick={() => (game.section = !game.section)} aria-label="Section view">✂</button>
-					<button class:active={game.showClearances} onclick={() => (game.showClearances = !game.showClearances)} aria-label="Show clearances" title="Show clearances: couch envelopes (stowed / deployed), egress paths, keep-out zones" data-testid="show-clearances">📐</button>
 				</div>
 			{:else}
 				<div class="pills"><span class="deckname">{game.deckLabel(game.walkDeck)}</span></div>
@@ -176,23 +178,16 @@
 		</div>
 
 		<div class="top-right">
-			<button class="fab" onclick={toggleMode}>{game.mode === 'build' ? '🚶 Walk' : '🛠 Build'}</button>
-			{#if game.mode === 'build'}<button class="fab" onclick={() => (game.designer = true)} aria-label="Equipment designer">📐{mobile ? '' : ' Design'}</button>{/if}
+			<button class="fab mode" onclick={toggleMode} data-testid="mode-toggle">{#if game.mode === 'build'}<span>🚶</span><small>Walk</small>{:else}<span>🛠</span><small>Build</small>{/if}</button>
+			{#if game.mode === 'build'}<button class="fab mode" onclick={() => (game.designer = true)} aria-label="Equipment designer"><span>🧩</span><small>Design</small></button>{/if}
 			{#if mobile && game.mode === 'build' && !possessed}<button class="fab crewfab" class:on={crewSheet} onclick={() => (crewSheet = !crewSheet)} aria-label="Crew sim">👥</button>{/if}
 			{#if game.mode === 'build'}
 				<CameraWidget compact={mobile} />
 			{/if}
 		</div>
 
-		{#if crew.enabled && !game.designer}
-			<div class="simclock" class:mobile>
-				<button onclick={() => (crew.running = !crew.running)} aria-label={crew.running ? 'Pause sim' : 'Play sim'}>{crew.running ? '⏸' : '▶'}</button>
-				<b>{fmtClock(crew.ui.clock)}</b>
-				<button onclick={() => (crew.speed = crew.speed === 60 ? 1 : crew.speed === 1 ? 4 : crew.speed === 4 ? 16 : 60)} aria-label="Sim speed">{crew.speed}×</button>
-				<PowerMeter compact={mobile} onopen={() => (powerOpen = !powerOpen)} />
-			</div>
-			{#if powerOpen}<PowerPanel onclose={() => (powerOpen = false)} />{/if}
-		{/if}
+		{#if !(mobile && crewSheet)}<HudTopBar {mobile} onpower={() => (powerOpen = !powerOpen)} />{/if}
+		{#if crew.enabled && powerOpen}<PowerPanel onclose={() => (powerOpen = false)} />{/if}
 		{#if game.mode === 'build' && crew.enabled}<AgentCard {mobile} />{/if}
 		{#if crew.enabled && !mobile}<CrewHoverTip />{/if}
 		{#if mobile && game.mode === 'build' && !possessed}
@@ -247,7 +242,11 @@
 				<div class="center-hint low">WASD move · Shift run · drag look · at a ladder: E/Space ▲ climb up, Q/C ▼ down (PgUp/PgDn) · X use · V 1st/3rd · Esc release</div>
 			{/if}
 		{:else if game.mode === 'build'}
-			<div class="build-actions" class:mobile>
+			{#if !(mobile && crewSheet)}
+				<BuildBar {mobile} />
+				<SelectionCard {mobile} />
+			{/if}
+			<div class="build-actions" class:mobile class:carded={game.tool === 'select' && game.selected !== null}>
 				{#if game.microG && game.freeCam}
 					<button class="fab" onclick={() => game.resetUpTick++} aria-label="Reset camera up">⬆ <small>Reset up</small></button>
 				{/if}
@@ -255,7 +254,7 @@
 					<button class="fab ok" onclick={confirmPending} aria-label="Place">✓ Place</button>
 					<button class="fab" onclick={() => (game.pending = null)} aria-label="Cancel">✕</button>
 				{/if}
-				{#if game.tool === 'select' && game.selectedUid !== null}
+				{#if game.tool === 'select' && game.selectedUid !== null && !game.selected}
 					<button class="fab del" onclick={() => game.deleteSelected()} aria-label="Delete">🗑</button>
 				{/if}
 				{#if game.tool === 'module' && game.selectedModule === 'hatch'}
@@ -263,7 +262,7 @@
 						⇅ <small>Align {game.alignShafts ? 'on' : 'off'}</small>
 					</button>
 				{/if}
-				{#if showRotate}
+				{#if showRotate && !(game.tool === 'select' && game.selected)}
 					<button class="fab" onclick={() => game.rotate(-15)} aria-label="Rotate left">⟲</button>
 					<button class="fab" onclick={() => game.rotate(15)} aria-label="Rotate">⟳ <small>15°</small></button>
 					<button class="fab" onclick={() => game.rotate(90)} aria-label="Rotate 90">90°</button>
@@ -323,8 +322,49 @@
 		display: grid;
 		grid-template-columns: 320px 1fr;
 	}
-	.app.mobile {
+	.app.mobile,
+	.app.drawerless {
 		grid-template-columns: 1fr;
+	}
+	/* sci-fi glass panels shared by the HUD */
+	:global(.glass) {
+		background: linear-gradient(180deg, rgba(16, 30, 52, 0.72), rgba(6, 12, 24, 0.78));
+		border: 1px solid rgba(120, 200, 255, 0.28);
+		border-radius: 14px;
+		box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(180, 230, 255, 0.12), 0 0 0 1px rgba(56, 189, 248, 0.06);
+		backdrop-filter: blur(10px) saturate(1.3);
+		-webkit-backdrop-filter: blur(10px) saturate(1.3);
+	}
+	.fab.mode {
+		display: inline-flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		gap: 2px;
+		min-width: 64px;
+		min-height: 56px;
+		padding: 6px 10px;
+		border-radius: 14px;
+		background: linear-gradient(180deg, rgba(30, 58, 96, 0.85), rgba(10, 20, 38, 0.9));
+		border: 1px solid rgba(125, 211, 252, 0.45);
+		box-shadow: 0 0 14px rgba(56, 189, 248, 0.22);
+	}
+	.fab.mode span {
+		font-size: 22px;
+		line-height: 1;
+	}
+	.fab.mode small {
+		font-size: 11px;
+		letter-spacing: 0.04em;
+		text-transform: uppercase;
+	}
+	.app.mobile .fab.mode {
+		min-width: 46px;
+		min-height: 46px;
+		padding: 4px 6px;
+	}
+	.app.mobile .fab.mode small {
+		display: none;
 	}
 	.viewport {
 		position: relative;
@@ -408,38 +448,6 @@
 		cursor: pointer;
 		touch-action: manipulation;
 		box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
-	}
-	.simclock {
-		position: absolute;
-		top: calc(12px + env(safe-area-inset-top));
-		left: 50%;
-		transform: translateX(-50%);
-		z-index: 11;
-		display: flex;
-		align-items: center;
-		gap: 6px;
-		background: rgba(14, 22, 36, 0.9);
-		border: 1px solid #2c4466;
-		border-radius: 12px;
-		padding: 3px 5px;
-		font-variant-numeric: tabular-nums;
-		font-size: 13px;
-	}
-	.simclock.mobile {
-		top: calc(112px + env(safe-area-inset-top));
-		left: calc(12px + env(safe-area-inset-left));
-		transform: none;
-		font-size: 12px;
-	}
-	.simclock button {
-		font: inherit;
-		color: inherit;
-		background: #131c2c;
-		border: 1px solid #24344e;
-		border-radius: 8px;
-		min-width: 36px;
-		min-height: 32px;
-		touch-action: manipulation;
 	}
 	.crewfab.on {
 		border-color: #49a6ff;
@@ -543,7 +551,7 @@
 	.build-actions {
 		position: absolute;
 		right: 16px;
-		bottom: 40px;
+		bottom: 176px;
 		display: flex;
 		gap: 8px;
 		z-index: 10;
@@ -563,7 +571,7 @@
 		position: absolute;
 		left: 50%;
 		transform: translateX(-50%);
-		bottom: 44px;
+		bottom: 176px;
 		font-size: 12px;
 		padding: 6px 12px;
 		border-radius: 999px;

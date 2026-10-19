@@ -155,6 +155,8 @@ class GameState {
 
 	selectedUid = $state<number | null>(null);
 	hoverUid = $state<number | null>(null);
+	/** HUD: left panel drawer open (desktop) */
+	sidebarOpen = $state(true);
 	/** HUD toggle: show couch envelopes / egress paths / keep-out zones on the current deck */
 	showClearances = $state(false);
 	/** couch whose egress zones are shown because its issue row was clicked */
@@ -688,6 +690,27 @@ class GameState {
 
 	deleteSelected() {
 		if (this.selectedUid !== null) this.removeModule(this.selectedUid);
+	}
+	/** copy the selected item next to it (first free spot within 0.6–2 m, same rotation) */
+	duplicateSelected(): boolean {
+		const m = this.selected;
+		if (!m) return false;
+		const def = CATALOG_BY_ID[m.type];
+		const step = Math.max(def.w, def.d, 0.4) + 0.1;
+		for (const r of [step, step * 1.5, step * 2])
+			for (let k = 0; k < 12; k++) {
+				const a = (k / 12) * Math.PI * 2;
+				const x = +(m.x + Math.cos(a) * r).toFixed(3), z = +(m.z + Math.sin(a) * r).toFixed(3);
+				if (!this.check(m.type, x, z, m.angle, null, this.current, m.y ?? 0).ok) continue;
+				const uid = this.nextUid++;
+				this.modules.push({ ...m, uid, x, z });
+				this.selectedUid = uid;
+				this.autosave();
+				this.flash(`Duplicated ${def.name}`);
+				return true;
+			}
+		this.flash('No free spot next to it for a copy');
+		return false;
 	}
 
 	/** Rotate placement ghost, or the selected module (if it still fits). */
