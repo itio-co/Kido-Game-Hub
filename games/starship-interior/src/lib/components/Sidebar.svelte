@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { options } from '$lib/game/options.svelte';
 	import { CATALOG, CATALOG_BY_ID, sizeLabel } from '$lib/game/catalog';
 	import { download } from '$lib/game/exporters';
 	import { dimsOf, footprintOf, maxRadius } from '$lib/game/geometry';
@@ -158,9 +159,6 @@
 		<button onclick={() => game.lockAll(true)} title="Lock every item and ladder on this deck (undo: Ctrl+Z)">🔒 Lock all on deck</button>
 		<button onclick={() => game.lockAll(false)} title="Unlock every item and ladder on this deck">🔓 Unlock all</button>
 	</div>
-	<label class="chk" title="New ladders / hatches start locked; ticking it also locks the existing ones">
-		<input type="checkbox" checked={game.lockStructural} onchange={(e) => game.setLockStructural((e.currentTarget as HTMLInputElement).checked)} /> Lock ladders / hatches by default
-	</label>
 	<div class="seg">
 		<button class="danger" disabled={game.decks.length < 2} onclick={() => confirmThen(`Remove ${game.deckLabel(game.current)} and its modules?`, () => game.removeDeck())}>🗑 Remove deck</button>
 	</div>
@@ -323,21 +321,6 @@
 		</section>
 
 		<section>
-			<h2>View & checks</h2>
-			<div class="checks">
-				<label><input type="checkbox" bind:checked={game.clearance} /> Clearance check (access zones + 0.8 m paths)</label>
-				<label><input type="checkbox" bind:checked={game.guides} /> Radial guides</label>
-				<label><input type="checkbox" checked={game.quality === 'high'} onchange={(e) => (game.quality = e.currentTarget.checked ? 'high' : 'low')} /> High quality (shadows, reflections)</label>
-				<label><input type="checkbox" bind:checked={game.confirmPlacement} /> Touch: tap to preview, ✓ to place</label>
-				<div class="seg small">
-					<span>2-finger drag:</span>
-					<button class:active={game.twoFingerMode === 'rotate'} onclick={() => (game.twoFingerMode = 'rotate')}>Orbit</button>
-					<button class:active={game.twoFingerMode === 'pan'} onclick={() => (game.twoFingerMode = 'pan')}>Pan</button>
-				</div>
-			</div>
-		</section>
-
-		<section>
 			<h2>Export for building</h2>
 			<div class="grid2">
 				<button onclick={() => exportSVG()}>📐 Plan 1:50 ({game.phase === 'launch' ? 'launch' : 'surface'})</button>
@@ -361,25 +344,11 @@
 			<input bind:this={fileInput} type="file" accept="application/json,.json" hidden onchange={onFile} />
 		</section>
 
-		{#if !mobile}
-			<section class="help">
-				<h2>Controls</h2>
-				<ul>
-					<li><b>Place</b>: click to place · <b>Q/E</b> or <b>Shift+wheel</b> rotate 15° (Shift+Q/E 1°) · <b>R</b> 90°</li>
-					<li><b>Select</b>: click a module, drag to move · <b>Del</b> delete · right-click delete</li>
-					<li><b>Lock</b>: 🔒 on the selection card or <b>L</b> – a locked item can't be dragged (drag orbits), rotated or deleted · Decks panel: Lock all / Unlock all · <b>Ctrl+Z</b>/<b>Ctrl+Shift+Z</b> undo/redo lock changes</li>
-					<li><b>Measure</b>: click two points · <b>Esc</b> clear · <b>G</b> snap</li>
-					<li><b>Camera</b>: left-drag empty space orbit (360°) · right-drag pan · middle-drag orbit · wheel zoom · <b>←/→</b> orbit · <b>↑/↓</b> tilt · <b>+/−</b> zoom · widget top-right: ⟲⟳ 45°, Top, Iso, Reset</li>
-					<li><b>Decks</b>: <b>PgUp/PgDn</b>, <b>Shift+Q/E</b> (or Q/E with nothing selected/placing) · ▼▲ pills · <b>F</b> walk: WASD, Shift run, <b>Space</b> ▲ up, <b>Q/C</b> ▼ down at a ladder</li>
-					<li><b>Interact</b> (walk / crew / cruise): <b>E</b> = use / sit / climb toward where you look / repair the item under the crosshair or in reach · <b>Shift+E</b> or hold <b>E</b> = more actions (1–9) · <b>X</b> stop activity · cruise roll <b>Z/C</b>, deck-up <b>T</b></li>
-					<li><b>HUD</b>: build bar (bottom) – tabs + cards to place · selection card – ⟲⟳ 90°, 📋 duplicate, 🗑 delete · ☰ hides this panel · 📐 Clearances shows couch envelopes, egress paths, keep-outs</li>
-					<li><b>Crew sim</b>: need trends <b>&gt;&gt; &gt; · &lt; &lt;&lt;</b> (hover for rate) · ⚡ meter opens the power panel · issues are clickable</li>
-				</ul>
-			</section>
-		{:else}
-			<p class="disc"><b>Camera:</b> drag empty space to orbit (Select tool) · two fingers orbit/pan · pinch zoom · widget top-right: ⟲⟳ 45°, Top, Iso, Reset, ＋/－</p>
-			<p class="disc">{DISCLAIMER}</p>
-		{/if}
+		<section class="optlink">
+			<button onclick={() => options.show('controls')} data-testid="sidebar-options">⚙ Options & controls</button>
+			<p class="disc">{mobile ? 'Touch gestures, key bindings, graphics, simulation and building settings live in the Options menu (⚙ in the top bar).' : 'Key bindings, graphics, simulation and building settings live in the Options menu: ⚙ in the top bar, F10 or O.'}</p>
+			{#if mobile}<p class="disc">{DISCLAIMER}</p>{/if}
+		</section>
 	</div>
 </aside>
 
@@ -625,12 +594,18 @@
 		height: 18px;
 		flex: none;
 	}
-	.help ul {
-		margin: 0;
-		padding-left: 16px;
-		font-size: 11.5px;
-		line-height: 1.55;
-		color: #a9bad3;
+	.optlink button {
+		width: 100%;
+		padding: 9px;
+		font-size: 13px;
+		font-weight: 600;
+	}
+	.optlink .disc {
+		margin: 6px 0 0;
+		color: #8fa6c4;
+	}
+	.optlink .disc + .disc {
+		color: #e0a85a;
 	}
 
 	/* ---------- mobile bottom sheet ---------- */
@@ -701,13 +676,5 @@
 		font-size: 9px;
 		color: #9cf0b8;
 		margin-left: 5px;
-	}
-	.chk {
-		display: flex;
-		align-items: center;
-		gap: 6px;
-		font-size: 12px;
-		color: #9fb6d6;
-		margin: 4px 0;
 	}
 </style>

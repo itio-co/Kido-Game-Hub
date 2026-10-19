@@ -97,7 +97,7 @@ async function dragFrom(page, uid, dx) {
 
 	// persists after reload (layout JSON)
 	await wait(800);
-	const saved = await G(page, () => JSON.parse(localStorage.getItem('starship-interior-v5') ?? localStorage.getItem(Object.keys(localStorage).find((k) => /starship/.test(k) && !/equip/.test(k))) ?? '{}'));
+	const saved = await G(page, () => JSON.parse(localStorage.getItem('starship-interior:save:v5') ?? '{}'));
 	const savedLocked = (saved.decks?.[0]?.modules ?? []).filter((m) => m.locked).length;
 	await page.reload({ waitUntil: 'networkidle' });
 	await page.waitForFunction(() => !!window.__debug && !!window.__game);

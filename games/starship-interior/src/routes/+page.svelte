@@ -26,6 +26,8 @@
 	import HudTopBar from '$lib/components/hud/HudTopBar.svelte';
 	import BuildBar from '$lib/components/hud/BuildBar.svelte';
 	import SelectionCard from '$lib/components/hud/SelectionCard.svelte';
+	import OptionsMenu from '$lib/components/hud/OptionsMenu.svelte';
+	import { options } from '$lib/game/options.svelte';
 
 	let innerWidth = $state(1280);
 	let innerHeight = $state(800);
@@ -34,8 +36,10 @@
 
 	onMount(() => {
 		game.isTouch = window.matchMedia('(pointer: coarse)').matches;
-		if (game.isTouch) game.quality = 'low'; // phones start in Low quality (toggle in View & checks)
+		if (game.isTouch) game.quality = 'low'; // phones start in Low quality (Options → Graphics)
 		game.loadLocal(true);
+		options.init(); // saved Options-menu settings override the defaults
+		(window as unknown as { __options: typeof options }).__options = options;
 		window.__game = game;
 		(window as unknown as { __crew: typeof crew }).__crew = crew;
 		(window as unknown as { __rig: typeof rig }).__rig = rig;
@@ -96,7 +100,10 @@
 		else if (e.key === '+' || e.key === '=' || e.code === 'NumpadAdd') rig.zoom(0.85);
 		else if (e.key === '-' || e.key === '_' || e.code === 'NumpadSubtract') rig.zoom(1 / 0.85);
 		else if (e.code === 'Escape') {
-			// Esc: drop whatever is in hand and go back to the normal Select tool
+			// Esc while already idle (Select tool, nothing selected / placing / measuring) opens the Options menu
+			const idle = game.tool === 'select' && game.selectedUid === null && !game.pending && !game.measureA && !game.measureB && !game.drag;
+			if (idle && !e.repeat) return void options.show();
+			// otherwise Esc drops whatever is in hand and goes back to the normal Select tool
 			game.pending = null;
 			game.selectedUid = null;
 			game.measureA = game.measureB = null;
@@ -166,6 +173,7 @@
 	{#if game.designer}
 		<div class="top-right">
 			<button class="fab" onclick={() => (game.designer = false)}>◀ Planner</button>
+			<button class="fab" onclick={() => options.toggle()} aria-label="Options" title="Options (F10 / O)" data-testid="options-btn-designer">⚙</button>
 		</div>
 		{#if game.isTouch}<div class="tip dtip" class:mobile>{equip.editMode === 'object' ? 'Tap a part to select · drag gizmo · 1 finger orbit · pinch zoom' : `Tap ${equip.editMode === 'vertex' ? 'dots' : equip.editMode === 'edge' ? 'edges' : 'faces'} to select (＋ Multi adds) · drag gizmo · 1 finger orbit (⬚ Box on: drag box-selects, 2 fingers orbit) · pinch zoom`}</div>{/if}
 		{#if game.toast}<div class="toast" class:dtoast={mobile}>{game.toast}</div>{/if}
@@ -252,9 +260,9 @@
 				<Joystick />
 				<div class="tip walk">{game.microG ? 'Joystick: translate · drag: look' : 'Joystick: move · drag: look'}</div>
 			{:else if game.microG}
-				<div class="center-hint low">Micro-g · E interact (Shift+E more) · WASD translate · Space/R up · Ctrl/F down · Z/C roll · drag look · Shift push harder · G grab · X stop activity · T deck-up · PgUp/PgDn fly to next deck · V 1st/3rd · Esc release</div>
+				<div class="center-hint low">Micro-g · E interact (Shift+E more) · WASD translate · Space/R up · Ctrl/F down · Z/C roll · drag look · Shift push harder · G grab · X stop activity · T deck-up · PgUp/PgDn fly to next deck · V 1st/3rd · Esc release · ⚙ / O options</div>
 			{:else}
-				<div class="center-hint low">E interact (use · sit · climb toward where you look · repair; Shift+E / hold E more) · WASD move · Shift run · drag look · Space/PgUp ▲ · Q/C/PgDn ▼ · X stop activity · V 1st/3rd · Esc release</div>
+				<div class="center-hint low">E interact (use · sit · climb toward where you look · repair; Shift+E / hold E more) · WASD move · Shift run · drag look · Space/PgUp ▲ · Q/C/PgDn ▼ · X stop activity · V 1st/3rd · Esc release · ⚙ / O options</div>
 			{/if}
 		{:else if game.mode === 'build'}
 			{#if !(mobile && (crewSheet || (crew.enabled && crew.selected !== null)))}
@@ -301,7 +309,7 @@
 				<Joystick />
 				<div class="tip walk">Joystick: move · drag: look</div>
 			{:else if !game.pointerLocked}
-				<div class="center-hint">Click to look · WASD move · Shift run · E interact (climb toward where you look, sit, inspect; Shift+E more) · Space/PgUp ▲ · Q/C/PgDn ▼ · F build</div>
+				<div class="center-hint">Click to look · WASD move · Shift run · E interact (climb toward where you look, sit, inspect; Shift+E more) · Space/PgUp ▲ · Q/C/PgDn ▼ · F build · O options (all keys)</div>
 			{/if}
 			<InteractHud {mobile} />
 			<div class="travel">
@@ -320,6 +328,7 @@
 		{/if}
 	{/if}
 	</main>
+	<OptionsMenu {mobile} />
 </div>
 
 <style>

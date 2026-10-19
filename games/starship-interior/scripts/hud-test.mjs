@@ -1,5 +1,5 @@
 // Game HUD: top resource bar (power meter, clearances toggle, sim clock), bottom build bar (tabs + cards → placement),
-// contextual selection card (rotate / duplicate / delete), side-panel drawer, mobile layout.
+// contextual selection card (rotate / duplicate / delete), side-panel drawer, ⚙ Options button, mobile layout.
 // Screenshots: screenshot-hud-desktop.png, screenshot-hud-mobile.png. Usage: node scripts/hud-test.mjs [url]
 import { chromium, devices } from 'playwright';
 const URL = process.argv[2] ?? 'http://localhost:5173/';
@@ -29,6 +29,8 @@ const G = (fn, a) => page.evaluate(fn, a);
 const top = page.locator('[data-testid=hud-topbar]');
 const bar = page.locator('[data-testid=build-bar]');
 check('top bar + build bar visible', (await top.isVisible()) && (await bar.isVisible()));
+check('top bar has the ⚙ Options button', await top.locator('[data-testid=options-btn]').isVisible());
+check('sidebar no longer lists Controls (moved to Options)', (await page.locator('aside h2', { hasText: /^Controls$/ }).count()) === 0 && (await page.locator('[data-testid=sidebar-options]').isVisible()));
 check('top bar shows static power budget before the sim', await page.locator('[data-testid=hud-power-budget]').isVisible());
 await page.getByRole('button', { name: /Start crew sim/ }).click();
 await page.waitForFunction(() => window.__crew.enabled);
@@ -90,6 +92,7 @@ await M(() => window.__crew.start());
 await page.waitForTimeout(500);
 const mb = page.locator('[data-testid=build-bar]');
 check('mobile: build bar visible', await mb.isVisible());
+check('mobile: ⚙ Options button visible in the top bar', await page.locator('[data-testid=hud-topbar] [data-testid=options-btn]').isVisible());
 await mb.locator('[data-testid=build-tab]').nth(1).tap();
 const mc = mb.locator('[data-testid=build-card]').first();
 await mc.tap();

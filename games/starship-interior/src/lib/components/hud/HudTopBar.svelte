@@ -1,9 +1,10 @@
 <script lang="ts">
-	/** Slim top resource bar: mission phase, crew / seats, mass, power (live bus or budget), cost, free floor, issues, clearances toggle, sim clock. */
+	/** Slim top resource bar: ⚙ options, mission phase, crew / seats, mass, power (live bus or budget), cost, free floor, issues, clearances toggle, sim clock. */
 	import { game } from '$lib/game/state.svelte';
 	import { crew, fmtClock } from '$lib/sim/crewSim.svelte';
 	import PowerMeter from '$lib/sim/PowerMeter.svelte';
 	import type { Mission } from '$lib/game/types';
+	import { options } from '$lib/game/options.svelte';
 	let { mobile = false, onpower }: { mobile?: boolean; onpower?: () => void } = $props();
 	const s = $derived(game.stats);
 	const MISSIONS: { id: Mission; icon: string; label: string }[] = [
@@ -23,6 +24,7 @@
 </script>
 
 <div class="hudbar glass" class:mobile data-testid="hud-topbar">
+	<button class="res opts" class:on={options.open} onclick={() => options.toggle()} title="Options: controls, graphics, simulation, building, about (F10 / O)" aria-label="Options" data-testid="options-btn">⚙{#if !mobile}<small>Menu</small>{/if}</button>
 	<button class="res mission" onclick={nextMission} title="Mission phase (click to cycle): Launch · Cruise (micro-g) · Landing · Surface" data-testid="hud-mission">{mi.icon}{#if !mobile} {mi.label}{/if}</button>
 	<span class="res" class:bad={game.seats < game.crew} title="Crew / launch seats">👥 {game.crew}<small>/💺{game.seats}</small></span>
 	{#if !mobile}<span class="res" title="Equipment mass (estimate)">⚖ {k(s.mass)}</span>{/if}
@@ -96,6 +98,15 @@
 	button.res {
 		cursor: pointer;
 	}
+	.opts {
+		font-size: 14px;
+		padding: 4px 8px;
+	}
+	.opts small {
+		font-size: 11px;
+		margin-left: 3px;
+	}
+	.opts.on,
 	.tog.on {
 		color: #061018;
 		background: linear-gradient(180deg, #6ee7ff, #22b8e0);

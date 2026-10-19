@@ -412,7 +412,7 @@ The mission is saved with the layout.
   roll and upside-down views. **⬆ Reset up** (panel or HUD) restores the deck-up view. Dust motes drift in the current deck.
 
 ## Game HUD
-- **Top resource bar** (slim, glass): mission phase (click to cycle), crew / launch seats, mass, power (the live meter
+- **Top resource bar** (slim, glass): **⚙ Menu** (Options), mission phase (click to cycle), crew / launch seats, mass, power (the live meter
   while the crew sim runs, otherwise the static budget), volume, cost, free floor area, issue count, **📐 Clearances**
   toggle, and the sim clock with ⏸/▶ and speed.
 - **Bottom build bar:** large tool buttons (Select, Place, Measure, Camera), category tabs (Crew, Galley, Hygiene & fitness,
@@ -420,13 +420,42 @@ The mission is saved with the layout.
   ▾ collapses the bar.
 - **Selection card:** appears when an item is selected. It shows size, power and deck, live condition (when the sim runs),
   couch egress status, and seats. Actions: ⟲ ⟳ 90°, 📋 duplicate, 🪑＋ add seats (tables), 🧭 nudge (blocked couch), 🗑 delete.
-- **Side panel drawer:** ☰ (left of the deck pills) shows or hides the full sidebar (tools, catalog, checks, crew sim).
+- **Side panel drawer:** ☰ (left of the deck pills) shows or hides the full sidebar (tools, ship, decks, crew sim, stats,
+  export, save/load). Key bindings and view settings are no longer in the sidebar; they live in the Options menu.
   It is open by default.
 - **Mode buttons** (top-right): large 🚶 Walk / 🛠 Build and 🧩 Design.
 - **Phone:** the top bar sits at the top (scrolls sideways), the build bar sits above the bottom sheet, and the selection
   card replaces the build bar while something is selected.
 
+## Options menu (⚙)
+
+A game-style menu that replaces the old sidebar *Controls* list and *View & checks* box.
+
+- **Open:** ⚙ **Menu** at the left end of the top bar (also ⚙ next to ◀ Planner in the designer), **F10** or **O** in
+  any mode, or **Esc** in build mode when you are already idle (Select tool, nothing selected, nothing being placed or
+  measured; otherwise Esc first cancels / deselects as before). In walk / possession Esc keeps its release behaviour,
+  so use ⚙, F10 or O there. **Esc**, F10, O, ✕ or a click on the dimmed backdrop closes it. Opening it releases the mouse
+  pointer, and game keys don't reach the scene while it is open.
+- **Layout:** desktop = centred glass panel with tabs on the left; phone = full screen with the tabs as a top segmented row.
+- **Pages:**
+  - **Controls:** every binding grouped by mode (Build, Camera, Walk, Crew control, Cruise micro-g, Designer, Menu,
+    Mobile touch gestures) as key-cap chips, with a search filter (key or action, e.g. `E`, `climb`). On phones and
+    touch devices the touch gestures come first.
+  - **Graphics:** quality High / Low, shadows, interior lights warm / cool, show clearances, occupancy badges,
+    walkable overlay, radial guides.
+  - **Simulation:** keep running while the menu is open, start / pause the crew sim, sim speed (1 / 4 / 16 / 60×),
+    random or fixed seed (applied on every Start), heat map, first-person possession.
+  - **Building:** snap, align ladders, lock ladders / hatches by default (saved with the layout), clearance check,
+    touch tap-to-preview, two-finger orbit / pan, units (metric SI, fixed).
+  - **About / Help:** version and git commit (from the build), the disclaimer, a sources summary pointing to
+    `docs/starship-reference.md`, HUD / crew-sim tips and **Reset options to defaults**.
+- **Persistence:** settings are saved in `localStorage` under `starship-interior:options` (the light tone keeps its own
+  `starship-interior:tone` key) and restored on load; a saved quality overrides the phone default of Low.
+- **Sim pause:** the crew sim pauses while the menu is open and resumes on close, unless *Keep running* is on.
+
 ## Controls
+
+All bindings are also listed, searchable, in **⚙ Options → Controls**.
 
 ### Camera (build mode)
 
@@ -435,7 +464,7 @@ The mission is saved with the layout.
   right-click without a drag on a module deletes it. Middle-drag orbits, the wheel zooms, ←/→ orbit, ↑/↓
   tilt and +/− zoom.
 - **Mobile:** with the Select tool, a one-finger drag on empty space orbits. Two-finger drag orbits or pans
-  (set this under Touch options) and pinch zooms.
+  (set this in ⚙ Options → Building) and pinch zooms.
 - **Camera widget** (top-right, under Walk; desktop and mobile): ⟲/⟳ orbit in animated 45° steps, ⤒/⤓ tilt,
   ＋/－ zoom, Top view, Iso view and Reset. A compass needle turns with the camera (N = −Z).
 - Pitch ranges from near top-down to near horizontal and never goes below the floor. Switching decks keeps
@@ -449,7 +478,7 @@ The mission is saved with the layout.
 | Rotate | While placing (Place tool with a ghost/preview) or with a module/ladder selected: `Q`/`E` or `Shift`+wheel 15° · `Alt+Q/E` 1° · `R` 90° · on-screen ⟲ ⟳ 90° buttons |
 | Select / move / delete | Select tool: click a module, drag to move. `Delete`/`Backspace` or 🗑 deletes; right-click deletes in any tool |
 | Measure | Click two points to see the distance (m). `Esc` clears |
-| Lock / unlock | **🔒/🔓** on the selection card (also in the sidebar's Selected box; on mobile on the card, or the HUD button for a selected ladder) or `L` toggles the lock on the selection. You can't drag a locked item (dragging it orbits the camera instead), rotate it (`Q`/`E`/`R` or the buttons), move it to a clear spot (🧭), or delete it (`Del`, 🗑 or right-click show "… is locked – unlock it first"). It can still be selected, inspected and used by the crew. Locked items show a small 🔒 badge, a 🔒 on the hover/selection labels and an amber outline when selected. The Decks panel has **🔒 Lock all on deck** / **🔓 Unlock all** (items plus the ladders touching the deck) and **Lock ladders / hatches by default**. `Ctrl+Z` / `Ctrl+Shift+Z` (or `Ctrl+Y`) undo/redo lock changes. The flag is saved as `"locked": true` per module / ladder in the layout JSON |
+| Lock / unlock | **🔒/🔓** on the selection card (also in the sidebar's Selected box; on mobile on the card, or the HUD button for a selected ladder) or `L` toggles the lock on the selection. You can't drag a locked item (dragging it orbits the camera instead), rotate it (`Q`/`E`/`R` or the buttons), move it to a clear spot (🧭), or delete it (`Del`, 🗑 or right-click show "… is locked – unlock it first"). It can still be selected, inspected and used by the crew. Locked items show a small 🔒 badge, a 🔒 on the hover/selection labels and an amber outline when selected. The Decks panel has **🔒 Lock all on deck** / **🔓 Unlock all** (items plus the ladders touching the deck); **Lock ladders / hatches by default** is in ⚙ Options → Building. `Ctrl+Z` / `Ctrl+Shift+Z` (or `Ctrl+Y`) undo/redo lock changes. The flag is saved as `"locked": true` per module / ladder in the layout JSON |
 | Back to normal | `Esc` (or the ↖ Select button) cancels placing / measuring, deselects, and returns to the Select tool. `1` also picks Select |
 | Camera | Middle-drag orbits, wheel zooms (Camera tool: left orbit, right pan) |
 | Decks | Deck pills, **▼ ▲** buttons, `PgUp`/`PgDn`, `Shift+Q`/`Shift+E`, or plain `Q`/`E` when nothing is selected or being placed · ＋ adds a deck, height slider, ✂ section view |
@@ -459,6 +488,7 @@ The mission is saved with the layout.
 | Walk | `F`; click to look around, `WASD` move, `Shift` run. `E` interacts (see below): at a ladder (within ~1 m) or hatch opening it climbs toward where you look, at a chair or couch it sits you down (move or `E` to stand), at other equipment it inspects it. `Space`/`PgUp` climb up and `Q`/`C`/`PgDn` climb down explicitly (short climb animation), or use the on-screen **▲ / ▼** buttons. Away from a ladder, a hint names the nearest one and rings it |
 | Interact (E) | Walk, possessed crew and cruise. **E** runs the best context action. That is the item under the crosshair, otherwise the nearest one within ~1.5 m in front of you (measured from the item's nearest edge; anything within 0.8 m counts whatever your heading). The prompt names it, e.g. `E  Climb up to Deck 2`, `E  Sit – Meal at table (Chair 2/4)`, `E  Use Water Dispenser – Rehydrate food`, `E  Repair Hygiene / Toilet`, `E  Stop: Sleep (Sleep Bunk)`. **Shift+E** or **holding E for 0.4 s** opens a list of the other actions for what's in reach: pick with `1`–`9` or a click, close with `Esc`/`E`. `Enter` also runs the best action. Ladders follow your look direction: look up to climb up, down to climb down. Unpowered, broken or full items show greyed out with the reason. Mobile: tap the big **Interact** button (it shows the label), hold it for the list. With a single possible action E acts immediately on key-down. A press whose key-up gets lost (focus or pointer-lock change, a remote desktop) still acts once, and the key-up's timestamp decides tap vs hold, so a stalled frame can't turn a tap into the list. If the browser sends no `code`, the key / keyCode / Thai character is used instead. Entering walk or possession releases focus from the button you clicked. A dim `E nothing in reach` line shows when there is no target. **F9** (or `?ixdebug` in the URL) shows a debug overlay with the last key events (code, key, keyCode, repeat, IME, target), pointer lock, focus, the actions in reach and what E did |
 | Possessed crew | `Space`/`PgUp` climb up, `Q`/`C`/`PgDn` climb down, `X` stop the current activity, `V` 1st/3rd person, `Esc` release. Cruise: `Space`/`R` up, `Ctrl`/`F` down, `Z`/`C` roll, `G` grab, `T` reorient to deck-up |
+| Options menu | ⚙ in the top bar, `F10` or `O` (any mode), `Esc` when idle in build mode; `Esc` closes |
 | Keyboard layouts | All shortcuts use the physical key (`KeyboardEvent.code`), so they work on Thai, AZERTY etc. layouts. Keys are ignored only while typing in a text field; clicked buttons release focus |
 
 ### Mobile (touch)
@@ -468,7 +498,7 @@ The mission is saved with the layout.
 - **Place:** tap to preview (the ghost locks in place), drag to move it, then tap it again or press **✓ Place**; **✕** cancels.
 - **Select:** tap a module to select it, drag it to move, use 🗑 to delete. Rotate with the large ⟲ / ⟳15° / 90° buttons.
 - **Measure:** tap two points.
-- **Two fingers** always control the camera: pinch zooms, drag orbits (or pans, under *View & checks*).
+- **Two fingers** always control the camera: pinch zooms, drag orbits (or pans, under ⚙ Options → Building).
   A second finger cancels any build action in progress, so camera gestures never place anything.
 - **Walk:** joystick to move, drag to look, ▲ Up / ▼ Down buttons (lit when a ladder or hatch is within reach).
 - **Designer:** 📐 opens it. The ▲ bottom sheet holds the library, parts, numeric fields, ±1 cm / ±5° nudge buttons and
@@ -585,11 +615,13 @@ scripts/designer-edit-test.mjs designer vertex/edge/face editing, ops, validatio
 scripts/interact-real-test.mjs E like a real user: pointer lock, focus on HUD buttons, Thai keys, lost key-ups, frame stalls, empty code, F9 overlay
 scripts/interior-test.mjs   interior view: walls/ceilings, no clipping, lights, camera containment, mobile budget
 scripts/hud-test.mjs        HUD top bar, build bar, selection card, drawer (desktop + iPhone 13)
+scripts/options-test.mjs    Options menu: ⚙ / F10 / O / Esc, tabs, settings persist, sim pause, Controls search (desktop + iPhone 13)
 src/lib/sim/effects.ts      status effects, diminishing returns, trend symbols
 src/lib/sim/lifecycle.ts    life specs, wear / hazard, repair / service
 src/lib/sim/power.ts        power profiles + priorities
 src/lib/game/egress.ts      couch egress path solver + nudge
-src/lib/components/hud/     HudTopBar, BuildBar, SelectionCard, categories
+src/lib/components/hud/     HudTopBar, BuildBar, SelectionCard, OptionsMenu (⚙ menu), categories
+src/lib/game/options.svelte.ts  persisted Options settings + menu open / pause state; controls.ts = key-binding table
 ```
 
 ## Limitations / next steps

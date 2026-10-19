@@ -222,7 +222,7 @@
 	position={[5, lightY + 12, 4]}
 	intensity={interior ? 0.35 : 2.2}
 	color="#fff6ea"
-	castShadow={game.quality === 'high'}
+	castShadow={game.quality === 'high' && game.shadows}
 	shadow.mapSize={[2048, 2048]}
 	shadow.bias={-0.0004}
 	shadow.normalBias={0.02}
@@ -266,7 +266,7 @@
 						ceiling={k < topDeck}
 						near={Math.abs(k - viewDeck) <= 1}
 						lights={lowPerf ? (k === viewDeck ? 1 : 0) : Math.abs(k - viewDeck) <= 1 ? 2 : 0}
-						shadows={!lowPerf && game.quality === 'high' && k === viewDeck}
+						shadows={!lowPerf && game.quality === 'high' && game.shadows && k === viewDeck}
 						tone={game.interiorTone}
 						{outside}
 					/>
