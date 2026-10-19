@@ -160,15 +160,41 @@
 		{/if}
 		{#if possessed}
 			{#if crew.ui.prompt}<div class="prompt" class:mobile>{crew.ui.prompt}</div>{/if}
-			<div class="possess-actions" class:mobile>
-				<button class="fab ok" onclick={() => crew.interact(false)} aria-label="Use / climb up">E {game.isTouch ? 'Use ⬆' : 'Use / ⬆'}</button>
-				<button class="fab" onclick={() => crew.interact(true)} aria-label="Climb down">⬇</button>
-				<button class="fab" onclick={() => (crew.firstPerson = !crew.firstPerson)} aria-label="Camera view">{crew.firstPerson ? '3rd' : '1st'}</button>
-				<button class="fab del" onclick={() => crew.possess(null)} aria-label="Release">⏏ Release</button>
-			</div>
+			{#if game.microG}
+				<div class="possess-actions" class:mobile>
+					<button class="fab ok" onclick={() => crew.interact(false)} aria-label="Use">{game.isTouch ? 'Use' : 'X Use'}</button>
+					<button class="fab" onclick={() => crew.reorient()} aria-label="Reorient to deck up">⊙ <small>Deck up</small></button>
+					<button class="fab" onclick={() => (crew.firstPerson = !crew.firstPerson)} aria-label="Camera view">{crew.firstPerson ? '3rd' : '1st'}</button>
+					<button class="fab del" onclick={() => crew.possess(null)} aria-label="Release">⏏ Release</button>
+				</div>
+				{#if game.isTouch}
+					{@const hold = (k: 'u' | 'roll', v: number) => ({
+						onpointerdown: (e: PointerEvent) => ((crew.touch[k] = v), (e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId)),
+						onpointerup: () => (crew.touch[k] = 0),
+						onpointercancel: () => (crew.touch[k] = 0)
+					})}
+					<div class="micropad">
+						<button class="fab" {...hold('roll', -1)} aria-label="Roll left">⟲</button>
+						<button class="fab" {...hold('u', 1)} aria-label="Move up">▲</button>
+						<button class="fab" {...hold('roll', 1)} aria-label="Roll right">⟳</button>
+						<button class="fab ok" onclick={() => (crew.input.grab = true)} aria-label="Grab">✊</button>
+						<button class="fab" {...hold('u', -1)} aria-label="Move down">▼</button>
+						<span></span>
+					</div>
+				{/if}
+			{:else}
+				<div class="possess-actions" class:mobile>
+					<button class="fab ok" onclick={() => crew.interact(false)} aria-label="Use / climb up">E {game.isTouch ? 'Use ⬆' : 'Use / ⬆'}</button>
+					<button class="fab" onclick={() => crew.interact(true)} aria-label="Climb down">⬇</button>
+					<button class="fab" onclick={() => (crew.firstPerson = !crew.firstPerson)} aria-label="Camera view">{crew.firstPerson ? '3rd' : '1st'}</button>
+					<button class="fab del" onclick={() => crew.possess(null)} aria-label="Release">⏏ Release</button>
+				</div>
+			{/if}
 			{#if game.isTouch}
 				<Joystick />
-				<div class="tip walk">Joystick: move · drag: look</div>
+				<div class="tip walk">{game.microG ? 'Joystick: translate · drag: look' : 'Joystick: move · drag: look'}</div>
+			{:else if game.microG}
+				<div class="center-hint low">Micro-g · WASD translate · Space/R up · Ctrl/F down · Q/E roll · drag look · Shift push harder · G grab · X use · Z deck-up · V 1st/3rd · Esc release</div>
 			{:else}
 				<div class="center-hint low">WASD move · Shift run · drag look · wheel zoom · E use / climb up · Q down · V 1st/3rd person · Esc release</div>
 			{/if}
@@ -423,6 +449,23 @@
 		flex-direction: column;
 		align-items: flex-end;
 		bottom: calc(40px + env(safe-area-inset-bottom));
+	}
+	.micropad {
+		position: absolute;
+		right: calc(84px + env(safe-area-inset-right));
+		bottom: calc(40px + env(safe-area-inset-bottom));
+		z-index: 11;
+		display: grid;
+		grid-template-columns: repeat(3, 48px);
+		gap: 6px;
+		touch-action: none;
+	}
+	.micropad .fab {
+		width: 48px;
+		height: 48px;
+		padding: 0;
+		justify-content: center;
+		font-size: 18px;
 	}
 	.center-hint.low {
 		top: auto;
