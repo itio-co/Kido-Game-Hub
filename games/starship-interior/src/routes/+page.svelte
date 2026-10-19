@@ -84,9 +84,11 @@
 		else if (e.key === '+' || e.key === '=' || e.code === 'NumpadAdd') rig.zoom(0.85);
 		else if (e.key === '-' || e.key === '_' || e.code === 'NumpadSubtract') rig.zoom(1 / 0.85);
 		else if (e.code === 'Escape') {
+			// Esc: drop whatever is in hand and go back to the normal Select tool
 			game.pending = null;
 			game.selectedUid = null;
 			game.measureA = game.measureB = null;
+			game.tool = 'select';
 		} else if (toolKeys[e.code]) {
 			game.tool = toolKeys[e.code];
 			game.pending = null;
@@ -247,6 +249,9 @@
 			<div class="build-actions" class:mobile class:carded={game.tool === 'select' && game.selected !== null}>
 				{#if game.microG && game.freeCam}
 					<button class="fab" onclick={() => game.resetUpTick++} aria-label="Reset camera up">⬆ <small>Reset up</small></button>
+				{/if}
+				{#if game.tool !== 'select'}
+					<button class="fab" onclick={() => { game.pending = null; game.measureA = game.measureB = null; game.tool = 'select'; }} aria-label="Back to Select" title="Back to Select (Esc)">↖ <small>Select{mobile ? '' : ' · Esc'}</small></button>
 				{/if}
 				{#if game.tool === 'module' && game.pending}
 					<button class="fab ok" onclick={confirmPending} aria-label="Place">✓ Place</button>

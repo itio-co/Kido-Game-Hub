@@ -402,6 +402,7 @@ The mission is saved with the layout.
 | Rotate | While placing (Place tool with a ghost/preview) or with a module/ladder selected: `Q`/`E` or `Shift`+wheel 15° · `Alt+Q/E` 1° · `R` 90° · on-screen ⟲ ⟳ 90° buttons |
 | Select / move / delete | Select tool: click a module, drag to move. `Delete`/`Backspace` or 🗑 deletes; right-click deletes in any tool |
 | Measure | Click two points to see the distance (m). `Esc` clears |
+| Back to normal | `Esc` (or the ↖ Select button) cancels placing / measuring, deselects, and returns to the Select tool. `1` also picks Select |
 | Camera | Middle-drag orbits, wheel zooms (Camera tool: left orbit, right pan) |
 | Decks | Deck pills, **▼ ▲** buttons, `PgUp`/`PgDn`, `Shift+Q`/`Shift+E`, or plain `Q`/`E` when nothing is selected or being placed · ＋ adds a deck, height slider, ✂ section view |
 | Section cut | ✂ on: Half/Quarter, Follow camera, cut-angle slider and ⟲/⟳ 15° in the Decks panel, optional cut height |
