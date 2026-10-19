@@ -8,6 +8,7 @@
 	import type { ModuleId } from '$lib/game/types';
 	import AffordanceEditor from './AffordanceEditor.svelte';
 	import { lifeOf } from '$lib/sim/lifecycle';
+	import { PRIORITIES, powerOf, type Priority } from '$lib/sim/power';
 	import type { ModuleDef } from '$lib/game/types';
 
 	interface Props {
@@ -53,6 +54,14 @@
 		equip.update(equip.selectedId, (e) => ((e as unknown as Record<string, unknown>)[k as string] = v));
 	}
 	const lifeBase = $derived(lifeOf({ id: def?.id ?? '', power: def?.power ?? 0 } as unknown as ModuleDef));
+	const powerBase = $derived(powerOf({ id: def?.id ?? '', power: def?.power ?? 0 } as unknown as ModuleDef) ?? { standby: 0, active: 0, priority: 'Normal' as Priority });
+	function setPow(k: 'standby' | 'active' | 'duty' | 'priority', v: number | Priority) {
+		if (typeof v === 'number' && (!isFinite(v) || v < 0)) return;
+		equip.update(equip.selectedId, (e) => (e.powerSpec = { ...(e.powerSpec ?? {}), [k]: v }));
+	}
+	function setPeak(w: number, sec: number) {
+		equip.update(equip.selectedId, (e) => (e.powerSpec = { ...(e.powerSpec ?? {}), peak: w > 0 && sec > 0 ? { w, s: sec } : undefined }));
+	}
 	function setLife(k: 'life' | 'mtbf' | 'service' | 'repair' | 'spares', v: number) {
 		if (!isFinite(v) || v < 0) return;
 		equip.update(equip.selectedId, (e) => (e.life = { ...(e.life ?? {}), [k]: v }));
@@ -261,6 +270,16 @@
 					<label title="Repair time, sim minutes (engineer)">Repair min <input type="number" min="5" value={def.life?.repair ?? lifeBase.repair} disabled={!editable} onchange={(e) => setLife('repair', Number(e.currentTarget.value))} /></label>
 					<label title="Spare kits per repair (from Storage Lockers, 6 each)">Spares <input type="number" min="0" max="10" value={def.life?.spares ?? lifeBase.spares} disabled={!editable} onchange={(e) => setLife('spares', Number(e.currentTarget.value))} /></label>
 					<label title="Noise radius m (Comfort debuff nearby while in use); 0 = quiet">Noise m <input type="number" min="0" max="10" step="0.5" value={def.noise?.r ?? 0} disabled={!editable} onchange={(e) => meta('noise', Number(e.currentTarget.value) > 0 ? { r: Number(e.currentTarget.value) } : undefined)} /></label>
+					<label title="Standby / idle draw, W">Standby W <input type="number" min="0" data-testid="designer-standby" value={def.powerSpec?.standby ?? powerBase.standby} disabled={!editable} onchange={(e) => setPow('standby', Number(e.currentTarget.value))} /></label>
+					<label title="Working draw, W">Active W <input type="number" min="0" value={def.powerSpec?.active ?? powerBase.active} disabled={!editable} onchange={(e) => setPow('active', Number(e.currentTarget.value))} /></label>
+					<label title="Start-up surge W (0 = none)">Peak W <input type="number" min="0" value={def.powerSpec?.peak?.w ?? powerBase.peak?.w ?? 0} disabled={!editable} onchange={(e) => setPeak(Number(e.currentTarget.value), def.powerSpec?.peak?.s ?? powerBase.peak?.s ?? 5)} /></label>
+					<label title="Surge duration, s">Peak s <input type="number" min="0" value={def.powerSpec?.peak?.s ?? powerBase.peak?.s ?? 0} disabled={!editable} onchange={(e) => setPeak(def.powerSpec?.peak?.w ?? powerBase.peak?.w ?? 0, Number(e.currentTarget.value))} /></label>
+					<label title="Duty cycle while on (fridge ~0.4)">Duty <input type="number" min="0.05" max="1" step="0.05" value={def.powerSpec?.duty ?? powerBase.duty ?? 1} disabled={!editable} onchange={(e) => setPow('duty', Number(e.currentTarget.value))} /></label>
+					<label>Priority
+						<select value={def.powerSpec?.priority ?? powerBase.priority} disabled={!editable} data-testid="designer-priority" onchange={(e) => setPow('priority', e.currentTarget.value as Priority)}>
+							{#each PRIORITIES as p (p)}<option>{p}</option>{/each}
+						</select>
+					</label>
 					<label>Stowed in
 						<select value={def.stowPhase ?? 'launch'} disabled={!editable} onchange={(e) => meta('stowPhase', e.currentTarget.value as 'launch' | 'surface')}>
 							<option value="launch">Launch/Landing</option>

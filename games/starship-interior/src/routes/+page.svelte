@@ -17,6 +17,8 @@
 	import Joystick from '$lib/components/Joystick.svelte';
 	import AgentCard from '$lib/sim/AgentCard.svelte';
 	import CrewHoverTip from '$lib/sim/CrewHoverTip.svelte';
+	import PowerMeter from '$lib/sim/PowerMeter.svelte';
+	import PowerPanel from '$lib/sim/PowerPanel.svelte';
 	import CrewSimPanel from '$lib/sim/CrewSimPanel.svelte';
 	import { crew, fmtClock } from '$lib/sim/crewSim.svelte';
 
@@ -123,6 +125,7 @@
 		game.mode = game.mode === 'build' ? 'walk' : 'build';
 	}
 	let crewSheet = $state(false);
+	let powerOpen = $state(false);
 	const possessed = $derived(crew.possessed !== null && game.mode === 'build');
 	function confirmPending() {
 		if (game.pending && game.placeAt(game.pending)) game.pending = null;
@@ -186,7 +189,9 @@
 				<button onclick={() => (crew.running = !crew.running)} aria-label={crew.running ? 'Pause sim' : 'Play sim'}>{crew.running ? '⏸' : '▶'}</button>
 				<b>{fmtClock(crew.ui.clock)}</b>
 				<button onclick={() => (crew.speed = crew.speed === 60 ? 1 : crew.speed === 1 ? 4 : crew.speed === 4 ? 16 : 60)} aria-label="Sim speed">{crew.speed}×</button>
+				<PowerMeter compact={mobile} onopen={() => (powerOpen = !powerOpen)} />
 			</div>
+			{#if powerOpen}<PowerPanel onclose={() => (powerOpen = false)} />{/if}
 		{/if}
 		{#if game.mode === 'build' && crew.enabled}<AgentCard {mobile} />{/if}
 		{#if crew.enabled && !mobile}<CrewHoverTip />{/if}
