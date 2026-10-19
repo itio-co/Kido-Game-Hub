@@ -27,6 +27,7 @@
 	import Avatar from '$lib/sim/Avatar.svelte';
 	import { couchFrame, type AvatarState } from '$lib/sim/avatarPose';
 	import { couchOccupant } from '$lib/game/couchModel';
+	import { defaultSlots } from '$lib/game/affordances';
 
 	const COUCH = couchFrame(couchOccupant());
 
@@ -48,6 +49,14 @@
 		if (!def || !equip.occupant || equip.pose === 'stowed' || !def.seats || (def.stowPhase ?? 'launch') !== 'surface') return [];
 		const n = def.seats;
 		return Array.from({ length: n }, (_, i) => ({ x: (i - (n - 1) / 2) * 0.8, y: 0, z: 0, yaw: 0, pose: 'couch', t: i, visible: true, couch: COUCH }));
+	});
+	/** use points of the shown affordance as ghost avatars in their exact use transform (slot editor) */
+	const useGhosts = $derived.by(() => {
+		if (!def?.affords?.length || occupants.length || equip.pose === 'stowed') return [];
+		const ai = Math.min(equip.slotSel.aff, def.affords.length - 1);
+		const af = def.affords[ai];
+		const sl = af.slots ?? defaultSlots(af, def.w, def.d, def.height, def.capacity ?? def.seats ?? 1);
+		return sl.map((s, k) => ({ k, sel: equip.slotSel.aff === ai && equip.slotSel.slot === k, av: { x: s[0], y: s[2], z: s[1], yaw: (s[3] * Math.PI) / 180, pose: s[4] ?? af.pose, t: k * 0.7, visible: true, seatY: 0 } as AvatarState }));
 	});
 	// camera presets (Iso / Side / Front / Top)
 	let camRef = $state<PerspectiveCamera>();
@@ -236,6 +245,12 @@
 	{#each occupants as o, i (i)}
 		<Avatar av={o} color={['#3f7fd6', '#d6643f', '#3fae6a', '#b04fc4'][i % 4]} id={100 + i} />
 	{/each}
+	{#each useGhosts as gh (gh.k)}
+		<Avatar av={gh.av} color={gh.sel ? '#38bdf8' : '#7c93b8'} selected={gh.sel} id={200 + gh.k} />
+		<HTML position={[gh.av.x, gh.av.y + 1.95, gh.av.z]} center pointerEvents="none">
+			<div class="slotTag" class:sel={gh.sel} data-testid="use-ghost">#{gh.k + 1} {gh.av.pose}</div>
+		</HTML>
+	{/each}
 
 	<!-- hidden procedural renders used once to convert a built-in into parts -->
 	{#if needsExtract}
@@ -245,6 +260,19 @@
 {/if}
 
 <style>
+	.slotTag {
+		font: 600 10px system-ui, sans-serif;
+		color: #dbeafe;
+		background: rgba(8, 14, 24, 0.75);
+		border: 1px solid #7c93b8;
+		border-radius: 6px;
+		padding: 1px 4px;
+		white-space: nowrap;
+	}
+	.slotTag.sel {
+		border-color: #38bdf8;
+		color: #7dd3fc;
+	}
 	.dim {
 		font: 11px system-ui;
 		color: #cfe3ff;

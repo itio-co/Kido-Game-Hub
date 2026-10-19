@@ -233,7 +233,7 @@ const ALL_FULL = (c, id) => { for (const n of ['energy', 'hunger', 'hygiene', 'b
 	await G(page, () => { const g = window.__game; g.selectDeck(1); window.__rig.animateTo({ az: 0.55, polar: 0.82, dist: 6.4 }, [0.4, g.floorY[1] + 0.3, 0.6], 10); });
 	await wait(2000);
 	await page.screenshot({ path: 'screenshot-crew-launch.png' });
-	check('launch phase: crew strap into couches', !!strapped && (await G(page, () => window.__game.seats)) > 0, { strapped, seats: await G(page, () => window.__game.seats), log: noseat });
+	check('launch phase: crew strap into couches', !!strapped && (await G(page, () => window.__game.seats)) > 0, { strapped, seats: await G(page, () => window.__game.seats), log: noseat, states: strapped ? undefined : await G(page, () => window.__crew.agents.map((a) => `${a.id}:${a.state}/${a.door}/${a.action}`)) });
 	await G(page, () => window.__game.setPhase('surface'));
 
 	// save includes roster + settings

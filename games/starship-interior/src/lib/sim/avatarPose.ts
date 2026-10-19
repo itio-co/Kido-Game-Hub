@@ -245,4 +245,21 @@ export interface AvatarState {
 	seatY?: number;
 	/** micro-g: free body orientation (x, y, z, w); when set, (x, y, z) is the hip joint */
 	q?: [number, number, number, number] | null;
+	/** pose blend: body = mix of `from` (0) → `pose` (1); docking into / out of a use pose */
+	from?: PoseName;
+	mix?: number;
+}
+
+/** joint-wise blend of two frames */
+export function mixFrames(a: PoseFrame, b: PoseFrame, t: number): PoseFrame {
+	const o = { ...b };
+	for (const k of Object.keys(o) as (keyof PoseFrame)[]) o[k] = a[k] + (b[k] - a[k]) * t;
+	return o;
+}
+/** the frame an avatar shows right now (with its pose blend) */
+export function avatarFrame(av: AvatarState, g = 1): PoseFrame {
+	const f = frameFor(av.pose, av.t, g, av.couch, av.seatY);
+	const m = av.mix ?? 1;
+	if (!av.from || m >= 1 || av.from === av.pose) return f;
+	return mixFrames(frameFor(av.from, av.t, g, av.couch, av.seatY), f, Math.max(0, m));
 }

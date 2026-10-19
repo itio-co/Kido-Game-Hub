@@ -24,7 +24,13 @@ export const NEED_IDS = NEEDS.map((n) => n.id);
 export const DECAY: Record<NeedId, number> = { energy: 5.5, hunger: 7, hygiene: 3.5, bladder: 11, fitness: 2.2, fun: 4, work: 4, comfort: 4 };
 export const SLEEP_DECAY: Partial<Record<NeedId, number>> = { hunger: 2.5, bladder: 4, hygiene: 1.5, fun: 0.5, work: 0.5, fitness: 0.5 };
 
-export type Slot = [number, number, number, number];
+/**
+ * Exact use transform of one place, relative to the item (module space, front = +Z):
+ * [x, z, y, yawDeg, pose?] – x/z = body origin on the floor plan (seat point for sitting, mattress
+ * point for lying, feet for standing), y = height of that point, yaw = facing (0 = +Z, 180 = towards
+ * the item's back), pose = body pose at this place (default: the affordance's pose).
+ */
+export type Slot = [number, number, number, number, PoseName?];
 export interface Affordance {
 	id: string;
 	label: string;
@@ -82,8 +88,9 @@ export const BUILTIN_AFFORDANCES: Record<string, Affordance[]> = {
 	workstation2: [{ id: 'work', label: 'Work at console', needs: { work: 40, comfort: 6, fun: 4 }, minutes: 120, pose: 'sitwork', social: true, slots: [[-0.6, 0.24, 0.47, 180], [0.6, 0.24, 0.47, 180]], roles: ['Commander', 'Pilot', 'Scientist', 'Engineer'] }],
 	hydroponics: [{ id: 'tend', label: 'Gardening', needs: { work: 34, fun: 12 }, minutes: 50, pose: 'work', slots: front(0.6, [-0.33, 0.33]), roles: ['Scientist'] }],
 	hygiene: [
-		{ id: 'toilet', label: 'Use toilet', needs: { bladder: 1000 }, minutes: 6, pose: 'sit', hidden: true, until: 'bladder', slots: [[0, 0, 0, 180]], micro: 'no' },
-		{ id: 'wash', label: 'Wash up', needs: { hygiene: 320, comfort: 10 }, minutes: 15, pose: 'wash', hidden: true, until: 'hygiene', slots: [[0, 0, 0, 180]] }
+		// seated on the bowl facing the door / standing at the basin on the right wall
+		{ id: 'toilet', label: 'Use toilet', needs: { bladder: 1000 }, minutes: 6, pose: 'sit', hidden: true, until: 'bladder', slots: [[0, -0.24, 0.42, 0]], micro: 'no' },
+		{ id: 'wash', label: 'Wash up', needs: { hygiene: 320, comfort: 10 }, minutes: 15, pose: 'wash', hidden: true, until: 'hygiene', slots: [[0.05, -0.1, 0, 90]] }
 	],
 	treadmill: [{ id: 'exercise', label: 'Exercise', needs: { fitness: 48, fun: 8, hygiene: -14, energy: -6, comfort: -4 }, minutes: 45, pose: 'exercise', slots: [[0.1, 0, 0.26, -90]], micro: 'ok' }],
 	eclss: [{ id: 'maintain', label: 'Maintain ECLSS', needs: { work: 36 }, minutes: 40, pose: 'work', slots: front(0.9), roles: ['Engineer'] }],
@@ -208,7 +215,15 @@ export function sanitizeAffordances(raw: unknown): Affordance[] | undefined {
 				if (NEED_IDS.includes(k as NeedId) && typeof v === 'number' && isFinite(v)) needs[k as NeedId] = Math.max(-200, Math.min(2000, v));
 		const pose = POSES.includes(o.pose as PoseName) ? (o.pose as PoseName) : 'stand';
 		const slots = Array.isArray(o.slots)
-			? (o.slots as unknown[]).filter((s) => Array.isArray(s) && s.length === 4 && s.every((v) => typeof v === 'number' && isFinite(v))).slice(0, 8).map((s) => (s as number[]).map((v, i) => (i === 3 ? v : Math.max(-3, Math.min(3, v)))) as Slot)
+			? (o.slots as unknown[])
+					.filter((s) => Array.isArray(s) && (s.length === 4 || s.length === 5) && s.slice(0, 4).every((v) => typeof v === 'number' && isFinite(v)))
+					.slice(0, 8)
+					.map((s) => {
+						const a = s as unknown[];
+						const out = (a.slice(0, 4) as number[]).map((v, i) => (i === 3 ? ((((v + 180) % 360) + 360) % 360) - 180 : Math.max(-3, Math.min(3, v)))) as Slot;
+						if (a.length === 5 && POSES.includes(a[4] as PoseName)) out[4] = a[4] as PoseName;
+						return out;
+					})
 			: undefined;
 		out.push({
 			id: String(o.id ?? `a${out.length + 1}`).slice(0, 24),

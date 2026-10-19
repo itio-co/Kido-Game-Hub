@@ -77,6 +77,12 @@ const pod = pods[0];
 
 
 const me = await page.evaluate(() => window.__crew.possessed);
+// the crew may already have gone to bed in a pod before the pause: free every door item
+await page.evaluate(() => {
+	const c = window.__crew;
+	for (const a of c.agents) if (a.item?.door && !a.possessed) { c.release(a, false); a.state = 'idle'; }
+});
+await wait(1500);
 // stand at the approach point facing the door
 await page.evaluate(([p, id]) => {
 	const c = window.__crew;

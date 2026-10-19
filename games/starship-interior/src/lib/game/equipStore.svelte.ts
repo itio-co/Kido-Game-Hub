@@ -19,6 +19,8 @@ class EquipStore {
 	partId = $state<string | null>(null);
 	/** designer: preview openness of parts marked as door (0 closed … 1 open) */
 	doorPreview = $state(0);
+	/** designer: affordance whose use points are shown as ghost avatars, and the selected use point */
+	slotSel = $state<{ aff: number; slot: number }>({ aff: 0, slot: -1 });
 	/** pose shown and edited: deployed (main) or stowed */
 	pose = $state<'deployed' | 'stowed'>('deployed');
 	/** designer: show a seated 1.75 m occupant in couches (deployed pose) */

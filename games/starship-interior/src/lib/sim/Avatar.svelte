@@ -5,7 +5,7 @@
 	 */
 	import { T, useTask } from '@threlte/core';
 	import { CapsuleGeometry, Color, Group, MeshStandardMaterial, SphereGeometry, BoxGeometry, CylinderGeometry, Mesh } from 'three';
-	import { BODY, frameFor, type AvatarState } from './avatarPose';
+	import { BODY, avatarFrame, type AvatarState } from './avatarPose';
 
 	interface Props {
 		av: AvatarState;
@@ -55,7 +55,7 @@
 		r.visible = av.visible;
 		if (!av.visible) return;
 		r.position.set(av.x, av.y, av.z);
-		const f = frameFor(av.pose, av.t, g, av.couch, av.seatY);
+		const f = avatarFrame(av, g);
 		if (av.q) {
 			// free-floating: root = hip joint, full 3D orientation
 			r.quaternion.set(av.q[0], av.q[1], av.q[2], av.q[3]);
