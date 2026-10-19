@@ -37,7 +37,12 @@ export interface Affordance {
 	/** stop early once this need is satisfied (≥ 97) */
 	until?: NeedId;
 	slots?: Slot[];
+	/** in micro-g (cruise): 'ok', 'restraint' (needs a handrail / foot restraint within 1.5 m) or 'no'. Default 'restraint'. */
+	micro?: 'ok' | 'restraint' | 'no';
+	/** usable under gravity (launch/landing/surface)? Default true. */
+	gravity?: boolean;
 }
+export const MICRO_LABEL = { ok: 'works in micro-g', restraint: 'needs a restraint in micro-g', no: 'unusable in micro-g' } as const;
 export const POSES: PoseName[] = ['stand', 'work', 'sit', 'sitwork', 'eat', 'sleep', 'exercise', 'wash'];
 
 const front = (d: number, xs: number[] = [0], y = 0, off = 0.32): Slot[] => xs.map((x) => [x, d / 2 + off, y, 180]);
@@ -45,8 +50,8 @@ const front = (d: number, xs: number[] = [0], y = 0, off = 0.32): Slot[] => xs.m
 export const BUILTIN_AFFORDANCES: Record<string, Affordance[]> = {
 	bunk: [{ id: 'sleep', label: 'Sleep', needs: { energy: 14, comfort: 8 }, minutes: 480, pose: 'sleep', until: 'energy', slots: [[0.12, 0, 0.56, 90]] }],
 	crewpod: [
-		{ id: 'sleep', label: 'Sleep (private)', needs: { energy: 15, comfort: 10, fun: 1 }, minutes: 480, pose: 'sleep', hidden: true, until: 'energy', slots: [[0, 0, 0, 180]] },
-		{ id: 'privacy', label: 'Private time', needs: { fun: 25, comfort: 25 }, minutes: 40, pose: 'sit', hidden: true, slots: [[0, 0, 0, 180]] }
+		{ id: 'sleep', label: 'Sleep (private)', needs: { energy: 15, comfort: 10, fun: 1 }, minutes: 480, pose: 'sleep', hidden: true, until: 'energy', slots: [[0, 0, 0, 180]], micro: 'ok' },
+		{ id: 'privacy', label: 'Private time', needs: { fun: 25, comfort: 25 }, minutes: 40, pose: 'sit', hidden: true, slots: [[0, 0, 0, 180]], micro: 'ok' }
 	],
 	galley: [{ id: 'cook', label: 'Prepare & eat', needs: { hunger: 160, fun: 4 }, minutes: 20, pose: 'work', until: 'hunger', slots: front(0.65, [-0.45, 0.45]) }],
 	table: [
@@ -56,16 +61,23 @@ export const BUILTIN_AFFORDANCES: Record<string, Affordance[]> = {
 	workstation: [{ id: 'work', label: 'Work at console', needs: { work: 32, comfort: 10, fun: 2 }, minutes: 120, pose: 'sitwork', slots: [[0, 0.24, 0.47, 180]] }],
 	hydroponics: [{ id: 'tend', label: 'Tend plants', needs: { work: 26, fun: 12 }, minutes: 45, pose: 'work', slots: front(0.6) }],
 	hygiene: [
-		{ id: 'toilet', label: 'Use toilet', needs: { bladder: 1000 }, minutes: 6, pose: 'sit', hidden: true, until: 'bladder', slots: [[0, 0, 0, 180]] },
+		{ id: 'toilet', label: 'Use toilet', needs: { bladder: 1000 }, minutes: 6, pose: 'sit', hidden: true, until: 'bladder', slots: [[0, 0, 0, 180]], micro: 'no' },
 		{ id: 'wash', label: 'Wash up', needs: { hygiene: 320, comfort: 10 }, minutes: 15, pose: 'wash', hidden: true, until: 'hygiene', slots: [[0, 0, 0, 180]] }
 	],
-	treadmill: [{ id: 'exercise', label: 'Exercise', needs: { fitness: 48, fun: 8, hygiene: -14, energy: -6, comfort: -4 }, minutes: 45, pose: 'exercise', slots: [[0.1, 0, 0.26, -90]] }],
+	treadmill: [{ id: 'exercise', label: 'Exercise', needs: { fitness: 48, fun: 8, hygiene: -14, energy: -6, comfort: -4 }, minutes: 45, pose: 'exercise', slots: [[0.1, 0, 0.26, -90]], micro: 'ok' }],
 	eclss: [{ id: 'maintain', label: 'Maintain ECLSS', needs: { work: 28 }, minutes: 30, pose: 'work', slots: front(0.9) }],
 	locker: [{ id: 'supplies', label: 'Get supplies', needs: { work: 10, comfort: 12 }, minutes: 6, pose: 'work', slots: front(0.6) }],
-	couch: [{ id: 'relax', label: 'Relax', needs: { comfort: 40, fun: 8 }, minutes: 30, pose: 'sit', slots: [[0, 0.12, 0.5, 0]] }],
-	pilotcouch: [{ id: 'relax', label: 'Relax', needs: { comfort: 40, fun: 8 }, minutes: 30, pose: 'sit', slots: [[0, 0.12, 0.5, 0]] }],
-	couchrow3: [{ id: 'relax', label: 'Relax', needs: { comfort: 40, fun: 10 }, minutes: 30, pose: 'sit', social: true, slots: [-0.8, 0, 0.8].map((x) => [x, 0.12, 0.5, 0] as Slot) }],
-	couchrow4: [{ id: 'relax', label: 'Relax', needs: { comfort: 40, fun: 10 }, minutes: 30, pose: 'sit', social: true, slots: [-1.2, -0.4, 0.4, 1.2].map((x) => [x, 0.12, 0.5, 0] as Slot) }]
+	couch: [{ id: 'relax', label: 'Relax', needs: { comfort: 40, fun: 8 }, minutes: 30, pose: 'sit', slots: [[0, 0.12, 0.5, 0]], micro: 'ok' }],
+	pilotcouch: [{ id: 'relax', label: 'Relax', needs: { comfort: 40, fun: 8 }, minutes: 30, pose: 'sit', slots: [[0, 0.12, 0.5, 0]], micro: 'ok' }],
+	couchrow3: [{ id: 'relax', label: 'Relax', needs: { comfort: 40, fun: 10 }, minutes: 30, pose: 'sit', social: true, slots: [-0.8, 0, 0.8].map((x) => [x, 0.12, 0.5, 0] as Slot), micro: 'ok' }],
+	couchrow4: [{ id: 'relax', label: 'Relax', needs: { comfort: 40, fun: 10 }, minutes: 30, pose: 'sit', social: true, slots: [-1.2, -0.4, 0.4, 1.2].map((x) => [x, 0.12, 0.5, 0] as Slot), micro: 'ok' }],
+	// micro-g outfitting
+	sleepingbag: [{ id: 'sleep', label: 'Sleep in bag', needs: { energy: 15, comfort: 8 }, minutes: 480, pose: 'sleep', until: 'energy', slots: [[0, 0.14, 0.05, 180]], micro: 'ok', gravity: false }],
+	zerogtoilet: [
+		{ id: 'toilet', label: 'Use zero-g toilet', needs: { bladder: 1000 }, minutes: 7, pose: 'sit', hidden: true, until: 'bladder', slots: [[0, 0, 0, 180]], micro: 'ok' },
+		{ id: 'wash', label: 'Wipe-wash', needs: { hygiene: 260, comfort: 6 }, minutes: 15, pose: 'wash', hidden: true, until: 'hygiene', slots: [[0, 0, 0, 180]], micro: 'ok' }
+	],
+	ared: [{ id: 'exercise', label: 'Resistive exercise', needs: { fitness: 55, fun: 6, hygiene: -12, energy: -5, comfort: -3 }, minutes: 45, pose: 'exercise', slots: [[0, 0.1, 0.12, 180]], micro: 'ok' }]
 };
 
 /** couch seat x offsets (launch: crew strapped in, deployed couch) */
@@ -106,6 +118,8 @@ export function sanitizeAffordances(raw: unknown): Affordance[] | undefined {
 			hidden: !!o.hidden,
 			social: !!o.social,
 			until: NEED_IDS.includes(o.until as NeedId) ? (o.until as NeedId) : undefined,
+			micro: o.micro === 'ok' || o.micro === 'no' || o.micro === 'restraint' ? o.micro : undefined,
+			gravity: o.gravity === false ? false : undefined,
 			slots: slots?.length ? slots : undefined
 		});
 	}

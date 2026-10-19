@@ -21,10 +21,13 @@
 </script>
 
 <div class="crew">
-	<div class="seg">
-		<button class:active={game.phase === 'surface'} onclick={() => game.setPhase('surface')}>🛋 Surface / cruise</button>
-		<button class:active={game.phase === 'launch'} onclick={() => game.setPhase('launch')}>🚀 Launch / landing</button>
+	<div class="seg phases" role="group" aria-label="Mission phase">
+		<button class:active={game.mission === 'launch'} onclick={() => game.setMission('launch')}>🚀 Launch</button>
+		<button class:active={game.mission === 'cruise'} onclick={() => game.setMission('cruise')}>🪐 Cruise (micro-g)</button>
+		<button class:active={game.mission === 'landing'} onclick={() => game.setMission('landing')}>🛬 Landing</button>
+		<button class:active={game.mission === 'surface'} onclick={() => game.setMission('surface')}>🌕 Surface</button>
 	</div>
+	<div class="phint">{game.mission === 'cruise' ? 'Weightless: crew float, push off handrails and fly through open hatches.' : game.phase === 'launch' ? 'Couches deployed, stowables folded, crew strapped in.' : `Surface gravity (${game.shipMode === 'habitat' ? game.hab.location : 'Earth'}).`}</div>
 	<label class="row">
 		<span>Crew</span>
 		<button class="mini" onclick={() => (game.crew = Math.max(1, game.crew - 1))}>−</button>
@@ -92,5 +95,14 @@
 		color: #ffd27a;
 		border-radius: 3px;
 		padding: 0 4px;
+	}
+	.phases {
+		display: grid !important;
+		grid-template-columns: 1fr 1fr;
+	}
+	.phint {
+		font-size: 11px;
+		color: #8ea3c2;
+		margin: 4px 0;
 	}
 </style>

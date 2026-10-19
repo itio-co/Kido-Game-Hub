@@ -14,11 +14,20 @@ export type BuiltinId =
 	| 'couch'
 	| 'pilotcouch'
 	| 'couchrow3'
-	| 'couchrow4';
+	| 'couchrow4'
+	| 'handrail'
+	| 'footrestraint'
+	| 'sleepingbag'
+	| 'zerogtoilet'
+	| 'ared';
 /** built-in equipment or a user design from the Equipment Designer (`custom:…`) */
 export type ModuleId = BuiltinId | `custom:${string}`;
 
 export type Phase = 'surface' | 'launch';
+/** mission phase: Launch → Cruise (micro-g) → Landing → Surface. Launch/Landing use the couch geometry. */
+export type Mission = 'launch' | 'cruise' | 'landing' | 'surface';
+/** where an item can be mounted: deck floor (default), hull wall, under the ceiling, or any */
+export type Mount = 'floor' | 'wall' | 'ceiling' | 'any';
 
 export interface ModuleDef {
 	id: ModuleId;
@@ -60,6 +69,10 @@ export interface ModuleDef {
 	custom?: boolean;
 	/** crew-sim affordances (what the crew can do with it) */
 	affords?: import('./affordances').Affordance[];
+	/** mounting options (default 'floor') */
+	mount?: Mount;
+	/** micro-g restraint (handrail / foot restraint): enables 'restraint' affordances within 1.5 m */
+	restraint?: boolean;
 }
 
 export interface PlacedModule {
@@ -69,6 +82,10 @@ export interface PlacedModule {
 	z: number;
 	/** yaw in degrees (Three.js rotation.y) */
 	angle: number;
+	/** base elevation above the deck floor (wall / ceiling mounts), metres */
+	y?: number;
+	/** mounted on the hull wall or under the ceiling (default: floor) */
+	mount?: 'wall' | 'ceiling';
 }
 
 /**
@@ -109,6 +126,7 @@ export interface SaveData {
 	habitat: unknown;
 	crew: number;
 	phase: Phase;
+	mission?: Mission;
 	decks: SaveDeck[];
 	shafts: Omit<Shaft, 'uid'>[];
 	equipment?: unknown[];

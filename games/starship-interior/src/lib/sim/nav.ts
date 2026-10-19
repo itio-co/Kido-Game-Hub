@@ -252,7 +252,7 @@ export interface Portal {
 /** build navigation for every deck (obstacles: equipment footprints + ladders/openings) */
 export function buildNav(decks: Deck[], shafts: Shaft[], radius: (k: number) => number, shaftLen: (s: Shaft) => number) {
 	const navs = decks.map((d, k) => {
-		const obstacles = d.modules.filter((m) => !CATALOG_BY_ID[m.type]?.walkable && CATALOG_BY_ID[m.type]).map((m) => footprintOf(m.type, m.x, m.z, m.angle, BODY_PAD));
+		const obstacles = d.modules.filter((m) => !CATALOG_BY_ID[m.type]?.walkable && CATALOG_BY_ID[m.type] && (m.y ?? 0) < 1.9).map((m) => footprintOf(m.type, m.x, m.z, m.angle, BODY_PAD));
 		const holes: Footprint[] = shafts.filter((s) => s.from === k || s.to === k).map((s) => ({ kind: 'circle', cx: s.x, cz: s.z, r: 0.45 + BODY_PAD * 0.5 }));
 		return new DeckNav(radius(k), obstacles, holes);
 	});

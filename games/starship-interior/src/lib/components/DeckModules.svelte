@@ -13,8 +13,8 @@
 
 {#each deck.modules as m (m.uid)}
 	{#if m.uid !== hideUid}
-		<T.Group position={[m.x, 0, m.z]} rotation.y={(m.angle * Math.PI) / 180} userData={{ uid: m.uid, type: m.type }} name={m.type}>
-			<ModuleMesh type={m.type} deckHeight={deck.height} phase={game.phase} />
+		<T.Group position={[m.x, m.y ?? 0, m.z]} rotation.y={(m.angle * Math.PI) / 180} userData={{ uid: m.uid, type: m.type }} name={m.type}>
+			<ModuleMesh type={m.type} deckHeight={deck.height} phase={game.phase} mount={m.mount} />
 		</T.Group>
 	{/if}
 {/each}

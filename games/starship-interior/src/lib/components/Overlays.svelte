@@ -4,8 +4,8 @@
 	import { HTML } from '@threlte/extras';
 	import { BufferGeometry, LineBasicMaterial, LineDashedMaterial, Vector3 } from 'three';
 	import { CATALOG_BY_ID } from '$lib/game/catalog';
-	import { accessFootprint, footprintOf, maxRadius, outline, shaftAccess, shaftFootprint, snapTo } from '$lib/game/geometry';
-	import { HULL_INNER_RADIUS, SNAP_ANGLE } from '$lib/game/specs';
+	import { accessFootprint, footprintOf, maxRadius, outline, shaftAccess, shaftFootprint } from '$lib/game/geometry';
+	import { HULL_INNER_RADIUS } from '$lib/game/specs';
 	import { game } from '$lib/game/state.svelte';
 	import { radialGuide } from '$lib/three/hullGeometry';
 	import ModuleMesh from './ModuleMesh.svelte';
@@ -54,15 +54,15 @@
 		if (game.drag?.moved) {
 			const m = game.modules.find((mm) => mm.uid === game.drag!.uid);
 			if (!m) return null;
-			const c = game.check(m.type, game.drag.x, game.drag.z, m.angle, m.uid);
-			return { type: m.type, x: game.drag.x, z: game.drag.z, angle: m.angle, ...c };
+			const t = game.dragPose(m, game.drag);
+			const c = game.check(m.type, t.x, t.z, t.angle, m.uid, game.current, t.y);
+			return { type: m.type, ...t, mount: m.mount, ...c };
 		}
 		if (game.tool !== 'module' || game.selectedModule === 'hatch' || game.cameraDragging) return null;
 		const t = game.pending ?? game.hover;
 		if (!t) return null;
-		const p = game.snapPt(t);
-		const angle = game.snap ? snapTo(game.rotation, SNAP_ANGLE) : game.rotation;
-		return { type: game.selectedModule, x: p.x, z: p.z, angle, ...game.check(game.selectedModule, p.x, p.z, angle) };
+		const p = game.placementFor(game.selectedModule, t);
+		return { type: game.selectedModule, ...p, ...game.check(game.selectedModule, p.x, p.z, p.angle, null, game.current, p.y) };
 	});
 
 	function dims(uid: number) {
@@ -184,9 +184,12 @@
 	{#if accessFootprint(ghost.type, ghost.x, ghost.z, ghost.angle)}
 		<Zone f={accessFootprint(ghost.type, ghost.x, ghost.z, ghost.angle)!} color="#4aa3ff" opacity={0.15} y={0.018} />
 	{/if}
-	<T.Group position={[ghost.x, 0, ghost.z]} rotation.y={(ghost.angle * Math.PI) / 180}>
-		<ModuleMesh type={ghost.type} ghost={col} deckHeight={deckH} phase={game.phase} />
+	<T.Group position={[ghost.x, ghost.y ?? 0, ghost.z]} rotation.y={(ghost.angle * Math.PI) / 180}>
+		<ModuleMesh type={ghost.type} ghost={col} deckHeight={deckH} phase={game.phase} mount={ghost.mount} />
 	</T.Group>
+	{#if ghost.mount}
+		<HTML position={[ghost.x, (ghost.y ?? 0) + 0.15, ghost.z]} center pointerEvents="none" zIndexRange={[5, 0]}><div class="lad">{ghost.mount === 'wall' ? `wall mount · base ${(ghost.y ?? 0).toFixed(2)} m` : 'ceiling mount'}</div></HTML>
+	{/if}
 	{#if !ghost.ok}
 		<HTML position={[ghost.x, 0.1, ghost.z]} center pointerEvents="none" zIndexRange={[5, 0]}><div class="bad">{ghost.reason}</div></HTML>
 	{/if}

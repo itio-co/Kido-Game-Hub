@@ -41,7 +41,7 @@ import {
 	WALL_MARGIN,
 	deckVolume
 } from './specs';
-import type { Deck, LayoutData, Mode, ModuleId, Phase, PlacedModule, Quality, SaveData, SaveDeck, Shaft, Tool } from './types';
+import type { Mission, Mount, Deck, LayoutData, Mode, ModuleId, Phase, PlacedModule, Quality, SaveData, SaveDeck, Shaft, Tool } from './types';
 
 const STORAGE_KEY = 'starship-interior:save:v5';
 const V4_KEY = 'starship-interior:save:v4';
@@ -71,6 +71,8 @@ export interface ShaftPlan extends Check {
 	alignedWith: number | null;
 }
 
+/** items mounted with their base above this height do not obstruct floor paths */
+export const HEAD_CLEAR = 1.9;
 const round = (v: number, d = 2) => Math.round(v * 10 ** d) / 10 ** d;
 
 class GameState {
@@ -93,7 +95,13 @@ class GameState {
 	ship = $derived(buildShip(this.hab));
 	// ---- crew & mission phase ----
 	phase = $state<Phase>('surface');
+	/** Launch → Cruise (micro-g) → Landing → Surface */
+	mission = $state<Mission>('surface');
 	crew = $state(6);
+	// ---- wall / ceiling mounting (placement tool) ----
+	mountMode = $state<'floor' | 'wall' | 'ceiling'>('floor');
+	/** height of a wall-mounted item's base above the floor, m */
+	mountHeight = $state(1.0);
 	checklist = $state<Record<string, boolean>>({});
 	// ---- section view cut ----
 	cutFollow = $state(true);
@@ -295,7 +303,7 @@ class GameState {
 	analysis = $derived.by((): DeckAnalysis | null => (this.clearance && this.deck ? this.analyze(this.current) : null));
 	analyze(k: number, phase: Phase = this.phase): DeckAnalysis {
 		PHASE.v = phase;
-		const r = analyzeDeck(this.decks[k].modules, k === this.airlockDeck, this.shaftsOn(k), (sh) => this.shaftLabel(sh), this.deckRadius[k] ?? HULL_INNER_RADIUS);
+		const r = analyzeDeck(this.decks[k].modules.filter((m) => (m.y ?? 0) < HEAD_CLEAR), k === this.airlockDeck, this.shaftsOn(k), (sh) => this.shaftLabel(sh), this.deckRadius[k] ?? HULL_INNER_RADIUS);
 		PHASE.v = this.phase;
 		return r;
 	}
@@ -491,11 +499,11 @@ class GameState {
 
 	// ---------------- placement rules ----------------
 	/** Valid only if valid in BOTH mission phases (current phase checked first). */
-	check(type: ModuleId, x: number, z: number, angle: number, ignoreUid: number | null = null, deckIdx = this.current): Check {
+	check(type: ModuleId, x: number, z: number, angle: number, ignoreUid: number | null = null, deckIdx = this.current, y = 0): Check {
 		const order: Phase[] = this.phase === 'launch' ? ['launch', 'surface'] : ['surface', 'launch'];
 		for (const ph of order) {
 			PHASE.v = ph;
-			const c = this.checkPhase(type, x, z, angle, ignoreUid, deckIdx);
+			const c = this.checkPhase(type, x, z, angle, ignoreUid, deckIdx, y);
 			PHASE.v = this.phase;
 			if (!c.ok) {
 				const def = CATALOG_BY_ID[type];
@@ -505,16 +513,26 @@ class GameState {
 		}
 		return { ok: true, reason: '' };
 	}
-	private checkPhase(type: ModuleId, x: number, z: number, angle: number, ignoreUid: number | null, deckIdx: number): Check {
+	/** vertical extent [y0, y1] of a module above its deck floor */
+	vRange(type: ModuleId, y: number, deckIdx: number): [number, number] {
+		const def = CATALOG_BY_ID[type];
+		if (def.fullHeight) return [0, this.decks[deckIdx]?.height ?? 2.4];
+		return [y, y + dimsOf(def).height];
+	}
+	private checkPhase(type: ModuleId, x: number, z: number, angle: number, ignoreUid: number | null, deckIdx: number, y = 0): Check {
 		const def = CATALOG_BY_ID[type];
 		const deck = this.decks[deckIdx];
 		const h = dimsOf(def).height;
-		if (!def.fullHeight && h > deck.height + 1e-6) return { ok: false, reason: `Too tall: ${h.toFixed(2)} m > deck ${deck.height.toFixed(1)} m` };
+		if (!def.fullHeight && y + h > deck.height + 1e-6)
+			return { ok: false, reason: y > 0 ? `Too high: top at ${(y + h).toFixed(2)} m > deck ${deck.height.toFixed(1)} m` : `Too tall: ${h.toFixed(2)} m > deck ${deck.height.toFixed(1)} m` };
 		const f = footprintOf(type, x, z, angle);
 		const R = this.maxR(deckIdx);
 		if (!insideDeck(f, R)) return { ok: false, reason: `Outside the ${(R + WALL_MARGIN).toFixed(2)} m usable radius` };
+		const [a0, a1] = this.vRange(type, y, deckIdx);
 		for (const m of deck.modules) {
 			if (m.uid === ignoreUid) continue;
+			const [b0, b1] = this.vRange(m.type, m.y ?? 0, deckIdx);
+			if (a1 <= b0 + 1e-6 || b1 <= a0 + 1e-6) continue; // stacked above/below (wall / ceiling mounts)
 			if (overlaps(f, footprintOf(m.type, m.x, m.z, m.angle))) return { ok: false, reason: `Overlaps ${CATALOG_BY_ID[m.type].name}` };
 		}
 		for (const sh of this.shaftsOn(deckIdx))
@@ -527,16 +545,44 @@ class GameState {
 		return this.snap ? { x: snapTo(p.x, SNAP_POS), z: snapTo(p.z, SNAP_POS) } : { x: round(p.x, 3), z: round(p.z, 3) };
 	}
 
-	placeAt(p: Pt): boolean {
-		if (this.selectedModule === 'hatch') return this.placeShaft(p);
+	/** effective mounting of an item for the placement tool */
+	mountFor(type: ModuleId): 'floor' | 'wall' | 'ceiling' {
+		const m: Mount = CATALOG_BY_ID[type]?.mount ?? 'floor';
+		return m === 'any' ? this.mountMode : m;
+	}
+	/**
+	 * Placement pose for the pointer position: floor (snap grid), wall (snapped flush to the hull's inner
+	 * surface, facing inward, base at mountHeight) or ceiling (under the slab above).
+	 */
+	placementFor(type: ModuleId, p: Pt, deckIdx = this.current): { x: number; z: number; angle: number; y: number; mount?: 'wall' | 'ceiling' } {
+		const mode = this.mountFor(type);
+		const def = CATALOG_BY_ID[type];
+		const { w, d, height } = dimsOf(def);
+		const H = this.decks[deckIdx]?.height ?? 2.4;
+		if (mode === 'wall') {
+			const R = this.maxR(deckIdx);
+			const ang = Math.atan2(p.x, p.z);
+			const r = Math.max(0, Math.sqrt(Math.max(0, R * R - (w / 2) ** 2)) - d / 2 - 0.002);
+			const y = round(Math.max(0, Math.min(H - height, this.mountHeight)), 3);
+			return { x: round(Math.sin(ang) * r, 3), z: round(Math.cos(ang) * r, 3), angle: normAngle(round((ang * 180) / Math.PI + 180, 2)), y, mount: 'wall' };
+		}
 		const q = this.snapPt(p);
 		const angle = this.snap ? snapTo(this.rotation, SNAP_ANGLE) : this.rotation;
-		const c = this.check(this.selectedModule, q.x, q.z, angle);
+		if (mode === 'ceiling') return { x: q.x, z: q.z, angle, y: round(Math.max(0, H - height), 3), mount: 'ceiling' };
+		return { x: q.x, z: q.z, angle, y: 0 };
+	}
+
+	placeAt(p: Pt): boolean {
+		if (this.selectedModule === 'hatch') return this.placeShaft(p);
+		const q = this.placementFor(this.selectedModule, p);
+		const c = this.check(this.selectedModule, q.x, q.z, q.angle, null, this.current, q.y);
 		if (!c.ok) {
 			this.flash(c.reason);
 			return false;
 		}
-		this.deck.modules.push({ uid: this.nextUid++, type: this.selectedModule, x: q.x, z: q.z, angle: normAngle(angle) });
+		const m: PlacedModule = { uid: this.nextUid++, type: this.selectedModule, x: q.x, z: q.z, angle: normAngle(q.angle) };
+		if (q.mount) (m.mount = q.mount), (m.y = q.y);
+		this.deck.modules.push(m);
 		this.autosave();
 		return true;
 	}
@@ -572,7 +618,8 @@ class GameState {
 			this.autosave();
 		} else if (sel) {
 			const a = normAngle(this.snap ? snapTo(sel.angle + delta, SNAP_ANGLE) : sel.angle + delta);
-			const c = this.check(sel.type, sel.x, sel.z, a, sel.uid);
+			if (sel.mount === 'wall') return this.flash('Wall-mounted items face the hull centre – move them instead');
+			const c = this.check(sel.type, sel.x, sel.z, a, sel.uid, this.current, sel.y ?? 0);
 			if (!c.ok) return this.flash('Cannot rotate: ' + c.reason);
 			sel.angle = a;
 			this.autosave();
@@ -601,15 +648,27 @@ class GameState {
 		}
 		const m = this.modules.find((mm) => mm.uid === d.uid);
 		if (!m) return false;
-		const c = this.check(m.type, d.x, d.z, m.angle, m.uid);
+		const t = this.dragPose(m, d);
+		const c = this.check(m.type, t.x, t.z, t.angle, m.uid, this.current, t.y);
 		if (!c.ok) {
 			this.flash('Move cancelled: ' + c.reason);
 			return false;
 		}
-		m.x = d.x;
-		m.z = d.z;
+		m.x = t.x;
+		m.z = t.z;
+		m.angle = t.angle;
 		this.autosave();
 		return true;
+	}
+
+	/** where a dragged module ends up (wall mounts slide along the hull and keep facing inward) */
+	dragPose(m: PlacedModule, p: Pt): { x: number; z: number; angle: number; y: number } {
+		if (m.mount !== 'wall') return { x: p.x, z: p.z, angle: m.angle, y: m.y ?? 0 };
+		const keep = this.mountHeight;
+		this.mountHeight = m.y ?? 0;
+		const t = this.placementFor(m.type, p);
+		this.mountHeight = keep;
+		return { x: t.x, z: t.z, angle: t.angle, y: m.y ?? 0 };
 	}
 
 	// ---------------- decks ----------------
@@ -871,6 +930,16 @@ class GameState {
 		PHASE.v = p;
 		this.pending = null;
 		this.drag = null;
+		if (p === 'launch' && this.mission !== 'launch' && this.mission !== 'landing') this.mission = 'launch';
+		if (p === 'surface' && (this.mission === 'launch' || this.mission === 'landing')) this.mission = 'surface';
+	}
+	/** mission phase: Launch/Landing use the deployed-couch geometry; Cruise is weightless */
+	setMission(m: Mission) {
+		this.setPhase(m === 'launch' || m === 'landing' ? 'launch' : 'surface');
+		this.mission = m;
+	}
+	get microG() {
+		return this.mission === 'cruise';
 	}
 
 	// ---------------- exports ----------------
@@ -909,10 +978,11 @@ class GameState {
 			habitat: JSON.parse(JSON.stringify(this.hab)),
 			crew: this.crew,
 			phase: this.phase,
+			mission: this.mission,
 			decks: this.decks.map((d) => ({
 				height: d.height,
 				section: d.section,
-				modules: d.modules.map(({ type, x, z, angle }) => ({ type, x, z, angle }))
+				modules: d.modules.map(({ type, x, z, angle, y, mount }) => (mount ? { type, x, z, angle, y, mount } : { type, x, z, angle }))
 			})),
 			shafts: this.shafts.map(({ x, z, angle, from, to }) => ({ x, z, angle, from, to })),
 			equipment: this.getEquipment?.() ?? [],
@@ -956,8 +1026,10 @@ class GameState {
 				const x = Number(m.x) || 0;
 				const z = Number(m.z) || 0;
 				const angle = normAngle(Number(m.angle) || 0);
-				if (this.check(m.type, x, z, angle, null, k).ok)
-					this.decks[k].modules.push({ uid: this.nextUid++, type: m.type, x, z, angle });
+				const mount = m.mount === 'wall' || m.mount === 'ceiling' ? m.mount : undefined;
+				const y = mount ? Math.max(0, Math.min(height, Number(m.y) || 0)) : 0;
+				if (this.check(m.type, x, z, angle, null, k, y).ok)
+					this.decks[k].modules.push(mount ? { uid: this.nextUid++, type: m.type, x, z, angle, y, mount } : { uid: this.nextUid++, type: m.type, x, z, angle });
 				else skipped++;
 			}
 		}
@@ -997,6 +1069,7 @@ class GameState {
 			this.nextOpening = Math.max(0, ...this.hab.openings.map((o) => o.uid)) + 1;
 			this.crew = Math.max(1, Math.min(100, Math.round(Number(d.crew) || 6)));
 			this.setPhase(d.phase === 'launch' ? 'launch' : 'surface');
+			if (d.mission === 'launch' || d.mission === 'cruise' || d.mission === 'landing' || d.mission === 'surface') this.setMission(d.mission);
 			if (Array.isArray(d.equipment)) this.onEquipment?.(d.equipment);
 			if (d.crewSim) this.onCrewSim?.(d.crewSim);
 		} else {

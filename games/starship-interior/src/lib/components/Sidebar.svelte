@@ -234,6 +234,28 @@
 			</div>
 		</section>
 
+		{#if game.tool === 'module' && game.selectedModule !== 'hatch' && (CATALOG_BY_ID[game.selectedModule]?.mount ?? 'floor') !== 'floor'}
+			{@const mt = CATALOG_BY_ID[game.selectedModule]?.mount}
+			<section class="selbox">
+				<h2>Mounting</h2>
+				<div class="seg" role="group" aria-label="Mount">
+					<button class:active={game.mountFor(game.selectedModule) === 'floor'} disabled={mt !== 'any'} onclick={() => (game.mountMode = 'floor')}>⬇ Floor</button>
+					<button class:active={game.mountFor(game.selectedModule) === 'wall'} disabled={mt !== 'any' && mt !== 'wall'} onclick={() => (game.mountMode = 'wall')}>▮ Wall</button>
+					<button class:active={game.mountFor(game.selectedModule) === 'ceiling'} disabled={mt !== 'any' && mt !== 'ceiling'} onclick={() => (game.mountMode = 'ceiling')}>⬆ Ceiling</button>
+				</div>
+				{#if game.mountFor(game.selectedModule) === 'wall'}
+					<div class="hrow">
+						<span>Height</span>
+						<input type="range" aria-label="Mount height" min="0" max={game.deck.height} step="0.05" bind:value={game.mountHeight} />
+						<b>{game.mountHeight.toFixed(2)} m</b>
+					</div>
+					<div class="hint2">Snaps flush to the hull's inner wall, facing inward. Base height above the floor.</div>
+				{:else if game.mountFor(game.selectedModule) === 'ceiling'}
+					<div class="hint2">Hangs under the slab above ({game.deck.height.toFixed(1)} m).</div>
+				{/if}
+			</section>
+		{/if}
+
 		{#if game.tool === 'module' && game.selectedModule === 'hatch'}
 			<section class="selbox">
 				<h2>Ladder / hatch options</h2>

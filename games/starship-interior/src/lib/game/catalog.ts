@@ -92,6 +92,35 @@ export const CATALOG: ModuleDef[] = [
 		category: 'Crew seating', estimate: true,
 		description: 'Four couches on one stroking pallet (0.8 m pitch).'
 	},
+	// ---- micro-g (cruise) outfitting: ESTIMATE sizes based on ISS hardware ----
+	{
+		id: 'handrail', name: 'Handrail', icon: '➖', shape: 'rect', w: 0.8, d: 0.1, height: 0.1,
+		access: 0, mass: 1.5, power: 0, cost: 300, mount: 'any', restraint: true, category: 'Micro-g', estimate: true,
+		description: 'ISS-style handrail segment (0.8 m). Mount on the floor, hull wall or ceiling. Crew push off and grab here; enables restraint-dependent use within 1.5 m.',
+		source: 'ISS handrails – NASA SSP 50005'
+	},
+	{
+		id: 'footrestraint', name: 'Foot Restraint', icon: '🦶', shape: 'rect', w: 0.5, d: 0.35, height: 0.08,
+		walkable: true, access: 0, mass: 2, power: 0, cost: 400, mount: 'any', restraint: true, category: 'Micro-g', estimate: true,
+		description: 'Foot-loop restraint plate: crew hook their feet to work, eat or exercise in micro-g.'
+	},
+	{
+		id: 'sleepingbag', name: 'Sleeping Bag (wall)', icon: '🛌', shape: 'rect', w: 0.8, d: 0.2, height: 2.0,
+		access: 0.6, mass: 6, power: 0, cost: 1500, mount: 'wall', category: 'Micro-g', estimate: true,
+		description: 'Wall-mounted sleeping bag 2.0 × 0.8 × 0.2 m with restraint straps. Usable in cruise only.'
+	},
+	{
+		id: 'zerogtoilet', name: 'Zero-g Toilet', icon: '🌀', shape: 'rect', w: 0.9, d: 0.8, height: 2.0,
+		access: 0.9, mass: 220, power: 400, cost: 23000000, category: 'Micro-g', estimate: true,
+		description: 'Air-flow toilet (UWMS-like) in a rack enclosure with thigh bars, urine funnel hose and privacy curtain. Works in micro-g and gravity.',
+		source: 'NASA UWMS (2020)'
+	},
+	{
+		id: 'ared', name: 'Resistive Exercise (ARED-style)', icon: '🏋️', shape: 'rect', w: 1.6, d: 1.0, height: 1.9,
+		access: 0.8, mass: 320, power: 50, cost: 1500000, category: 'Micro-g', estimate: true,
+		description: 'Vacuum-cylinder resistive exercise device with lift bar and foot platform. Works in micro-g and gravity.',
+		source: 'ISS ARED'
+	},
 	{
 		id: 'hatch', name: 'Ladder + Hatch (deck link)', icon: '🪜', shape: 'circle', w: 1.1, d: 1.1, r: 0.55,
 		height: 0, fullHeight: true, walkable: true, access: 0, mass: 40, power: 20, cost: 9000,
