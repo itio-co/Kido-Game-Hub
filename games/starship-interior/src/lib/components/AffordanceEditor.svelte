@@ -3,6 +3,7 @@
 	import { NEEDS, NEED_IDS, POSES, defaultSlots, type Affordance, type NeedId } from '$lib/game/affordances';
 	import { equip } from '$lib/game/equipStore.svelte';
 	import type { PoseName } from '$lib/sim/avatarPose';
+	import { EFFECTS, EFFECT_IDS } from '$lib/sim/effects';
 
 	const def = $derived(equip.selected);
 	const editable = $derived(equip.editable);
@@ -23,6 +24,21 @@
 			if (!isFinite(v) || v === 0) delete needs[n];
 			else needs[n] = Math.max(-200, Math.min(2000, v));
 			a[i] = { ...a[i], needs };
+		});
+	}
+	function setCap(i: number, n: NeedId, v: number) {
+		edit((a) => {
+			const cap = { ...(a[i].cap ?? {}) };
+			if (!isFinite(v) || v <= 0) delete cap[n];
+			else cap[n] = Math.min(100, v);
+			a[i] = { ...a[i], cap: Object.keys(cap).length ? cap : undefined };
+		});
+	}
+	function toggleAfter(i: number, id: string, on: boolean) {
+		edit((a) => {
+			const list = (a[i].after ?? []).filter((x) => x.id !== id);
+			if (on) list.push({ id });
+			a[i] = { ...a[i], after: list.length ? list : undefined };
 		});
 	}
 	function setCapacity(i: number, n: number) {
@@ -60,6 +76,18 @@
 						<label title={`${n.label}: points per sim hour`}>{n.icon}<input type="number" step="5" value={a.needs[n.id] ?? 0} disabled={!editable} onchange={(e) => setNeed(i, n.id, Number(e.currentTarget.value))} /></label>
 					{/each}
 				</div>
+				<div class="needs caps" title="Max gain per session (cap); empty = no cap">
+					<small>cap</small>
+					{#each NEEDS as n (n.id)}
+						{#if (a.needs[n.id] ?? 0) > 0}<label title={`${n.label}: max gain per session`}>{n.icon}<input type="number" step="5" min="0" max="100" value={a.cap?.[n.id] ?? ''} disabled={!editable} onchange={(e) => setCap(i, n.id, Number(e.currentTarget.value))} /></label>{/if}
+					{/each}
+				</div>
+				<div class="r small after" data-testid="after-effects">
+					<small>after:</small>
+					{#each EFFECT_IDS as id (id)}
+						<label class="chk" title={EFFECTS[id].label}><input type="checkbox" checked={!!a.after?.some((x) => x.id === id)} disabled={!editable} onchange={(e) => toggleAfter(i, id, e.currentTarget.checked)} />{EFFECTS[id].icon}</label>
+					{/each}
+				</div>
 				<div class="r small">
 					<label class="chk"><input type="checkbox" checked={!!a.social} disabled={!editable} onchange={(e) => set(i, 'social', e.currentTarget.checked)} /> social</label>
 					<label class="chk"><input type="checkbox" checked={!!a.hidden} disabled={!editable} onchange={(e) => set(i, 'hidden', e.currentTarget.checked)} /> enclosed</label>
@@ -73,7 +101,7 @@
 			</div>
 		{/each}
 		{#if editable && list.length < 6}<button onclick={add}>＋ Add action</button>{/if}
-		<div class="hint">Rates are need points restored per sim hour (needs 0–100 decay over time). Capacity = simultaneous users (slots).</div>
+		<div class="hint">Rates are need points per sim hour, scaled by condition and tapering near 100; cap = max gain per session; after = status effects granted when done (digesting, rested, sweaty, coffee → crash…). Capacity = simultaneous users (slots).</div>
 	</section>
 {/if}
 

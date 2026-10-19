@@ -7,6 +7,8 @@
 	import { glbAspect } from '$lib/three/glbPart';
 	import type { ModuleId } from '$lib/game/types';
 	import AffordanceEditor from './AffordanceEditor.svelte';
+	import { lifeOf } from '$lib/sim/lifecycle';
+	import type { ModuleDef } from '$lib/game/types';
 
 	interface Props {
 		mobile?: boolean;
@@ -49,6 +51,11 @@
 	}
 	function meta<K extends keyof NonNullable<typeof def>>(k: K, v: NonNullable<typeof def>[K]) {
 		equip.update(equip.selectedId, (e) => ((e as unknown as Record<string, unknown>)[k as string] = v));
+	}
+	const lifeBase = $derived(lifeOf({ id: def?.id ?? '', power: def?.power ?? 0 } as unknown as ModuleDef));
+	function setLife(k: 'life' | 'mtbf' | 'service' | 'repair' | 'spares', v: number) {
+		if (!isFinite(v) || v < 0) return;
+		equip.update(equip.selectedId, (e) => (e.life = { ...(e.life ?? {}), [k]: v }));
 	}
 	function partField(k: 'name' | 'shape' | 'm', v: string) {
 		if (!part) return;
@@ -248,6 +255,12 @@
 					<label>Access m <input type="number" step="0.05" value={def.access} disabled={!editable} onchange={(e) => meta('access', Number(e.currentTarget.value))} /></label>
 					<label>Seats <input type="number" min="0" value={def.seats ?? 0} disabled={!editable} onchange={(e) => meta('seats', Number(e.currentTarget.value) || undefined)} /></label>
 					<label title="How many crew can use it at the same moment (strictly enforced by the crew sim)">Capacity <input type="number" min="1" max="24" data-testid="designer-capacity" value={def.capacity ?? (def.affords?.reduce((m, af) => Math.max(m, af.slots?.length ?? 0), 0) || def.seats || 1)} disabled={!editable} onchange={(e) => meta('capacity', Math.max(1, Math.round(Number(e.currentTarget.value) || 1)))} /></label>
+					<label title="Rated service life, hours of use (ESTIMATE)">Life h <input type="number" min="10" data-testid="designer-life" value={def.life?.life ?? lifeBase.life} disabled={!editable} onchange={(e) => setLife('life', Number(e.currentTarget.value))} /></label>
+					<label title="Mean time between failures, hours of use">MTBF h <input type="number" min="10" data-testid="designer-mtbf" value={def.life?.mtbf ?? lifeBase.mtbf} disabled={!editable} onchange={(e) => setLife('mtbf', Number(e.currentTarget.value))} /></label>
+					<label title="Maintenance interval, hours of use">Service h <input type="number" min="1" value={def.life?.service ?? lifeBase.service} disabled={!editable} onchange={(e) => setLife('service', Number(e.currentTarget.value))} /></label>
+					<label title="Repair time, sim minutes (engineer)">Repair min <input type="number" min="5" value={def.life?.repair ?? lifeBase.repair} disabled={!editable} onchange={(e) => setLife('repair', Number(e.currentTarget.value))} /></label>
+					<label title="Spare kits per repair (from Storage Lockers, 6 each)">Spares <input type="number" min="0" max="10" value={def.life?.spares ?? lifeBase.spares} disabled={!editable} onchange={(e) => setLife('spares', Number(e.currentTarget.value))} /></label>
+					<label title="Noise radius m (Comfort debuff nearby while in use); 0 = quiet">Noise m <input type="number" min="0" max="10" step="0.5" value={def.noise?.r ?? 0} disabled={!editable} onchange={(e) => meta('noise', Number(e.currentTarget.value) > 0 ? { r: Number(e.currentTarget.value) } : undefined)} /></label>
 					<label>Stowed in
 						<select value={def.stowPhase ?? 'launch'} disabled={!editable} onchange={(e) => meta('stowPhase', e.currentTarget.value as 'launch' | 'surface')}>
 							<option value="launch">Launch/Landing</option>

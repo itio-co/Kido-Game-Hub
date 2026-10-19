@@ -9,6 +9,7 @@
  * rotations in DEGREES (XYZ Euler). `stowed` is the optional second pose.
  */
 import { sanitizeAffordances, type Affordance } from './affordances';
+import { sanitizeLife, type LifeSpec } from '$lib/sim/lifecycle';
 import { Box3, Euler, Matrix4, Mesh, Quaternion, Vector3, type BufferGeometry, type Material, type Object3D } from 'three';
 import type { MatName } from '$lib/three/materials';
 import type { ModuleDef, Phase } from './types';
@@ -51,6 +52,10 @@ export interface EquipDef {
 	seats?: number;
 	/** concurrent users (crew sim places) */
 	capacity?: number;
+	/** life-cycle overrides (rated life, MTBF, maintenance interval, repair, spares) */
+	life?: Partial<LifeSpec>;
+	/** noise: Comfort debuff for crew within r metres while in use (always = also when idle) */
+	noise?: { r: number; always?: boolean };
 	/** crew-sim affordances (editable in the designer metadata) */
 	affords?: Affordance[];
 	stowable?: boolean;
@@ -88,6 +93,8 @@ export function toModuleDef(e: EquipDef): ModuleDef {
 		category: e.category,
 		seats: e.seats || undefined,
 		capacity: e.capacity || undefined,
+		life: e.life,
+		noise: e.noise,
 		affords: e.affords?.length ? e.affords : undefined,
 		stowable: e.stowable,
 		estimate: e.estimate,
@@ -230,6 +237,11 @@ export function sanitizeEquip(raw: unknown): EquipDef | null {
 		cost: num(r.cost, 0, 0, 1e9),
 		seats: r.seats ? Math.round(num(r.seats, 0, 0, 20)) : undefined,
 		capacity: r.capacity ? Math.round(num(r.capacity, 1, 1, 24)) : undefined,
+		life: sanitizeLife(r.life),
+		noise:
+			r.noise && typeof r.noise === 'object' && Number((r.noise as { r?: unknown }).r) > 0
+				? { r: num((r.noise as { r?: unknown }).r, 1, 0.1, 10), always: !!(r.noise as { always?: unknown }).always }
+				: undefined,
 		affords: sanitizeAffordances(r.affords),
 		stowable: !!r.stowable,
 		estimate: r.estimate !== false,
