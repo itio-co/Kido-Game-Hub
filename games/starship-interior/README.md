@@ -482,7 +482,37 @@ Samples in `samples/`:
 - Matte white/grey equipment, an LED ceiling strip, and ceiling lights per deck in walk and section view.
 - A procedural RoomEnvironment (PMREM) environment map, ACES filmic tone mapping and an sRGB output.
 - PCF shadows. The PCFSoft shadow type was removed in this three.js version, so plain PCF is used.
-- No ambient occlusion (not cheap enough for phones).
+- No screen-space ambient occlusion (not cheap enough for phones). The AO look comes from gradients baked into the
+  lining texture plus a hemisphere light.
+
+### Interior view (walk / possess / cruise)
+- In walk mode, and whenever you possess a crew member (gravity or cruise free-fly), each deck renders as a closed room.
+  Build mode switches back to the 1.1 m cut-away with the decks above hidden.
+- **Walls:**
+  - A full-height curved hull lining with off-white insulation panels, seams, fasteners and a kick plate.
+  - Handrails, cable trays and vent grilles.
+  - Portholes that glow with the outside light: blue-black in space, warm on Mars, grey-white on the Moon.
+  - Wall-mounted equipment gets a dark backplate and two mounting rails that bridge the gap to the curved wall.
+- **Ceilings:**
+  - Each ceiling is the underside of the deck above: perforated ceiling panels, recessed LED strips, and the hatch
+    opening with a yellow rim. The ladder is visible through it.
+  - The top deck closes with the nose ogive. The bottom deck sits on an aft bulkhead dome.
+- **No clipping:** section clipping is always off in the interior view, even when ✂ Section view is on.
+- **Lighting:**
+  - Emissive LED strips and a hemisphere light, plus point lights on your deck and the decks next to it (one shadow-casting
+    light on high quality).
+  - On desktop, a window spotlight carries the Moon, Mars or space light.
+  - 💡 **warm/cool** (in the walk bar and the possess action bar) switches the lights between 3000 K and 5000 K. The
+    choice is remembered.
+- **Camera:** walking stops 0.2 m before the lining. The 3rd-person possess camera's boom is limited to the deck radius
+  minus 0.35 m, so the camera pulls in near the walls instead of leaving the hull.
+- **Performance (LOD):**
+  - Fit-out and portholes are built only for your deck ±1, and static parts are merged per material.
+  - On phones (or Low quality) there is 1 point light on your deck, no spotlight and no shadows.
+  - Measured in a headless iPhone 13 emulation: about 185 draw calls, 30k triangles and 4 lights.
+  - Desktop: about 1,070 draw calls, 107k triangles and 8 lights.
+- Test: `node scripts/interior-test.mjs`. Screenshots: screenshot-walk-interior.png, screenshot-walk-ceiling.png,
+  screenshot-cruise-interior.png, screenshot-possess-interior.png, screenshot-mobile-walk-interior.png.
 
 ## Structure
 ```
@@ -514,6 +544,7 @@ scripts/lifecycle-test.mjs  wear, failures, repairs, maintenance, spares plan
 scripts/need-curves.mjs     working rates, status effects, trend symbols (2 days at 60×)
 scripts/couch-egress-test.mjs couch envelopes, egress blockers, nudge, Show clearances
 scripts/power-test.mjs      power bus, shedding order, brownout, deficit issues
+scripts/interior-test.mjs   interior view: walls/ceilings, no clipping, lights, camera containment, mobile budget
 scripts/hud-test.mjs        HUD top bar, build bar, selection card, drawer (desktop + iPhone 13)
 src/lib/sim/effects.ts      status effects, diminishing returns, trend symbols
 src/lib/sim/lifecycle.ts    life specs, wear / hazard, repair / service
@@ -535,7 +566,7 @@ src/lib/components/hud/     HudTopBar, BuildBar, SelectionCard, categories
     angular momentum, and bodies don't collide with each other (only separation steering).
   - Docking into a slot is an animated glide. Feet-in-restraint is a pose, not a contact model.
   - The voxel grid is 0.2 m and the hatch column 0.3 m, so very tight gaps may be closed or open differently than in reality.
-  - Wall items above the 1.1 m build cutaway can look like they float in build view.
+  - Wall items above the 1.1 m build cutaway can look like they float in build view (in the interior view they sit on backplates against the full wall).
   - Loose floating items (the optional cosmetic extra) are not implemented. The torus "loops" of the foot restraint are full rings.
   - First-person camera in build mode keeps the hull cutaway, so looking up shows the sky.
 - **Needs / effects / life cycle / power:** all rates, lifetimes, MTBFs and power figures are gameplay ESTIMATEs

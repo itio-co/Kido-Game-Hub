@@ -81,6 +81,7 @@
 	const provider = () => crew.actions();
 	onMount(() => {
 		game.ctxProvider = provider;
+		(window as unknown as { __possessCam: unknown }).__possessCam = () => cam.position.toArray();
 		window.addEventListener('keydown', onKeyDown);
 		window.addEventListener('keyup', onKeyUp);
 		dom.addEventListener('pointerdown', onDown);
@@ -173,7 +174,8 @@
 			return;
 		}
 		target.set(a.av.x, a.av.y + 1.35, a.av.z);
-		const R = (game.deckRadius[a.deck] ?? 4.5) - 0.2;
+		// lining + handrails sit ~10 cm inside the hull: keep the boom 35 cm clear of the wall
+		const R = (game.deckRadius[a.deck] ?? 4.5) - 0.35;
 		const ceil = fy + (game.decks[a.deck]?.height ?? 2.4) - 0.12;
 		let d = dist;
 		// shorten the boom so the camera stays inside the hull and under the ceiling

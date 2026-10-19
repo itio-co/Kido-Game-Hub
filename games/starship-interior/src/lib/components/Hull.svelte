@@ -25,6 +25,8 @@
 		rTop?: number;
 		/** habitat section view: the ship shell draws the walls, only the floor is needed */
 		floorOnly?: boolean;
+		/** interior view: the lining / fit-out (Interior.svelte) replaces frames, stringers, windows and the light */
+		interior?: boolean;
 	}
 	let {
 		index,
@@ -37,7 +39,8 @@
 		airlock = index === 0,
 		rFloor = HULL_INNER_RADIUS,
 		rTop = HULL_INNER_RADIUS,
-		floorOnly = false
+		floorOnly = false,
+		interior = false
 	}: Props = $props();
 	const tapered = $derived(rFloor < HULL_INNER_RADIUS - 1e-3 || rTop < HULL_INNER_RADIUS - 1e-3);
 	const holeKey = $derived(JSON.stringify(holes));
@@ -80,7 +83,7 @@
 <T.Mesh position.y={-SLAB_THICKNESS} geometry={slabGeo} material={mat('steelDark')} receiveShadow castShadow />
 <T.Mesh position.y={0.002} geometry={floorGeo} material={floorMat} receiveShadow />
 
-{#if !floorOnly && !tapered}
+{#if !floorOnly && !tapered && !interior}
 <!-- circumferential frames (inside face, within the 5 cm wall margin) -->
 {#each frames as y}
 	<T.Mesh position.y={y} rotation.x={Math.PI / 2} material={mat('steelDark')}>
@@ -120,7 +123,7 @@
 	</T.Mesh>
 {/if}
 {/if}
-{#if lights}
+{#if lights && !interior}
 	<T.PointLight position={[0, height - 0.3, 0]} intensity={14} distance={9} decay={1.6} color="#fff2e2" />
 {/if}
 

@@ -220,6 +220,7 @@
 					<InteractButton {mobile} />
 					<button class="fab" onclick={() => crew.reorient()} aria-label="Reorient to deck up" title="Reorient to deck-up (T)">⊙ <small>{game.isTouch ? 'Deck up' : 'T Deck up'}</small></button>
 					<button class="fab" onclick={() => (crew.firstPerson = !crew.firstPerson)} aria-label="Camera view">{crew.firstPerson ? '3rd' : '1st'}</button>
+					<button class="fab" onclick={() => game.toggleTone()} aria-label="Interior light tone" title="Interior lights warm / cool" data-testid="light-tone">💡{mobile ? '' : ` ${game.interiorTone}`}</button>
 					<button class="fab del" onclick={() => crew.possess(null)} aria-label="Release">⏏ Release</button>
 				</div>
 				{#if game.isTouch}
@@ -243,6 +244,7 @@
 					<button class="fab" class:on={climbDown} onclick={() => crew.climb(false)} aria-label="Deck down" title="Climb down (E looking down / Q / C / PgDn)">▼ <small>{game.isTouch ? 'Deck' : 'Q Deck'}</small></button>
 					<InteractButton {mobile} />
 					<button class="fab" onclick={() => (crew.firstPerson = !crew.firstPerson)} aria-label="Camera view">{crew.firstPerson ? '3rd' : '1st'}</button>
+					<button class="fab" onclick={() => game.toggleTone()} aria-label="Interior light tone" title="Interior lights warm / cool" data-testid="light-tone">💡{mobile ? '' : ` ${game.interiorTone}`}</button>
 					<button class="fab del" onclick={() => crew.possess(null)} aria-label="Release">⏏ Release</button>
 				</div>
 			{/if}
@@ -303,6 +305,7 @@
 			{/if}
 			<InteractHud {mobile} />
 			<div class="travel">
+				<button class="fab" onclick={() => game.toggleTone()} aria-label="Interior light tone" title="Interior lights warm / cool" data-testid="light-tone">💡 <small>{game.interiorTone}</small></button>
 				<InteractButton {mobile} />
 				<button class="fab" class:on={game.hatchHere.up} onclick={() => deckMove(true)} aria-label="Deck up" title="Climb up (E looking up / Space / PgUp)">▲ <small>{game.isTouch ? 'Up' : 'Space Up'}</small></button>
 				<button class="fab" class:on={game.hatchHere.down} onclick={() => deckMove(false)} aria-label="Deck down" title="Climb down (E looking down / Q / C / PgDn)">▼ <small>{game.isTouch ? 'Down' : 'Q Down'}</small></button>

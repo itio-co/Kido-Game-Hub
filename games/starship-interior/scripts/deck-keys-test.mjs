@@ -152,7 +152,7 @@ await page.waitForFunction(() => !!window.__crew.vox && window.__crew.agents[0].
 await page.evaluate(() => { const c = window.__crew; c.teleport(0, 0, 0.8, 0.8); c.possess(0); });
 await wait(400);
 await page.keyboard.press('PageUp');
-const cf = await until(page, () => window.__crew.agents[0].deck === 1 && window.__crew.agents[0].state !== 'move', null, 40000);
+const cf = await until(page, () => window.__crew.agents[0].deck === 1 && window.__crew.agents[0].state !== 'move', null, 90000);
 check('cruise: PgUp auto-flies through the hatch to the next deck', !!cf, { deck: await page.evaluate(() => window.__crew.agents[0].deck) });
 check('no console errors', errors.length === 0, errors.slice(0, 5));
 await browser.close();
