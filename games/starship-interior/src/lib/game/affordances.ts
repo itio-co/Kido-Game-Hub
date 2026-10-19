@@ -45,7 +45,13 @@ export interface Affordance {
 	roles?: string[];
 	/** only the listed roles may do it (e.g. medical check-ups) */
 	roleOnly?: boolean;
+	/** meal-flow step(s) this task provides: get food, rehydrate, heat, dispose of trash */
+	step?: MealStep[];
+	/** steps a crew member does before this (meal) – food & water required, heat & trash optional */
+	requires?: MealStep[];
 }
+export type MealStep = 'food' | 'water' | 'heat' | 'trash';
+export const STEP_LABEL: Record<MealStep, string> = { food: 'get food', water: 'rehydrate', heat: 'heat food', trash: 'dispose of packaging' };
 export const MICRO_LABEL = { ok: 'works in micro-g', restraint: 'needs a restraint in micro-g', no: 'unusable in micro-g' } as const;
 export const POSES: PoseName[] = ['stand', 'work', 'sit', 'sitwork', 'eat', 'sleep', 'exercise', 'wash'];
 
@@ -59,10 +65,11 @@ export const BUILTIN_AFFORDANCES: Record<string, Affordance[]> = {
 	],
 	galley: [
 		{ id: 'cook', label: 'Prepare & eat', needs: { hunger: 160, fun: 4 }, minutes: 20, pose: 'work', until: 'hunger', slots: front(0.65, [-0.45, 0.45]) },
-		{ id: 'cookcrew', label: 'Cook for the crew', needs: { work: 36, fun: 8, hunger: 20 }, minutes: 40, pose: 'work', slots: front(0.65, [-0.45, 0.45]), roles: ['Specialist', 'Medic'] }
+		{ id: 'cookcrew', label: 'Cook for the crew', needs: { work: 36, fun: 8, hunger: 20 }, minutes: 40, pose: 'work', slots: front(0.65, [-0.45, 0.45]), roles: ['Specialist', 'Medic'] },
+		{ id: 'prep', label: 'Collect & heat meal', needs: {}, minutes: 6, pose: 'work', step: ['food', 'water', 'heat'], slots: front(0.65, [-0.45, 0.45]) }
 	],
 	table: [
-		{ id: 'meal', label: 'Meal at table', needs: { hunger: 130, comfort: 30, fun: 18 }, minutes: 30, pose: 'eat', social: true, until: 'hunger', slots: [[-0.3, 0.68, 0.46, 180], [0.3, 0.68, 0.46, 180], [-0.3, -0.68, 0.46, 0], [0.3, -0.68, 0.46, 0]] },
+		{ id: 'meal', label: 'Meal at table', needs: { hunger: 130, comfort: 30, fun: 18 }, minutes: 30, pose: 'eat', social: true, until: 'hunger', requires: ['food', 'water', 'heat', 'trash'], slots: [[-0.3, 0.68, 0.46, 180], [0.3, 0.68, 0.46, 180], [-0.3, -0.68, 0.46, 0], [0.3, -0.68, 0.46, 0]] },
 		{ id: 'checkup', label: 'Medical check-up', needs: { work: 40, fun: 10 }, minutes: 25, pose: 'sit', social: true, slots: [[-0.3, 0.68, 0.46, 180], [0.3, 0.68, 0.46, 180]], roles: ['Medic'], roleOnly: true },
 		{ id: 'chat', label: 'Chat at table', needs: { fun: 40, comfort: 25 }, minutes: 30, pose: 'sit', social: true, slots: [[-0.3, 0.68, 0.46, 180], [0.3, 0.68, 0.46, 180], [-0.3, -0.68, 0.46, 0], [0.3, -0.68, 0.46, 0]] }
 	],
@@ -83,6 +90,28 @@ export const BUILTIN_AFFORDANCES: Record<string, Affordance[]> = {
 	pilotcouch: [{ id: 'relax', label: 'Relax', needs: { comfort: 40, fun: 8 }, minutes: 30, pose: 'sit', slots: [[0, 0.12, 0.5, 0]], micro: 'ok' }],
 	couchrow3: [{ id: 'relax', label: 'Relax', needs: { comfort: 40, fun: 10 }, minutes: 30, pose: 'sit', social: true, slots: [-0.8, 0, 0.8].map((x) => [x, 0.12, 0.5, 0] as Slot), micro: 'ok' }],
 	couchrow4: [{ id: 'relax', label: 'Relax', needs: { comfort: 40, fun: 10 }, minutes: 30, pose: 'sit', social: true, slots: [-1.2, -0.4, 0.4, 1.2].map((x) => [x, 0.12, 0.5, 0] as Slot), micro: 'ok' }],
+	// galley set: multi-step meal flow
+	foodwarmer: [
+		{ id: 'heat', label: 'Heat food', needs: {}, minutes: 4, pose: 'work', step: ['heat'], slots: front(0.55) },
+		{ id: 'cookcrew', label: 'Bake for the crew', needs: { work: 38, fun: 8 }, minutes: 18, pose: 'work', slots: front(0.55), roles: ['Specialist', 'Medic'] }
+	],
+	waterdispenser: [{ id: 'water', label: 'Rehydrate food', needs: {}, minutes: 3, pose: 'work', step: ['water'], slots: front(0.4), micro: 'ok' }],
+	fridge: [{ id: 'food', label: 'Get fresh food', needs: { comfort: 4 }, minutes: 2, pose: 'work', step: ['food'], slots: front(0.65), micro: 'ok' }],
+	pantry: [
+		{ id: 'food', label: 'Get meal packs', needs: {}, minutes: 2, pose: 'work', step: ['food'], slots: front(0.6, [-0.3, 0.3]), micro: 'ok' },
+		{ id: 'inventory', label: 'Food inventory', needs: { work: 30 }, minutes: 30, pose: 'work', slots: front(0.6, [-0.3, 0.3]), roles: ['Specialist', 'Medic'], micro: 'ok' }
+	],
+	prepcounter: [{ id: 'cookcrew', label: 'Prepare food for the crew', needs: { work: 34, fun: 8 }, minutes: 35, pose: 'work', slots: front(0.65, [-0.3, 0.3]), roles: ['Specialist', 'Medic'], micro: 'ok' }],
+	trash: [{ id: 'trash', label: 'Dispose of packaging', needs: { comfort: 2 }, minutes: 1, pose: 'work', step: ['trash'], slots: front(0.55), micro: 'ok' }],
+	foodstation: [
+		{ id: 'meal', label: 'Meal at food station', needs: { hunger: 130, comfort: 18, fun: 14 }, minutes: 25, pose: 'work', social: true, until: 'hunger', requires: ['food', 'water', 'heat', 'trash'], micro: 'ok', slots: [[-0.25, 0.62, 0, 180], [0.25, -0.62, 0, 0]] },
+		{ id: 'chat', label: 'Coffee & chat', needs: { fun: 34, comfort: 15 }, minutes: 20, pose: 'work', social: true, micro: 'ok', slots: [[-0.25, 0.62, 0, 180], [0.25, -0.62, 0, 0]] }
+	],
+	galleytable: [
+		{ id: 'meal', label: 'Meal at table', needs: { hunger: 130, comfort: 30, fun: 18 }, minutes: 30, pose: 'eat', social: true, until: 'hunger', requires: ['food', 'water', 'heat', 'trash'] },
+		{ id: 'checkup', label: 'Medical check-up', needs: { work: 40, fun: 10 }, minutes: 25, pose: 'sit', social: true, roles: ['Medic'], roleOnly: true },
+		{ id: 'chat', label: 'Chat at table', needs: { fun: 40, comfort: 25 }, minutes: 30, pose: 'sit', social: true }
+	],
 	// micro-g outfitting
 	sleepingbag: [{ id: 'sleep', label: 'Sleep in bag', needs: { energy: 15, comfort: 8 }, minutes: 480, pose: 'sleep', until: 'energy', slots: [[0, 0.14, 0.05, 180]], micro: 'ok', gravity: false }],
 	zerogtoilet: [
@@ -141,6 +170,8 @@ export function sanitizeAffordances(raw: unknown): Affordance[] | undefined {
 			gravity: o.gravity === false ? false : undefined,
 			roles: Array.isArray(o.roles) ? (o.roles as unknown[]).filter((r) => typeof r === 'string').map((r) => String(r).slice(0, 16)).slice(0, 6) : undefined,
 			roleOnly: o.roleOnly === true ? true : undefined,
+			step: Array.isArray(o.step) ? (o.step as unknown[]).filter((x): x is MealStep => ['food', 'water', 'heat', 'trash'].includes(x as string)) : undefined,
+			requires: Array.isArray(o.requires) ? (o.requires as unknown[]).filter((x): x is MealStep => ['food', 'water', 'heat', 'trash'].includes(x as string)) : undefined,
 			slots: slots?.length ? slots : undefined
 		});
 	}

@@ -20,7 +20,16 @@ export type BuiltinId =
 	| 'footrestraint'
 	| 'sleepingbag'
 	| 'zerogtoilet'
-	| 'ared';
+	| 'ared'
+	| 'foodwarmer'
+	| 'waterdispenser'
+	| 'fridge'
+	| 'pantry'
+	| 'prepcounter'
+	| 'trash'
+	| 'foodstation'
+	| 'galleytable'
+	| 'chair';
 /** built-in equipment or a user design from the Equipment Designer (`custom:…`) */
 export type ModuleId = BuiltinId | `custom:${string}`;
 
@@ -74,6 +83,16 @@ export interface ModuleDef {
 	mount?: Mount;
 	/** micro-g restraint (handrail / foot restraint): enables 'restraint' affordances within 1.5 m */
 	restraint?: boolean;
+	/** group equipment (tables): capacity = seat objects (chairs; foot restraints in micro-g) placed at its edge */
+	group?: boolean;
+	/** a seat object that can join a group table */
+	seat?: boolean;
+	/** concurrent users (overrides the slot count; custom equipment) */
+	capacity?: number;
+	/** food storage, crew-days of meals it holds (ESTIMATE) */
+	foodDays?: number;
+	/** works in micro-g without extra restraints (built-in clips / foot rails) – informational */
+	microNote?: string;
 }
 
 export interface PlacedModule {

@@ -36,6 +36,7 @@
 				<button class:active={crew.speed === s} onclick={() => ((crew.speed = s), (crew.running = true))}>{s}×</button>
 			{/each}
 			<button class:active={crew.heatmap} onclick={() => (crew.heatmap = !crew.heatmap)} aria-label="Heat map" title="Congestion heat map (current deck)">🔥</button>
+			<button class:active={crew.badges} onclick={() => (crew.badges = !crew.badges)} aria-label="Occupancy badges" title="Occupancy / condition badges over equipment">🏷</button>
 		</div>
 		<div class="row">
 			<button onclick={() => crew.reset()}>↺ Reset</button>

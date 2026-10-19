@@ -247,6 +247,7 @@
 					<label>Cost $ <input type="number" value={def.cost} disabled={!editable} onchange={(e) => meta('cost', Number(e.currentTarget.value))} /></label>
 					<label>Access m <input type="number" step="0.05" value={def.access} disabled={!editable} onchange={(e) => meta('access', Number(e.currentTarget.value))} /></label>
 					<label>Seats <input type="number" min="0" value={def.seats ?? 0} disabled={!editable} onchange={(e) => meta('seats', Number(e.currentTarget.value) || undefined)} /></label>
+					<label title="How many crew can use it at the same moment (strictly enforced by the crew sim)">Capacity <input type="number" min="1" max="24" data-testid="designer-capacity" value={def.capacity ?? (def.affords?.reduce((m, af) => Math.max(m, af.slots?.length ?? 0), 0) || def.seats || 1)} disabled={!editable} onchange={(e) => meta('capacity', Math.max(1, Math.round(Number(e.currentTarget.value) || 1)))} /></label>
 					<label>Stowed in
 						<select value={def.stowPhase ?? 'launch'} disabled={!editable} onchange={(e) => meta('stowPhase', e.currentTarget.value as 'launch' | 'surface')}>
 							<option value="launch">Launch/Landing</option>

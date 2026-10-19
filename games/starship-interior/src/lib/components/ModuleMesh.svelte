@@ -259,6 +259,84 @@
 			<Part shape="cyl" args={[0.12, 0.12, 0.05, 18]} position={[x, 1.15, 0.3]} rotation={[0, 0, PI / 2]} m="dark" {ghost} />
 		{/each}
 		<Part args={[0.4, 0.25, 0.03]} position={[0.5, 1.4, -0.33]} m="screen" {ghost} />
+	{:else if type === 'foodwarmer'}
+		<Part shape="rbox" args={[0.6, 0.88, 0.55]} position={[0, 0.44, 0]} m="white" {ghost} />
+		<Part args={[0.56, 0.02, 0.5]} position={[0, 0.89, 0]} m="steel" {ghost} />
+		<Part shape="rbox" args={[0.56, 0.42, 0.5]} position={[0, 1.12, -0.01]} m="steelDark" {ghost} />
+		<Part args={[0.4, 0.26, 0.01]} position={[-0.05, 1.12, 0.245]} m="glass" {ghost} />
+		<Part args={[0.36, 0.02, 0.02]} position={[-0.05, 1.27, 0.26]} m="steel" {ghost} />
+		<Part args={[0.06, 0.2, 0.01]} position={[0.22, 1.12, 0.246]} m="screen" {ghost} />
+		<Part args={[0.03, 0.03, 0.01]} position={[0.22, 1.02, 0.25]} m="amber" {ghost} />
+		<Part args={[0.5, 0.2, 0.45]} position={[0, 1.42, -0.04]} m="white" {ghost} />
+		{#each [-0.14, 0.14] as x}<Part args={[0.26, 0.82, 0.01]} position={[x, 0.45, 0.276]} m="grey" {ghost} />{/each}
+	{:else if type === 'waterdispenser'}
+		<Part shape="rbox" args={[0.45, 1.5, 0.4]} position={[0, 0.75, 0]} m="white" {ghost} />
+		<Part args={[0.32, 0.32, 0.12]} position={[0, 1.05, 0.15]} m="dark" {ghost} />
+		<Part shape="cyl" args={[0.012, 0.006, 0.12, 8]} position={[0, 1.15, 0.16]} m="steel" {ghost} />
+		<Part args={[0.3, 0.02, 0.1]} position={[0, 0.9, 0.16]} m="steel" {ghost} />
+		<Part shape="cyl" args={[0.025, 0.025, 0.012, 12]} position={[-0.08, 1.32, 0.205]} rotation={[PI / 2, 0, 0]} m="amber" {ghost} />
+		<Part shape="cyl" args={[0.025, 0.025, 0.012, 12]} position={[0.08, 1.32, 0.205]} rotation={[PI / 2, 0, 0]} m="blue" {ghost} />
+		<Part args={[0.2, 0.08, 0.01]} position={[0, 1.42, 0.202]} m="screen" {ghost} />
+		<Part args={[0.36, 0.5, 0.01]} position={[0, 0.4, 0.202]} m="grey" {ghost} />
+	{:else if type === 'fridge'}
+		<Part shape="rbox" args={[0.6, 1.8, 0.65]} position={[0, 0.9, 0]} m="white" {ghost} />
+		<Part args={[0.56, 1.02, 0.015]} position={[0, 1.26, 0.327]} m="grey" {ghost} />
+		<Part args={[0.56, 0.66, 0.015]} position={[0, 0.38, 0.327]} m="grey" {ghost} />
+		<Part args={[0.025, 0.4, 0.03]} position={[0.24, 1.2, 0.345]} m="steel" {ghost} />
+		<Part args={[0.025, 0.3, 0.03]} position={[0.24, 0.5, 0.345]} m="steel" {ghost} />
+		<Part args={[0.12, 0.06, 0.01]} position={[-0.15, 1.62, 0.336]} m="screen" {ghost} />
+		<Part args={[0.03, 0.03, 0.01]} position={[-0.05, 1.62, 0.336]} m="blue" {ghost} />
+	{:else if type === 'pantry'}
+		<Part args={[1.2, 2.0, 0.58]} position={[0, 1.0, -0.01]} m="white" {ghost} />
+		{#each [-0.3, 0.3] as x}
+			{#each [0.3, 0.78, 1.26, 1.74] as y}
+				<Part args={[0.56, 0.44, 0.02]} position={[x, y, 0.29]} m="fabric" {ghost} />
+				<Part args={[0.2, 0.05, 0.01]} position={[x, y + 0.14, 0.302]} m="yellow" {ghost} />
+			{/each}
+		{/each}
+	{:else if type === 'prepcounter'}
+		<Part args={[1.2, 0.85, 0.6]} position={[0, 0.43, -0.025]} m="white" {ghost} />
+		<Part args={[1.2, 0.04, 0.65]} position={[0, 0.93, 0]} m="steel" {ghost} />
+		{#each [-0.4, 0, 0.4] as x}
+			<Part args={[0.36, 0.7, 0.01]} position={[x, 0.45, 0.276]} m="grey" {ghost} />
+			<Part args={[0.12, 0.025, 0.04]} position={[x, 0.965, 0.1]} m="dark" {ghost} />
+			<Part args={[0.2, 0.012, 0.16]} position={[x, 0.958, -0.05]} m="blue" {ghost} />
+		{/each}
+		<Part shape="cyl" args={[0.006, 0.006, 1.1, 6]} position={[0, 0.975, -0.22]} rotation={[0, 0, PI / 2]} m="yellow" {ghost} />
+		<Part shape="cyl" args={[0.015, 0.015, 1.1, 8]} position={[0, 0.08, 0.36]} rotation={[0, 0, PI / 2]} m="yellow" {ghost} />
+	{:else if type === 'trash'}
+		<Part shape="rbox" args={[0.5, 0.95, 0.55]} position={[0, 0.475, 0]} m="grey" {ghost} />
+		<Part args={[0.42, 0.04, 0.42]} position={[0, 0.97, 0]} m="dark" {ghost} />
+		<Part shape="torus" args={[0.12, 0.015, 8, 24]} position={[0, 0.99, 0]} rotation={[PI / 2, 0, 0]} m="steel" {ghost} />
+		<Part args={[0.4, 0.5, 0.01]} position={[0, 0.45, 0.276]} m="white" {ghost} />
+		<Part args={[0.03, 0.03, 0.01]} position={[0.15, 0.8, 0.278]} m="green" {ghost} />
+	{:else if type === 'foodstation'}
+		<Part args={[1.0, 0.04, 0.7]} position={[0, 1.03, 0]} m="white" {ghost} />
+		<Part args={[1.02, 0.02, 0.72]} position={[0, 1.005, 0]} m="steel" {ghost} />
+		{#each [-0.3, 0, 0.3] as x}
+			{#each [-0.2, 0.2] as z}<Part args={[0.2, 0.008, 0.14]} position={[x, 1.054, z]} m="blue" {ghost} />{/each}
+			<Part args={[0.06, 0.02, 0.02]} position={[x, 1.06, 0]} m="yellow" {ghost} />
+		{/each}
+		<Part shape="cyl" args={[0.06, 0.06, 1.0, 12]} position={[0, 0.5, 0]} m="steel" {ghost} />
+		<Part shape="cyl" args={[0.28, 0.28, 0.02, 16]} position={[0, 0.01, 0]} m="steelDark" {ghost} />
+		{#each [-1, 1] as s}
+			<Part shape="cyl" args={[0.015, 0.015, 0.9, 8]} position={[0, 0.1, s * 0.5]} rotation={[0, 0, PI / 2]} m="yellow" {ghost} />
+			{#each [-0.4, 0.4] as x}<Part args={[0.02, 0.1, 0.02]} position={[x, 0.05, s * 0.5]} m="steel" {ghost} />{/each}
+		{/each}
+	{:else if type === 'galleytable'}
+		<Part args={[1.2, 0.04, 0.8]} position={[0, 0.72, 0]} m="white" {ghost} />
+		<Part args={[1.22, 0.02, 0.82]} position={[0, 0.695, 0]} m="steel" {ghost} />
+		<Part shape="cyl" args={[0.05, 0.05, 0.68, 12]} position={[0, 0.35, 0]} m="steel" {ghost} />
+		<Part shape="cyl" args={[0.3, 0.3, 0.02, 16]} position={[0, 0.01, 0]} m="steelDark" {ghost} />
+		{#each [-0.3, 0.3] as x}{#each [-0.22, 0.22] as z}<Part args={[0.22, 0.006, 0.16]} position={[x, 0.743, z]} m="blue" {ghost} />{/each}{/each}
+	{:else if type === 'chair'}
+		<Part args={[0.42, 0.05, 0.42]} position={[0, 0.45, 0]} m="fabric" {ghost} />
+		<Part args={[0.42, 0.42, 0.04]} position={[0, 0.69, -0.2]} m="fabric" {ghost} />
+		{#each [[-0.18, -0.18], [0.18, -0.18], [-0.18, 0.18], [0.18, 0.18]] as [x, z]}
+			<Part shape="cyl" args={[0.012, 0.012, 0.43, 6]} position={[x, 0.215, z]} m="steel" {ghost} />
+			<Part shape="cyl" args={[0.02, 0.02, 0.01, 8]} position={[x, 0.005, z]} m="dark" {ghost} />
+		{/each}
+		<Part args={[0.44, 0.02, 0.05]} position={[0, 0.5, 0.05]} m="yellow" {ghost} />
 	{:else if type === 'hatch'}
 		<Part shape="cyl" args={[0.5, 0.5, 0.03, 40]} position={[0, 0.015, 0]} m="steel" {ghost} />
 		<Part shape="torus" args={[0.45, 0.022, 6, 40]} position={[0, 0.03, 0]} rotation={[PI / 2, 0, 0]} m="yellow" {ghost} />

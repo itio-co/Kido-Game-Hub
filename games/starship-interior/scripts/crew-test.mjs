@@ -146,6 +146,23 @@ const ALL_FULL = (c, id) => { for (const n of ['energy', 'hunger', 'hygiene', 'b
 	const csv = (await import('node:fs')).readFileSync(csvPath, 'utf8');
 	writeFileSync('samples/crew-sim-analytics.csv', csv);
 	check('CSV export', /EQUIPMENT/.test(csv) && /DESIGN ISSUES/.test(csv), { bytes: csv.length });
+	// strict capacity: 1 sim day at 60× (stepped synchronously) – no item ever has more users than places
+	const cap = await G(page, () => {
+		const c = window.__crew;
+		const sp = c.speed, run = c.running;
+		c.speed = 60;
+		c.running = true;
+		let worst = 0, maxUsers = 0;
+		for (let i = 0; i < 1440 / 15; i++) {
+			c.step(0.25);
+			worst = Math.max(worst, c.overCapacity());
+			for (const it of c.items) maxUsers = Math.max(maxUsers, c.agents.filter((a) => a.item === it && a.state === 'use').length);
+		}
+		c.speed = sp;
+		c.running = run;
+		return { worst, maxUsers, csvUtil: /utilization_pct/.test(c.csv()) };
+	});
+	check('60× for 1 sim day: no item ever exceeds its capacity', cap.worst === 0 && cap.csvUtil, cap);
 	await page.getByRole('button', { name: 'Heat map' }).click();
 
 	// 5) possession: take control, walk with W, interact prompt
@@ -184,7 +201,7 @@ const ALL_FULL = (c, id) => { for (const n of ['energy', 'hunger', 'hygiene', 'b
 	}, pid);
 	await wait(1500);
 	const prompt = await G(page, () => window.__crew.ui.prompt);
-	check('possession interact prompt', !!prompt && /^E: /.test(prompt), { prompt });
+	check('possession interact prompt', !!prompt && /^E(\/X)?: /.test(prompt), { prompt });
 	await page.screenshot({ path: 'screenshot-crew-possess.png' });
 	await page.keyboard.press('KeyE');
 	await wait(800);

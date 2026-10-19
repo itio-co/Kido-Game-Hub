@@ -18,7 +18,7 @@ export const CATALOG: ModuleDef[] = [
 		source: 'ISS CQ 2.1 m³ – NASA NTRS 20130011142'
 	},
 	{
-		id: 'galley', name: 'Galley Counter', icon: '🍳', shape: 'rect', w: 1.8, d: 0.65, height: 2.0,
+		id: 'galley', name: 'Galley Counter (combined)', icon: '🍳', shape: 'rect', w: 1.8, d: 0.65, height: 2.0,
 		access: 0.9, mass: 180, power: 1500, cost: 18000,
 		description: 'Counter (0.95 m), food warmer, water dispenser, upper cabinets.'
 	},
@@ -126,6 +126,57 @@ export const CATALOG: ModuleDef[] = [
 		description: 'Vacuum-cylinder resistive exercise device with lift bar and foot platform. Works in micro-g and gravity.',
 		source: 'ISS ARED'
 	},
+	// ---- galley set (true-to-scale procedural; ISS galley analogs where public, otherwise ESTIMATE) ----
+	{
+		id: 'foodwarmer', name: 'Food Warmer / Convection Oven', icon: '♨️', shape: 'rect', w: 0.6, d: 0.55, height: 1.5,
+		access: 0.8, mass: 38, power: 650, cost: 45000, category: 'Galley', estimate: true,
+		description: 'Pedestal cabinet with a convection food warmer at counter height (heats pouches and cans; holds food trays with clips). Micro-g: pouches held by clips, needs a foot restraint for the cook.',
+		source: 'ISS Galley Food Warmer (~0.5 × 0.4 × 0.3 m, ~120 W) as analog; oven power ESTIMATE'
+	},
+	{
+		id: 'waterdispenser', name: 'Water Dispenser (hot / ambient)', icon: '🚰', shape: 'rect', w: 0.45, d: 0.4, height: 1.5,
+		access: 0.7, mass: 30, power: 420, cost: 60000, category: 'Galley', estimate: true,
+		description: 'Potable water dispenser: needle port rehydrates sealed food and drink bags with hot (~75 °C) or ambient water, metered in 30 ml steps. Works in micro-g (sealed bags).',
+		source: 'ISS Potable Water Dispenser (PWD) – NASA; size/power ESTIMATE'
+	},
+	{
+		id: 'fridge', name: 'Galley Refrigerator / Freezer', icon: '🧊', shape: 'rect', w: 0.6, d: 0.65, height: 1.8,
+		access: 0.8, mass: 95, power: 250, cost: 80000, foodDays: 20, category: 'Galley', estimate: true,
+		description: 'Fridge (top) and freezer (bottom) for fresh food and drinks; ~20 crew-days of fresh items. Latched doors and nets keep items in place in micro-g.',
+		source: 'ISS Galley refrigerator / MELFI analogs; ESTIMATE'
+	},
+	{
+		id: 'pantry', name: 'Food Storage Lockers (pantry)', icon: '🥫', shape: 'rect', w: 1.2, d: 0.6, height: 2.0,
+		access: 0.8, mass: 85, power: 0, cost: 6000, foodDays: 150, category: 'Galley', estimate: true,
+		description: 'Bulk pantry: 8 soft-goods bays of ISS-style food containers; ~150 crew-days (≈1.8 kg / 0.005 m³ packaged food per crew-day).',
+		source: 'ISS food system ~1.8 kg/crew-day incl. packaging (NASA); volume ESTIMATE'
+	},
+	{
+		id: 'prepcounter', name: 'Prep Counter (restraint clips)', icon: '🔪', shape: 'rect', w: 1.2, d: 0.65, height: 0.95,
+		access: 0.8, mass: 55, power: 0, cost: 5000, restraint: true, category: 'Galley', estimate: true,
+		description: 'Work counter with spring clips, Velcro and bungee cords holding pouches, trays and utensils, integrated foot-restraint rail – usable in micro-g and gravity.'
+	},
+	{
+		id: 'trash', name: 'Trash Compactor / Waste Station', icon: '🗑️', shape: 'rect', w: 0.5, d: 0.55, height: 1.0,
+		access: 0.7, mass: 60, power: 300, cost: 30000, category: 'Galley', estimate: true,
+		description: 'Packaging waste bags with a heat-melt compactor (dries and tiles trash). Wet-trash bags sealed for micro-g.',
+		source: 'NASA Heat Melt Compactor (HMC) analog; ESTIMATE'
+	},
+	{
+		id: 'foodstation', name: 'Zero-g Food Station', icon: '🥄', shape: 'rect', w: 1.0, d: 0.7, height: 1.05,
+		access: 0.6, mass: 40, power: 0, cost: 4000, restraint: true, group: true, category: 'Galley', estimate: true,
+		description: 'Standing-height galley table with tray clips / Velcro pads and integrated foot-restraint rails: 2 built-in standing places, more with chairs or foot restraints at its edge.'
+	},
+	{
+		id: 'galleytable', name: 'Galley Table (group)', icon: '🍽️', shape: 'rect', w: 1.2, d: 0.8, height: 0.74,
+		access: 0, mass: 35, power: 0, cost: 2500, group: true, category: 'Galley', estimate: true,
+		description: 'Mess / meeting table. Capacity = chairs placed at its edges (in micro-g also foot restraints). Use "Add seats" to auto-place chairs.'
+	},
+	{
+		id: 'chair', name: 'Chair (seat)', icon: '🪑', shape: 'rect', w: 0.45, d: 0.45, height: 0.85,
+		access: 0, mass: 6, power: 0, cost: 900, seat: true, category: 'Galley', estimate: true,
+		description: 'Lightweight chair with lap belt and floor-lock pins; snaps to table sides facing the table (Alt to place freely). Belongs to the nearest table it faces.'
+	},
 	{
 		id: 'hatch', name: 'Ladder + Hatch (deck link)', icon: '🪜', shape: 'circle', w: 1.1, d: 1.1, r: 0.55,
 		height: 0, fullHeight: true, walkable: true, access: 0, mass: 40, power: 20, cost: 9000,
@@ -179,12 +230,23 @@ export function starterLayout(): LayoutData {
 			height: 2.4,
 			modules: [
 				{ type: 'eclss', x: -2.9, z: -2.4, angle: 50 },
-				{ type: 'galley', x: 1.5, z: -3.3, angle: 0 },
-				{ type: 'table', x: 2.3, z: 0.4, angle: 90 },
+				// compact galley cluster (valid in Surface and Cruise)
+				{ type: 'pantry', x: 2.64, z: 3.14, angle: -140 },
+				{ type: 'fridge', x: 3.44, z: 2.24, angle: -123 },
+				{ type: 'waterdispenser', x: 3.90, z: 1.65, angle: -113 },
+				{ type: 'foodwarmer', x: 4.03, z: 1.01, angle: -104 },
+				{ type: 'prepcounter', x: 4.07, z: -0.07, angle: -89 },
+				{ type: 'trash', x: 4.03, z: -1.01, angle: -76 },
+				{ type: 'foodstation', x: 1.87, z: -3.25, angle: -30 },
+				{ type: 'galleytable', x: 1.9, z: -1.0, angle: 0 },
+				{ type: 'chair', x: 1.6, z: -0.325, angle: 180 },
+				{ type: 'chair', x: 2.2, z: -0.325, angle: 180 },
+				{ type: 'chair', x: 1.6, z: -1.675, angle: 0 },
+				{ type: 'chair', x: 2.2, z: -1.675, angle: 0 },
+				{ type: 'footrestraint', x: 3.2, z: 0.0, angle: -90 },
 				{ type: 'hygiene', x: -2.7, z: 2.5, angle: 135 },
 				{ type: 'hydroponics', x: 0.9, z: 3.65, angle: 180 },
-				{ type: 'locker', x: -0.6, z: 3.85, angle: 180 },
-				{ type: 'partition', x: 3.6, z: -1.2, angle: 70 }
+				{ type: 'locker', x: -0.6, z: 3.85, angle: 180 }
 			]
 		},
 		{

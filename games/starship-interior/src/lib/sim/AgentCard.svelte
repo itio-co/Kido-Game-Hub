@@ -35,7 +35,7 @@
 			<button class="x" onclick={() => !fresh() && (crew.selected = null)} aria-label="Close">✕</button>
 		</div>
 		{#if !compact}
-		<div class="act">▶ {u.action}{#if u.queue}<br /><small>⏳ {u.queue}</small>{/if}</div>
+		<div class="act">▶ {u.action}{#if u.queue}<br /><small>⏳ {u.queue}</small>{/if}{#if u.using}<br /><small data-testid="agent-using">{u.using}</small>{/if}</div>
 		<div class="needs">
 			{#each NEEDS as n (n.id)}
 				{@const v = u.needs[n.id]}

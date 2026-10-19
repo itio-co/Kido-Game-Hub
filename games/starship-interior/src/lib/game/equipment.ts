@@ -49,6 +49,8 @@ export interface EquipDef {
 	power: number;
 	cost: number;
 	seats?: number;
+	/** concurrent users (crew sim places) */
+	capacity?: number;
 	/** crew-sim affordances (editable in the designer metadata) */
 	affords?: Affordance[];
 	stowable?: boolean;
@@ -85,6 +87,7 @@ export function toModuleDef(e: EquipDef): ModuleDef {
 		description: e.description,
 		category: e.category,
 		seats: e.seats || undefined,
+		capacity: e.capacity || undefined,
 		affords: e.affords?.length ? e.affords : undefined,
 		stowable: e.stowable,
 		estimate: e.estimate,
@@ -226,6 +229,7 @@ export function sanitizeEquip(raw: unknown): EquipDef | null {
 		power: num(r.power, 0, 0, 1e5),
 		cost: num(r.cost, 0, 0, 1e9),
 		seats: r.seats ? Math.round(num(r.seats, 0, 0, 20)) : undefined,
+		capacity: r.capacity ? Math.round(num(r.capacity, 1, 1, 24)) : undefined,
 		affords: sanitizeAffordances(r.affords),
 		stowable: !!r.stowable,
 		estimate: r.estimate !== false,

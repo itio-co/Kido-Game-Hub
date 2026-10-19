@@ -1,3 +1,4 @@
+import { seatSpots, groupSeats } from './groups';
 import { CATALOG_BY_ID, LADDER_EXTENSION, SHAFT_MASS_PER_M, footprintArea, starterLayout } from './catalog';
 import { analyzeDeck, type DeckAnalysis } from './clearance';
 import { bomCSV, elevationSVG, floorPlanSVG } from './exporters';
@@ -572,10 +573,42 @@ class GameState {
 			const y = round(Math.max(0, Math.min(H - height, this.mountHeight)), 3);
 			return { x: round(Math.sin(ang) * r, 3), z: round(Math.cos(ang) * r, 3), angle: normAngle(round((ang * 180) / Math.PI + 180, 2)), y, mount: 'wall' };
 		}
+		if (def?.seat && !this.altHeld) {
+			// chairs snap to free table-side spots facing the table (Alt places freely)
+			let best: { x: number; z: number; angle: number } | null = null, bd = 0.7;
+			for (const t of this.decks[deckIdx]?.modules ?? [])
+				for (const sp of seatSpots(t)) {
+					const d = Math.hypot(sp.x - p.x, sp.z - p.z);
+					if (d < bd) (bd = d), (best = sp);
+				}
+			if (best) return { x: round(best.x, 3), z: round(best.z, 3), angle: round(best.angle, 2), y: 0 };
+		}
 		const q = this.snapPt(p);
 		const angle = this.snap ? snapTo(this.rotation, SNAP_ANGLE) : this.rotation;
 		if (mode === 'ceiling') return { x: q.x, z: q.z, angle, y: round(Math.max(0, H - height), 3), mount: 'ceiling' };
 		return { x: q.x, z: q.z, angle, y: 0 };
+	}
+
+	/** seat objects of every group table on a deck (micro-g counts foot restraints) */
+	seatsOf(tableUid: number, deckIdx = this.current) {
+		return groupSeats(this.decks[deckIdx]?.modules ?? [], this.microG).get(tableUid) ?? [];
+	}
+	/** auto-place chairs on free, valid table-side spots; returns how many were added */
+	addSeats(tableUid: number, max = 8, deckIdx = this.current): number {
+		const deck = this.decks[deckIdx];
+		const t = deck?.modules.find((m) => m.uid === tableUid);
+		if (!t || !CATALOG_BY_ID[t.type]?.group) return 0;
+		let n = 0;
+		for (const sp of seatSpots(t)) {
+			if (n >= max) break;
+			const x = round(sp.x, 3), z = round(sp.z, 3), angle = round(sp.angle, 2);
+			if (!this.check('chair', x, z, angle, null, deckIdx, 0).ok) continue;
+			deck.modules.push({ uid: this.nextUid++, type: 'chair', x, z, angle });
+			n++;
+		}
+		if (n) this.autosave();
+		this.flash(n ? `Added ${n} chair${n > 1 ? 's' : ''} – table seats ${this.seatsOf(tableUid, deckIdx).length}` : 'No free valid seat spot at this table');
+		return n;
 	}
 
 	placeAt(p: Pt): boolean {

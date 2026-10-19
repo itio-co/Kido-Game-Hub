@@ -27,6 +27,8 @@
 	import TrackballCam from './TrackballCam.svelte';
 	import Dust from './Dust.svelte';
 	import LadderHint from './LadderHint.svelte';
+	import GroupLinks from './GroupLinks.svelte';
+	import OccupancyBadges from '$lib/sim/OccupancyBadges.svelte';
 	import { crew } from '$lib/sim/crewSim.svelte';
 
 	interface Props {
@@ -240,10 +242,14 @@
 {/if}
 {#if crew.enabled && !game.exportAll}
 	<CrewLayer deckVisible={(k) => allDecks || k === game.current} />
+	{#if crew.badges}
+		<OccupancyBadges deckVisible={(k) => (crew.possessed !== null ? k === (crew.ui.agents[crew.possessed]?.deck ?? game.current) : k === game.current)} />
+	{/if}
 {/if}
 {#if game.mode === 'build' && !game.exportAll}
 	<T.Group position.y={game.floorY[game.current]}>
 		<Overlays />
+		<GroupLinks />
 	</T.Group>
 {/if}
 </T.Group>

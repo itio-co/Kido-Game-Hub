@@ -211,6 +211,11 @@
 					<button onclick={() => game.rotate(90)}>90°</button>
 					<button class="danger" onclick={() => game.deleteSelected()}>🗑</button>
 				</div>
+				{#if selInfo.def.group}
+					{@const seats = game.seatsOf(sel.uid)}
+					<div class="kv"><span>Seats (capacity)</span><b data-testid="table-seats">{seats.length + (selInfo.def.restraint ? 2 : 0)}{selInfo.def.restraint ? ' (2 built-in)' : ''}</b></div>
+					<button onclick={() => game.addSeats(sel.uid)} data-testid="add-seats">🪑 Add seats</button>
+				{/if}
 			</section>
 		{/if}
 
