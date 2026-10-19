@@ -53,7 +53,7 @@
 			<button onclick={() => game.rotate(-15)} aria-label="Rotate left 15°" title="Rotate −15° (Q)">⟲</button>
 			<button onclick={() => game.rotate(15)} aria-label="Rotate right 15°" title="Rotate +15° (E)">⟳</button>
 			<button onclick={() => game.rotate(90)} aria-label="Rotate 90°" title="Rotate 90° (R)">90°</button>
-			<button onclick={() => game.duplicateSelected()} aria-label="Duplicate" title="Duplicate next to it" data-testid="selcard-duplicate">⧉</button>
+			<button onclick={() => game.duplicateSelected()} aria-label="Duplicate" title="Duplicate next to it" data-testid="selcard-duplicate">📋</button>
 			{#if def.group}<button onclick={() => game.addSeats(sel.uid)} aria-label="Add seats" title="Add chairs around the table">🪑＋</button>{/if}
 			{#if eg && !eg.ok}<button onclick={nudge} aria-label="Move to clear spot" title="Move to the nearest spot with clear egress">🧭</button>{/if}
 			<button class="del" onclick={() => game.deleteSelected()} aria-label="Delete" title="Delete (Del)" data-testid="selcard-delete">🗑</button>
@@ -79,7 +79,7 @@
 		left: 8px;
 		right: 8px;
 		width: auto;
-		bottom: calc(230px + env(safe-area-inset-bottom));
+		bottom: calc(124px + env(safe-area-inset-bottom));
 	}
 	.hd {
 		display: flex;

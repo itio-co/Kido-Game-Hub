@@ -13,7 +13,6 @@
 	import DesignerPanel from '$lib/components/DesignerPanel.svelte';
 	import { equip } from '$lib/game/equipStore.svelte';
 	import Sidebar from '$lib/components/Sidebar.svelte';
-	import StatsPanel from '$lib/components/StatsPanel.svelte';
 	import Joystick from '$lib/components/Joystick.svelte';
 	import AgentCard from '$lib/sim/AgentCard.svelte';
 	import CrewHoverTip from '$lib/sim/CrewHoverTip.svelte';
@@ -160,7 +159,6 @@
 	{:else}
 
 		<div class="top-left">
-			{#if mobile}<StatsPanel compact />{/if}
 			{#if game.mode === 'build'}
 				<div class="pills">
 					{#if !mobile}<button class="drawer" class:active={game.sidebarOpen} onclick={() => (game.sidebarOpen = !game.sidebarOpen)} aria-label="Toggle side panel" title="Side panel: tools, catalog, crew sim, checks" data-testid="drawer-toggle">☰</button>{/if}
@@ -243,7 +241,7 @@
 			{/if}
 		{:else if game.mode === 'build'}
 			{#if !(mobile && crewSheet)}
-				<BuildBar {mobile} />
+				{#if !mobile || !(game.tool === 'select' && game.selected)}<BuildBar {mobile} />{/if}
 				<SelectionCard {mobile} />
 			{/if}
 			<div class="build-actions" class:mobile class:carded={game.tool === 'select' && game.selected !== null}>
@@ -383,7 +381,7 @@
 	}
 	.top-left {
 		position: absolute;
-		top: calc(12px + env(safe-area-inset-top));
+		top: calc(56px + env(safe-area-inset-top));
 		left: calc(12px + env(safe-area-inset-left));
 		right: calc(140px + env(safe-area-inset-right));
 		pointer-events: none;
@@ -557,7 +555,7 @@
 		z-index: 10;
 	}
 	.build-actions.mobile {
-		bottom: calc(124px + env(safe-area-inset-bottom));
+		bottom: calc(272px + env(safe-area-inset-bottom));
 		right: calc(10px + env(safe-area-inset-right));
 		left: 10px;
 		justify-content: flex-end;
@@ -582,7 +580,7 @@
 		z-index: 5;
 	}
 	.tip.mobile {
-		bottom: calc(190px + env(safe-area-inset-bottom));
+		bottom: calc(334px + env(safe-area-inset-bottom));
 		font-size: 11px;
 	}
 	.tip.walk {

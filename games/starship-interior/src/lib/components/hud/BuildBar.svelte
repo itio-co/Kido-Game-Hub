@@ -33,11 +33,11 @@
 
 <div class="buildbar glass" class:mobile class:closed={!open} data-testid="build-bar">
 	<div class="tabs" role="tablist">
-		<span class="tools" role="group" aria-label="Tools">
+		{#if !mobile}<span class="tools" role="group" aria-label="Tools">
 			{#each TOOLS as t (t.id)}
 				<button class="tool" class:active={game.tool === t.id} onclick={() => setTool(t.id)} aria-label="{t.label} tool" title={t.label} data-testid="hud-tool">{t.icon}</button>
 			{/each}
-		</span>
+		</span>{/if}
 		{#each cats as c (c.id)}
 			<button role="tab" class:active={cat === c.id} aria-selected={cat === c.id} onclick={() => ((cat = c.id), (open = true))} data-testid="build-tab" title={c.label}>{c.icon}<span>{c.label}</span></button>
 		{/each}

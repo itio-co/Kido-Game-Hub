@@ -31,10 +31,11 @@
 	{:else}
 		<span class="res" class:bad={!s.powerOk} title="Electrical load vs assumed budget (start the crew sim for the live power bus)" data-testid="hud-power-budget">⚡ {(s.power / 1000).toFixed(1)}/{(s.powerAvail / 1000).toFixed(1)} kW</span>
 	{/if}
+	{#if s.volumeLimit}<span class="res" class:bad={s.volume > s.volumeLimit} title="Habitable volume used / limit">⬡ {Math.round(s.volume)}/{s.volumeLimit} m³</span>{/if}
 	{#if !mobile}<span class="res" title="Cost (estimate)">💰 {money(s.cost)}</span>{/if}
 	<span class="res" title="Free floor on this deck">▢ {s.freeArea.toFixed(0)} m²</span>
 	{#if issues}<span class="res bad" title="Design issues (see the panel)">⚠ {issues}</span>{/if}
-	<button class="res tog" class:on={game.showClearances} onclick={() => (game.showClearances = !game.showClearances)} title="Show clearances: couch envelopes, egress paths, keep-out zones" aria-label="Show clearances" data-testid="show-clearances">📐{#if !mobile} Clearances{/if}</button>
+	<button class="res tog" class:on={game.showClearances} onclick={() => (game.showClearances = !game.showClearances)} title="Show clearances: couch envelopes, egress paths, keep-out zones" aria-label="Show clearances" data-testid="show-clearances">📐{#if !mobile}<small>Clear.</small>{/if}</button>
 	{#if crew.enabled}
 		<span class="sim">
 			<button onclick={() => (crew.running = !crew.running)} aria-label={crew.running ? 'Pause sim' : 'Play sim'}>{crew.running ? '⏸' : '▶'}</button>
@@ -55,14 +56,16 @@
 		gap: 4px;
 		padding: 4px 6px;
 		z-index: 14;
-		max-width: calc(100% - 520px);
+		max-width: calc(100% - 176px);
 		overflow-x: auto;
 		scrollbar-width: none;
 		white-space: nowrap;
 	}
 	.hudbar.mobile {
-		top: calc(52px + env(safe-area-inset-top));
-		max-width: calc(100% - 16px);
+		top: calc(8px + env(safe-area-inset-top));
+		left: calc(8px + env(safe-area-inset-left));
+		transform: none;
+		max-width: calc(100% - 80px);
 		gap: 3px;
 		padding: 3px 4px;
 	}
