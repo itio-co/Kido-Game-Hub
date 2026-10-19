@@ -108,8 +108,8 @@ export class VoxNav {
 					if (!n) continue;
 					this.nb.push({ d: n === 1 ? 5 : n === 2 ? 7 : 9, c: (dl * N + dj) * N + di });
 				}
-		// "near a surface": any blocked voxel within 2 cells (≈0.4 m beyond the padded surface)
-		const reach = 2;
+		// "near a surface": any blocked voxel within 3 cells (≈0.6 m beyond the padded surface ≈ arm/leg reach)
+		const reach = 3;
 		for (let l = 0; l < M; l++)
 			for (let j = 0; j < N; j++)
 				for (let i = 0; i < N; i++) {
