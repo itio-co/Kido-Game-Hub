@@ -1,38 +1,44 @@
-# Crew sim analytics,"Day 1 · 16:25",sim hours,9.4,crew,6,mode,cabin,phase,surface
+# Crew sim analytics,"Day 1 · 16:21",sim hours,9.4,crew,6,mode,cabin,phase,surface
 
 EQUIPMENT
 deck,equipment,uid,capacity,utilization_pct,uses,waits,avg_wait_min,max_queue,reachable
-"Deck 1","Life Support (ECLSS) Rack",1,1,31,5,0,0.0,0,true
-"Deck 1","Galley Counter",2,2,3,2,0,0.0,0,true
-"Deck 1","Table + 4 Seats",3,4,15,14,0,0.0,0,true
-"Deck 1","Hygiene / Toilet",4,1,38,18,6,9.4,3,true
-"Deck 1","Hydroponics Rack",5,1,33,4,0,0.0,0,true
-"Deck 1","Storage Locker",6,1,0,0,0,0.0,0,true
-"Deck 2","Workstation",8,1,42,2,0,0.0,0,true
-"Deck 2","Sleep Bunk",9,1,72,1,0,0.0,0,true
-"Deck 2","Crew Quarters Pod",10,1,18,1,0,0.0,0,true
-"Deck 2","Crew Quarters Pod",11,1,15,1,0,0.0,0,true
-"Deck 2","Exercise Treadmill",12,1,34,4,0,0.0,0,true
-"Deck 2","Storage Locker",13,1,0,0,0,0.0,0,true
-"Deck 3","Sleep Bunk",14,1,24,1,0,0.0,0,true
-"Deck 3","Sleep Bunk",15,1,55,2,0,0.0,0,true
-"Deck 3","Storage Locker",16,1,0,0,0,0.0,0,true
-"Deck 3","Hygiene / Toilet",17,1,21,10,0,0.0,0,true
-"Deck 3","Table + 4 Seats",18,4,7,8,0,0.0,0,true
+"Deck 1","Life Support (ECLSS) Rack",1,1,8,1,0,0.0,0,true
+"Deck 1","Food Storage Lockers (pantry)",2,2,9,10,0,0.0,0,true
+"Deck 1","Galley Refrigerator / Freezer",3,1,5,3,0,0.0,0,true
+"Deck 1","Water Dispenser (hot / ambient)",4,1,23,13,2,2.8,1,true
+"Deck 1","Food Warmer / Convection Oven",5,1,29,14,2,0.0,1,true
+"Deck 1","Prep Counter (restraint clips)",6,2,11,3,0,0.0,0,true
+"Deck 1","Trash Compactor / Waste Station",7,1,22,11,4,5.2,2,true
+"Deck 1","Zero-g Food Station",8,2,3,2,0,0.0,0,true
+"Deck 1","Galley Table (group)",9,4,16,13,0,0.0,0,true
+"Deck 1","Hygiene / Toilet",15,1,34,15,4,6.2,3,true
+"Deck 1","Hydroponics Rack",16,2,5,1,0,0.0,0,true
+"Deck 1","Storage Locker",17,1,0,0,0,0.0,0,true
+"Deck 2","Workstation",18,1,27,2,0,0.0,0,true
+"Deck 2","Sleep Bunk",19,1,24,1,0,0.0,0,true
+"Deck 2","Crew Quarters Pod",20,1,68,1,0,0.0,0,true
+"Deck 2","Crew Quarters Pod",21,1,31,2,0,0.0,0,true
+"Deck 2","Exercise Treadmill",22,1,34,4,0,0.0,0,true
+"Deck 2","Storage Locker",23,1,0,0,0,0.0,0,true
+"Deck 3","Sleep Bunk",24,1,0,0,0,0.0,0,true
+"Deck 3","Sleep Bunk",25,1,17,1,0,0.0,0,true
+"Deck 3","Storage Locker",26,1,0,0,0,0.0,0,true
+"Deck 3","Hygiene / Toilet",27,1,7,3,0,0.0,0,true
+"Deck 3","Table + 4 Seats",28,4,2,3,0,0.0,0,true
 
 LADDERS
 ladder,climbs,wait_min
-"L1-2",12,2.7
-"L2-3",6,0.0
+"L1-2",22,33.5
+"L2-3",13,4.9
 
 UNMET NEEDS
 need,critical_hours,pct_of_crew_time
-energy,1.55,2.7
-hunger,0.14,0.2
+energy,1.46,2.6
+hunger,0.49,0.9
 hygiene,0.00,0.0
-bladder,0.19,0.3
+bladder,0.26,0.5
 fitness,0.38,0.7
-fun,0.19,0.3
+fun,0.24,0.4
 work,0.00,0.0
 comfort,0.00,0.0
 
@@ -43,29 +49,33 @@ hatch,passages,congestion_min
 "L2-3",0,0.00
 unusable_equipment,deck,reason
 "Life Support (ECLSS) Rack","Deck 1","Life Support (ECLSS) Rack without restraints / unusable in micro-g (Maintain ECLSS without restraints) – add a handrail or foot restraint within 1.5 m"
-"Galley Counter","Deck 1","Galley Counter without restraints / unusable in micro-g (Prepare & eat without restraints) – add a handrail or foot restraint within 1.5 m"
-"Table + 4 Seats","Deck 1","Table + 4 Seats without restraints / unusable in micro-g (Meal at table without restraints, Chat at table without restraints) – add a handrail or foot restraint within 1.5 m"
+"Galley Table (group)","Deck 1","Galley Table (group) without restraints / unusable in micro-g (Meal at table without restraints, Medical check-up without restraints, Chat at table without restraints) – add a handrail or foot restraint within 1.5 m"
 "Hygiene / Toilet","Deck 1","Hygiene / Toilet without restraints / unusable in micro-g (Use toilet unusable in micro-g, Wash up without restraints) – add a handrail or foot restraint within 1.5 m"
-"Hydroponics Rack","Deck 1","Hydroponics Rack without restraints / unusable in micro-g (Tend plants without restraints) – add a handrail or foot restraint within 1.5 m"
-"Storage Locker","Deck 1","Storage Locker without restraints / unusable in micro-g (Get supplies without restraints) – add a handrail or foot restraint within 1.5 m"
+"Hydroponics Rack","Deck 1","Hydroponics Rack without restraints / unusable in micro-g (Gardening without restraints) – add a handrail or foot restraint within 1.5 m"
+"Storage Locker","Deck 1","Storage Locker without restraints / unusable in micro-g (Get supplies without restraints, Inventory & stowage without restraints) – add a handrail or foot restraint within 1.5 m"
 "Workstation","Deck 2","Workstation without restraints / unusable in micro-g (Work at console without restraints) – add a handrail or foot restraint within 1.5 m"
 "Sleep Bunk","Deck 2","Sleep Bunk without restraints / unusable in micro-g (Sleep without restraints) – add a handrail or foot restraint within 1.5 m"
-"Storage Locker","Deck 2","Storage Locker without restraints / unusable in micro-g (Get supplies without restraints) – add a handrail or foot restraint within 1.5 m"
+"Storage Locker","Deck 2","Storage Locker without restraints / unusable in micro-g (Get supplies without restraints, Inventory & stowage without restraints) – add a handrail or foot restraint within 1.5 m"
 "Sleep Bunk","Deck 3","Sleep Bunk without restraints / unusable in micro-g (Sleep without restraints) – add a handrail or foot restraint within 1.5 m"
 "Sleep Bunk","Deck 3","Sleep Bunk without restraints / unusable in micro-g (Sleep without restraints) – add a handrail or foot restraint within 1.5 m"
-"Storage Locker","Deck 3","Storage Locker without restraints / unusable in micro-g (Get supplies without restraints) – add a handrail or foot restraint within 1.5 m"
+"Storage Locker","Deck 3","Storage Locker without restraints / unusable in micro-g (Get supplies without restraints, Inventory & stowage without restraints) – add a handrail or foot restraint within 1.5 m"
 "Hygiene / Toilet","Deck 3","Hygiene / Toilet without restraints / unusable in micro-g (Use toilet unusable in micro-g, Wash up without restraints) – add a handrail or foot restraint within 1.5 m"
-"Table + 4 Seats","Deck 3","Table + 4 Seats without restraints / unusable in micro-g (Meal at table without restraints, Chat at table without restraints) – add a handrail or foot restraint within 1.5 m"
+"Table + 4 Seats","Deck 3","Table + 4 Seats without restraints / unusable in micro-g (Meal at table without restraints, Medical check-up without restraints, Chat at table without restraints) – add a handrail or foot restraint within 1.5 m"
+
+SAFETY,unstuck,0,stalled_trips_replanned,0
 
 DESIGN ISSUES
 severity,issue
-med,"Hygiene / Toilet (Deck 1): average wait 9.4 min over 6 waits, max queue 3 – consider a second unit"
+med,"Bottleneck: Trash Compactor / Waste Station (Deck 1) queue avg 5.2 min over 4 waits, max queue 2 – add another unit"
+med,"Bottleneck: Hygiene / Toilet (Deck 1) queue avg 6.2 min over 4 waits, max queue 3 – add another unit"
+med,"Galley storage holds 170 crew-days = 28 days for 6 crew (mission 500 d) – the rest must come from cargo / resupply"
+low,"Ladder L1-2: 34 min of waiting in total (22 climbs) – add a second connection?"
 
 CREW
 name,role,deck,action,mood,energy,hunger,hygiene,bladder,fitness,fun,work,comfort
-"Crew 1",Commander,"Deck 1","Maintain ECLSS (Life Support (ECLSS) Rack)",92,87,93,96,88,92,96,90,97
-"Crew 2",Pilot,"Deck 3","Chat at table (Table + 4 Seats)",91,92,85,95,96,85,86,89,99
-"Crew 3",Engineer,"Deck 1","Prepare & eat (Galley Counter)",88,80,80,84,98,83,98,90,97
-"Crew 4",Scientist,"Deck 2","Work at console (Workstation)",84,85,71,81,79,73,93,100,100
-"Crew 5",Medic,"Deck 1","Tend plants (Hydroponics Rack)",88,84,96,87,83,84,86,91,92
-"Crew 6",Specialist,"Deck 2","Exercise (Exercise Treadmill)",83,61,76,84,87,100,96,88,80
+"Crew 1",Commander,"Deck 1","Use toilet (Hygiene / Toilet)",89,85,93,82,81,91,95,87,96
+"Crew 2",Pilot,"Deck 1","Dispose of packaging (Trash Compactor / Waste Station)",77,53,94,70,68,81,79,88,87
+"Crew 3",Engineer,"Deck 2","Waiting for the Hygiene / Toilet",89,97,89,90,72,85,91,90,100
+"Crew 4",Scientist,"Deck 1","Going to Sleep (Sleep Bunk)",80,44,92,77,95,67,97,90,81
+"Crew 5",Medic,"Deck 2","Sleep (Sleep Bunk)",88,94,76,93,84,85,91,89,100
+"Crew 6",Specialist,"Deck 3","Sleep (Sleep Bunk)",68,40,84,87,44,86,65,90,62

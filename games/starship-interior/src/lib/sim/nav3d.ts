@@ -128,6 +128,47 @@ export class VoxNav {
 					if (found) this.near[c] = 1;
 				}
 	}
+	/** keep only voxels connected (26-neighbourhood) to `seed`; every other pocket becomes blocked → removed count */
+	prune(seed: number): number {
+		if (seed < 0 || !this.free[seed]) return 0;
+		const N = this.N, NN = N * N, M = this.M;
+		const seen = new Uint8Array(this.free.length);
+		const st = [seed];
+		seen[seed] = 1;
+		while (st.length) {
+			const c = st.pop()!;
+			const i = c % N, j = Math.floor(c / N) % N, l = Math.floor(c / NN);
+			for (let dl = -1; dl <= 1; dl++)
+				for (let dj = -1; dj <= 1; dj++)
+					for (let di = -1; di <= 1; di++) {
+						const ii = i + di, jj = j + dj, ll = l + dl;
+						if (ii < 0 || jj < 0 || ll < 0 || ii >= N || jj >= N || ll >= M) continue;
+						const k = (ll * N + jj) * N + ii;
+						if (!this.free[k] || seen[k]) continue;
+						seen[k] = 1;
+						st.push(k);
+					}
+		}
+		let n = 0;
+		for (let c = 0; c < this.free.length; c++)
+			if (this.free[c] && !seen[c]) {
+				this.free[c] = 0;
+				this.deckOf[c] = -1;
+				n++;
+			}
+		if (n) this.fields.clear();
+		return n;
+	}
+	/** swept test: is the straight segment a→b inside free space (samples every ¼ voxel)? */
+	segFree(ax: number, ay: number, az: number, bx: number, by: number, bz: number): boolean {
+		const d = Math.hypot(bx - ax, by - ay, bz - az);
+		const n = Math.max(1, Math.ceil(d / (this.C * 0.25)));
+		for (let s = 1; s <= n; s++) {
+			const t = s / n;
+			if (!this.isFree(ax + (bx - ax) * t, ay + (by - ay) * t, az + (bz - az) * t)) return false;
+		}
+		return true;
+	}
 	cell(x: number, y: number, z: number): number {
 		const C = this.C;
 		const i = Math.floor((x + this.R) / C), j = Math.floor((z + this.R) / C), l = Math.floor((y - this.y0) / C);

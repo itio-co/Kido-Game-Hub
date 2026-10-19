@@ -29,6 +29,7 @@
 	import LadderHint from './LadderHint.svelte';
 	import GroupLinks from './GroupLinks.svelte';
 	import OccupancyBadges from '$lib/sim/OccupancyBadges.svelte';
+	import NavOverlay from '$lib/sim/NavOverlay.svelte';
 	import { crew } from '$lib/sim/crewSim.svelte';
 
 	interface Props {
@@ -242,6 +243,9 @@
 {/if}
 {#if crew.enabled && !game.exportAll}
 	<CrewLayer deckVisible={(k) => allDecks || k === game.current} />
+	{#if crew.showNav}
+		<NavOverlay />
+	{/if}
 	{#if crew.badges}
 		<OccupancyBadges deckVisible={(k) => (crew.possessed !== null ? k === (crew.ui.agents[crew.possessed]?.deck ?? game.current) : k === game.current)} />
 	{/if}

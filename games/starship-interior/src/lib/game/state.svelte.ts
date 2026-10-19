@@ -343,6 +343,8 @@ class GameState {
 		};
 	});
 
+	/** equipment whose crew use points are unreachable (set by the crew sim's nav rebuild) */
+	unreachable = $state<{ deck: number; uid: number; text: string }[]>([]);
 	/** placed modules that no longer fit (e.g. after editing a custom design): flagged, never deleted */
 	invalidPlacements = $derived.by(() => {
 		const out: { deck: number; uid: number; text: string }[] = [];

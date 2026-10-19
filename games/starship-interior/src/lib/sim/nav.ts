@@ -109,6 +109,21 @@ export class DeckNav {
 		this._sizes = sizes;
 		return lab;
 	}
+	/** drop every free cell whose component is not in `keep` (unreachable pockets) → returns cells removed */
+	prune(keep: Set<number>): number {
+		const lab = this.comp;
+		let n = 0;
+		for (let c = 0; c < lab.length; c++)
+			if (this.free[c] && !keep.has(lab[c])) {
+				this.free[c] = 0;
+				n++;
+			}
+		if (n) {
+			this._comp = null;
+			this.fields.clear();
+		}
+		return n;
+	}
 	get compSizes() {
 		void this.comp;
 		return this._sizes;
@@ -250,7 +265,7 @@ export interface Portal {
 }
 
 /** build navigation for every deck (obstacles: equipment footprints + ladders/openings) */
-export function buildNav(decks: Deck[], shafts: Shaft[], radius: (k: number) => number, shaftLen: (s: Shaft) => number) {
+export function buildNav(decks: Deck[], shafts: Shaft[], radius: (k: number) => number, shaftLen: (s: Shaft) => number, seedDeck = 0) {
 	const navs = decks.map((d, k) => {
 		const obstacles = d.modules.filter((m) => !CATALOG_BY_ID[m.type]?.walkable && CATALOG_BY_ID[m.type] && (m.y ?? 0) < 1.9).map((m) => footprintOf(m.type, m.x, m.z, m.angle, BODY_PAD));
 		const holes: Footprint[] = shafts.filter((s) => s.from === k || s.to === k).map((s) => ({ kind: 'circle', cx: s.x, cz: s.z, r: 0.45 + BODY_PAD * 0.5 }));
@@ -267,7 +282,32 @@ export function buildNav(decks: Deck[], shafts: Shaft[], radius: (k: number) => 
 		const pb = lo.pt(cb), pt = hi.pt(ct);
 		portals.push({ shaft: s, bottom: { deck: s.from, x: pb[0], z: pb[1], cell: cb }, top: { deck: s.to, x: pt[0], z: pt[1], cell: ct }, length: shaftLen(s) });
 	}
-	return { navs, portals };
+	// single source of truth: only the area connected to the crew spawn (airlock deck main area, through
+	// ladders) is walkable; pockets behind equipment / wall items are removed so nothing can target them
+	const keep = navs.map(() => new Set<number>());
+	const k0 = Math.min(Math.max(0, seedDeck), navs.length - 1);
+	const m0 = navs[k0]?.mainCell() ?? -1;
+	let pruned = 0;
+	if (m0 >= 0) {
+		keep[k0].add(navs[k0].comp[m0]);
+		for (let changed = true; changed; ) {
+			changed = false;
+			for (const p of portals) {
+				const cb = navs[p.bottom.deck].comp[p.bottom.cell], ct = navs[p.top.deck].comp[p.top.cell];
+				if (keep[p.bottom.deck].has(cb) && !keep[p.top.deck].has(ct)) (keep[p.top.deck].add(ct), (changed = true));
+				if (keep[p.top.deck].has(ct) && !keep[p.bottom.deck].has(cb)) (keep[p.bottom.deck].add(cb), (changed = true));
+			}
+		}
+		// decks with no connection at all keep their main area (an unconnected deck is flagged elsewhere)
+		navs.forEach((n, k) => {
+			if (!keep[k].size) {
+				const mc = n.mainCell();
+				if (mc >= 0) keep[k].add(n.comp[mc]);
+			}
+		});
+		navs.forEach((n, k) => (pruned += n.prune(keep[k])));
+	}
+	return { navs, portals, pruned };
 }
 export type NavWorld = ReturnType<typeof buildNav>;
 
