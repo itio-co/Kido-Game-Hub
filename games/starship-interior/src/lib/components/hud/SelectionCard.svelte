@@ -1,8 +1,9 @@
 <script lang="ts">
 	/** Contextual selection card: name, size, live condition, egress status, seats, and rotate / duplicate / delete actions. */
 	import { CATALOG_BY_ID } from '$lib/game/catalog';
-	import { nudgeFor } from '$lib/game/egress';
-	import { dimsOf } from '$lib/game/geometry';
+	import { keepoutFootprint, nudgeFor } from '$lib/game/egress';
+	import { dimsOf, footprintOf, overlaps } from '$lib/game/geometry';
+	import { doorSpecOf } from '$lib/game/doors';
 	import { game } from '$lib/game/state.svelte';
 	import { crew } from '$lib/sim/crewSim.svelte';
 	import { LIFE_ICON } from '$lib/sim/lifecycle';
@@ -23,6 +24,17 @@
 		return !!sel?.locked;
 	});
 	const eg = $derived(sel && def?.seats ? game.egressOf(sel.uid) : null);
+	/** door: kind + whether its swing / access zone is clear of other equipment */
+	const doorInfo = $derived.by(() => {
+		if (!sel) return null;
+		const ds = doorSpecOf(sel.type);
+		if (!ds) return null;
+		const f = keepoutFootprint(sel);
+		const blockers = f
+			? game.deck.modules.filter((o) => o.uid !== sel.uid && !o.mount && CATALOG_BY_ID[o.type] && !CATALOG_BY_ID[o.type].restraint && overlaps(f, footprintOf(o.type, o.x, o.z, o.angle))).map((o) => CATALOG_BY_ID[o.type].name)
+			: [];
+		return { label: ds.label, kind: ds.kind, private: ds.private, blockers };
+	});
 	function nudge() {
 		const m = sel;
 		if (!m || game.lockedGuard(m.uid, 'move')) return;
@@ -51,6 +63,9 @@
 		{/if}
 		{#if eg}
 			<div class="row eg" class:bad={!eg.ok} data-testid="selcard-egress">{eg.ok ? '✓' : '✖'} {eg.ok ? `Egress clear → ${eg.target} (${eg.envelope})` : `Egress blocked by ${eg.blockers.map((b) => b.name).join(', ') || 'hull'} (${eg.envelope})`}</div>
+		{/if}
+		{#if doorInfo}
+			<div class="row eg" class:bad={doorInfo.blockers.length > 0} data-testid="selcard-door">🚪 {doorInfo.kind === 'curtain' ? 'Curtain' : `${doorInfo.kind === 'hinge' ? 'Hinged' : 'Sliding'} ${doorInfo.label}`}{doorInfo.private ? ' · private' : ''} · {doorInfo.blockers.length ? `✖ swing blocked by ${[...new Set(doorInfo.blockers)].join(', ')}` : '✓ swing clear'}</div>
 		{/if}
 		{#if def.group}<div class="row">🪑 {game.seatsOf(sel.uid).length + (def.restraint ? 2 : 0)} seats</div>{/if}
 		<div class="acts">

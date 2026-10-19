@@ -17,6 +17,8 @@ class EquipStore {
 	selectedId = $state<string>('couch');
 	// ---- designer UI state ----
 	partId = $state<string | null>(null);
+	/** designer: preview openness of parts marked as door (0 closed … 1 open) */
+	doorPreview = $state(0);
 	/** pose shown and edited: deployed (main) or stowed */
 	pose = $state<'deployed' | 'stowed'>('deployed');
 	/** designer: show a seated 1.75 m occupant in couches (deployed pose) */

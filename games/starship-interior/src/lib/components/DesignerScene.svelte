@@ -17,6 +17,8 @@
 	import { isBuiltin } from '$lib/game/catalog';
 	import type { ModuleId } from '$lib/game/types';
 	import EquipPartMesh from './EquipPartMesh.svelte';
+	import DoorLeaf from './DoorLeaf.svelte';
+	import { partDoorLeaf } from '$lib/game/doors';
 	import EditOverlay from './EditOverlay.svelte';
 	import { emptySel } from '$lib/game/editMesh';
 	import ModuleMesh from './ModuleMesh.svelte';
@@ -198,6 +200,12 @@
 	<T.Group bind:ref={partsGroup} name="equipment">
 	{#each parts as p (p.id)}
 		{#if !(editing && p.id === equip.partId)}
+			{#if p.door && equip.doorPreview > 0}
+				<!-- door preview (▶ Test door): the leaf swings about its hinge -->
+				<DoorLeaf leaf={partDoorLeaf(p.door, p)} preview={equip.doorPreview}>
+					<EquipPartMesh part={p} pose={poseOf(p, stowed)} selected={!editing && p.id === equip.partId} onpick={editing ? undefined : (id) => (equip.partId = id)} />
+				</DoorLeaf>
+			{:else}
 			<EquipPartMesh
 				part={p}
 				pose={poseOf(p, stowed)}
@@ -205,6 +213,7 @@
 				onpick={editing ? undefined : (id) => (equip.partId = id)}
 				bind:ref={refs[p.id]}
 			/>
+			{/if}
 		{/if}
 	{/each}
 	</T.Group>

@@ -12,7 +12,8 @@
 	import { BufferGeometry, Float32BufferAttribute } from 'three';
 	import { CATALOG_BY_ID } from '$lib/game/catalog';
 	import { egressFor, keepoutFootprint, nudgeFor, type EgressResult } from '$lib/game/egress';
-	import { PHASE, footprintOf, outline, type Footprint, type Vec2 } from '$lib/game/geometry';
+	import { PHASE, footprintOf, localToWorld, outline, type Footprint, type Vec2 } from '$lib/game/geometry';
+	import { doorSpecOf, type DoorSpec } from '$lib/game/doors';
 	import { MIN_PASSAGE_WIDTH } from '$lib/game/specs';
 	import { game } from '$lib/game/state.svelte';
 	import type { ModuleId, Phase, PlacedModule } from '$lib/game/types';
@@ -70,13 +71,34 @@
 	const keepouts = $derived.by(() => {
 		const sel = new Set([game.selectedUid, game.hoverUid, dragM?.uid ?? null]);
 		return mods
-			.filter((m) => CATALOG_BY_ID[m.type]?.keepout && (game.showClearances || sel.has(m.uid)))
+			.filter((m) => game.showClearances || sel.has(m.uid))
 			.map((m) => {
 				const p = dragM && m.uid === dragM.uid && game.drag ? { ...m, ...game.dragPose(m, game.drag) } : m;
-				return { uid: m.uid, f: keepoutFootprint(p)!, label: CATALOG_BY_ID[m.type].keepout!.label ?? 'keep-out' };
+				const f = keepoutFootprint(p);
+				const ds = doorSpecOf(m.type);
+				return { uid: m.uid, f: f!, label: CATALOG_BY_ID[m.type]?.keepout?.label ?? (ds ? `${ds.label} swing` : 'keep-out'), arcs: ds ? swingArcs(p, ds) : [] };
 			})
 			.filter((k) => k.f);
 	});
+	/** door swing arcs (side-hinged leaves): pivot → closed edge → arc → open edge, world XZ */
+	function swingArcs(m: PlacedModule, ds: DoorSpec): Vec2[][] {
+		if (ds.kind !== 'hinge') return [];
+		return ds.leaves
+			.filter((l) => (l.axis ?? 'y') === 'y' && l.angle && l.w)
+			.map((l) => {
+				const [px, , pz] = l.pivot;
+				const sx = px < 0 ? 1 : -1;
+				const pts: Vec2[] = [localToWorld(m.x, m.z, m.angle, px, pz)];
+				for (let i = 0; i <= 16; i++) {
+					const th = (((l.angle ?? 0) * i) / 16) * (Math.PI / 180);
+					const x = sx * l.w! * Math.cos(th),
+						z = -sx * l.w! * Math.sin(th);
+					pts.push(localToWorld(m.x, m.z, m.angle, px + x, pz + z));
+				}
+				pts.push(pts[0]);
+				return pts;
+			});
+	}
 	/** 0.8 m wide floor band along a polyline, split into clear / blocked quads */
 	function band(path: Vec2[], blocked: boolean[], want: boolean): BufferGeometry {
 		const g = new BufferGeometry();
@@ -103,6 +125,9 @@
 {#each keepouts as k (k.uid)}
 	<Zone f={k.f} color="#f59e0b" opacity={0.18} y={0.016} />
 	<Outline points={outline(k.f)} y={0.026} color="#f59e0b" opacity={0.8} />
+	{#each k.arcs as a, i (i)}
+		<Outline points={a} y={0.03} color="#fbbf24" opacity={0.95} />
+	{/each}
 {/each}
 
 {#each items as o (o.m.uid + (o.live ? '-live' : ''))}

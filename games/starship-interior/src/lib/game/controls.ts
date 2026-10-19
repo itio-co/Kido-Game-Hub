@@ -82,10 +82,10 @@ export const CONTROL_GROUPS: BindingGroup[] = [
 			{ keys: ['Shift'], action: 'Run' },
 			{ keys: ['Drag', 'Wheel'], action: 'Look around / zoom the 3rd-person camera' },
 			{ keys: ['V'], action: 'First / third person' },
-			{ keys: ['E'], action: 'Interact: walk to the item and use it (sit, eat, sleep, work…)', note: 'climb a ladder: walks to its base, then climbs' },
+			{ keys: ['E'], action: 'Interact: walk to the item and use it (sit, eat, sleep, work…)', note: 'doors open, you step inside, private doors close behind you; climb a ladder: walks to its base, then climbs' },
 			{ keys: ['Shift+E', 'Hold E'], action: 'More actions (pick with 1–9)' },
 			{ keys: ['Enter'], action: 'Run the best action' },
-			{ keys: ['X'], action: 'Stop / cancel (stand up, leave the queue)' },
+			{ keys: ['X'], action: 'Stop / cancel (stand up, leave the queue)', note: 'inside a pod / toilet: the door opens and you step out' },
 			{ keys: ['Space', 'PgUp'], action: 'Climb up at a ladder' },
 			{ keys: ['Q', 'C', 'PgDn'], action: 'Climb down at a ladder' },
 			{ keys: ['F9'], action: 'Interact debug overlay' }

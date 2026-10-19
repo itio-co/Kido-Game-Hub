@@ -91,13 +91,18 @@ const full = await G(() => {
 	c.teleport(0, it.deck, it.slots[0].ax, it.slots[0].az);
 	a.possessed = true;
 	const p = c.promptFor(a);
-	const used = c.interact();
+	c.interact();
+	// a full item is never used directly: E joins its queue instead
+	const used = a.state === 'use';
+	const queued = it.queue.includes(a.id);
+	c.release(a, false);
+	a.state = 'idle';
 	for (const s of it.slots) s.occ = null;
 	c.possess(null);
 	c.running = true;
-	return { p, used };
+	return { p, used, queued };
 });
-check('possessed: full item shows "Full (1/1)" and blocks use', /Full \(1\/1\)/.test(full.p ?? '') && !full.used, full);
+check('possessed: full item shows "full (1/1)", E queues instead of using', /full \(1\/1\)/i.test(full.p ?? '') && !full.used && full.queued, full);
 
 // missing water dispenser → issue + meals blocked
 const miss = await G(() => {

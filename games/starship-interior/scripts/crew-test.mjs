@@ -204,8 +204,12 @@ const ALL_FULL = (c, id) => { for (const n of ['energy', 'hunger', 'hygiene', 'b
 	check('possession interact prompt', !!prompt && /^E\s+\S/.test(prompt), { prompt });
 	await page.screenshot({ path: 'screenshot-crew-possess.png' });
 	await page.keyboard.press('KeyE');
-	await wait(800);
-	const used = await G(page, (id) => window.__crew.agents[id].state, pid);
+	// E may first walk the avatar to the use point (state 'move'), then it uses it
+	let used = 'idle';
+	for (let i = 0; i < 40 && used !== 'use'; i++) {
+		await wait(250);
+		used = await G(page, (id) => window.__crew.agents[id].state, pid);
+	}
 	check('possessed interact (E) uses equipment', used === 'use', { state: used });
 	await page.getByRole('button', { name: 'Release', exact: true }).click();
 	await wait(500);

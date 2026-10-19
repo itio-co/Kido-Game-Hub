@@ -35,8 +35,8 @@
 		{@const p = pos(o)}
 		{#if p}
 			<HTML position={p} center pointerEvents="none" zIndexRange={[6, 0]}>
-				<div class="occ" data-occ={o.key} data-power={o.power} data-state={o.state} data-cond={o.cond} style="--c:{col(o)}">
-					<span class="n">{o.state === 'Broken' ? '✖ broken' : `${o.n}/${o.cap}`}</span>{#if o.q}<span class="q">+{o.q}⏳</span>{/if}{#if o.state === 'Needs maintenance'}<span class="q">🔧</span>{/if}{#if o.power}<span class="q pw" title={o.power === 'shed' ? 'Unavailable (no power)' : 'Brownout: cannot start'}>{o.power === 'shed' ? '🔌✖' : '⚡✖'}</span>{/if}
+				<div class="occ" data-occ={o.key} data-power={o.power} data-state={o.state} data-cond={o.cond} data-door={o.door} style="--c:{col(o)}">
+					<span class="n">{o.state === 'Broken' ? '✖ broken' : o.door === 'occupied' ? '🔒 occupied' : `${o.n}/${o.cap}`}</span>{#if o.q}<span class="q">+{o.q}⏳</span>{/if}{#if o.state === 'Needs maintenance'}<span class="q">🔧</span>{/if}{#if o.power}<span class="q pw" title={o.power === 'shed' ? 'Unavailable (no power)' : 'Brownout: cannot start'}>{o.power === 'shed' ? '🔌✖' : '⚡✖'}</span>{/if}
 					{#if o.cond !== undefined}<span class="bar" title="condition"><i style="width:{Math.max(4, o.cond)}%;background:{condCol(o.cond)}"></i></span>{/if}
 				</div>
 			</HTML>

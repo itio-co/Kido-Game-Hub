@@ -8,6 +8,7 @@
 	import { glbAspect } from '$lib/three/glbPart';
 	import type { ModuleId } from '$lib/game/types';
 	import AffordanceEditor from './AffordanceEditor.svelte';
+	import { sanitizePartDoor, type PartDoor } from '$lib/game/doors';
 	import { lifeOf } from '$lib/sim/lifecycle';
 	import { PRIORITIES, powerOf, type Priority } from '$lib/sim/power';
 	import type { ModuleDef } from '$lib/game/types';
@@ -75,6 +76,37 @@
 			const p = e.parts.find((x) => x.id === part.id);
 			if (p) (p as unknown as Record<string, unknown>)[k] = v;
 		});
+	}
+	/** mark / unmark the selected part as a door (hinge or slide) */
+	function setDoor(d: PartDoor | null) {
+		if (!part) return;
+		equip.update(equip.selectedId, (e) => {
+			const p = e.parts.find((x) => x.id === part.id);
+			if (!p) return;
+			if (d) p.door = sanitizePartDoor(d);
+			else delete p.door;
+		});
+	}
+	function doorField<K extends keyof PartDoor>(k: K, v: PartDoor[K]) {
+		if (part?.door) setDoor({ ...part.door, [k]: v });
+	}
+	/** default hinge: the part's left edge (module space), opening outwards */
+	function makeDoor() {
+		if (!part || !pose) return;
+		const [x, y, z] = pose.pos;
+		setDoor({ kind: 'hinge', axis: 'y', angle: -100, pivot: [Math.round((x - pose.size[0] / 2) * 1000) / 1000, Math.round((y - pose.size[1] / 2) * 1000) / 1000, z], dur: 0.8 });
+	}
+	let doorAnim = 0;
+	function testDoor() {
+		cancelAnimationFrame(doorAnim);
+		const t0 = performance.now();
+		const dur = (part?.door?.dur ?? 0.8) * 1000;
+		const tick = () => {
+			const t = (performance.now() - t0) / dur;
+			equip.doorPreview = t < 1 ? t : t < 2 ? 1 : t < 3 ? 3 - t : 0;
+			if (t < 3) doorAnim = requestAnimationFrame(tick);
+		};
+		tick();
 	}
 	function dup() {
 		const id = equip.duplicate(equip.selectedId);
@@ -319,6 +351,35 @@
 								<button onclick={() => nudge('rot', 1, -5)} aria-label="Yaw −5°">−5°</button>
 								<button onclick={() => nudge('rot', 1, 5)} aria-label="Yaw +5°">+5°</button>
 							</div>
+							<div class="door" data-testid="door-panel">
+								<label><input type="checkbox" checked={!!part.door} onchange={(e) => (e.currentTarget.checked ? makeDoor() : setDoor(null))} data-testid="door-toggle" /> 🚪 Door part</label>
+								{#if part.door}
+									{@const dd = part.door}
+									<select value={dd.kind} onchange={(e) => doorField('kind', e.currentTarget.value as 'hinge')} aria-label="Door kind">
+										<option value="hinge">hinge</option><option value="slide">slide</option>
+									</select>
+									{#if dd.kind === 'hinge'}
+										<select value={dd.axis ?? 'y'} onchange={(e) => doorField('axis', e.currentTarget.value as 'y')} aria-label="Hinge axis">
+											<option value="y">axis Y (side hinge)</option><option value="x">axis X (top/bottom)</option><option value="z">axis Z</option>
+										</select>
+										<label>angle °<input type="number" step="5" value={dd.angle ?? -100} onchange={(e) => doorField('angle', Number(e.currentTarget.value))} /></label>
+									{:else}
+										{#each ['X', 'Y', 'Z'] as ax, i}
+											<label>slide {ax} cm<input type="number" value={cm((dd.slide ?? [0.6, 0, 0])[i])} onchange={(e) => { const v = [...(dd.slide ?? [0.6, 0, 0])] as [number, number, number]; v[i] = Number(e.currentTarget.value) / 100; doorField('slide', v); }} /></label>
+										{/each}
+									{/if}
+									<div class="vec">
+										<span>Hinge / pivot cm</span>
+										{#each ['X', 'Y', 'Z'] as ax, i}
+											<label>{ax}<input type="number" value={cm(dd.pivot[i])} onchange={(e) => { const v = [...dd.pivot] as [number, number, number]; v[i] = Number(e.currentTarget.value) / 100; doorField('pivot', v); }} /></label>
+										{/each}
+									</div>
+									<label>duration s<input type="number" step="0.1" min="0.2" max="4" value={dd.dur ?? 0.8} onchange={(e) => doorField('dur', Number(e.currentTarget.value))} /></label>
+									<label title="Closes behind the user while in use"><input type="checkbox" checked={!!dd.private} onchange={(e) => doorField('private', e.currentTarget.checked)} /> private</label>
+									<label title="The user steps inside (use point within the footprint)"><input type="checkbox" checked={!!dd.enter} onchange={(e) => doorField('enter', e.currentTarget.checked)} /> walk-in</label>
+									<button onclick={testDoor} data-testid="door-test">▶ Test door</button>
+								{/if}
+							</div>
 							{#if part.shape !== 'glb'}
 								<div class="comp" data-testid="component-panel">
 									<div class="row">
@@ -449,6 +510,20 @@
 		display: flex;
 		flex-direction: column;
 		font: 13px/1.35 system-ui, sans-serif;
+	}
+	.door {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 4px 8px;
+		align-items: center;
+		margin: 6px 0;
+		padding: 5px 6px;
+		border: 1px solid rgba(245, 158, 11, 0.35);
+		border-radius: 6px;
+		font-size: 11px;
+	}
+	.door input[type='number'] {
+		width: 52px;
 	}
 	.comp {
 		margin-top: 8px;

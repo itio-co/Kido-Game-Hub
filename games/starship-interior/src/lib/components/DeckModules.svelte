@@ -32,7 +32,7 @@
 {#each deck.modules as m (m.uid)}
 	{#if m.uid !== hideUid}
 		<T.Group position={[m.x, m.y ?? 0, m.z]} rotation.y={(m.angle * Math.PI) / 180} userData={{ uid: m.uid, type: m.type }} name={m.type}>
-			<ModuleMesh type={m.type} deckHeight={deck.height} phase={game.phase} mount={m.mount} />
+			<ModuleMesh type={m.type} deckHeight={deck.height} phase={game.phase} mount={m.mount} doorKey="{k}:{m.uid}" />
 			{#if m.mount === 'wall'}
 				{@const g = mountGap(m)}
 				{#if g && g.h > 0.06}

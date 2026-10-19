@@ -9,6 +9,7 @@
  * stowed otherwise. Keep-out zones (door swings, fold-downs) are visualised but do not block egress
  * (doors are closed and latched for launch / landing).
  */
+import { doorSpecOf } from './doors';
 import { CATALOG_BY_ID } from './catalog';
 import { PHASE, accessFootprint, containsPoint, footprintOf, localToWorld, overlaps, shaftAccess, type Footprint, type Vec2 } from './geometry';
 import { AIRLOCK_ANGLE, MIN_PASSAGE_WIDTH } from './specs';
@@ -49,10 +50,17 @@ export interface EgressCtx {
 	deckLabel: string;
 }
 
+/** keep-out derived from a door spec (designer doors, oven door): the swing radius of the widest hinged leaf */
+function doorKeepout(type: ModuleId): { d: number; w?: number; label?: string } | null {
+	const ds = doorSpecOf(type);
+	if (!ds || ds.kind !== 'hinge') return null;
+	const r = Math.max(0, ...ds.leaves.map((l) => (l.axis === 'x' ? (l.w ?? 0) * Math.abs(Math.sin(((l.angle ?? 0) * Math.PI) / 180)) : (l.w ?? 0))));
+	return r > 0.05 ? { d: Math.round(r * 100) / 100, label: `${ds.label} swing` } : null;
+}
 /** keep-out zone in front of an item (door swing / fold-down), local +Z side */
 export function keepoutFootprint(m: { type: ModuleId; x: number; z: number; angle: number }): Footprint | null {
 	const def = CATALOG_BY_ID[m.type];
-	const k = def?.keepout;
+	const k = def?.keepout ?? doorKeepout(m.type);
 	if (!k || def.shape !== 'rect') return null;
 	const [cx, cz] = localToWorld(m.x, m.z, m.angle, 0, def.d / 2 + k.d / 2);
 	return { kind: 'rect', cx, cz, hw: (k.w ?? def.w) / 2, hd: k.d / 2, angle: m.angle };

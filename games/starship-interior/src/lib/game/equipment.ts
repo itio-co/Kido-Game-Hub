@@ -15,6 +15,7 @@ import { Box3, Euler, Matrix4, Mesh, Quaternion, Vector3, type BufferGeometry, t
 import type { MatName } from '$lib/three/materials';
 import type { ModuleDef, Phase } from './types';
 import { meshBounds, sanitizeMesh, vcount, type EditMesh } from './editMesh';
+import { sanitizePartDoor, type PartDoor } from './doors';
 
 export type EquipShape = 'box' | 'rbox' | 'cyl' | 'sphere' | 'capsule' | 'plane' | 'torus' | 'glb' | 'mesh';
 export const SHAPES: EquipShape[] = ['box', 'rbox', 'cyl', 'sphere', 'capsule', 'plane', 'torus'];
@@ -38,6 +39,8 @@ export interface EquipPart {
 	glb?: string;
 	/** editable polygon mesh in part-local metres (shape 'mesh'; size = its bounding box, a stowed size scales it) */
 	mesh?: EditMesh;
+	/** this part is a door / lid: hinge axis + open angle or slide offset, duration (crew sim animates it) */
+	door?: PartDoor;
 }
 /** the editable equipment definition (also the JSON export format) */
 export interface EquipDef {
@@ -239,6 +242,8 @@ export function sanitizeEquip(raw: unknown): EquipDef | null {
 			part.mesh = mesh;
 			part.size = meshBounds(mesh).size;
 		}
+		const door = sanitizePartDoor(p.door);
+		if (door) part.door = door;
 		return [part];
 	});
 	const id = typeof r.id === 'string' && r.id.startsWith('custom:') ? r.id.slice(0, 80) : `custom:${uidPart()}`;

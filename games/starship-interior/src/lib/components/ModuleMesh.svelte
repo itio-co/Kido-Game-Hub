@@ -11,6 +11,8 @@
 	import EquipModel from './EquipModel.svelte';
 	import Self from './ModuleMesh.svelte';
 	import { CATALOG_BY_ID } from '$lib/game/catalog';
+	import { DOORS } from '$lib/game/doors';
+	import DoorLeaf from './DoorLeaf.svelte';
 
 	interface Props {
 		type: ModuleId;
@@ -21,8 +23,11 @@
 		phase?: Phase;
 		/** wall / ceiling mount (handrails orient their standoffs to the mounting surface) */
 		mount?: 'wall' | 'ceiling';
+		/** placed item key "deck:uid": door leaves follow the live door state (null = closed / rest) */
+		doorKey?: string | null;
 	}
-	let { type, ghost = null, deckHeight = 2.4, phase = 'surface', mount }: Props = $props();
+	let { type, ghost = null, deckHeight = 2.4, phase = 'surface', mount, doorKey = null }: Props = $props();
+	const door = $derived(DOORS[type]);
 	const launch = $derived(phase === 'launch');
 	const customDef = $derived(type.startsWith('custom:') ? CATALOG_BY_ID[type] : null);
 	const couch = $derived(
@@ -35,7 +40,7 @@
 
 <T.Group>
 	{#if customDef?.parts}
-		<EquipModel parts={customDef.parts} stowed={phase === (customDef.stowPhase ?? 'launch')} {ghost} />
+		<EquipModel parts={customDef.parts} stowed={phase === (customDef.stowPhase ?? 'launch')} {ghost} {doorKey} />
 	{:else if couch}
 		<PartsModel parts={couch} stowed={!launch} {ghost} />
 	{:else if type === 'table' && launch}
@@ -70,24 +75,52 @@
 		<Part args={[0.04, 0.8, 0.9]} position={[0.98, 0.8, 0]} m="white" {ghost} />
 		<Part args={[2.0, 0.04, 0.9]} position={[0, 1.18, 0]} m="white" {ghost} />
 		<Part args={[1.9, 0.02, 0.02]} position={[0, 1.13, 0.43]} m="steel" {ghost} />
-		<Part args={[0.5, 0.68, 0.02]} position={[0.68, 0.8, 0.43]} m="fabric" {ghost} />
+		<DoorLeaf leaf={door!.leaves[0]} {doorKey} restOpen>
+			<!-- privacy curtain: closed spans the opening, open bunches at the right end -->
+			<Part args={[1.9, 0.72, 0.02]} position={[0, 0.8, 0.43]} m="fabric" {ghost} />
+		</DoorLeaf>
 		<Part args={[0.3, 0.02, 0.05]} position={[-0.6, 1.15, -0.3]} m="led" {ghost} />
 		<Part args={[0.16, 0.1, 0.01]} position={[-0.75, 0.9, -0.405]} m="screen" {ghost} />
 	{:else if type === 'crewpod' || type === 'hygiene'}
-		<Part args={[1.0, 2.1, 0.94]} position={[0, 1.05, -0.03]} m="white" {ghost} />
+		{@const hyg = type === 'hygiene'}
+		<!-- hollow compartment: back / side walls, roof, floor, door frame; the door leaf swings out -->
+		<Part args={[1.0, 2.1, 0.04]} position={[0, 1.05, -0.48]} m="white" {ghost} />
+		{#each [-1, 1] as s}
+			<Part args={[0.04, 2.1, 0.92]} position={[s * 0.48, 1.05, -0.02]} m="white" {ghost} />
+			<Part args={[0.11, 2.1, 0.06]} position={[s * 0.445, 1.05, 0.45]} m="white" {ghost} />
+			<Part args={[0.03, 1.9, 0.04]} position={[s * 0.385, 0.95, 0.45]} m="steelDark" {ghost} />
+		{/each}
+		<Part args={[1.0, 0.04, 0.96]} position={[0, 2.08, 0]} m="white" {ghost} />
+		<Part args={[0.78, 0.2, 0.06]} position={[0, 2.0, 0.45]} m="white" {ghost} />
+		<Part args={[0.5, 0.12, 0.02]} position={[0, 1.98, 0.485]} m="dark" {ghost} />
+		<Part args={[0.92, 0.03, 0.92]} position={[0, 0.015, -0.02]} m="steelDark" {ghost} />
 		<Part args={[1.0, 0.08, 0.06]} position={[0, 0.04, 0.47]} m="dark" {ghost} />
-		<Part args={[0.74, 1.86, 0.03]} position={[0, 1.02, 0.455]} m={type === 'hygiene' ? 'grey' : 'white'} {ghost} />
-		<Part args={[0.03, 1.9, 0.04]} position={[-0.385, 1.02, 0.45]} m="steelDark" {ghost} />
-		<Part args={[0.03, 1.9, 0.04]} position={[0.385, 1.02, 0.45]} m="steelDark" {ghost} />
-		<Part args={[0.03, 0.2, 0.04]} position={[0.3, 1.05, 0.48]} m="steel" {ghost} />
-		<Part args={[0.5, 0.12, 0.02]} position={[0, 1.98, 0.47]} m="dark" {ghost} />
-		<Part args={[0.03, 0.03, 0.01]} position={[0.33, 1.4, 0.475]} m={type === 'hygiene' ? 'amber' : 'green'} {ghost} />
-		{#if type === 'hygiene'}
-			<Part args={[0.4, 0.5, 0.01]} position={[0, 1.45, 0.473]} m="glass" {ghost} />
-			<Part shape="cyl" args={[0.06, 0.06, 0.3, 10]} position={[-0.3, 2.0, -0.3]} m="steel" {ghost} />
+		<Part args={[0.6, 0.02, 0.04]} position={[0, 2.05, -0.1]} m="led" {ghost} />
+		<!-- occupancy light: green free, amber occupied -->
+		<Part args={[0.03, 0.03, 0.01]} position={[0.44, 1.4, 0.485]} m={hyg ? 'amber' : 'green'} {ghost} />
+		{#if hyg}
+			<!-- toilet + basin + mirror inside -->
+			<Part shape="cyl" args={[0.17, 0.19, 0.4, 18]} position={[0, 0.2, -0.28]} m="grey" {ghost} />
+			<Part shape="torus" args={[0.14, 0.03, 8, 18]} position={[0, 0.41, -0.28]} rotation={[PI / 2, 0, 0]} m="dark" {ghost} />
+			<Part args={[0.36, 0.4, 0.12]} position={[0, 0.6, -0.42]} m="white" {ghost} />
+			<Part args={[0.1, 0.12, 0.36]} position={[0.4, 0.9, -0.15]} m="white" {ghost} />
+			<Part args={[0.01, 0.36, 0.3]} position={[0.455, 1.35, -0.15]} m="glass" {ghost} />
+			<Part shape="cyl" args={[0.06, 0.06, 0.3, 10]} position={[-0.3, 1.9, -0.3]} m="steel" {ghost} />
 		{:else}
-			<Part args={[0.2, 0.12, 0.01]} position={[0, 1.6, 0.473]} m="screen" {ghost} />
+			<!-- vertical sleeping bag on the back wall, wall screen, stowage -->
+			<Part shape="capsule" args={[0.16, 1.3, 4, 12]} position={[0, 1.1, -0.3]} m="mattress" {ghost} />
+			<Part args={[0.01, 0.22, 0.32]} position={[-0.455, 1.45, -0.1]} m="screen" {ghost} />
+			<Part args={[0.12, 0.5, 0.5]} position={[0.4, 1.6, -0.15]} m="grey" {ghost} />
 		{/if}
+		<DoorLeaf leaf={door!.leaves[0]} {doorKey}>
+			<Part args={[0.74, 1.86, 0.03]} position={[0, 0.95, 0.465]} m={hyg ? 'grey' : 'white'} {ghost} />
+			<Part args={[0.03, 0.2, 0.04]} position={[0.3, 1.05, 0.49]} m="steel" {ghost} />
+			{#if hyg}
+				<Part args={[0.4, 0.5, 0.01]} position={[0, 1.45, 0.483]} m="glass" {ghost} />
+			{:else}
+				<Part args={[0.2, 0.12, 0.01]} position={[0, 1.6, 0.483]} m="screen" {ghost} />
+			{/if}
+		</DoorLeaf>
 	{:else if type === 'galley'}
 		<Part args={[1.8, 0.8, 0.6]} position={[0, 0.5, -0.025]} m="white" {ghost} />
 		<Part args={[1.8, 0.1, 0.5]} position={[0, 0.05, -0.07]} m="dark" {ghost} />
@@ -147,10 +180,18 @@
 			/>
 		{/each}
 	{:else if type === 'locker'}
-		<Part args={[0.6, 2.0, 0.58]} position={[0, 1.0, -0.01]} m="white" {ghost} />
-		{#each [-1, 1] as s}
-			<Part args={[0.285, 1.88, 0.02]} position={[s * 0.147, 1.0, 0.29]} m="grey" {ghost} />
-			<Part args={[0.02, 0.22, 0.03]} position={[s * 0.03, 1.1, 0.305]} m="steel" {ghost} />
+		<Part args={[0.6, 2.0, 0.04]} position={[0, 1.0, -0.28]} m="white" {ghost} />
+		{#each [-1, 1] as s}<Part args={[0.02, 2.0, 0.58]} position={[s * 0.29, 1.0, -0.01]} m="white" {ghost} />{/each}
+		<Part args={[0.6, 0.06, 0.58]} position={[0, 1.97, -0.01]} m="white" {ghost} />
+		<Part args={[0.6, 0.08, 0.58]} position={[0, 0.04, -0.01]} m="white" {ghost} />
+		<!-- shelves + stowage behind the doors -->
+		{#each [0.45, 0.95, 1.45] as y}<Part args={[0.54, 0.02, 0.5]} position={[0, y, 0]} m="steelDark" {ghost} />{/each}
+		<Part args={[0.4, 0.3, 0.35]} position={[0, 1.12, -0.05]} m="fabric" {ghost} />
+		{#each [-1, 1] as s, i}
+			<DoorLeaf leaf={door!.leaves[i]} {doorKey}>
+				<Part args={[0.285, 1.88, 0.02]} position={[s * 0.147, 1.0, 0.29]} m="grey" {ghost} />
+				<Part args={[0.02, 0.22, 0.03]} position={[s * 0.03, 1.1, 0.305]} m="steel" {ghost} />
+			</DoorLeaf>
 		{/each}
 		<Part args={[0.4, 0.06, 0.01]} position={[0, 1.8, 0.302]} m="dark" {ghost} />
 	{:else if type === 'hydroponics'}
@@ -244,7 +285,9 @@
 		<Part args={[0.2, 0.12, 0.01]} position={[0, 1.4, 0.217]} m="screen" {ghost} />
 		<Part args={[0.03, 1.9, 0.03]} position={[-0.43, 1.0, 0.38]} m="steel" {ghost} />
 		<Part args={[0.86, 0.03, 0.03]} position={[0, 1.95, 0.38]} m="steel" {ghost} />
-		<Part args={[0.02, 1.7, 0.3]} position={[-0.43, 1.05, 0.22]} m="fabric" {ghost} />
+		<DoorLeaf leaf={door!.leaves[0]} {doorKey} restOpen>
+			<Part args={[0.86, 1.7, 0.02]} position={[0, 1.05, 0.4]} m="fabric" {ghost} />
+		</DoorLeaf>
 	{:else if type === 'ared'}
 		<Part args={[1.6, 0.12, 1.0]} position={[0, 0.06, 0]} m="steelDark" {ghost} />
 		<Part args={[0.9, 0.04, 0.6]} position={[0, 0.14, 0.1]} m="rubber" {ghost} />
@@ -263,8 +306,11 @@
 		<Part shape="rbox" args={[0.6, 0.88, 0.55]} position={[0, 0.44, 0]} m="white" {ghost} />
 		<Part args={[0.56, 0.02, 0.5]} position={[0, 0.89, 0]} m="steel" {ghost} />
 		<Part shape="rbox" args={[0.56, 0.42, 0.5]} position={[0, 1.12, -0.01]} m="steelDark" {ghost} />
-		<Part args={[0.4, 0.26, 0.01]} position={[-0.05, 1.12, 0.245]} m="glass" {ghost} />
-		<Part args={[0.36, 0.02, 0.02]} position={[-0.05, 1.27, 0.26]} m="steel" {ghost} />
+		<Part args={[0.36, 0.22, 0.01]} position={[-0.05, 1.12, 0.236]} m="led" {ghost} />
+		<DoorLeaf leaf={door!.leaves[0]} {doorKey}>
+			<Part args={[0.4, 0.27, 0.015]} position={[-0.05, 1.125, 0.255]} m="glass" {ghost} />
+			<Part args={[0.36, 0.02, 0.02]} position={[-0.05, 1.27, 0.27]} m="steel" {ghost} />
+		</DoorLeaf>
 		<Part args={[0.06, 0.2, 0.01]} position={[0.22, 1.12, 0.246]} m="screen" {ghost} />
 		<Part args={[0.03, 0.03, 0.01]} position={[0.22, 1.02, 0.25]} m="amber" {ghost} />
 		<Part args={[0.5, 0.2, 0.45]} position={[0, 1.42, -0.04]} m="white" {ghost} />
@@ -279,20 +325,30 @@
 		<Part args={[0.2, 0.08, 0.01]} position={[0, 1.42, 0.202]} m="screen" {ghost} />
 		<Part args={[0.36, 0.5, 0.01]} position={[0, 0.4, 0.202]} m="grey" {ghost} />
 	{:else if type === 'fridge'}
-		<Part shape="rbox" args={[0.6, 1.8, 0.65]} position={[0, 0.9, 0]} m="white" {ghost} />
-		<Part args={[0.56, 1.02, 0.015]} position={[0, 1.26, 0.327]} m="grey" {ghost} />
-		<Part args={[0.56, 0.66, 0.015]} position={[0, 0.38, 0.327]} m="grey" {ghost} />
-		<Part args={[0.025, 0.4, 0.03]} position={[0.24, 1.2, 0.345]} m="steel" {ghost} />
-		<Part args={[0.025, 0.3, 0.03]} position={[0.24, 0.5, 0.345]} m="steel" {ghost} />
+		<Part shape="rbox" args={[0.6, 1.8, 0.6]} position={[0, 0.9, -0.025]} m="white" {ghost} />
+		<!-- lit interior behind the door -->
+		<Part args={[0.5, 0.9, 0.02]} position={[0, 1.2, 0.28]} m="led" {ghost} />
+		{#each [0.95, 1.25] as y}<Part args={[0.5, 0.02, 0.1]} position={[0, y, 0.25]} m="glass" {ghost} />{/each}
+		<DoorLeaf leaf={door!.leaves[0]} {doorKey}>
+			<Part args={[0.56, 1.02, 0.03]} position={[0, 1.26, 0.32]} m="grey" {ghost} />
+			<Part args={[0.56, 0.66, 0.03]} position={[0, 0.38, 0.32]} m="grey" {ghost} />
+			<Part args={[0.025, 0.4, 0.03]} position={[0.24, 1.2, 0.345]} m="steel" {ghost} />
+			<Part args={[0.025, 0.3, 0.03]} position={[0.24, 0.5, 0.345]} m="steel" {ghost} />
+		</DoorLeaf>
 		<Part args={[0.12, 0.06, 0.01]} position={[-0.15, 1.62, 0.336]} m="screen" {ghost} />
 		<Part args={[0.03, 0.03, 0.01]} position={[-0.05, 1.62, 0.336]} m="blue" {ghost} />
 	{:else if type === 'pantry'}
 		<Part args={[1.2, 2.0, 0.58]} position={[0, 1.0, -0.01]} m="white" {ghost} />
-		{#each [-0.3, 0.3] as x}
-			{#each [0.3, 0.78, 1.26, 1.74] as y}
+		{#each [-0.3, 0.3] as x, i}
+			{#each [0.3, 0.78, 1.74] as y}
 				<Part args={[0.56, 0.44, 0.02]} position={[x, y, 0.29]} m="fabric" {ghost} />
 				<Part args={[0.2, 0.05, 0.01]} position={[x, y + 0.14, 0.302]} m="yellow" {ghost} />
 			{/each}
+			<Part args={[0.5, 0.38, 0.02]} position={[x, 1.26, 0.27]} m="dark" {ghost} />
+			<DoorLeaf leaf={door!.leaves[i]} {doorKey}>
+				<Part args={[0.56, 0.44, 0.02]} position={[x, 1.26, 0.29]} m="fabric" {ghost} />
+				<Part args={[0.2, 0.05, 0.01]} position={[x, 1.4, 0.302]} m="yellow" {ghost} />
+			</DoorLeaf>
 		{/each}
 	{:else if type === 'prepcounter'}
 		<Part args={[1.2, 0.85, 0.6]} position={[0, 0.43, -0.025]} m="white" {ghost} />
