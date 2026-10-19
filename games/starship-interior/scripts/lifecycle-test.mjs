@@ -125,9 +125,12 @@ await G(() => {
 	const t = c.items.find((i) => i.def.id === 'hygiene' && i.deck === 0);
 	g.selectedUid = t.uid;
 	c.step(0.05);
+	const m = g.decks[0].modules.find((mm) => mm.uid === t.uid);
+	window.__rig.animateTo({ az: Math.atan2(m.x, m.z) + 0.5, polar: 0.85, dist: 6.5 }, [m.x * 0.5, g.floorY[0] + 0.5, m.z * 0.5], 10);
 });
 await wait(300);
 await page.getByRole('button', { name: /Issues/ }).click().catch(() => {});
+await page.locator('[data-testid=sel-life]').scrollIntoViewIfNeeded().catch(() => {});
 await wait(2500);
 const cond = await page.locator('[data-testid=sel-cond]').textContent().catch(() => null);
 check('selection card shows condition', /Broken/.test(cond ?? ''), cond);

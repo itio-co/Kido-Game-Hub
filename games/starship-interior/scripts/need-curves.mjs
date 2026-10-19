@@ -37,9 +37,9 @@ const R = await G(() => {
 	let reEat = 0, meals = 0;
 	const lastMeal = c.agents.map(() => -1e9);
 	const sym = (r) => (Math.abs(r) < 2 ? '·' : r > 0 ? (r >= 10 ? '>>' : '>') : r <= -10 ? '<<' : '<');
-	const steps = (2 * 1440) / 15;
+	const steps = (2 * 1440) / 3;
 	for (let k = 0; k < steps; k++) {
-		c.step(0.25);
+		c.step(0.05);
 		c.agents.forEach((a, i) => {
 			const key = a.state === 'use' && a.aff ? a.aff.label + (a.item?.virtual ? '' : ` @ ${a.item?.def.name}`) : null;
 			if (cur[i] && cur[i].key !== key) {
@@ -56,7 +56,7 @@ const R = await G(() => {
 			}
 			for (const n of ids) syms[n].add(sym(a.rate[n]));
 		});
-		if (k >= 1440 / 15) {
+		if (k >= 1440 / 3 && k % 3 === 0) {
 			const a = c.agents[2];
 			series.push({ t: c.clock, needs: { ...a.needs }, act: a.state === 'use' ? a.aff?.label : a.state, fx: a.effects.map((e) => e.id) });
 		}
@@ -73,7 +73,7 @@ check('all four trend symbols appear in normal play', ['<<', '<', '>', '>>'].eve
 check('no re-eating while satiated (meal < 2.5 h after the last)', R.reEat === 0, { reEat: R.reEat, meals: R.meals });
 const sleep = R.durations.find((d) => /Sleep/i.test(d.activity));
 check('sleep takes ~7–8 h', sleep && sleep.avgMin >= 360 && sleep.avgMin <= 500, sleep);
-const meal = R.durations.find((d) => /meal|Eat/i.test(d.activity) && d.avgMin > 10);
+const meal = R.durations.find((d) => /^Meal/.test(d.activity));
 check('a meal takes ~20–30 min', meal && meal.avgMin >= 15 && meal.avgMin <= 35, meal);
 
 // live AgentCard with trend symbols + effects (after a meal + exercise), cropped

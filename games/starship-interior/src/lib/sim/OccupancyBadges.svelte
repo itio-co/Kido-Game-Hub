@@ -26,7 +26,7 @@
 		const m = game.decks[deck]?.modules.find((mm) => mm.uid === uid);
 		return m ? [m.x, (game.floorY[deck] ?? 0) + 1.0, m.z] : null;
 	};
-	const col = (o: Occ) => (o.cond !== undefined && o.cond <= 0 ? '#6b7280' : o.cap === 0 ? '#ef4444' : o.n >= o.cap ? '#ef4444' : o.n > 0 ? '#f59e0b' : '#22c55e');
+	const col = (o: Occ) => (o.state === 'Broken' ? '#dc2626' : o.cap === 0 ? '#ef4444' : o.n >= o.cap ? '#ef4444' : o.n > 0 ? '#f59e0b' : '#22c55e');
 	const condCol = (c: number) => (c > 60 ? '#22c55e' : c > 35 ? '#f59e0b' : c > 0 ? '#ef4444' : '#6b7280');
 </script>
 
@@ -36,7 +36,7 @@
 		{#if p}
 			<HTML position={p} center pointerEvents="none" zIndexRange={[6, 0]}>
 				<div class="occ" data-occ={o.key} data-state={o.state} data-cond={o.cond} style="--c:{col(o)}">
-					<span class="n">{o.cond !== undefined && o.cond <= 0 ? '✖' : `${o.n}/${o.cap}`}</span>{#if o.q}<span class="q">+{o.q}⏳</span>{/if}{#if o.state === 'Needs maintenance'}<span class="q">🔧</span>{/if}
+					<span class="n">{o.state === 'Broken' ? '✖ broken' : `${o.n}/${o.cap}`}</span>{#if o.q}<span class="q">+{o.q}⏳</span>{/if}{#if o.state === 'Needs maintenance'}<span class="q">🔧</span>{/if}
 					{#if o.cond !== undefined}<span class="bar" title="condition"><i style="width:{Math.max(4, o.cond)}%;background:{condCol(o.cond)}"></i></span>{/if}
 				</div>
 			</HTML>
