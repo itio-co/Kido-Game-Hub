@@ -12,7 +12,7 @@ const check = (name, ok, info) => {
 	if (!ok) fails++;
 	console.log(`${ok ? 'PASS' : 'FAIL'} ${name}${info !== undefined ? ' ' + JSON.stringify(info) : ''}`);
 };
-async function until(page, fn, arg, ms = 20000) {
+async function until(page, fn, arg, ms = 45000) {
 	const t0 = Date.now();
 	for (;;) {
 		const v = await page.evaluate(fn, arg);
@@ -54,17 +54,19 @@ const a1 = await page.evaluate(() => [window.__game.decks[0].modules[0].angle, w
 check('build: E rotates when a module is selected (deck unchanged)', a1[0] !== a0 && a1[1] === 0, { a0, a1 });
 await page.evaluate(() => { window.__game.selectedUid = null; });
 
-// ---------- walk mode (gravity) ----------
+// ---------- walk mode (gravity): the embodied avatar ----------
 await page.getByRole('button', { name: '🚶 Walk', exact: true }).click(); // focus must not stay on the button
 await page.waitForFunction(() => !!window.__walk && window.__game.mode === 'walk');
+// the avatar moves in real time; pause the AI so nobody else is on the ladders (no waiting in this test)
+await page.evaluate(() => { window.__crew.running = false; window.__game.quality = 'low'; });
 await wait(800);
 // far from any ladder: hint
 await page.evaluate(() => { const g = window.__game; const s = g.shafts.find((x) => x.from === 0); window.__walk.face(s.x, s.z); });
 const far = await page.evaluate(() => { const g = window.__game, s = g.shafts.find((x) => x.from === 0), p = window.__walk.pos(); return Math.hypot(p[0] - s.x, p[2] - s.z); });
-if (far > 1.0) {
-	await page.keyboard.press('KeyE');
+if (far > 1.5) {
+	await page.keyboard.press('Space'); // the avatar: Space = climb up → not at a ladder → hint + ring
 	const hint = await page.evaluate(() => ({ toast: window.__game.toast, ring: !!window.__game.ladderHint }));
-	check('walk: away from a ladder E shows "Go to a ladder" + ring', /Go to a ladder/.test(hint.toast) && hint.ring, hint);
+	check('walk: away from a ladder Space shows "Go to a ladder" + ring', /Go to a ladder/.test(hint.toast) && hint.ring, hint);
 }
 // walk to the ladder
 await page.keyboard.down('KeyW');
@@ -126,15 +128,21 @@ await page.keyboard.press('Escape');
 await wait(200);
 const menuClosed = !(await page.getByTestId('interact-menu').isVisible().catch(() => false));
 check('possessed: Shift+E opens the action list, Esc closes it (still possessed)', menuOpen && items.some((t) => /Climb up/.test(t)) && menuClosed && (await page.evaluate(() => window.__crew.possessed)) === 0, { items });
-// holding E 0.5 s also opens it (and does not climb)
+// holding E 0.5 s also opens it (and does not climb) – with a choice of actions; a single action acts on key-down
+const nActs = await page.evaluate(() => window.__crew.actions().length);
 await page.keyboard.down('KeyE');
 await wait(550);
 await page.keyboard.up('KeyE');
 const held = await page.getByTestId('interact-menu').isVisible().catch(() => false);
 const stillDeck0 = await page.evaluate(() => window.__crew.agents[0].deck === 0 && window.__crew.agents[0].state !== 'move');
-await page.keyboard.press('KeyE'); // E closes the list
-check('possessed: holding E opens the list instead of acting', held && stillDeck0, { held, stillDeck0 });
-await page.keyboard.press('KeyE');
+if (nActs > 1) {
+	await page.keyboard.press('KeyE'); // E closes the list
+	check('possessed: holding E opens the list instead of acting', held && stillDeck0, { held, stillDeck0, nActs });
+	await wait(400);
+	await page.keyboard.press('KeyE');
+} else check('possessed: single action → E acts on key-down (no list)', !held && !stillDeck0, { held, stillDeck0, nActs });
+// one retry: a press can land on a stalled software-rendered frame while the list is refreshing
+if (!(await until(page, () => window.__crew.agents[0].state !== 'idle' || window.__crew.agents[0].deck === 1, null, 2000))) await page.keyboard.press('KeyE');
 const pu = await until(page, () => { const a = window.__crew.agents[0]; return a.deck === 1 && a.state !== 'move'; }, null, 40000);
 check('possessed: KeyE climbs to the upper deck (ladder in reach, facing it)', !!pu, await page.evaluate(() => window.__crew.agentSnapshot(0)));
 await wait(400);

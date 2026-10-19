@@ -96,7 +96,12 @@
 		};
 	});
 	const top = $derived(interact.list[0]);
-	const using = $derived(crew.possessed !== null && crew.ui.prompt?.startsWith('Using:') ? crew.ui.prompt.split(' · ')[0] : null);
+	/** what the avatar is busy with: "Walking to Water Dispenser… (move to cancel)", "Using: …", queue, climb */
+	const using = $derived.by(() => {
+		const p = crew.possessed !== null ? crew.ui.prompt : null;
+		if (!p || !/^(Using|Walking|Floating|Waiting|Climbing|Strapped|Auto-flying)/.test(p)) return null;
+		return p.startsWith('Using:') || p.startsWith('Strapped') ? p.split(' · ').slice(0, 2).join(' · ') : p;
+	});
 </script>
 
 {#if !top && !using && !interact.menu && game.ctxProvider}
@@ -104,7 +109,7 @@
 {/if}
 {#if top || using}
 	<div class="ixprompt" class:mobile data-testid="interact-prompt">
-		{#if using}<span class="status">{using}</span>{/if}
+		{#if using}<span class="status" data-testid="interact-status">{using}</span>{/if}
 		{#if top}
 			<span class:dis={top.disabled}><kbd>{mobile ? '●' : 'E'}</kbd> {top.label}</span>
 			{#if interact.list.length > 1}<small>+{interact.list.length - 1} · {mobile ? 'hold' : 'Shift+E / hold E'}</small>{/if}

@@ -74,20 +74,21 @@ export const CONTROL_GROUPS: BindingGroup[] = [
 	},
 	{
 		id: 'walk',
-		title: 'Walk',
+		title: 'Walk (your avatar)',
 		icon: '🚶',
 		bindings: [
-			{ keys: ['Click'], action: 'Capture the mouse to look around' },
-			{ keys: ['W', 'A', 'S', 'D'], action: 'Move' },
+			{ keys: ['F'], action: 'Walk: take over a crew member as your avatar', note: 'the selected one, else the nearest; F / Esc back to build' },
+			{ keys: ['W', 'A', 'S', 'D'], action: 'Move', note: 'also stands up / cancels walking to an item' },
 			{ keys: ['Shift'], action: 'Run' },
-			{ keys: ['E'], action: 'Interact: use / sit / climb / repair what you look at', note: 'single action acts on key-down' },
+			{ keys: ['Drag', 'Wheel'], action: 'Look around / zoom the 3rd-person camera' },
+			{ keys: ['V'], action: 'First / third person' },
+			{ keys: ['E'], action: 'Interact: walk to the item and use it (sit, eat, sleep, work…)', note: 'climb a ladder: walks to its base, then climbs' },
 			{ keys: ['Shift+E', 'Hold E'], action: 'More actions (pick with 1–9)' },
 			{ keys: ['Enter'], action: 'Run the best action' },
+			{ keys: ['X'], action: 'Stop / cancel (stand up, leave the queue)' },
 			{ keys: ['Space', 'PgUp'], action: 'Climb up at a ladder' },
 			{ keys: ['Q', 'C', 'PgDn'], action: 'Climb down at a ladder' },
-			{ keys: ['F9'], action: 'Interact debug overlay' },
-			{ keys: ['Esc'], action: 'Release the mouse' },
-			{ keys: ['F'], action: 'Back to build mode' }
+			{ keys: ['F9'], action: 'Interact debug overlay' }
 		]
 	},
 	{

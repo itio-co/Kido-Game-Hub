@@ -37,7 +37,7 @@
 			else if (code === 'KeyG') crew.input.grab = true;
 			else if (code === 'KeyT') crew.reorient();
 			else if (code === 'KeyV') crew.firstPerson = !crew.firstPerson;
-			else if (code === 'Escape') crew.possess(null);
+			else if (code === 'Escape') release();
 			return;
 		}
 		// gravity (E = interact lives in InteractHud): Space climbs up, Q/C climb down, X stops
@@ -49,7 +49,12 @@
 			crew.climb(false);
 		} else if (code === 'KeyX') crew.stopAction();
 		else if (code === 'KeyV') crew.firstPerson = !crew.firstPerson;
-		else if (code === 'Escape') crew.possess(null);
+		else if (code === 'Escape') release();
+	}
+	/** Esc: release the crew member (walk mode: back to build, handled by the page) */
+	function release() {
+		if (crew.embodied) crew.disembody();
+		else crew.possess(null);
 	}
 	const onKeyUp = (e: KeyboardEvent) => keys.delete(keyCode(e));
 	const clearKeys = () => keys.clear();
@@ -84,6 +89,45 @@
 	onMount(() => {
 		game.ctxProvider = provider;
 		(window as unknown as { __possessCam: unknown }).__possessCam = () => cam.position.toArray();
+		// walk-mode test / debug hook (same shape as the old first-person walker)
+		const me = () => (crew.possessed !== null ? crew.agents[crew.possessed] : null);
+		(window as unknown as { __walk: unknown }).__walk = {
+			avatar: true,
+			id: () => crew.possessed,
+			pos: () => {
+				const a = me();
+				if (!a) return [0, 0, 0];
+				return a.m ? [a.m.p.x, a.m.p.y, a.m.p.z] : [a.x, (game.floorY[a.deck] ?? 0) + a.y + 1.62, a.z];
+			},
+			/** turn to look at (x, z) */
+			face: (x: number, z: number) => {
+				const a = me();
+				if (!a) return;
+				const [px, pz] = a.m ? [a.m.p.x, a.m.p.z] : [a.x, a.z];
+				crew.input.yaw = Math.atan2(-(x - px), -(z - pz));
+			},
+			/** look pitch (rad, + up) */
+			look: (p: number) => (pitch = 0.42 - p),
+			climbing: () => {
+				const a = me();
+				return !!a && (a.state === 'move' || a.state === 'ladder') && (a.climbPhase === 1 || a.legs.slice(a.leg).some((l) => l.kind === 'climb') || (!a.item && !!crew.micro));
+			},
+			seated: () => {
+				const a = me();
+				return !!a && (a.state === 'use' || a.state === 'strapped') && ['sit', 'sitwork', 'eat', 'couch', 'strap'].includes(a.av.pose) ;
+			},
+			state: () => me()?.state ?? null,
+			/** avatar snapshot for tests: state, pose, action, item, deck, x/z */
+			info: () => {
+				const a = me();
+				return a ? { state: a.state, pose: a.av.pose, action: a.action, item: a.item?.label ?? null, aff: a.aff?.id ?? null, deck: a.deck, x: a.x, z: a.z, dock: a.dock, needs: { ...a.needs } } : null;
+			},
+			place: (x: number, z: number) => {
+				const a = me();
+				if (a) crew.teleport(a.id, a.deck, x, z);
+			},
+			actions: () => crew.actions().map((c) => c.label)
+		};
 		window.addEventListener('keydown', onKeyDown);
 		window.addEventListener('keyup', onKeyUp);
 		window.addEventListener('blur', clearKeys);
@@ -102,6 +146,7 @@
 			window.removeEventListener('pointercancel', onUp);
 			dom.removeEventListener('wheel', onWheel);
 			crew.input.f = crew.input.s = crew.input.u = crew.input.roll = 0;
+			delete (window as unknown as { __walk?: unknown }).__walk;
 			if (game.ctxProvider === provider) game.ctxProvider = null;
 		};
 	});
@@ -112,6 +157,7 @@
 	const flip = new Quaternion().setFromAxisAngle(Y, Math.PI);
 	const camPos = new Vector3();
 	let lastDeck = -1;
+	let hatchKey = '';
 	useTask((dt) => {
 		const id = crew.possessed;
 		const a = id !== null ? crew.agents[id] : null;
@@ -165,6 +211,17 @@
 		}
 		cam.up.set(0, 1, 0);
 		crew.input.look = 0.42 - pitch;
+		if (game.mode === 'walk') {
+			// walk HUD state from the avatar: viewed deck + ladder / hatch in reach (▲ / ▼ lit)
+			if (a.climbPhase !== 1 && game.walkDeck !== a.deck) game.walkDeck = a.deck;
+			const hu = crew.ladderNear(a, true, 1.5), hd = crew.ladderNear(a, false, 1.5);
+			const P = crew.world?.portals;
+			const key = `${a.deck}|${hu}|${hd}`;
+			if (key !== hatchKey && P) {
+				hatchKey = key;
+				game.hatchHere = { up: hu >= 0, down: hd >= 0, upTo: hu >= 0 ? P[hu].top.deck : -1, downTo: hd >= 0 ? P[hd].bottom.deck : -1 };
+			}
+		}
 		if (a.deck !== lastDeck && a.climbPhase !== 1) {
 			lastDeck = a.deck;
 			if (game.current !== a.deck) game.selectDeck(a.deck);

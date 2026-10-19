@@ -354,7 +354,7 @@
 {#if !game.exportAll}
 	<LadderHint />
 {/if}
-{#if game.mode === 'build' && crew.possessed !== null}
+{#if crew.possessed !== null}
 	<PossessControls />
 {:else if game.mode === 'build' && game.microG && game.freeCam}
 	<TrackballCam pos={view.pos} target={[view.target[0], view.target[1] + 1.2, view.target[2]]} />

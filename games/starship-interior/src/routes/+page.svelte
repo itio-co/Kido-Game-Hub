@@ -63,6 +63,8 @@
 		}
 		if (isTyping(e)) return;
 		if (game.designer) return; // designer has its own keys (DesignerPanel)
+		// walk mode (avatar): F returns to build; in micro-g F is 'down', so use 🛠 Build / Esc there
+		if (e.code === 'KeyF' && game.mode === 'walk' && crew.possessed !== null && !crew.micro) return toggleMode();
 		if (crew.possessed !== null) return; // PossessControls owns the keyboard
 		if (e.code === 'KeyF') return toggleMode();
 		if (game.mode !== 'build') return;
@@ -143,12 +145,34 @@
 		game.hover = null;
 		game.drag = null;
 		game.joystick = { x: 0, y: 0 };
-		if (crew.possessed !== null) crew.possess(null);
-		game.mode = game.mode === 'build' ? 'walk' : 'build';
+		if (game.mode === 'build') {
+			// walk mode = embody a crew member (the selected one, else the nearest on this deck): same
+			// avatar, needs, auto-walk-to-use and climbing as possession; no crew → plain first-person walker
+			crew.embody(game.current, rig.controls?.target.x ?? 0, rig.controls?.target.z ?? 0);
+			game.mode = 'walk';
+		} else {
+			if (crew.embodied) crew.disembody();
+			else if (crew.possessed !== null) crew.possess(null);
+			game.mode = 'build';
+		}
 	}
+	// the avatar was released some other way (Esc, crew removed): leave walk mode
+	$effect(() => {
+		if (game.mode === 'walk' && crew.possessed === null && !crew.embodied && avatarWalk) {
+			avatarWalk = false;
+			game.mode = 'build';
+		}
+		if (game.mode === 'walk' && crew.possessed !== null) avatarWalk = true;
+		if (game.mode === 'build') avatarWalk = false;
+	});
+	let avatarWalk = false;
 	let crewSheet = $state(false);
 	let powerOpen = $state(false);
-	const possessed = $derived(crew.possessed !== null && game.mode === 'build');
+	const possessed = $derived(crew.possessed !== null);
+	function releaseAvatar() {
+		if (game.mode === 'walk') toggleMode();
+		else crew.possess(null);
+	}
 	function confirmPending() {
 		if (game.pending && game.placeAt(game.pending)) game.pending = null;
 	}
@@ -229,7 +253,7 @@
 					<button class="fab" onclick={() => crew.reorient()} aria-label="Reorient to deck up" title="Reorient to deck-up (T)">⊙ <small>{game.isTouch ? 'Deck up' : 'T Deck up'}</small></button>
 					<button class="fab" onclick={() => (crew.firstPerson = !crew.firstPerson)} aria-label="Camera view">{crew.firstPerson ? '3rd' : '1st'}</button>
 					<button class="fab" onclick={() => game.toggleTone()} aria-label="Interior light tone" title="Interior lights warm / cool" data-testid="light-tone">💡{mobile ? '' : ` ${game.interiorTone}`}</button>
-					<button class="fab del" onclick={() => crew.possess(null)} aria-label="Release">⏏ Release</button>
+					<button class="fab del" onclick={releaseAvatar} aria-label="Release">{game.mode === 'walk' ? '🛠 Build' : '⏏ Release'}</button>
 				</div>
 				{#if game.isTouch}
 					{@const hold = (k: 'u' | 'roll', v: number) => ({
@@ -253,16 +277,16 @@
 					<InteractButton {mobile} />
 					<button class="fab" onclick={() => (crew.firstPerson = !crew.firstPerson)} aria-label="Camera view">{crew.firstPerson ? '3rd' : '1st'}</button>
 					<button class="fab" onclick={() => game.toggleTone()} aria-label="Interior light tone" title="Interior lights warm / cool" data-testid="light-tone">💡{mobile ? '' : ` ${game.interiorTone}`}</button>
-					<button class="fab del" onclick={() => crew.possess(null)} aria-label="Release">⏏ Release</button>
+					<button class="fab del" onclick={releaseAvatar} aria-label="Release">{game.mode === 'walk' ? '🛠 Build' : '⏏ Release'}</button>
 				</div>
 			{/if}
 			{#if game.isTouch}
 				<Joystick />
 				<div class="tip walk">{game.microG ? 'Joystick: translate · drag: look' : 'Joystick: move · drag: look'}</div>
 			{:else if game.microG}
-				<div class="center-hint low">Micro-g · E interact (Shift+E more) · WASD translate · Space/R up · Ctrl/F down · Z/C roll · drag look · Shift push harder · G grab · X stop activity · T deck-up · PgUp/PgDn fly to next deck · V 1st/3rd · Esc release · ⚙ / O options</div>
+				<div class="center-hint low">Micro-g · E interact (Shift+E more) · WASD translate · Space/R up · Ctrl/F down · Z/C roll · drag look · Shift push harder · G grab · X stop activity · T deck-up · PgUp/PgDn fly to next deck · V 1st/3rd · {game.mode === 'walk' ? (game.microG ? 'Esc build' : 'F / Esc build') : 'Esc release'} · ⚙ / O options</div>
 			{:else}
-				<div class="center-hint low">E interact (use · sit · climb toward where you look · repair; Shift+E / hold E more) · WASD move · Shift run · drag look · Space/PgUp ▲ · Q/C/PgDn ▼ · X stop activity · V 1st/3rd · Esc release · ⚙ / O options</div>
+				<div class="center-hint low">E interact (use · sit · climb toward where you look · repair; Shift+E / hold E more) · WASD move · Shift run · drag look · Space/PgUp ▲ · Q/C/PgDn ▼ · X stop activity · V 1st/3rd · {game.mode === 'walk' ? (game.microG ? 'Esc build' : 'F / Esc build') : 'Esc release'} · ⚙ / O options</div>
 			{/if}
 		{:else if game.mode === 'build'}
 			{#if !(mobile && (crewSheet || (crew.enabled && crew.selected !== null)))}

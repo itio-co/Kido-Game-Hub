@@ -173,19 +173,9 @@
 			const canSit = m.type === 'chair' || !!def.seats || (def.affords ?? []).some((af) => SEAT_POSES.has(af.pose) && af.id !== 'toilet');
 			if (canSit && !seated)
 				out.push({ label: `Sit (${name}${tag})`, kind: 'sit', score, run: () => ((seated = { label: `${name}${tag}` }), game.flash(`Sitting – ${name}${tag} · move or E to stand up`)) });
-			out.push({ label: `Inspect ${name}${tag}`, kind: 'inspect', score: score + (canSit ? 0.05 : 0), run: () => inspect(k, m.uid, `${name}${tag}`) });
 		}
 		out.sort((a, b) => a.score - b.score);
 		return out.slice(0, 9).map(({ score: _s, ...o }) => o);
-	}
-	function inspect(k: number, uid: number, label: string) {
-		const m = game.decks[k].modules.find((x) => x.uid === uid);
-		const def = m && CATALOG_BY_ID[m.type];
-		if (!def) return;
-		const it = crew.enabled ? crew.items.find((i) => i.key === `${k}:${uid}`) : undefined;
-		const users = it ? crew.agents.filter((a) => a.item === it && a.state === 'use').length : 0;
-		const bits = [`${def.mass} kg`, def.power ? `${def.power} W` : 'unpowered', ...(def.affords?.length ? [def.affords.map((a) => a.label).join(' / ')] : []), ...(it ? [`${it.broken ? 'BROKEN' : `condition ${Math.round(it.cond)}%`}`, `${users}/${it.slots.length} in use`] : [])];
-		game.flash(`${label}: ${bits.join(' · ')}`);
 	}
 
 	const keys = new Set<string>();

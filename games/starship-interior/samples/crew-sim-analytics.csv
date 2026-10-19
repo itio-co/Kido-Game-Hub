@@ -1,44 +1,44 @@
-# Crew sim analytics,"Day 1 · 15:06",sim hours,8.1,crew,6,mode,cabin,phase,surface
+# Crew sim analytics,"Day 1 · 15:15",sim hours,8.3,crew,6,mode,cabin,phase,surface
 
 EQUIPMENT
 deck,equipment,uid,capacity,utilization_pct,uses,waits,avg_wait_min,max_queue,reachable
-"Deck 1","Life Support (ECLSS) Rack",1,1,21,1,0,0.0,0,true
-"Deck 1","Food Storage Lockers (pantry)",2,2,4,8,0,0.0,0,true
-"Deck 1","Galley Refrigerator / Freezer",3,1,1,1,0,0.0,0,true
-"Deck 1","Water Dispenser (hot / ambient)",4,1,10,9,0,0.0,0,true
-"Deck 1","Food Warmer / Convection Oven",5,1,9,8,0,0.0,0,true
-"Deck 1","Prep Counter (restraint clips)",6,2,9,2,0,0.0,0,true
-"Deck 1","Trash Compactor / Waste Station",7,1,7,6,0,0.0,0,true
-"Deck 1","Zero-g Food Station",8,2,4,2,0,0.0,0,true
-"Deck 1","Galley Table (group)",9,4,9,7,0,0.0,0,true
-"Deck 1","Hygiene / Toilet",15,1,21,13,5,8.5,3,true
-"Deck 1","Hydroponics Rack",16,2,4,2,0,0.0,0,true
-"Deck 1","Storage Locker",17,1,0,0,0,0.0,0,true
-"Deck 2","Workstation",18,1,37,1,0,0.0,0,true
+"Deck 1","Life Support (ECLSS) Rack",1,1,38,2,0,0.0,0,true
+"Deck 1","Food Storage Lockers (pantry)",2,2,4,8,1,0.0,1,true
+"Deck 1","Galley Refrigerator / Freezer",3,1,4,4,0,0.0,0,true
+"Deck 1","Water Dispenser (hot / ambient)",4,1,11,12,5,4.7,2,true
+"Deck 1","Food Warmer / Convection Oven",5,1,13,12,5,0.1,1,true
+"Deck 1","Prep Counter (restraint clips)",6,2,16,4,0,0.0,0,true
+"Deck 1","Trash Compactor / Waste Station",7,1,6,6,0,0.0,0,true
+"Deck 1","Zero-g Food Station",8,2,3,2,0,0.0,0,true
+"Deck 1","Galley Table (group)",9,4,17,13,0,0.0,0,true
+"Deck 1","Hygiene / Toilet",15,1,23,15,6,11.8,3,true
+"Deck 1","Hydroponics Rack",16,2,9,1,0,0.0,0,true
+"Deck 1","Storage Locker",17,1,36,3,0,0.0,0,true
+"Deck 2","Workstation",18,1,13,1,0,0.0,0,true
 "Deck 2","Sleep Bunk",19,1,0,0,0,0.0,0,true
-"Deck 2","Crew Quarters Pod",20,1,91,1,0,0.0,0,true
-"Deck 2","Crew Quarters Pod",21,1,67,4,0,0.0,0,true
-"Deck 2","Exercise Treadmill",22,1,45,3,1,20.9,1,true
-"Deck 2","Storage Locker",23,1,0,0,0,0.0,0,true
+"Deck 2","Crew Quarters Pod",20,1,77,1,0,0.0,0,true
+"Deck 2","Crew Quarters Pod",21,1,0,0,0,0.0,0,true
+"Deck 2","Exercise Treadmill",22,1,37,3,0,0.0,0,true
+"Deck 2","Storage Locker",23,1,11,1,0,0.0,0,true
 "Deck 3","Sleep Bunk",24,1,0,0,0,0.0,0,true
 "Deck 3","Sleep Bunk",25,1,0,0,0,0.0,0,true
 "Deck 3","Storage Locker",26,1,0,0,0,0.0,0,true
-"Deck 3","Hygiene / Toilet",27,1,7,4,0,0.0,0,true
-"Deck 3","Table + 4 Seats",28,4,2,1,0,0.0,0,true
+"Deck 3","Hygiene / Toilet",27,1,1,1,0,0.0,0,true
+"Deck 3","Table + 4 Seats",28,4,0,0,0,0.0,0,true
 
 LADDERS
 ladder,climbs,wait_min
-"L1-2",13,22.9
-"L2-3",7,0.0
+"L1-2",10,5.6
+"L2-3",2,0.0
 
 UNMET NEEDS
 need,critical_hours,pct_of_crew_time
-energy,1.71,3.5
-hunger,0.46,1.0
+energy,1.73,3.5
+hunger,0.52,1.1
 hygiene,0.00,0.0
-bladder,0.26,0.5
-fitness,1.00,2.1
-fun,0.60,1.2
+bladder,0.27,0.5
+fitness,0.43,0.9
+fun,0.29,0.6
 work,0.00,0.0
 comfort,0.00,0.0
 
@@ -64,84 +64,84 @@ unusable_equipment,deck,reason
 
 LIFE CYCLE
 deck,equipment,uid,state,condition_pct,hours_used,failures,repairs,maintenance,downtime_h
-"Deck 1","Life Support (ECLSS) Rack",1,"New",97,9.82,0,0,0,0.00
-"Deck 1","Food Storage Lockers (pantry)",2,"New",100,0.68,0,0,0,0.00
-"Deck 1","Galley Refrigerator / Freezer",3,"New",99,8.16,0,0,0,0.00
-"Deck 1","Water Dispenser (hot / ambient)",4,"New",100,0.78,0,0,0,0.00
-"Deck 1","Food Warmer / Convection Oven",5,"New",100,0.72,0,0,0,0.00
-"Deck 1","Prep Counter (restraint clips)",6,"New",100,1.50,0,0,0,0.00
-"Deck 1","Trash Compactor / Waste Station",7,"New",100,0.60,0,0,0,0.00
-"Deck 1","Zero-g Food Station",8,"New",100,0.72,0,0,0,0.00
-"Deck 1","Galley Table (group)",9,"New",100,2.97,0,0,0,0.00
-"Deck 1","Hygiene / Toilet",15,"New",98,1.67,0,0,0,0.00
-"Deck 1","Hydroponics Rack",16,"New",98,8.70,0,0,0,0.00
-"Deck 1","Storage Locker",17,"New",100,0.00,0,0,0,0.00
-"Deck 2","Workstation",18,"New",100,2.98,0,0,0,0.00
+"Deck 1","Life Support (ECLSS) Rack",1,"Operational",96,11.42,0,0,0,0.00
+"Deck 1","Food Storage Lockers (pantry)",2,"New",100,0.61,0,0,0,0.00
+"Deck 1","Galley Refrigerator / Freezer",3,"New",99,8.58,0,0,0,0.00
+"Deck 1","Water Dispenser (hot / ambient)",4,"New",100,0.95,0,0,0,0.00
+"Deck 1","Food Warmer / Convection Oven",5,"New",99,1.11,0,0,0,0.00
+"Deck 1","Prep Counter (restraint clips)",6,"New",100,2.67,0,0,0,0.00
+"Deck 1","Trash Compactor / Waste Station",7,"New",100,0.52,0,0,0,0.00
+"Deck 1","Zero-g Food Station",8,"New",100,0.54,0,0,0,0.00
+"Deck 1","Galley Table (group)",9,"New",100,5.49,0,0,0,0.00
+"Deck 1","Hygiene / Toilet",15,"New",98,1.90,0,0,0,0.00
+"Deck 1","Hydroponics Rack",16,"New",98,9.68,0,0,0,0.00
+"Deck 1","Storage Locker",17,"New",100,2.98,0,0,0,0.00
+"Deck 2","Workstation",18,"New",100,1.05,0,0,0,0.00
 "Deck 2","Sleep Bunk",19,"New",100,0.00,0,0,0,0.00
-"Deck 2","Crew Quarters Pod",20,"New",100,7.39,0,0,0,0.00
-"Deck 2","Crew Quarters Pod",21,"New",100,5.42,0,0,0,0.00
-"Deck 2","Exercise Treadmill",22,"Operational",94,3.68,0,0,0,0.00
-"Deck 2","Storage Locker",23,"New",100,0.00,0,0,0,0.00
+"Deck 2","Crew Quarters Pod",20,"New",100,6.36,0,0,0,0.00
+"Deck 2","Crew Quarters Pod",21,"New",100,0.00,0,0,0,0.00
+"Deck 2","Exercise Treadmill",22,"Operational",95,3.07,0,0,0,0.00
+"Deck 2","Storage Locker",23,"New",100,0.95,0,0,0,0.00
 "Deck 3","Sleep Bunk",24,"New",100,0.00,0,0,0,0.00
 "Deck 3","Sleep Bunk",25,"New",100,0.00,0,0,0,0.00
 "Deck 3","Storage Locker",26,"New",100,0.00,0,0,0,0.00
-"Deck 3","Hygiene / Toilet",27,"New",99,0.60,0,0,0,0.00
-"Deck 3","Table + 4 Seats",28,"New",100,0.57,0,0,0,0.00
-spares_left,18,spares_used,0,mission_days,680,mission_spares_needed,87,locker_pool,18,shortfall,69
+"Deck 3","Hygiene / Toilet",27,"New",100,0.08,0,0,0,0.00
+"Deck 3","Table + 4 Seats",28,"New",100,0.00,0,0,0,0.00
+spares_left,18,spares_used,0,mission_days,680,mission_spares_needed,80,locker_pool,18,shortfall,62
 item_type,units,use_h_per_day,mtbf_h,expected_failures,spares_needed
-"Exercise Treadmill",1,10.9,300,24.7,34
-"Hygiene / Toilet",2,6.7,400,11.4,15
+"Exercise Treadmill",1,8.9,300,20.3,30
 "Life Support (ECLSS) Rack",1,24,2500,6.5,14
+"Hygiene / Toilet",2,5.8,400,9.8,13
 "Hydroponics Rack",1,24,4000,4.1,5
 "Galley Refrigerator / Freezer",1,24,8000,2,3
-"Trash Compactor / Waste Station",1,1.8,500,2.4,3
-"Water Dispenser (hot / ambient)",1,2.3,1200,1.3,2
-"Food Warmer / Convection Oven",1,2.1,1000,1.4,2
-"Workstation",1,8.8,5000,1.2,2
-"Crew Quarters Pod",2,37.9,20000,1.3,2
-"Food Storage Lockers (pantry)",1,2,40000,0,1
-"Prep Counter (restraint clips)",1,4.4,40000,0.1,1
-"Zero-g Food Station",1,2.1,40000,0,1
-"Galley Table (group)",1,8.8,40000,0.1,1
-"Table + 4 Seats",1,1.7,40000,0,1
-"Storage Locker",3,0,40000,0,0
+"Food Warmer / Convection Oven",1,3.2,1000,2.2,3
+"Trash Compactor / Waste Station",1,1.5,500,2,3
+"Water Dispenser (hot / ambient)",1,2.8,1200,1.6,2
+"Food Storage Lockers (pantry)",1,1.8,40000,0,1
+"Prep Counter (restraint clips)",1,7.8,40000,0.1,1
+"Zero-g Food Station",1,1.6,40000,0,1
+"Galley Table (group)",1,16,40000,0.3,1
+"Storage Locker",3,11.4,40000,0.2,1
+"Workstation",1,3.1,5000,0.4,1
+"Crew Quarters Pod",2,18.5,20000,0.6,1
 "Sleep Bunk",3,0,20000,0,0
+"Table + 4 Seats",1,0,40000,0,0
 
 POWER
-supply_w,8246,load_w,2912,peak_load_w,3912,battery_kwh,60.00,battery_pct,100,shed_events,0,brownouts,0
+supply_w,7910,load_w,3250,peak_load_w,3921,battery_kwh,60.00,battery_pct,100,shed_events,0,brownouts,0
 deck,equipment,uid,priority,state,draw_w,energy_kwh,unavailable_min,standby_w,active_w,peak_w,duty
-"Deck 1","Life Support (ECLSS) Rack",1,Critical,Active,1500,12.160,0,1500,1500,2200,1
-"Deck 1","Hydroponics Rack",16,Normal,Active,308,2.500,0,20,450,0,0.67
-"Deck 1","Hygiene / Toilet",15,Essential,Active,250,0.730,0,10,250,400,1
-"Deck 3","Hygiene / Toilet",27,Essential,Active,250,0.310,0,10,250,400,1
-"Deck 1","Galley Refrigerator / Freezer",3,Essential,Active,103,0.840,0,5,250,700,0.4
-"Deck 2","Crew Quarters Pod",20,Normal,Active,80,0.600,0,15,80,0,1
-"Deck 2","Crew Quarters Pod",21,Normal,Active,80,0.500,0,15,80,0,1
-"Deck 2","Workstation",18,Normal,Standby,40,1.130,0,40,300,0,1
-"Deck 1","Water Dispenser (hot / ambient)",4,Normal,Standby,15,0.420,0,15,420,600,0.5
-"Deck 1","Food Warmer / Convection Oven",5,Deferrable,Standby,10,0.750,0,10,650,900,0.7
-"Deck 2","Exercise Treadmill",22,Deferrable,Standby,10,2.410,0,10,600,1500,1
-"Deck 1","Trash Compactor / Waste Station",7,Deferrable,Standby,5,0.410,0,5,300,1000,1
+"Deck 1","Life Support (ECLSS) Rack",1,Critical,Active,1500,12.380,0,1500,1500,2200,1
+"Deck 1","Food Warmer / Convection Oven",5,Deferrable,Active,458,0.990,0,10,650,900,0.7
+"Deck 1","Hydroponics Rack",16,Normal,Active,308,2.540,0,20,450,0,0.67
+"Deck 2","Workstation",18,Normal,Active,300,0.630,0,40,300,0,1
+"Deck 1","Hygiene / Toilet",15,Essential,Active,250,0.880,0,10,250,400,1
+"Deck 1","Galley Refrigerator / Freezer",3,Essential,Active,103,0.850,0,5,250,700,0.4
+"Deck 1","Water Dispenser (hot / ambient)",4,Normal,Standby,15,0.480,0,15,420,600,0.5
+"Deck 2","Crew Quarters Pod",20,Normal,Standby,15,0.540,0,15,80,0,1
+"Deck 2","Crew Quarters Pod",21,Normal,Standby,15,0.120,0,15,80,0,1
+"Deck 2","Exercise Treadmill",22,Deferrable,Standby,10,2.000,0,10,600,1500,1
+"Deck 3","Hygiene / Toilet",27,Essential,Standby,10,0.110,0,10,250,400,1
+"Deck 1","Trash Compactor / Waste Station",7,Deferrable,Standby,5,0.400,0,5,300,1000,1
 "Deck 2","Sleep Bunk",19,Normal,Standby,2,0.020,0,2,15,0,1
 "Deck 3","Sleep Bunk",24,Normal,Standby,2,0.020,0,2,15,0,1
 "Deck 3","Sleep Bunk",25,Normal,Standby,2,0.020,0,2,15,0,1
 
-SAFETY,unstuck,0,stalled_trips_replanned,0,layout_changes,0,layout_nudged,0,layout_replanned,0
+SAFETY,unstuck,1,stalled_trips_replanned,0,layout_changes,0,layout_nudged,0,layout_replanned,0
 
 DESIGN ISSUES
 severity,issue
-high,"Spares shortfall: mission (180 d cruise + 500 d surface) needs ≈87 spare kits, lockers hold 18 – short 69 (worst: Exercise Treadmill 34, Hygiene / Toilet 15, Life Support (ECLSS) Rack 14)"
-med,"Bottleneck: Hygiene / Toilet (Deck 1) queue avg 8.5 min over 5 waits, max queue 3 – add another unit"
-med,"Crew Quarters Pod (Deck 2) is a bottleneck: 91% utilization"
+high,"Bottleneck: Hygiene / Toilet (Deck 1) queue avg 11.8 min over 6 waits, max queue 3 – add another unit"
+high,"Spares shortfall: mission (180 d cruise + 500 d surface) needs ≈80 spare kits, lockers hold 18 – short 62 (worst: Exercise Treadmill 30, Life Support (ECLSS) Rack 14, Hygiene / Toilet 13)"
+med,"Bottleneck: Water Dispenser (hot / ambient) (Deck 1) queue avg 4.7 min over 5 waits, max queue 2 – add another unit"
 med,"Only 5 usable sleep places for 6 crew – crew queue ~7.5 h for a bed"
 med,"Galley storage holds 170 crew-days = 28 days for 6 crew (mission 500 d) – the rest must come from cargo / resupply"
-low,"Ladder L1-2: 23 min of waiting in total (13 climbs) – add a second connection?"
+low,"Crew had to be un-stuck 1× (body left valid space) – report this layout"
 
 CREW
 name,role,deck,action,mood,energy,hunger,hygiene,bladder,fitness,fun,work,comfort
-"Crew 1",Commander,"Deck 2","Sleep (private) (Crew Quarters Pod)",88,89,80,88,68,96,97,95,100
-"Crew 2",Pilot,"Deck 3","Use toilet (Hygiene / Toilet)",75,60,89,74,58,84,74,90,75
-"Crew 3",Engineer,"Deck 1","Chat at table (Galley Table (group))",81,60,86,94,80,84,88,84,83
-"Crew 4",Scientist,"Deck 1","Gardening (Hydroponics Rack)",74,46,100,86,55,78,86,72,74
-"Crew 5",Medic,"Deck 1","Use toilet (Hygiene / Toilet)",72,60,98,74,51,84,46,89,81
-"Crew 6",Specialist,"Deck 2","Sleep (private) (Crew Quarters Pod)",67,62,91,82,23,74,82,60,75
+"Crew 1",Commander,"Deck 1","Heat food (Food Warmer / Convection Oven)",87,79,74,86,91,94,93,91,96
+"Crew 2",Pilot,"Deck 2","Work at console (Workstation)",80,59,90,74,83,83,88,86,77
+"Crew 3",Engineer,"Deck 1","Maintain ECLSS (Life Support (ECLSS) Rack)",80,59,86,93,75,83,82,91,77
+"Crew 4",Scientist,"Deck 1","Thinking",75,45,100,83,53,78,95,86,74
+"Crew 5",Medic,"Deck 1","Wash up (Hygiene / Toilet)",79,59,99,74,77,83,80,87,75
+"Crew 6",Specialist,"Deck 1","Inventory & stowage (Storage Locker)",65,41,86,61,68,64,65,80,52

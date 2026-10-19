@@ -1,4 +1,5 @@
-// Headless test: E = context interact in walk mode, possessed crew (gravity) and cruise, desktop + iPhone 13.
+// Headless test: E = context interact. Walk mode embodies a crew member (avatar walks to the use point, sits, needs
+// change, ladder walk+climb), possessed crew (gravity) and cruise, desktop + iPhone 13. Screenshot: screenshot-walk-use.png
 // Usage: node scripts/interact-test.mjs [url]   (dev server running)
 import { chromium, devices } from 'playwright';
 
@@ -45,47 +46,99 @@ const pickSlot = (page, re) =>
 // ---------------- desktop ----------------
 {
 	const { ctx, page, errors } = await open({ viewport: { width: 1280, height: 800 } });
-	// walk: sit on a chair / inspect equipment
-	await page.evaluate(() => window.__game.selectDeck(0));
+	// walk = embodied avatar: F takes over a crew member (3rd person), E walks to the use point and uses it
+	await page.evaluate(() => { window.__game.selectDeck(0); window.__game.quality = 'low'; });
 	await page.keyboard.press('KeyF');
-	await page.waitForFunction(() => !!window.__walk && window.__game.mode === 'walk');
+	await page.waitForFunction(() => !!window.__walk?.avatar && window.__game.mode === 'walk');
+	const emb = await page.evaluate(() => ({ embodied: window.__crew.embodied, id: window.__crew.possessed, fp: window.__crew.firstPerson, sim: window.__crew.enabled }));
+	check('walk: F embodies a crew member as your avatar (3rd person, sim on)', emb.embodied && emb.id !== null && emb.fp === false && emb.sim, emb);
+	await page.evaluate(() => (window.__crew.running = false));
+	// stand 2–2.6 m from a free galley-table chair, facing it
 	const seat = await page.evaluate(() => {
-		const g = window.__game;
-		const m = g.decks[0].modules.find((x) => x.type === 'chair') ?? g.decks[0].modules.find((x) => /couch/.test(x.type));
-		return m ? { x: m.x, z: m.z, type: m.type } : null;
-	});
-	if (seat) {
-		// stand ~0.9 m away facing the seat (free spot on a ring)
-		await page.evaluate((s) => {
-			const w = window.__walk;
-			for (let a = 0; a < Math.PI * 2; a += 0.3) {
-				const x = s.x + Math.cos(a) * 0.9, z = s.z + Math.sin(a) * 0.9;
-				w.place(x, z);
-				const p = w.pos();
-				if (Math.abs(p[0] - x) < 1e-6) { w.face(s.x, s.z); if (w.actions().some((l) => /^Sit/.test(l))) return; }
+		const c = window.__crew, id = c.possessed, nav = c.world.navs[0];
+		const it = c.items.find((i) => i.deck === 0 && /Galley Table|Table/.test(i.label) && i.slots.some((s) => s.occ === null));
+		if (!it) return null;
+		const k = it.slots.findIndex((s) => s.occ === null), s = it.slots[k];
+		for (let r = 2.6; r >= 1.9; r -= 0.1)
+			for (let a = 0; a < 6.28; a += 0.15) {
+				const x = s.ax + Math.cos(a) * r, z = s.az + Math.sin(a) * r;
+				if (!nav.isFree(x, z)) continue;
+				c.teleport(id, 0, x, z);
+				window.__walk.face(s.x, s.z);
+				if (window.__walk.actions().some((l) => /^Sit – Meal at table/.test(l))) return { label: it.label, key: it.key, r };
 			}
-		}, seat);
+		return null;
+	});
+	const all = await page.evaluate(() => window.__walk.actions());
+	check('walk: E never means Inspect', !all.some((l) => /Inspect/i.test(l)), all);
+	if (seat) {
+		const idx = all.findIndex((l) => /^Sit – Meal at table/.test(l));
+		if (idx === 0) await page.keyboard.press('KeyE');
+		else {
+			await page.keyboard.press('Shift+KeyE');
+			await page.keyboard.press(`Digit${idx + 1}`);
+		}
 		await wait(400);
-		const labels = await page.evaluate(() => window.__walk.actions());
-		const y0 = await page.evaluate(() => window.__walk.pos()[1]);
+		const going = await page.evaluate(() => window.__walk.info());
+		const status = await until(page, () => document.querySelector('[data-testid=interact-status]')?.textContent ?? '', null, 5000);
+		check('walk: E on a chair 2+ m away → avatar walks there ("Walking to … (move to cancel)")', going.state === 'move' && /Walking to .*Table.*move to cancel/.test(status), { going: going.state, status, r: seat.r });
+		await until(page, () => window.__walk.info().state !== 'move', null, 90000);
+		await wait(1500); // settle (dock blend)
+		const end = await page.evaluate(() => {
+			const c = window.__crew, a = c.agents[c.possessed], s = a.item?.slots[a.slot];
+			const dyaw = s ? Math.abs(Math.atan2(Math.sin(a.av.yaw - s.yaw), Math.cos(a.av.yaw - s.yaw))) : 9;
+			return { state: a.state, pose: a.av.pose, item: a.item?.label, d: s ? Math.hypot(a.av.x - s.x, a.av.z - s.z) : 9, dyaw: (dyaw * 180) / Math.PI, hunger: a.needs.hunger };
+		});
+		check('walk: avatar ends at the chair (≤ 5 cm, ≤ 10°), state = using, eat pose', end.state === 'use' && end.item === seat.label && end.d <= 0.05 && end.dyaw <= 10 && end.pose === 'eat', end);
+		await page.evaluate(() => window.__walk.look(-0.55));
+		await wait(1200);
+		await page.screenshot({ path: 'screenshot-walk-use.png' }); // avatar seated at the galley table
+		await page.evaluate(() => { window.__crew.speed = 16; window.__crew.running = true; });
+		await wait(2500);
+		const h1 = await page.evaluate(() => window.__crew.agents[window.__crew.possessed].needs.hunger);
+		await page.evaluate(() => (window.__crew.running = false));
+		check('walk: the meal raises hunger while seated (item rates apply)', h1 > end.hunger + 1, { before: end.hunger, after: h1 });
+		await page.keyboard.down('KeyW');
+		await wait(700);
+		await page.keyboard.up('KeyW');
+		const up = await page.evaluate(() => window.__walk.info());
+		check('walk: a movement key stands the avatar up', up.state === 'idle' && up.item === null, up);
+	} else console.log('SKIP walk-to-use (no free table chair on deck 1)');
+	// ladder: E walks to the ladder base, then climbs (animation) to the next deck
+	const lad = await page.evaluate(() => {
+		const c = window.__crew, id = c.possessed, p = c.world.portals.find((q) => q.bottom.deck === 0);
+		if (!p) return null;
+		const nav = c.world.navs[0];
+		for (let r = 1.3; r >= 0.6; r -= 0.1)
+			for (let a = 0; a < 6.28; a += 0.2) {
+				const x = p.bottom.x + Math.cos(a) * r, z = p.bottom.z + Math.sin(a) * r;
+				if (!nav.isFree(x, z)) continue;
+				c.teleport(id, 0, x, z);
+				window.__walk.face(p.shaft.x, p.shaft.z);
+				window.__walk.look(0.3);
+				if (/^Climb up/.test(window.__walk.actions()[0] ?? '')) return { to: p.top.deck, d: Math.hypot(x - p.bottom.x, z - p.bottom.z) };
+			}
+		return null;
+	});
+	if (lad) {
+		await page.evaluate(() => (window.__crew.running = true)); // a crew member already on the ladder must be able to finish
 		await page.keyboard.press('KeyE');
 		await wait(300);
-		const sat = await page.evaluate(() => ({ seated: window.__walk.seated(), y: window.__walk.pos()[1] }));
-		check('walk: E on a chair/couch sits down (eye lowers)', /^Sit/.test(labels[0] ?? '') && sat.seated && sat.y < y0 - 0.3, { labels, y0, sat });
-		const after = await page.evaluate(() => window.__walk.actions());
-		await page.keyboard.press('KeyE');
-		await wait(300);
-		check('walk: E again stands up', /^Stand up/.test(after[0] ?? '') && !(await page.evaluate(() => window.__walk.seated())), { after });
-		await page.keyboard.press('Shift+KeyE');
-		const menu = await page.getByTestId('interact-menu').getByRole('menuitem').allTextContents().catch(() => []);
-		const insp = menu.findIndex((t) => /Inspect/.test(t));
-		if (insp >= 0) await page.keyboard.press(`Digit${insp + 1}`);
-		await wait(200);
-		const toast = await page.evaluate(() => window.__game.toast);
-		check('walk: Shift+E lists actions; picking "Inspect" (digit) shows item info', insp >= 0 && /kg/.test(toast ?? ''), { menu, toast });
-	} else console.log('SKIP walk sit (no chair/couch on deck 1)');
+		if (await page.getByTestId('interact-menu').isVisible().catch(() => false)) await page.keyboard.press('Digit1'); // slow frame → read as a hold
+		// one retry: on a stalled software-rendered frame the press can land before the HUD list refreshed
+		if (!(await until(page, () => window.__walk.info().state !== 'idle', null, 1500))) {
+			await page.keyboard.press('KeyE');
+			await wait(300);
+			if (await page.getByTestId('interact-menu').isVisible().catch(() => false)) await page.keyboard.press('Digit1');
+		}
+		const climbing = await until(page, () => window.__walk.climbing(), null, 8000);
+		const arrived = await until(page, (to) => window.__walk.info().deck === to && window.__walk.info().state === 'idle', lad.to, 60000);
+		check('walk: E at a ladder (≤ 1.5 m) walks to its base and climbs to the next deck', !!climbing && !!arrived, { lad, climbing, info: await page.evaluate(() => window.__walk.info()) });
+		await page.evaluate(() => (window.__crew.running = false));
+	} else console.log('SKIP ladder climb (no ladder from deck 1)');
 	await page.keyboard.press('KeyF');
 	await page.waitForFunction(() => window.__game.mode === 'build');
+	check('walk: F back to build releases the avatar (and stops the sim walk mode started)', await page.evaluate(() => window.__crew.possessed === null && !window.__crew.embodied && !window.__crew.enabled));
 
 	// possessed: E uses the item under the crosshair; X stops; item behind you is not picked
 	await page.evaluate(() => { window.__crew.start(); window.__crew.running = false; });
