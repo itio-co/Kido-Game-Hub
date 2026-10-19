@@ -429,13 +429,13 @@ async function prep(page) {
 		await wait(250);
 	};
 	await page.getByRole('button', { name: /Toggle panel/ }).click();
-	await page.getByRole('button', { name: /Storage Locker/ }).click();
+	await page.locator('.panel').getByRole('button', { name: /Storage Locker/ }).first().click();
 	await page.getByRole('button', { name: 'Rotate', exact: true }).click(); // +15°
 	await tap(-3.4, -0.9);
 	await page.getByRole('button', { name: 'Place', exact: true }).click();
 	await wait(200);
 	await page.getByRole('button', { name: /Toggle panel/ }).click();
-	await page.getByRole('button', { name: /Workstation/ }).click();
+	await page.locator('.panel').getByRole('button', { name: /^\S+ Workstation/ }).first().click();
 	await page.getByRole('button', { name: 'Rotate 90' }).click();
 	await page.getByRole('button', { name: 'Rotate', exact: true }).click();
 	await tap(-0.4, 1.6); // preview only (locked ghost) for the screenshot

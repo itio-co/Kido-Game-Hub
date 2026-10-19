@@ -176,7 +176,7 @@
 		</div>
 
 		<div class="top-right">
-			<button class="fab mode" onclick={toggleMode} data-testid="mode-toggle">{#if game.mode === 'build'}<span>🚶</span><small>Walk</small>{:else}<span>🛠</span><small>Build</small>{/if}</button>
+			<button class="fab mode" onclick={toggleMode} aria-label={game.mode === 'build' ? '🚶 Walk' : '🛠 Build'} data-testid="mode-toggle">{#if game.mode === 'build'}<span>🚶</span><small>Walk</small>{:else}<span>🛠</span><small>Build</small>{/if}</button>
 			{#if game.mode === 'build'}<button class="fab mode" onclick={() => (game.designer = true)} aria-label="Equipment designer"><span>🧩</span><small>Design</small></button>{/if}
 			{#if mobile && game.mode === 'build' && !possessed}<button class="fab crewfab" class:on={crewSheet} onclick={() => (crewSheet = !crewSheet)} aria-label="Crew sim">👥</button>{/if}
 			{#if game.mode === 'build'}

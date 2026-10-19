@@ -35,6 +35,11 @@
 <circle cx="212" cy="124" r="0.6" fill="#3a7bd5"/>
 <circle cx="194" cy="124" r="2.4" fill="#fff" stroke="#000" stroke-width="0.3"/>
 <text x="194" y="125" font-size="2.8" text-anchor="middle" font-weight="bold">5</text>
+<polygon points="126.06,192.64 102.06,192.64 102.06,177.64 126.06,177.64" fill="none" stroke="#3a7bd5" stroke-width="0.2" stroke-dasharray="1 0.8"/>
+<polygon points="126.06,204.64 102.06,204.64 102.06,192.64 126.06,192.64" fill="#eef1f4" stroke="#000" stroke-width="0.35"/>
+<circle cx="114.06" cy="192.64" r="0.6" fill="#3a7bd5"/>
+<circle cx="114.06" cy="198.64" r="2.4" fill="#fff" stroke="#000" stroke-width="0.3"/>
+<text x="114.06" y="199.64" font-size="2.8" text-anchor="middle" font-weight="bold">6</text>
 <polygon points="122.00,133.00 138.00,133.00 138.00,145.00 122.00,145.00" fill="none" stroke="#3a7bd5" stroke-width="0.2" stroke-dasharray="1 0.8"/>
 <circle cx="130" cy="122" r="11" fill="none" stroke="#b58a00" stroke-width="0.35" stroke-dasharray="0"/>
 <circle cx="130" cy="122" r="8" fill="#fff" stroke="#000" stroke-width="0.4"/>
@@ -62,7 +67,7 @@
 <text x="285" y="28" font-size="4.5">Deck 3 (3 of 3) — floor plan</text>
 <text x="285" y="33" font-size="3.2" font-weight="bold">Surface/Cruise configuration</text>
 <text x="285" y="39" font-size="3">Clear height 2.40 m · slab 0.25 m · FFL +5.30 m</text>
-<text x="285" y="44" font-size="3">Dimensions in mm unless noted · 2026-10-18</text>
+<text x="285" y="44" font-size="3">Dimensions in mm unless noted · 2026-10-19</text>
 <text x="285" y="52" font-size="3" font-weight="bold"># Module   W×D×H (m)   X, Z (m)   rot°  wall (m)</text>
 <line x1="285" y1="53.5" x2="408" y2="53.5" stroke="#000" stroke-width="0.25"/>
 <text x="285" y="57.7" font-size="2.7">1  Sleep Bunk</text>
@@ -75,8 +80,10 @@
 <text x="289" y="81" font-size="2.3" fill="#333">1.00×1.00×2.10 · -3.00, 1.00 · 90° · 0.69</text>
 <text x="285" y="84.89999999999999" font-size="2.7">5  Table + 4 Seats</text>
 <text x="289" y="87.8" font-size="2.3" fill="#333">1.20×1.80×0.95 · 2.20, -1.30 · 90° · 0.86</text>
-<text x="285" y="91.69999999999999" font-size="2.7">L2-3  Ladder deck 2→3 (opening Ø0.80 here)</text>
-<text x="289" y="94.6" font-size="2.3" fill="#333">X, Z -1.000, -1.400 · 0° · same coordinates on deck 2</text>
+<text x="285" y="91.69999999999999" font-size="2.7">6  Hydroponics Rack</text>
+<text x="289" y="94.6" font-size="2.3" fill="#333">1.20×0.60×2.00 · -1.80, 2.43 · 180° · 0.87</text>
+<text x="285" y="98.49999999999999" font-size="2.7">L2-3  Ladder deck 2→3 (opening Ø0.80 here)</text>
+<text x="289" y="101.39999999999999" font-size="2.3" fill="#333">X, Z -1.000, -1.400 · 0° · same coordinates on deck 2</text>
 <text x="285" y="275" font-size="2.4" fill="#3a7bd5">Dashed blue = front access zone; dot = front · ⊗ = floor opening</text>
 <text x="285" y="281" font-size="2.3" fill="#a00">Concept-planning tool only. Real spacecraft interiors</text>
 <text x="285" y="284.5" font-size="2.3" fill="#a00">require engineering, structural and safety certification.</text>

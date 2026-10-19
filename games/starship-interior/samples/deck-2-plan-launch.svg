@@ -87,7 +87,7 @@
 <text x="285" y="28" font-size="4.5">Deck 2 (2 of 3) — floor plan</text>
 <text x="285" y="33" font-size="3.2" font-weight="bold">Launch/Landing configuration</text>
 <text x="285" y="39" font-size="3">Clear height 2.40 m · slab 0.25 m · FFL +2.65 m</text>
-<text x="285" y="44" font-size="3">Dimensions in mm unless noted · 2026-10-18</text>
+<text x="285" y="44" font-size="3">Dimensions in mm unless noted · 2026-10-19</text>
 <text x="285" y="52" font-size="3" font-weight="bold"># Module   W×D×H (m)   X, Z (m)   rot°  wall (m)</text>
 <line x1="285" y1="53.5" x2="408" y2="53.5" stroke="#000" stroke-width="0.25"/>
 <text x="285" y="57.7" font-size="2.7">1  Workstation</text>
