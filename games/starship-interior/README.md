@@ -244,6 +244,68 @@ Cabin and Surface Habitat modes, runs on top of build mode, and replans live whe
   exports (`crewSim`).
 - **Performance:** the sim step costs about 0.3 ms per frame for 12 agents (headless measurement). Phones start in Low quality.
 
+### Work/Purpose, galley and group seating
+- **Role-based work:** Commander, Pilot and Scientist work at consoles (the Dual Workstation seats two, Engineers too).
+  Scientists garden at the hydroponics rack. Engineers maintain the ECLSS and do periodic servicing and repairs.
+  Specialists and Medics cook for the crew, run food and locker inventory, and clean and organise anywhere.
+  Medics hold medical check-ups at a table. Work tasks are spread over the shift.
+- **Galley set:** food warmer / convection oven, water dispenser (hot / ambient, also coffee breaks), fridge/freezer,
+  pantry lockers, prep counter, trash compactor and a zero-g food station. A meal is a multi-step flow:
+  get food (fridge or pantry), rehydrate (water), heat (warmer or galley), eat at a table or food station, then dispose of
+  the packaging. Missing steps are reported as design issues.
+- **Tables + chairs (groups):** the Galley Table seats come from chairs. A chair dropped near a table snaps to a free side
+  facing it, and **🪑 Add seats** fills the free sides (up to 8). Seats join the table group, so a meal or chat is social.
+- **Capacity and occupancy:** every item has strict slots. Badges over items show `used/capacity` (green, amber when
+  full, ✖ when broken, 🔧 needing service, ⚡ unpowered). Taking control and pressing Use on a full item says "Full".
+- **Containment:** crew can only walk or fly in the area reachable from their spawn point (2D grid and micro-g voxel
+  masks pruned to the connected region). Moves are swept against obstacles, a watchdog unsticks stalled agents, and use
+  points that can't be reached are flagged in the issues and drawn red in the editor. A walkable-area debug overlay
+  is in ⚙.
+
+### Working rates, status effects and trend symbols
+- Using an item restores a need at a **rate per sim hour**, scaled by the item's condition (100 % → 1×, 0 % → 0.5×)
+  and with **diminishing returns** above 70 (20 % at 100). Some affordances have a per-session cap.
+  Effects are scaled by the fraction of the session completed.
+- **Status effects** continue after use (chips on the crew card, with remaining time): Digesting, Snack, Well rested,
+  Groggy, Post-exercise glow, Sweaty (cleared by washing), Muscle fatigue, Coffee boost → Caffeine crash, Noise fatigue,
+  Fresh & clean, Accomplished, Relieved. Each has per-need rates and/or decay multipliers, a duration and a curve
+  (constant, linear fade or exponential). The AI looks ahead with these effects, so a satiated crew member doesn't re-eat.
+- **Trend symbols** on every need bar: `>>` / `>` rising (green), `<` / `<<` falling (red), `·` steady.
+  The trend is the measured net rate (smoothed over ~10 sim minutes). Hover (desktop) or tap (phone) shows the exact rate, e.g. `−6.2/h`.
+- Typical durations at 60× (2-day test): sleep ≈ 6.5 h, meal ≈ 30 min, toilet ≈ 13 min, wash ≈ 19 min, exercise ≈ 85 min,
+  work blocks ≈ 3.5 h.
+
+### Equipment life cycle and spares
+- Each item has a life spec (rated life, MTBF, service interval, ESTIMATE values; editable in the Designer).
+  Condition falls with use and with calendar aging. States: ✦ New → ✓ Operational → ◐ Worn → 🔧 Needs maintenance → ✖ Broken.
+- Failures follow an MTBF hazard that rises as condition drops. A broken item can't be used: queued crew leave and
+  an Engineer repairs it, consuming spares (6 per storage locker; 3× when the item is past its rated life).
+  Maintenance resets the service clock.
+- The selection card and sidebar show condition, hours and next service. The issues list reports broken items, waiting
+  maintenance and spares shortfalls. **Mission spares plan** (cruise + surface days) estimates spares needed vs carried.
+  The CSV has a LIFE CYCLE section.
+
+### Electrical power
+- Each item has a power profile (Off / Standby / Active / Peak, duty cycle and start-up peak, ISS/analog ESTIMATEs) and a
+  priority: **Critical** (ECLSS, never shed), **Essential**, **Normal**, **Deferrable**. Priorities can be changed per item in the power panel.
+- **Live bus:** supply is 6 kW in cruise, or 12 kW solar (day/night curve) or nuclear on the surface, with a 60 kWh battery
+  (all editable). Deck lighting depends on occupancy.
+- When load exceeds supply plus the battery limit, loads are **shed** by priority (Deferrable first, largest first) and
+  restored one at a time once there is a 15 % margin. **Brownout:** an idle item whose start-up peak doesn't fit can't be started.
+  Unpowered items aren't used by the AI. A possessed crew member gets "Unavailable (no power …)".
+- **HUD power meter** (load / supply, battery %, sparkline). Click it for the power panel: settings, per-item draw and
+  priority, 24 h chart and alerts. Deficits are design issues, and the CSV has a POWER section.
+
+### Couch egress and clearances
+- With a couch selected (or **📐 Clearances** on in the top bar) the planner draws the couch's stowed and deployed
+  envelopes, its front access zone and the **egress path** (0.8 m wide) to the nearest ladder/hatch or the airlock,
+  using the envelope for the current phase (deployed in Launch/Landing).
+- Blocking items turn red and the blocked segment is marked. Issue text names the blocker and the needed path, e.g.
+  "Pilot Couch (Deck 3) egress blocked by Water Dispenser at (0.7, 0.2); needs 0.8 m path to Ladder L2-3 (deployed envelope)".
+  Click the issue to jump to the couch.
+- While you drag a couch the path updates live. **🧭 Move to nearest clear spot** suggests a nudge within 1.2 m.
+- Door and locker keep-out zones are drawn (amber) but don't block egress, because doors are latched for launch.
+
 ## Mission phases and Cruise (micro-g)
 
 The **Crew / Ship** panel has a mission selector: **🚀 Launch → 🪐 Cruise (micro-g) → 🛬 Landing → 🌕 Surface**.
@@ -302,6 +364,21 @@ The mission is saved with the layout.
 - **Build camera in Cruise:** tick **Free 6-DOF camera** in the panel to swap the orbit camera for a trackball that allows
   roll and upside-down views. **⬆ Reset up** (panel or HUD) restores the deck-up view. Dust motes drift in the current deck.
 
+## Game HUD
+- **Top resource bar** (slim, glass): mission phase (click to cycle), crew / launch seats, mass, power (the live meter
+  while the crew sim runs, otherwise the static budget), volume, cost, free floor area, issue count, **📐 Clearances**
+  toggle, and the sim clock with ⏸/▶ and speed.
+- **Bottom build bar:** large tool buttons (Select, Place, Measure, Camera), category tabs (Crew, Galley, Hygiene & fitness,
+  Work & systems, Launch seats, Micro-g, Custom) and scrolling item cards (size, power, seats). Click a card to place it.
+  ▾ collapses the bar.
+- **Selection card:** appears when an item is selected. It shows size, power and deck, live condition (when the sim runs),
+  couch egress status, and seats. Actions: ⟲ ⟳ 90°, 📋 duplicate, 🪑＋ add seats (tables), 🧭 nudge (blocked couch), 🗑 delete.
+- **Side panel drawer:** ☰ (left of the deck pills) shows or hides the full sidebar (tools, catalog, checks, crew sim).
+  It is open by default.
+- **Mode buttons** (top-right): large 🚶 Walk / 🛠 Build and 🧩 Design.
+- **Phone:** the top bar sits at the top (scrolls sideways), the build bar sits above the bottom sheet, and the selection
+  card replaces the build bar while something is selected.
+
 ## Controls
 
 ### Camera (build mode)
@@ -335,7 +412,8 @@ The mission is saved with the layout.
 
 ### Mobile (touch)
 - Below 760 px wide the sidebar becomes a **bottom sheet**: the tools row is always visible, and ▲ opens equipment, decks, stats and export.
-  At the top: a summary chip (kW, free m², m³) and deck pills (D1, D2, …, ＋, ✂).
+  At the top: the resource bar (phase, crew/seats, power, volume, free m², clearances, sim clock) and deck pills (D1, D2, …, ＋, ✂).
+  Above the sheet: the build bar (category tabs + cards); selecting an item swaps it for the selection card.
 - **Place:** tap to preview (the ghost locks in place), drag to move it, then tap it again or press **✓ Place**; **✕** cancels.
 - **Select:** tap a module to select it, drag it to move, use 🗑 to delete. Rotate with the large ⟲ / ⟳15° / 90° buttons.
 - **Measure:** tap two points.
@@ -413,6 +491,20 @@ src/lib/sim/                crew sim: nav.ts (grid, Dijkstra, ladder portals), n
 scripts/screenshot.mjs      Playwright test: screenshots, rule checks, sample exports
 scripts/crew-test.mjs       Playwright crew-sim test + crew screenshots
 scripts/cruise-test.mjs     Playwright Cruise (micro-g) test + cruise / wall-mount screenshots
+scripts/deck-keys-test.mjs  deck up/down keys in build / walk / possessed / cruise
+scripts/galley-test.mjs     galley meal flow, table+chair groups, capacity / occupancy
+scripts/nav-safety-test.mjs crew containment over random layouts
+scripts/needs-bench.mjs     need averages / Work/Purpose bench (node scripts/needs-bench.mjs [days])
+scripts/lifecycle-test.mjs  wear, failures, repairs, maintenance, spares plan
+scripts/need-curves.mjs     working rates, status effects, trend symbols (2 days at 60×)
+scripts/couch-egress-test.mjs couch envelopes, egress blockers, nudge, Show clearances
+scripts/power-test.mjs      power bus, shedding order, brownout, deficit issues
+scripts/hud-test.mjs        HUD top bar, build bar, selection card, drawer (desktop + iPhone 13)
+src/lib/sim/effects.ts      status effects, diminishing returns, trend symbols
+src/lib/sim/lifecycle.ts    life specs, wear / hazard, repair / service
+src/lib/sim/power.ts        power profiles + priorities
+src/lib/game/egress.ts      couch egress path solver + nudge
+src/lib/components/hud/     HudTopBar, BuildBar, SelectionCard, categories
 ```
 
 ## Limitations / next steps
@@ -431,6 +523,13 @@ scripts/cruise-test.mjs     Playwright Cruise (micro-g) test + cruise / wall-mou
   - Wall items above the 1.1 m build cutaway can look like they float in build view.
   - Loose floating items (the optional cosmetic extra) are not implemented. The torus "loops" of the foot restraint are full rings.
   - First-person camera in build mode keeps the hull cutaway, so looking up shows the sky.
+- **Needs / effects / life cycle / power:** all rates, lifetimes, MTBFs and power figures are gameplay ESTIMATEs
+  (ISS analogs where noted), not physiology or reliability data. "Health" is modelled through Fitness. Brownout is a heuristic
+  (an idle item can't start when its start-up peak doesn't fit). Condition, broken-state and power badges need the crew sim running.
+- **Egress:** a 2D 0.1 m grid path with a 0.8 m wide body. Door keep-outs are drawn but don't block. There is no
+  timed evacuation and no multi-person flow.
+- **Default cruise layout:** only 2 sleep places are usable in micro-g and there's no zero-g toilet, so cruise
+  Work/Purpose is lower (the issues list flags both).
 - Equipment is generic and procedural, not real flight hardware. Mass, power and cost are placeholders.
 - There is no structural, thermal, acoustic, radiation-transport, fire-safety or emergency-egress analysis. The path check is 2D and
   inflates the body with rough square corners.
