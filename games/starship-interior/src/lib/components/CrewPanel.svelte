@@ -28,6 +28,12 @@
 		<button class:active={game.mission === 'surface'} onclick={() => game.setMission('surface')}>🌕 Surface</button>
 	</div>
 	<div class="phint">{game.mission === 'cruise' ? 'Weightless: crew float, push off handrails and fly through open hatches.' : game.phase === 'launch' ? 'Couches deployed, stowables folded, crew strapped in.' : `Surface gravity (${game.shipMode === 'habitat' ? game.hab.location : 'Earth'}).`}</div>
+	{#if game.mission === 'cruise'}
+		<div class="row">
+			<label class="row"><input type="checkbox" bind:checked={game.freeCam} aria-label="Free 6-DOF camera" /> <span>Free 6-DOF camera</span></label>
+			<button class="mini" onclick={() => game.resetUpTick++} disabled={!game.freeCam} aria-label="Reset up">⬆ Reset up</button>
+		</div>
+	{/if}
 	<label class="row">
 		<span>Crew</span>
 		<button class="mini" onclick={() => (game.crew = Math.max(1, game.crew - 1))}>−</button>

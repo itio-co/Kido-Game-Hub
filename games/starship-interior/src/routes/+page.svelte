@@ -200,6 +200,9 @@
 			{/if}
 		{:else if game.mode === 'build'}
 			<div class="build-actions" class:mobile>
+				{#if game.microG && game.freeCam}
+					<button class="fab" onclick={() => game.resetUpTick++} aria-label="Reset camera up">⬆ <small>Reset up</small></button>
+				{/if}
 				{#if game.tool === 'module' && game.pending}
 					<button class="fab ok" onclick={confirmPending} aria-label="Place">✓ Place</button>
 					<button class="fab" onclick={() => (game.pending = null)} aria-label="Cancel">✕</button>

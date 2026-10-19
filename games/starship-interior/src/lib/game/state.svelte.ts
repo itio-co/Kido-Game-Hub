@@ -102,6 +102,9 @@ class GameState {
 	mountMode = $state<'floor' | 'wall' | 'ceiling'>('floor');
 	/** height of a wall-mounted item's base above the floor, m */
 	mountHeight = $state(1.0);
+	/** cruise build camera: free 6-DOF trackball (roll / upside-down) */
+	freeCam = $state(false);
+	resetUpTick = $state(0);
 	checklist = $state<Record<string, boolean>>({});
 	// ---- section view cut ----
 	cutFollow = $state(true);

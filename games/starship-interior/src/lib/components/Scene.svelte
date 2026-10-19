@@ -24,6 +24,8 @@
 	import WalkControls from './WalkControls.svelte';
 	import CrewLayer from '$lib/sim/CrewLayer.svelte';
 	import PossessControls from '$lib/sim/PossessControls.svelte';
+	import TrackballCam from './TrackballCam.svelte';
+	import Dust from './Dust.svelte';
 	import { crew } from '$lib/sim/crewSim.svelte';
 
 	interface Props {
@@ -248,8 +250,14 @@
 	<CutCaps faces={cut.faces} />
 {/if}
 
+{#if game.microG && !game.exportAll}
+	<Dust />
+{/if}
 {#if game.mode === 'build' && crew.possessed !== null}
 	<PossessControls />
+{:else if game.mode === 'build' && game.microG && game.freeCam}
+	<TrackballCam pos={view.pos} target={[view.target[0], view.target[1] + 1.2, view.target[2]]} />
+	<BuildInput />
 {:else if game.mode === 'build'}
 	{#key camKey}
 		<T.PerspectiveCamera makeDefault position={untrack(() => view.pos)} fov={45} near={0.05} far={400}>
