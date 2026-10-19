@@ -19,6 +19,8 @@
 	import CrewPanel from './CrewPanel.svelte';
 	import CrewSimPanel from '$lib/sim/CrewSimPanel.svelte';
 	import { equip } from '$lib/game/equipStore.svelte';
+	import { crew } from '$lib/sim/crewSim.svelte';
+	import { lifeOf, LIFE_ICON } from '$lib/sim/lifecycle';
 
 	interface Props {
 		mobile?: boolean;
@@ -72,12 +74,24 @@
 	}
 
 	const sel = $derived(game.selected);
+	// live life-cycle info of the selected item (crew sim running)
+	let lifeTick = $state(0);
+	$effect(() => {
+		const t = setInterval(() => lifeTick++, 500);
+		return () => clearInterval(t);
+	});
+	const life = $derived.by(() => {
+		void lifeTick;
+		return sel && crew.enabled ? crew.itemInfo(game.current, sel.uid) : null;
+	});
 	const selInfo = $derived.by(() => {
 		if (!sel) return null;
 		const def = CATALOG_BY_ID[sel.type];
 		const f = footprintOf(sel.type, sel.x, sel.z, sel.angle);
 		return { def, r: Math.hypot(sel.x, sel.z), wall: (game.deckRadius[game.current] ?? HULL_INNER_RADIUS) - maxRadius(f) };
 	});
+	const selSpec = $derived(lifeOf(selInfo?.def));
+
 </script>
 
 {#snippet toolButtons()}
@@ -210,6 +224,18 @@
 					<button onclick={() => game.rotate(15)}>⟳ 15°</button>
 					<button onclick={() => game.rotate(90)}>90°</button>
 					<button class="danger" onclick={() => game.deleteSelected()}>🗑</button>
+				</div>
+				<div class="kv" data-testid="sel-life">
+					{#if life}
+						<span>Condition</span><b data-testid="sel-cond">{LIFE_ICON[life.state]} {life.cond} % · {life.state}</b>
+						<span>Hours used</span><b>{life.hours} h{life.failures ? ` · ${life.failures} failure${life.failures > 1 ? 's' : ''}` : ''}</b>
+						<span>Next service</span><b>{life.state === 'Broken' ? 'repair needed' : `in ${life.nextService.toFixed(0)} h of use`}</b>
+						<span>In use</span><b>{life.users.length}/{life.cap}{life.queued.length ? ` · ${life.queued.length} queued` : ''}</b>
+					{:else}
+						<span>Service</span><b>every {selSpec.service} h of use</b>
+					{/if}
+					<span>MTBF / life</span><b>{selSpec.mtbf.toLocaleString()} h / {selSpec.life.toLocaleString()} h{selSpec.alwaysOn ? ' (always on)' : ''}</b>
+					<span>Repair</span><b>{selSpec.repair} min · {selSpec.spares} spare kit{selSpec.spares > 1 ? 's' : ''}{life ? ` (${life.spares} in lockers)` : ''}</b>
 				</div>
 				{#if selInfo.def.group}
 					{@const seats = game.seatsOf(sel.uid)}

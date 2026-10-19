@@ -35,8 +35,8 @@
 		{@const p = pos(o)}
 		{#if p}
 			<HTML position={p} center pointerEvents="none" zIndexRange={[6, 0]}>
-				<div class="occ" data-occ={o.key} style="--c:{col(o)}">
-					<span class="n">{o.cond !== undefined && o.cond <= 0 ? '✖' : `${o.n}/${o.cap}`}</span>{#if o.q}<span class="q">+{o.q}⏳</span>{/if}
+				<div class="occ" data-occ={o.key} data-state={o.state} data-cond={o.cond} style="--c:{col(o)}">
+					<span class="n">{o.cond !== undefined && o.cond <= 0 ? '✖' : `${o.n}/${o.cap}`}</span>{#if o.q}<span class="q">+{o.q}⏳</span>{/if}{#if o.state === 'Needs maintenance'}<span class="q">🔧</span>{/if}
 					{#if o.cond !== undefined}<span class="bar" title="condition"><i style="width:{Math.max(4, o.cond)}%;background:{condCol(o.cond)}"></i></span>{/if}
 				</div>
 			</HTML>

@@ -16,6 +16,7 @@
 	import StatsPanel from '$lib/components/StatsPanel.svelte';
 	import Joystick from '$lib/components/Joystick.svelte';
 	import AgentCard from '$lib/sim/AgentCard.svelte';
+	import CrewHoverTip from '$lib/sim/CrewHoverTip.svelte';
 	import CrewSimPanel from '$lib/sim/CrewSimPanel.svelte';
 	import { crew, fmtClock } from '$lib/sim/crewSim.svelte';
 
@@ -187,6 +188,7 @@
 			</div>
 		{/if}
 		{#if game.mode === 'build' && crew.enabled}<AgentCard {mobile} />{/if}
+		{#if crew.enabled && !mobile}<CrewHoverTip />{/if}
 		{#if mobile && game.mode === 'build' && !possessed}
 			{#if crewSheet}
 				<div class="crewsheet">

@@ -2,6 +2,8 @@
 	/** Inspect card for the selected crew member: portrait, mood, action, queue, needs, take control. */
 	import { NEEDS } from '$lib/game/affordances';
 	import { crew } from './crewSim.svelte';
+	import NeedBar from './NeedBar.svelte';
+	import EffectChips from './EffectChips.svelte';
 
 	interface Props {
 		mobile?: boolean;
@@ -36,13 +38,10 @@
 		</div>
 		{#if !compact}
 		<div class="act">▶ {u.action}{#if u.queue}<br /><small>⏳ {u.queue}</small>{/if}{#if u.using}<br /><small data-testid="agent-using">{u.using}</small>{/if}</div>
+		<EffectChips effects={u.effects} />
 		<div class="needs">
 			{#each NEEDS as n (n.id)}
-				{@const v = u.needs[n.id]}
-				<div class="need" title={`${n.label} ${Math.round(v)}`}>
-					<span>{n.icon}{#if !mobile} {n.label}{/if}</span>
-					<span class="bar"><span style:width="{v}%" style:background={v < 20 ? '#ff5a5a' : v < 45 ? '#ffb43a' : n.color}></span></span>
-				</div>
+				<NeedBar icon={n.icon} label={n.label} color={n.color} value={u.needs[n.id]} rate={u.rates[n.id]} showLabel={!mobile} compact={mobile} />
 			{/each}
 		</div>
 		{/if}
@@ -87,9 +86,6 @@
 	}
 	.card.mobile .needs {
 		grid-template-columns: repeat(4, 1fr);
-	}
-	.card.mobile .need {
-		grid-template-columns: auto 1fr;
 	}
 	.card.mobile .portrait {
 		width: 34px;
@@ -136,24 +132,6 @@
 		display: grid;
 		grid-template-columns: 1fr;
 		gap: 3px 8px;
-	}
-	.need {
-		display: grid;
-		grid-template-columns: 1fr 70px;
-		align-items: center;
-		font-size: 11px;
-		gap: 4px;
-	}
-	.bar {
-		height: 7px;
-		background: #1c2a40;
-		border-radius: 4px;
-		overflow: hidden;
-	}
-	.bar span {
-		display: block;
-		height: 100%;
-		transition: width 0.25s;
 	}
 	button {
 		font: inherit;

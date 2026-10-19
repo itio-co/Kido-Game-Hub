@@ -53,8 +53,23 @@
 		game.selectedUid = null;
 		invalidate();
 	}
+	// hover tooltip (mouse only; throttled raycast)
+	let lastMove = 0;
+	function onMove(e: PointerEvent) {
+		if (e.pointerType !== 'mouse' || !crew.enabled) return;
+		const now = performance.now();
+		if (now - lastMove < 60) return;
+		lastMove = now;
+		const id = pick(e);
+		crew.hover = id === null ? null : { id, x: e.clientX, y: e.clientY };
+	}
+	function onLeave() {
+		crew.hover = null;
+	}
 	onMount(() => {
 		dom.addEventListener('pointerdown', onDown, { capture: true });
+		dom.addEventListener('pointermove', onMove);
+		dom.addEventListener('pointerleave', onLeave);
 		// test hook: screen position of an avatar's chest
 		const v = new Vector3();
 		(window as unknown as { __crewDebug: unknown }).__crewDebug = {
@@ -66,7 +81,11 @@
 				return { x: r.left + ((v.x + 1) / 2) * r.width, y: r.top + ((1 - v.y) / 2) * r.height, visible: a.av.visible };
 			}
 		};
-		return () => dom.removeEventListener('pointerdown', onDown, { capture: true });
+		return () => {
+			dom.removeEventListener('pointerdown', onDown, { capture: true });
+			dom.removeEventListener('pointermove', onMove);
+			dom.removeEventListener('pointerleave', onLeave);
+		};
 	});
 	void down;
 

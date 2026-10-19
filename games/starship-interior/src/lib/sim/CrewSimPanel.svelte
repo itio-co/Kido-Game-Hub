@@ -4,6 +4,7 @@
 	import { download } from '$lib/game/exporters';
 	import { game } from '$lib/game/state.svelte';
 	import { crew, fmtClock, ROLES, SPEEDS } from './crewSim.svelte';
+	import { fmtRate, trend } from './effects';
 
 	let tab = $state<'crew' | 'log' | 'analytics' | 'settings'>('crew');
 	let report = $state<ReturnType<typeof crew.analytics> | null>(null);
@@ -57,6 +58,15 @@
 							<span class="dot" style:background={u.color}></span>
 							<span class="nm">{u.name} <small>{u.role}</small></span>
 							<span class="act">{u.moodLabel} {u.action} · {u.where}</span>
+							<span class="mn" data-testid="crew-list-needs">
+								{#each NEEDS as n (n.id)}
+									{@const t = trend(u.rates[n.id])}
+									<span class="mi" title={`${n.label} ${u.needs[n.id]} · ${fmtRate(u.rates[n.id])}`} style:color={u.needs[n.id] < 20 ? '#ff6b6b' : u.needs[n.id] < 45 ? '#ffb43a' : undefined}
+										>{n.icon}<b class="t {t.cls}">{t.sym}</b></span
+									>
+								{/each}
+								{#each u.effects as e, i (e.id + i)}<span class="mi" title={`${e.label} · ${e.left} min left`}>{e.icon}</span>{/each}
+							</span>
 						</button>
 						<button class="mini" onclick={() => (edit = edit === u.id ? null : u.id)} aria-label="Edit">✎</button>
 						<button class="mini" onclick={() => crew.possess(u.id)} aria-label="Take control" title="Take control">🎮</button>
@@ -237,6 +247,26 @@
 	.nm small {
 		opacity: 0.65;
 		font-weight: 400;
+	}
+	.mn {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 1px 5px;
+		font-size: 11px;
+	}
+	.mi b.t {
+		font: 800 11px/1 ui-monospace, Menlo, monospace;
+		letter-spacing: -1px;
+		margin-left: 1px;
+		color: #6c7c95;
+	}
+	.mi b.up,
+	.mi b.up2 {
+		color: #4be37a;
+	}
+	.mi b.down,
+	.mi b.down2 {
+		color: #ff5c5c;
 	}
 	.act {
 		font-size: 10.5px;
