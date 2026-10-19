@@ -70,14 +70,25 @@ if (far > 1.0) {
 await page.keyboard.down('KeyW');
 const reached = await until(page, () => { const g = window.__game; return g.hatchHere.up; }, null, 20000);
 await page.keyboard.up('KeyW');
-const prompt = await page.locator('.prompt').first().textContent().catch(() => '');
-check('walk: at the ladder the prompt offers E ▲', reached && /E ▲ climb to Deck 2/.test(prompt ?? ''), { prompt });
+await wait(400);
+const prompt = await page.getByTestId('interact-prompt').textContent().catch(() => '');
+check('walk: at the ladder the prompt offers "E  Climb up to Deck 2"', reached && /E\s+Climb up to Deck 2/.test(prompt ?? ''), { prompt });
 await page.keyboard.press('KeyE');
 const up = await until(page, () => window.__game.walkDeck === 1 && !window.__walk.climbing());
 check('walk: KeyE climbs to the upper deck', !!up, { deck: await page.evaluate(() => window.__game.walkDeck) });
 await page.keyboard.press('KeyQ');
 const down = await until(page, () => window.__game.walkDeck === 0 && !window.__walk.climbing());
 check('walk: KeyQ climbs back down', !!down, { deck: await page.evaluate(() => window.__game.walkDeck) });
+// E follows the look direction: up, then look down + E comes back down
+await page.keyboard.press('KeyE');
+await until(page, () => window.__game.walkDeck === 1 && !window.__walk.climbing());
+await page.evaluate(() => window.__walk.look(-1.0));
+await wait(400);
+const downPrompt = await page.getByTestId('interact-prompt').textContent().catch(() => '');
+await page.keyboard.press('KeyE');
+const downE = await until(page, () => window.__game.walkDeck === 0 && !window.__walk.climbing());
+check('walk: looking down, E climbs down ("E  Climb down to Deck 1")', !!downE && /Climb down to Deck 1/.test(downPrompt ?? ''), { downPrompt });
+await page.evaluate(() => window.__walk.look(0));
 await thai(page, 'KeyE', 'ำ');
 const up2 = await until(page, () => window.__game.walkDeck === 1 && !window.__walk.climbing());
 await thai(page, 'KeyQ', 'ๆ');
@@ -105,11 +116,27 @@ await aim();
 await page.keyboard.down('KeyW');
 const near = await until(page, () => window.__crew.canClimb(true), null, 15000);
 await page.keyboard.up('KeyW');
-const pp = await until(page, () => { const p = window.__crew.ui.prompt; return p && /E ▲/.test(p) ? p : null; }, null, 8000);
-check('possessed: near the ladder, prompt "E ▲ climb to Deck 2"', !!near && /E ▲ climb to Deck 2/.test(pp ?? ''), { pp });
+const pp = await until(page, () => { const p = window.__crew.ui.prompt; return p && /E\s+Climb up/.test(p) ? p : null; }, null, 8000);
+check('possessed: near the ladder, prompt "E  Climb up to Deck 2"', !!near && /E\s+Climb up to Deck 2/.test(pp ?? ''), { pp });
+// Shift+E opens the action list, Esc closes it without releasing the crew member
+await page.keyboard.press('Shift+KeyE');
+const menuOpen = await page.getByTestId('interact-menu').isVisible().catch(() => false);
+const items = menuOpen ? await page.getByTestId('interact-menu').getByRole('menuitem').allTextContents() : [];
+await page.keyboard.press('Escape');
+await wait(200);
+const menuClosed = !(await page.getByTestId('interact-menu').isVisible().catch(() => false));
+check('possessed: Shift+E opens the action list, Esc closes it (still possessed)', menuOpen && items.some((t) => /Climb up/.test(t)) && menuClosed && (await page.evaluate(() => window.__crew.possessed)) === 0, { items });
+// holding E 0.5 s also opens it (and does not climb)
+await page.keyboard.down('KeyE');
+await wait(550);
+await page.keyboard.up('KeyE');
+const held = await page.getByTestId('interact-menu').isVisible().catch(() => false);
+const stillDeck0 = await page.evaluate(() => window.__crew.agents[0].deck === 0 && window.__crew.agents[0].state !== 'move');
+await page.keyboard.press('KeyE'); // E closes the list
+check('possessed: holding E opens the list instead of acting', held && stillDeck0, { held, stillDeck0 });
 await page.keyboard.press('KeyE');
 const pu = await until(page, () => { const a = window.__crew.agents[0]; return a.deck === 1 && a.state !== 'move'; }, null, 40000);
-check('possessed: KeyE climbs to the upper deck (priority over equipment)', !!pu, await page.evaluate(() => window.__crew.agentSnapshot(0)));
+check('possessed: KeyE climbs to the upper deck (ladder in reach, facing it)', !!pu, await page.evaluate(() => window.__crew.agentSnapshot(0)));
 await wait(400);
 await page.keyboard.press('KeyQ');
 const pd = await until(page, () => { const a = window.__crew.agents[0]; return a.deck === 0 && a.state !== 'move'; }, null, 40000);

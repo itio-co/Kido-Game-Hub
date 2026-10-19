@@ -236,10 +236,10 @@ Cabin and Surface Habitat modes, runs on top of build mode, and replans live whe
 - **Possess:**
   - A third-person follow camera; **V** switches to first person.
   - Drag to look, wheel to zoom. **WASD** or the arrows move (joystick on touch), Shift runs.
-  - At a ladder (within ~1 m) **E/Space** climbs up and **Q/C** climbs down (also `PgUp`/`PgDn` and the ▲/▼ Deck buttons);
-    climbing has priority over equipment. **X/Enter** (or **E** when no ladder is in reach) uses the nearest equipment;
-    the prompt reads e.g. "E ▲ climb to Deck 2 · X: Prepare & eat (Galley Counter)". Away from a ladder, Q/E show where the
-    nearest ladder is and ring it.
+  - **E = interact** with whatever you are facing (see *Interact (E)* below): use equipment, sit, climb a ladder,
+    repair, stop the current activity. At a ladder E climbs toward where you look (look down = down). **Space/PgUp**
+    climb up and **Q/C/PgDn** climb down explicitly (or use the ▲/▼ Deck buttons). **X** stops the current activity.
+    Away from a ladder, the climb keys show where the nearest ladder is and ring it.
   - **Esc** or **⏏ Release** hands the crew member back to the AI. The others keep living.
 - **Analytics (📊 Issues):**
   - Utilisation % per item, average wait, max queue, unreachable items.
@@ -363,14 +363,15 @@ The mission is saved with the layout.
   - Equipment unusable in micro-g, e.g. "Sleep Bunk without restraints".
   - Missing zero-g toilet or micro-g exercise (high-severity issues).
 - **Possessing a crew member in Cruise (6-DOF):** first person by default; **V** switches to third person (no fixed horizon).
-  - Desktop: **WASD** translate in the body frame, **Space/R** up and **Ctrl/F/C** down along the body axis, **Q/E** roll,
+  - Desktop: **WASD** translate in the body frame, **Space/R** up and **Ctrl/F** down along the body axis, **Z/C** roll,
     drag to look relative to the body.
-  - **Shift** gives a stronger push-off (1.0 m/s). **G** grabs (stops) when something is in reach. **X/Enter** uses
-    equipment, **Z** or **⊙ Deck up** reorients to deck-up, **PgUp/PgDn** (or ▲/▼ Deck) auto-fly to the next/previous deck
+  - **Shift** gives a stronger push-off (1.0 m/s). **E** interacts (use equipment, fly through a nearby hatch, grab a
+    handhold while drifting). **G** grabs (stops) when something is in reach, **X** stops the current activity,
+    **T** or **⊙ Deck up** reorients to deck-up, **PgUp/PgDn** (or ▲/▼ Deck) auto-fly to the next/previous deck
     through the nearest hatch (flying through manually works too; a prompt appears near a hatch), **Esc** releases.
   - Momentum persists. With nothing in reach you only drift, or wriggle slowly.
   - Mobile: the joystick translates and dragging looks. The pad has ▲/▼ (up/down), ⟲/⟳ (roll) and ✊ (grab), plus
-    Use, Deck up, 1st/3rd and Release.
+    the big **Interact** button, Deck up, 1st/3rd and Release.
 - **Build camera in Cruise:** tick **Free 6-DOF camera** in the panel to swap the orbit camera for a trackball that allows
   roll and upside-down views. **⬆ Reset up** (panel or HUD) restores the deck-up view. Dust motes drift in the current deck.
 
@@ -418,7 +419,9 @@ The mission is saved with the layout.
 | Section cut | ✂ on: Half/Quarter, Follow camera, cut-angle slider and ⟲/⟳ 15° in the Decks panel, optional cut height |
 | Mission phase | Crew panel: Surface/Cruise ↔ Launch/Landing (couches deploy, stowables fold) |
 | Equipment designer | 📐 Design · `T`/`R`/`S` gizmo mode · `D` duplicate part · `M` mirror · `Del` delete part · `Esc` deselect |
-| Walk | `F`; click to look around, `WASD` move, `Shift` run. Within ~1 m of a ladder (lower deck) or hatch opening (upper deck) the prompt shows **E ▲ climb to Deck N** / **Q ▼ climb down to Deck N-1**: `E`/`Space`/`PgUp` climb up, `Q`/`C`/`PgDn` climb down (short climb animation), or the on-screen **▲ / ▼** buttons. Elsewhere a hint names the nearest ladder and rings it |
+| Walk | `F`; click to look around, `WASD` move, `Shift` run. `E` interacts (see below): at a ladder (within ~1 m) or hatch opening it climbs toward where you look, at a chair or couch it sits you down (move or `E` to stand), at other equipment it inspects it. `Space`/`PgUp` climb up and `Q`/`C`/`PgDn` climb down explicitly (short climb animation), or use the on-screen **▲ / ▼** buttons. Away from a ladder, a hint names the nearest one and rings it |
+| Interact (E) | Walk, possessed crew and cruise. **E** runs the best context action. That is the item under the crosshair, otherwise the nearest one within ~1.2 m in front of you. The prompt names it, e.g. `E  Climb up to Deck 2`, `E  Sit – Meal at table (Chair 2/4)`, `E  Use Water Dispenser – Rehydrate food`, `E  Repair Hygiene / Toilet`, `E  Stop: Sleep (Sleep Bunk)`. **Shift+E** or **holding E for 0.4 s** opens a list of the other actions for what's in reach: pick with `1`–`9` or a click, close with `Esc`/`E`. `Enter` also runs the best action. Ladders follow your look direction: look up to climb up, down to climb down. Unpowered, broken or full items show greyed out with the reason. Mobile: tap the big **Interact** button (it shows the label), hold it for the list |
+| Possessed crew | `Space`/`PgUp` climb up, `Q`/`C`/`PgDn` climb down, `X` stop the current activity, `V` 1st/3rd person, `Esc` release. Cruise: `Space`/`R` up, `Ctrl`/`F` down, `Z`/`C` roll, `G` grab, `T` reorient to deck-up |
 | Keyboard layouts | All shortcuts use the physical key (`KeyboardEvent.code`), so they work on Thai, AZERTY etc. layouts. Keys are ignored only while typing in a text field; clicked buttons release focus |
 
 ### Mobile (touch)

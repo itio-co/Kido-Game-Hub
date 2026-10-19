@@ -379,7 +379,8 @@
 					<li><b>Select</b>: click a module, drag to move · <b>Del</b> delete · right-click delete</li>
 					<li><b>Measure</b>: click two points · <b>Esc</b> clear · <b>G</b> snap</li>
 					<li><b>Camera</b>: left-drag empty space orbit (360°) · right-drag pan · middle-drag orbit · wheel zoom · <b>←/→</b> orbit · <b>↑/↓</b> tilt · <b>+/−</b> zoom · widget top-right: ⟲⟳ 45°, Top, Iso, Reset</li>
-					<li><b>Decks</b>: <b>PgUp/PgDn</b>, <b>Shift+Q/E</b> (or Q/E with nothing selected/placing) · ▼▲ pills · <b>F</b> walk: WASD, Shift run, at a ladder <b>E/Space</b> ▲ up, <b>Q/C</b> ▼ down</li>
+					<li><b>Decks</b>: <b>PgUp/PgDn</b>, <b>Shift+Q/E</b> (or Q/E with nothing selected/placing) · ▼▲ pills · <b>F</b> walk: WASD, Shift run, <b>Space</b> ▲ up, <b>Q/C</b> ▼ down at a ladder</li>
+					<li><b>Interact</b> (walk / crew / cruise): <b>E</b> = use / sit / climb toward where you look / repair the item under the crosshair or in reach · <b>Shift+E</b> or hold <b>E</b> = more actions (1–9) · <b>X</b> stop activity · cruise roll <b>Z/C</b>, deck-up <b>T</b></li>
 					<li><b>HUD</b>: build bar (bottom) – tabs + cards to place · selection card – ⟲⟳ 90°, 📋 duplicate, 🗑 delete · ☰ hides this panel · 📐 Clearances shows couch envelopes, egress paths, keep-outs</li>
 					<li><b>Crew sim</b>: need trends <b>&gt;&gt; &gt; · &lt; &lt;&lt;</b> (hover for rate) · ⚡ meter opens the power panel · issues are clickable</li>
 				</ul>

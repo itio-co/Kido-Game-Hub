@@ -78,6 +78,15 @@ export interface ShaftPlan extends Check {
 export const HEAD_CLEAR = 1.9;
 const round = (v: number, d = 2) => Math.round(v * 10 ** d) / 10 ** d;
 
+/** one context action offered by E / the Interact button */
+export interface CtxAction {
+	label: string;
+	run: () => unknown;
+	/** shown greyed out; running it only explains why (e.g. 'no power', 'full') */
+	disabled?: boolean;
+	kind?: 'use' | 'climb' | 'fly' | 'grab' | 'stop' | 'sit' | 'inspect' | 'repair';
+}
+
 class GameState {
 	decks = $state<Deck[]>([]);
 	/** ladder connections: ladder on deck `from` → hatch opening in deck `to` = from + 1 */
@@ -177,6 +186,9 @@ class GameState {
 	/** "go to a ladder" highlight ring (world deck + xz; shown until `until`, performance.now ms) */
 	ladderHint = $state<{ deck: number; x: number; z: number; until: number } | null>(null);
 	isTouch = $state(false);
+	/** context interaction (E): the active controller (walk / possessed crew) lists what can be done
+	 *  right now, best first (item under the crosshair / nearest within reach, ladder by look direction) */
+	ctxProvider: (() => CtxAction[]) | null = null;
 	/** set by WalkControls while walk mode is active */
 	travel: ((dir: 1 | -1) => void) | undefined = undefined;
 	/** set by the crew sim: roster + settings for save files / restore */

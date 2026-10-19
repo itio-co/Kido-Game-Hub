@@ -139,7 +139,7 @@ const tiltPOV = (page, id) => page.evaluate((id) => {
 	// possession 6-DOF
 	await page.getByRole('button', { name: '1×' }).click();
 	await page.evaluate(() => { window.__crew.teleport(1, 1, 0.5, 1.5); window.__crew.possess(1); window.__crew.agents[1].m.p.y = window.__game.floorY[1] + 0.55; });
-	await page.keyboard.press('KeyZ'); // reorient to deck-up (feet near the floor → can push off)
+	await page.keyboard.press('KeyT'); // reorient to deck-up (feet near the floor → can push off)
 	await wait(1500);
 	const st = () => page.evaluate(() => { const a = window.__crew.agents[1]; return { p: a.m.p.toArray(), q: a.m.q.toArray(), fp: window.__crew.firstPerson }; });
 	const s0 = await st();
@@ -148,9 +148,9 @@ const tiltPOV = (page, id) => page.evaluate((id) => {
 	await wait(1600);
 	await page.keyboard.up('KeyW');
 	await page.keyboard.up('KeyR');
-	await page.keyboard.down('KeyE');
+	await page.keyboard.down('KeyC'); // roll (Z/C; E is interact)
 	await wait(2200);
-	await page.keyboard.up('KeyE');
+	await page.keyboard.up('KeyC');
 	await page.mouse.move(800, 450);
 	await page.mouse.down();
 	await page.mouse.move(760, 420, { steps: 6 });

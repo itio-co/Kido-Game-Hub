@@ -2,11 +2,13 @@
 	/**
 	 * Possession camera + input: third-person follow camera behind the controlled crew member
 	 * (drag to orbit, wheel to zoom) or first-person (V). WASD / arrows / joystick move, Shift runs,
-	 * Gravity: E/Space climb up at a ladder (priority) else use, Q/C climb down, X/Enter use,
-	 * PgUp/PgDn climb, Esc releases. Keys match e.code (any keyboard layout).
-	 * Cruise (micro-g, 6-DOF): WASD translate in the body frame, Space/R up, Ctrl/F/C down, Q/E roll,
-	 * drag to look (relative to the body), Shift = stronger push-off, G grab, X/Enter use,
-	 * Z reorient to deck-up, V first/third person, PgUp/PgDn auto-fly through the nearest hatch.
+	 * E = interact with whatever is in front / in reach (handled by InteractHud: use equipment, sit,
+	 * climb a ladder towards where you look, repair…; Shift+E or hold E = other actions).
+	 * Gravity: Space/PgUp climb up, Q/C/PgDn climb down, X stop the current activity, Esc releases.
+	 * Cruise (micro-g, 6-DOF): WASD translate in the body frame, Space/R up, Ctrl/F down, Z/C roll,
+	 * drag to look (relative to the body), Shift = stronger push-off, G grab, X stop activity,
+	 * T reorient to deck-up, V first/third person, PgUp/PgDn auto-fly through the nearest hatch.
+	 * Keys match e.code (any keyboard layout).
 	 */
 	import { T, useTask, useThrelte } from '@threlte/core';
 	import { onMount } from 'svelte';
@@ -30,23 +32,21 @@
 		}
 		if (crew.micro) {
 			if (e.code === 'Space' || e.code.startsWith('Control')) e.preventDefault();
-			if (e.code === 'KeyX' || e.code === 'Enter') crew.interact();
+			if (e.code === 'KeyX') crew.stopAction();
 			else if (e.code === 'KeyG') crew.input.grab = true;
-			else if (e.code === 'KeyZ') crew.reorient();
+			else if (e.code === 'KeyT') crew.reorient();
 			else if (e.code === 'KeyV') crew.firstPerson = !crew.firstPerson;
 			else if (e.code === 'Escape') crew.possess(null);
 			return;
 		}
-		// gravity: E/Space climb up when a ladder is in reach (priority), otherwise use equipment
-		if (e.code === 'KeyE' || e.code === 'Space') {
+		// gravity (E = interact lives in InteractHud): Space climbs up, Q/C climb down, X stops
+		if (e.code === 'Space') {
 			e.preventDefault();
-			if (crew.canClimb(true)) crew.climb(true);
-			else if (crew.canClimb(false) && e.code === 'KeyE') crew.climb(true); // explains "only goes down"
-			else if (!crew.interact() && e.code === 'Space') crew.climb(true);
+			crew.climb(true);
 		} else if (e.code === 'KeyQ' || e.code === 'KeyC') {
 			e.preventDefault();
 			crew.climb(false);
-		} else if (e.code === 'KeyX' || e.code === 'Enter') crew.interact();
+		} else if (e.code === 'KeyX') crew.stopAction();
 		else if (e.code === 'KeyV') crew.firstPerson = !crew.firstPerson;
 		else if (e.code === 'Escape') crew.possess(null);
 	}
@@ -78,7 +78,9 @@
 		dist = Math.max(1.4, Math.min(7, dist * (e.deltaY > 0 ? 1.1 : 0.9)));
 		e.preventDefault();
 	};
+	const provider = () => crew.actions();
 	onMount(() => {
+		game.ctxProvider = provider;
 		window.addEventListener('keydown', onKeyDown);
 		window.addEventListener('keyup', onKeyUp);
 		dom.addEventListener('pointerdown', onDown);
@@ -95,6 +97,7 @@
 			window.removeEventListener('pointercancel', onUp);
 			dom.removeEventListener('wheel', onWheel);
 			crew.input.f = crew.input.s = crew.input.u = crew.input.roll = 0;
+			if (game.ctxProvider === provider) game.ctxProvider = null;
 		};
 	});
 
@@ -119,9 +122,9 @@
 		if (crew.micro && a.m) {
 			let u = crew.touch.u, roll = crew.touch.roll;
 			if (keys.has('Space') || keys.has('KeyR')) u += 1;
-			if (keys.has('ControlLeft') || keys.has('ControlRight') || keys.has('KeyF') || keys.has('KeyC')) u -= 1;
-			if (keys.has('KeyE')) roll += 1;
-			if (keys.has('KeyQ')) roll -= 1;
+			if (keys.has('ControlLeft') || keys.has('ControlRight') || keys.has('KeyF')) u -= 1;
+			if (keys.has('KeyC')) roll += 1;
+			if (keys.has('KeyZ')) roll -= 1;
 			crew.input.u = Math.max(-1, Math.min(1, u));
 			crew.input.roll = Math.max(-1, Math.min(1, roll));
 			if (a.deck !== lastDeck) {
@@ -156,6 +159,7 @@
 			return;
 		}
 		cam.up.set(0, 1, 0);
+		crew.input.look = 0.42 - pitch;
 		if (a.deck !== lastDeck && a.climbPhase !== 1) {
 			lastDeck = a.deck;
 			if (game.current !== a.deck) game.selectDeck(a.deck);

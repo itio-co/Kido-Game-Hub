@@ -1,8 +1,9 @@
 <script lang="ts">
 	/**
 	 * First-person walk mode across decks.
-	 *  Desktop: click → PointerLockControls, WASD/arrows, Shift run; within ~1 m of a ladder (lower
-	 *           deck) or a hatch opening (upper deck): E/Space/PgUp climb up, Q/C/PgDn climb down
+	 *  Desktop: click → PointerLockControls, WASD/arrows, Shift run. E = interact (InteractHud): at a
+	 *           ladder climbs towards where you look (look down = down), sit on a chair/couch, inspect
+	 *           equipment; Shift+E / hold E lists the other actions. Space/PgUp climb up, Q/C/PgDn down
 	 *           (short climb animation). Elsewhere a hint names the nearest ladder and rings it.
 	 *  Touch:   on-screen joystick (game.joystick) + drag to look; ▲/▼ deck buttons (game.travel()).
 	 *  Keys match e.code (layout independent).
@@ -17,14 +18,17 @@
 	import { isTyping } from '$lib/util/keys';
 	import type { Shaft } from '$lib/game/types';
 	import { HULL_INNER_RADIUS } from '$lib/game/specs';
-	import { game } from '$lib/game/state.svelte';
+	import { game, type CtxAction } from '$lib/game/state.svelte';
+	import { crew } from '$lib/sim/crewSim.svelte';
 
 	const { dom } = useThrelte();
 	const BODY_R = 0.25;
 	const cam = new PerspectiveCamera(72, 1, 0.05, 300);
 	cam.rotation.order = 'YXZ';
 
-	const eye = (k: number) => game.floorY[k] + Math.min(1.65, game.decks[k].height - 0.2);
+	const eye = (k: number) => game.floorY[k] + Math.min(1.65, game.decks[k].height - 0.2) - (seated ? 0.45 : 0);
+	/** sitting on a chair / couch (E): lower eye height until you move or press E again */
+	let seated: { label: string } | null = null;
 	/** ladder connections whose ladder stands on deck k (go up) / whose opening is in deck k (go down) */
 	const upFrom = (k: number) => game.shafts.filter((s) => s.from === k);
 	const downFrom = (k: number) => game.shafts.filter((s) => s.to === k);
@@ -74,7 +78,7 @@
 		const c = nearestOf(dir > 0 ? upFrom(k) : downFrom(k));
 		if (!c) {
 			const other = nearestOf(dir > 0 ? downFrom(k) : upFrom(k));
-			if (other) return game.flash(dir > 0 ? `This hatch only goes down – Q ▼ to Deck ${other.from + 1}` : `This ladder only goes up – E ▲ to Deck ${other.to + 1}`);
+			if (other) return game.flash(dir > 0 ? `This hatch only goes down – look down + E (or Q/PgDn) to Deck ${other.from + 1}` : `This ladder only goes up – E (or Space/PgUp) to Deck ${other.to + 1}`);
 			return hintNearest(dir);
 		}
 		const to = dir > 0 ? c.to : c.from;
@@ -102,11 +106,70 @@
 	}
 	game.travel = travel;
 
+	const SEAT_POSES = new Set(['sit', 'sitwork', 'eat']);
+	/** context actions for E (best first): ladders by look direction, then equipment in front */
+	function actions(): CtxAction[] {
+		if (climb) return [];
+		type Sc = CtxAction & { score: number };
+		const out: Sc[] = [];
+		if (seated) {
+			const l = seated.label;
+			out.push({ label: `Stand up (${l})`, kind: 'stop', score: -100, run: () => (seated = null) });
+		}
+		const k = game.walkDeck;
+		cam.getWorldDirection(fwd);
+		const lookUp = fwd.y > -0.2;
+		const u = nearestOf(upFrom(k)),
+			dn = nearestOf(downFrom(k));
+		const fl = Math.hypot(fwd.x, fwd.z) || 1;
+		const fx = fwd.x / fl,
+			fz = fwd.z / fl;
+		const cross = (o: { x: number; z: number }) => {
+			const dx = o.x - cam.position.x,
+				dz = o.z - cam.position.z,
+				l = Math.hypot(dx, dz);
+			return l < 0.25 || (dx * fx + dz * fz) / l > Math.cos(0.35) ? 0.8 : 0;
+		};
+		if (u) out.push({ label: `Climb up to Deck ${u.to + 1}`, kind: 'climb', score: distTo(u) - 0.4 - cross(u) - (lookUp ? 0.6 : 0), run: () => ((seated = null), travel(1)) });
+		if (dn) out.push({ label: `Climb down to Deck ${dn.from + 1}`, kind: 'climb', score: distTo(dn) - 0.4 - cross(dn) - (!lookUp ? 0.6 : 0), run: () => ((seated = null), travel(-1)) });
+		const mods = game.decks[k].modules;
+		for (const m of mods) {
+			const def = CATALOG_BY_ID[m.type];
+			if (!def || m.type === 'hatch') continue;
+			const dx = m.x - cam.position.x,
+				dz = m.z - cam.position.z;
+			const dc = Math.hypot(dx, dz);
+			const d = Math.max(0, dc - Math.min(def.w ?? 0.5, def.d ?? 0.5) / 2 - (def.r ?? 0));
+			if (d > 1.2) continue;
+			const ang = dc < 0.2 ? 0 : Math.acos(Math.max(-1, Math.min(1, (dx * fx + dz * fz) / dc)));
+			if (ang > 1.75 && d > 0.4) continue;
+			const score = d + ang * 0.5 - (ang < 0.35 ? 0.8 : 0);
+			const same = mods.filter((o) => o.type === m.type);
+			const tag = same.length > 1 ? ` ${same.indexOf(m) + 1}/${same.length}` : '';
+			const name = def.name.replace(/ \(seat\)$/, '');
+			const canSit = m.type === 'chair' || !!def.seats || (def.affords ?? []).some((af) => SEAT_POSES.has(af.pose) && af.id !== 'toilet');
+			if (canSit && !seated)
+				out.push({ label: `Sit (${name}${tag})`, kind: 'sit', score, run: () => ((seated = { label: `${name}${tag}` }), game.flash(`Sitting – ${name}${tag} · move or E to stand up`)) });
+			out.push({ label: `Inspect ${name}${tag}`, kind: 'inspect', score: score + (canSit ? 0.05 : 0), run: () => inspect(k, m.uid, `${name}${tag}`) });
+		}
+		out.sort((a, b) => a.score - b.score);
+		return out.slice(0, 9).map(({ score: _s, ...o }) => o);
+	}
+	function inspect(k: number, uid: number, label: string) {
+		const m = game.decks[k].modules.find((x) => x.uid === uid);
+		const def = m && CATALOG_BY_ID[m.type];
+		if (!def) return;
+		const it = crew.enabled ? crew.items.find((i) => i.key === `${k}:${uid}`) : undefined;
+		const users = it ? crew.agents.filter((a) => a.item === it && a.state === 'use').length : 0;
+		const bits = [`${def.mass} kg`, def.power ? `${def.power} W` : 'unpowered', ...(def.affords?.length ? [def.affords.map((a) => a.label).join(' / ')] : []), ...(it ? [`${it.broken ? 'BROKEN' : `condition ${Math.round(it.cond)}%`}`, `${users}/${it.slots.length} in use`] : [])];
+		game.flash(`${label}: ${bits.join(' · ')}`);
+	}
+
 	const keys = new Set<string>();
 	const onKeyDown = (e: KeyboardEvent) => {
 		if (isTyping(e)) return;
 		keys.add(e.code);
-		if (e.code === 'KeyE' || e.code === 'Space' || e.code === 'PageUp') {
+		if (e.code === 'Space' || e.code === 'PageUp') {
 			e.preventDefault();
 			travel(1);
 		} else if (e.code === 'KeyQ' || e.code === 'KeyC' || e.code === 'PageDown') {
@@ -156,8 +219,18 @@
 		(window as unknown as { __walk: unknown }).__walk = {
 			pos: () => [cam.position.x, cam.position.y, cam.position.z],
 			face: (x: number, z: number) => cam.rotation.set(0, Math.atan2(-(x - cam.position.x), -(z - cam.position.z)), 0),
-			climbing: () => !!climb
+			climbing: () => !!climb,
+			/** look pitch (rad, + up), keeps the heading */
+			look: (pitch: number) => {
+				euler.setFromQuaternion(cam.quaternion);
+				euler.x = pitch;
+				cam.quaternion.setFromEuler(euler);
+			},
+			seated: () => !!seated,
+			place: (x: number, z: number) => cam.position.set(x, eye(game.walkDeck), z),
+			actions: () => actions().map((c) => c.label)
 		};
+		game.ctxProvider = actions;
 		window.addEventListener('keydown', onKeyDown);
 		window.addEventListener('keyup', onKeyUp);
 		dom.addEventListener('pointerdown', onDown);
@@ -169,6 +242,7 @@
 			controls?.dispose();
 			game.pointerLocked = false;
 			game.travel = undefined;
+			if (game.ctxProvider === actions) game.ctxProvider = null;
 			game.hatchHere = { up: false, down: false, upTo: -1, downTo: -1 };
 			window.removeEventListener('keydown', onKeyDown);
 			window.removeEventListener('keyup', onKeyUp);
@@ -213,6 +287,7 @@
 		if (keys.has('KeyD') || keys.has('ArrowRight')) s += 1;
 		if (keys.has('KeyA') || keys.has('ArrowLeft')) s -= 1;
 		const len = Math.hypot(f, s);
+		if (len > 0.01 && seated) seated = null; // moving stands you up
 		if (len > 0.01) {
 			if (len > 1) {
 				f /= len;

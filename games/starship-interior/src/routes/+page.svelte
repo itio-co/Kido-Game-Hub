@@ -1,4 +1,7 @@
 <script lang="ts">
+	import InteractHud from '$lib/components/hud/InteractHud.svelte';
+	import InteractButton from '$lib/components/hud/InteractButton.svelte';
+	import { interact } from '$lib/game/interact.svelte';
 	import { Canvas } from '@threlte/core';
 	import CameraWidget from '$lib/components/CameraWidget.svelte';
 	import { rig } from '$lib/three/cameraRig.svelte';
@@ -118,8 +121,8 @@
 		window.addEventListener('click', blur, true);
 		return () => window.removeEventListener('click', blur, true);
 	});
-	const climbUp = $derived(!!crew.ui.prompt?.includes('E ▲'));
-	const climbDown = $derived(!!crew.ui.prompt?.includes('Q ▼'));
+	const climbUp = $derived(interact.list.some((c) => c.label.startsWith('Climb up')));
+	const climbDown = $derived(interact.list.some((c) => c.label.startsWith('Climb down')));
 	function toggleMode() {
 		game.pending = null;
 		game.hover = null;
@@ -201,13 +204,13 @@
 			{/if}
 		{/if}
 		{#if possessed}
-			{#if crew.ui.prompt}<div class="prompt" class:mobile>{crew.ui.prompt}</div>{/if}
+			<InteractHud {mobile} />
 			{#if game.microG}
 				<div class="possess-actions" class:mobile>
 					<button class="fab" onclick={() => crew.climb(true)} aria-label="Deck up" title="Auto-fly up (PgUp)">▲ <small>Deck</small></button>
 					<button class="fab" onclick={() => crew.climb(false)} aria-label="Deck down" title="Auto-fly down (PgDn)">▼ <small>Deck</small></button>
-					<button class="fab ok" onclick={() => crew.interact()} aria-label="Use">{game.isTouch ? 'Use' : 'X Use'}</button>
-					<button class="fab" onclick={() => crew.reorient()} aria-label="Reorient to deck up">⊙ <small>Deck up</small></button>
+					<InteractButton {mobile} />
+					<button class="fab" onclick={() => crew.reorient()} aria-label="Reorient to deck up" title="Reorient to deck-up (T)">⊙ <small>{game.isTouch ? 'Deck up' : 'T Deck up'}</small></button>
 					<button class="fab" onclick={() => (crew.firstPerson = !crew.firstPerson)} aria-label="Camera view">{crew.firstPerson ? '3rd' : '1st'}</button>
 					<button class="fab del" onclick={() => crew.possess(null)} aria-label="Release">⏏ Release</button>
 				</div>
@@ -228,9 +231,9 @@
 				{/if}
 			{:else}
 				<div class="possess-actions" class:mobile>
-					<button class="fab" class:on={climbUp} onclick={() => crew.climb(true)} aria-label="Deck up" title="Climb up (E / Space / PgUp)">▲ <small>{game.isTouch ? 'Deck' : 'E Deck'}</small></button>
-					<button class="fab" class:on={climbDown} onclick={() => crew.climb(false)} aria-label="Deck down" title="Climb down (Q / C / PgDn)">▼ <small>{game.isTouch ? 'Deck' : 'Q Deck'}</small></button>
-					<button class="fab ok" onclick={() => crew.interact()} aria-label="Use">{game.isTouch ? 'Use' : 'X Use'}</button>
+					<button class="fab" class:on={climbUp} onclick={() => crew.climb(true)} aria-label="Deck up" title="Climb up (E looking up / Space / PgUp)">▲ <small>{game.isTouch ? 'Deck' : 'Space Deck'}</small></button>
+					<button class="fab" class:on={climbDown} onclick={() => crew.climb(false)} aria-label="Deck down" title="Climb down (E looking down / Q / C / PgDn)">▼ <small>{game.isTouch ? 'Deck' : 'Q Deck'}</small></button>
+					<InteractButton {mobile} />
 					<button class="fab" onclick={() => (crew.firstPerson = !crew.firstPerson)} aria-label="Camera view">{crew.firstPerson ? '3rd' : '1st'}</button>
 					<button class="fab del" onclick={() => crew.possess(null)} aria-label="Release">⏏ Release</button>
 				</div>
@@ -239,9 +242,9 @@
 				<Joystick />
 				<div class="tip walk">{game.microG ? 'Joystick: translate · drag: look' : 'Joystick: move · drag: look'}</div>
 			{:else if game.microG}
-				<div class="center-hint low">Micro-g · WASD translate · Space/R up · Ctrl/F down · Q/E roll · drag look · Shift push harder · G grab · X use · Z deck-up · PgUp/PgDn fly to next deck · V 1st/3rd · Esc release</div>
+				<div class="center-hint low">Micro-g · E interact (Shift+E more) · WASD translate · Space/R up · Ctrl/F down · Z/C roll · drag look · Shift push harder · G grab · X stop activity · T deck-up · PgUp/PgDn fly to next deck · V 1st/3rd · Esc release</div>
 			{:else}
-				<div class="center-hint low">WASD move · Shift run · drag look · at a ladder: E/Space ▲ climb up, Q/C ▼ down (PgUp/PgDn) · X use · V 1st/3rd · Esc release</div>
+				<div class="center-hint low">E interact (use · sit · climb toward where you look · repair; Shift+E / hold E more) · WASD move · Shift run · drag look · Space/PgUp ▲ · Q/C/PgDn ▼ · X stop activity · V 1st/3rd · Esc release</div>
 			{/if}
 		{:else if game.mode === 'build'}
 			{#if !(mobile && (crewSheet || (crew.enabled && crew.selected !== null)))}
@@ -287,16 +290,13 @@
 				<Joystick />
 				<div class="tip walk">Joystick: move · drag: look</div>
 			{:else if !game.pointerLocked}
-				<div class="center-hint">Click to look · WASD move · Shift run · at a ladder: E/Space ▲ up, Q/C ▼ down (PgUp/PgDn) · F build</div>
+				<div class="center-hint">Click to look · WASD move · Shift run · E interact (climb toward where you look, sit, inspect; Shift+E more) · Space/PgUp ▲ · Q/C/PgDn ▼ · F build</div>
 			{/if}
-			{#if game.hatchHere.up || game.hatchHere.down}
-				<div class="prompt" class:mobile>
-					{#if game.hatchHere.up}E ▲ climb to Deck {game.hatchHere.upTo + 1}{/if}{#if game.hatchHere.up && game.hatchHere.down} · {/if}{#if game.hatchHere.down}Q ▼ climb down to Deck {game.hatchHere.downTo + 1}{/if}
-				</div>
-			{/if}
+			<InteractHud {mobile} />
 			<div class="travel">
-				<button class="fab" class:on={game.hatchHere.up} onclick={() => deckMove(true)} aria-label="Deck up" title="Climb up (E / Space / PgUp)">▲ <small>{game.isTouch ? 'Up' : 'E Up'}</small></button>
-				<button class="fab" class:on={game.hatchHere.down} onclick={() => deckMove(false)} aria-label="Deck down" title="Climb down (Q / C / PgDn)">▼ <small>{game.isTouch ? 'Down' : 'Q Down'}</small></button>
+				<InteractButton {mobile} />
+				<button class="fab" class:on={game.hatchHere.up} onclick={() => deckMove(true)} aria-label="Deck up" title="Climb up (E looking up / Space / PgUp)">▲ <small>{game.isTouch ? 'Up' : 'Space Up'}</small></button>
+				<button class="fab" class:on={game.hatchHere.down} onclick={() => deckMove(false)} aria-label="Deck down" title="Climb down (E looking down / Q / C / PgDn)">▼ <small>{game.isTouch ? 'Down' : 'Q Down'}</small></button>
 			</div>
 		{/if}
 

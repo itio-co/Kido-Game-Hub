@@ -201,7 +201,7 @@ const ALL_FULL = (c, id) => { for (const n of ['energy', 'hunger', 'hygiene', 'b
 	}, pid);
 	await wait(1500);
 	const prompt = await G(page, () => window.__crew.ui.prompt);
-	check('possession interact prompt', !!prompt && /^E(\/X)?: /.test(prompt), { prompt });
+	check('possession interact prompt', !!prompt && /^E\s+\S/.test(prompt), { prompt });
 	await page.screenshot({ path: 'screenshot-crew-possess.png' });
 	await page.keyboard.press('KeyE');
 	await wait(800);
