@@ -83,6 +83,8 @@ export interface ModuleDef {
 	mount?: Mount;
 	/** micro-g restraint (handrail / foot restraint): enables 'restraint' affordances within 1.5 m */
 	restraint?: boolean;
+	/** electrical load profile overrides (standby / active / peak / duty / priority) */
+	powerSpec?: Partial<import('$lib/sim/power').PowerSpec>;
 	/** keep-out zone in front (door swing / fold-down): depth m, width m (default = item width) */
 	keepout?: { d: number; w?: number; label?: string };
 	/** group equipment (tables): capacity = seat objects (chairs; foot restraints in micro-g) placed at its edge */
