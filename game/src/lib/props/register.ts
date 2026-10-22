@@ -36,6 +36,21 @@ const kindHandlers: Record<EntityKind, KindHandler> = {
   lamp: { role: 'scene', build: buildLamp },
   hotspot: { role: 'ui' },
   'decor-slot': { role: 'ui' },
+  'screen-registry': { role: 'data' },
+  screen: { role: 'data' },
+  'story-flow': { role: 'data' },
+  scene: { role: 'data' },
+  event: { role: 'data' },
+  'cutscene-page': { role: 'data' },
+  'speech-line': { role: 'data' },
+  evidence: { role: 'data' },
+  'time-slot': { role: 'data' },
+  dialogue: { role: 'data' },
+  choice: { role: 'data' },
+  'practice-game': { role: 'data' },
+  question: { role: 'data' },
+  goal: { role: 'data' },
+  minigame: { role: 'data' },
 };
 
 for (const kind of ENTITY_KINDS) registerKind(kind, kindHandlers[kind]);

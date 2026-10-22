@@ -1,4 +1,4 @@
-import type { SaveV1, TextSize } from './types';
+import type { FlowProgress, SaveV1, TextSize } from './types';
 
 export const SAVE_KEY = 'nesg.player.v1';
 
@@ -22,6 +22,20 @@ export function defaultSave(): SaveV1 {
     caseState: {
       facts: {},
     },
+    flow: defaultFlow(),
+  };
+}
+
+export function defaultFlow(): FlowProgress {
+  return {
+    evidence: [],
+    solved: false,
+    deduced: false,
+    reward: false,
+    difficulty: 'ปานกลาง',
+    played: [],
+    seen: [],
+    levels: { cross: [], jig: [], slide: [] },
   };
 }
 
@@ -39,6 +53,9 @@ export function readSave(): SaveV1 {
     const player = isRecord(data.player) ? data.player : {};
     const knowledge = isRecord(data.knowledge) ? data.knowledge : {};
     const caseState = isRecord(data.caseState) ? data.caseState : {};
+    const flow = isRecord(data.flow) ? data.flow : {};
+    const levels = isRecord(flow.levels) ? flow.levels : {};
+    const stars = (value: unknown): number[] => (Array.isArray(value) ? value.filter((item) => typeof item === 'number') : []);
     const textSize = SIZES.includes(player.textSize as TextSize) ? (player.textSize as TextSize) : 'md';
     const decor = isRecord(player.decor) ? (player.decor as Record<string, string | null>) : {};
     return {
@@ -59,6 +76,20 @@ export function readSave(): SaveV1 {
       },
       caseState: {
         facts: isRecord(caseState.facts) ? (caseState.facts as Record<string, boolean>) : base.caseState.facts,
+      },
+      flow: {
+        evidence: Array.isArray(flow.evidence) ? flow.evidence.filter((id) => typeof id === 'string') : [],
+        solved: flow.solved === true,
+        deduced: flow.deduced === true,
+        reward: flow.reward === true,
+        difficulty: typeof flow.difficulty === 'string' ? flow.difficulty : 'ปานกลาง',
+        played: Array.isArray(flow.played) ? flow.played.filter((id) => typeof id === 'string') : [],
+        seen: Array.isArray(flow.seen) ? flow.seen.filter((id) => typeof id === 'string') : [],
+        levels: {
+          cross: stars(levels.cross),
+          jig: stars(levels.jig),
+          slide: stars(levels.slide),
+        },
       },
     };
   } catch {

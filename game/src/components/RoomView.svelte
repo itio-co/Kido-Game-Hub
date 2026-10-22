@@ -74,7 +74,7 @@
           >
             <span class="mark">{#if hotspot.kind === 'decor-slot' && !filled}<span>+</span>{/if}</span>
             {#if selectedId === spot.id}
-              <span class="pill">{hotspot.title}</span>
+              <span class="pill">{filled ? decor[hotspot.id] : hotspot.title}</span>
             {/if}
           </button>
         {/if}

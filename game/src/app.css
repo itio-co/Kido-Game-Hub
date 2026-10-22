@@ -217,27 +217,6 @@ button { cursor: pointer; -webkit-tap-highlight-color: transparent; }
   font-weight: 700;
 }
 
-.events {
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  padding: 72px 16px 96px;
-  background: linear-gradient(170deg, #2a2440, #3a2f2a);
-  overflow: auto;
-}
-.events h1 { margin: 0 0 8px; text-align: center; font-size: calc(var(--fs) + 4px); }
-.events .lead { margin: 0 0 16px; text-align: center; opacity: 0.85; line-height: 1.45; }
-.stub-card {
-  background: #1a1a22;
-  color: #9aa4ad;
-  border-radius: 16px;
-  min-height: 140px;
-  padding: 28px 16px;
-  text-align: center;
-}
-.stub-card h2 { margin: 0 0 6px; font-size: var(--fs); }
-.stub-card p { margin: 0; }
-
 .scrim {
   position: absolute;
   inset: 0;
@@ -280,6 +259,7 @@ dialog.sheet::backdrop { display: none; }
   position: sticky;
   bottom: 0;
 }
+.sheet .action { margin-bottom: 8px; background: #ffcf4a; color: #3a2a00; }
 
 .tutor {
   position: absolute;

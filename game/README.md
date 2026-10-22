@@ -40,7 +40,7 @@ npm run check
 npm run validate
 ```
 
-`npm run validate` reads `public/data/player-room.json` and fails if any id or slug is duplicated, an id is not a UUID v4 stored in the file, a slug is not unique kebab-case, a title is missing, a kind is unknown, or a reference (`targetId`, `stackOn`, `hintTarget`, calendar `theme`) points at a missing id. The game runs the same check when the room loads.
+`npm run validate` reads `public/data/player-room.json`, `public/data/screens.json`, and `public/data/case-flow.json`. It fails if any id or slug is duplicated, an id is not a UUID v4 stored in the file, a slug is not unique kebab-case, a title is missing, a kind is unknown, or a reference (`targetId`, `stackOn`, `hintTarget`, calendar `theme`) points at a missing id. The game runs the same check when the room and the story flow load.
 
 ## Scene objects
 
@@ -57,15 +57,31 @@ Links between objects use `id`. `SceneCatalog.getById` and `getBySlug` look an o
 
 The wall shelf is a Three.js group: `bookshelf` → `shelf-row` → `book`. Each book is its own mesh. Rows and books are data, so another room can reuse the same builder.
 
-## This screen
+## This build
 
-- The game opens in the player's room.
+- The game opens in the player's room. That room is a real 3D scene. It has no DEMO ribbon.
 - Dots are static. The first tap shows a Thai name. The second tap acts.
-- Door → placeholder screen **เลือกเหตุการณ์**
-- Nightstand (practice corner), calendar, and decor slots → stub panels. The case-book button opens the case stub. There is no computer desk or cork board in this room; those are not in the reference picture.
-- Hint, text size, and the sound switch are on the cyan HUD line. Sound is remembered but not played yet.
+- Door → event select, a 3-page cutscene, difficulty, the house map, then the living room, study, and kitchen.
+- The living room clock lists hour slots. The living-room calendar lists days and can travel to yesterday or this afternoon. Leaving the living room returns the slot to “now”.
+- The case button opens the evidence notebook. With E01, E02, and E04 it opens the case board. The star-box lock opens the sliding-block puzzle only after the case is deduced. Winning that puzzle opens the album. The postcard sends the player home with the portrait reward, which can be placed on an empty decor slot in the real room.
+- The nightstand opens the practice grid and its level maps (crossword, jigsaw, sliding block).
+- Text size uses the phone setting (`sm` / `md` / `lg`). Sound is remembered but not played yet.
 - A 3-step lesson shows on the first launch only.
 
-Room positions, hotspots, calendar entries, and lesson text live in `public/data/player-room.json`, in the same spirit as a Story Pack: content in data, not hard-coded coordinates.
+Every screen other than the player room is a 2D image scene ported from `prototypes/poc-clickthrough`, with the same pictures and tap spots. `public/data/screens.json` is the registry. Each entry has `screen` and `status`: `demo` or `real`. A demo screen shows a static diagonal **DEMO** ribbon in the top corner. The ribbon does not receive taps. Set `status` to `real` and the ribbon for that screen disappears. `return-home` is `real` because the reward is placed in the 3D room. `player-room` is `real`.
+
+| Screen | Status |
+|---|---|
+| player-room | real |
+| return-home | real |
+| event-select, cutscene, difficulty, house-map | demo |
+| living-room, study, kitchen, kitchen-close, table, tray, grandma, uncle, star-box | demo |
+| crossword, jigsaw, slide | demo |
+| notebook, case-board, album | demo |
+| practice, level-map | demo |
+
+Clock, calendar, and day travel are overlays on the living room, so they use that screen's ribbon.
+
+Story content (events, spots, evidence, dialogues, practice cards) lives in `public/data/case-flow.json` with the same `id` / `kind` / `title` / `slug` model. Room positions stay in `public/data/player-room.json`. `scripts/author-flow.mjs` is the authoring source for the flow files. Do not regenerate it casually: ids are assigned in call order.
 
 The UI fonts are Noto Sans and Noto Sans Thai, licensed under the SIL Open Font License 1.1 (`src/fonts/OFL.txt`).

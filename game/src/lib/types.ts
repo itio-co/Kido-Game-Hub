@@ -243,9 +243,21 @@ export type CaseState = {
   facts: Record<string, boolean>;
 };
 
+export type FlowProgress = {
+  evidence: string[];
+  solved: boolean;
+  deduced: boolean;
+  reward: boolean;
+  difficulty: string;
+  played: string[];
+  seen: string[];
+  levels: { cross: number[]; jig: number[]; slide: number[] };
+};
+
 export type SaveV1 = {
   version: 1;
   player: PlayerProfile;
   knowledge: PlayerKnowledge;
   caseState: CaseState;
+  flow: FlowProgress;
 };

@@ -20,6 +20,21 @@ export const ENTITY_KINDS = [
   'lamp',
   'hotspot',
   'decor-slot',
+  'screen-registry',
+  'screen',
+  'story-flow',
+  'scene',
+  'event',
+  'cutscene-page',
+  'speech-line',
+  'evidence',
+  'time-slot',
+  'dialogue',
+  'choice',
+  'practice-game',
+  'question',
+  'goal',
+  'minigame',
 ] as const;
 
 export type EntityKind = (typeof ENTITY_KINDS)[number];
@@ -202,6 +217,36 @@ export function validateRoom(data: unknown): SceneCatalog {
     ? found.find((entry) => entry.id === (data.hud as { hintTarget: string }).hintTarget)
     : undefined;
   if (hint && hint.kind !== 'hotspot') problems.push('hintTarget ต้องเป็นชนิด hotspot');
+
+  if (problems.length) throw new RoomDataError(problems);
+  return new SceneCatalog(found);
+}
+
+/** Identity check for a data file that is not the 3D room. */
+export function validateEntities(data: unknown, rootKind: string): SceneCatalog {
+  const problems: string[] = [];
+  if (!isRecord(data)) throw new RoomDataError(['ไฟล์ข้อมูลไม่ถูกต้อง']);
+  if (data.kind !== rootKind) problems.push(`รากของไฟล์ต้องเป็น kind ${rootKind}`);
+
+  const found: Found[] = [];
+  visit(data, rootKind, found, problems);
+
+  const seenId = new Map<string, string>();
+  const seenSlug = new Map<string, string>();
+  for (const entry of found) {
+    const prevId = seenId.get(entry.id);
+    if (prevId) problems.push(`id ซ้ำ ${entry.id} (${prevId} และ ${entry.slug})`);
+    else seenId.set(entry.id, entry.slug);
+    const prevSlug = seenSlug.get(entry.slug);
+    if (prevSlug) problems.push(`slug ซ้ำ ${entry.slug}`);
+    else seenSlug.set(entry.slug, entry.id);
+  }
+
+  for (const entry of found) {
+    if (typeof entry.node.targetId === 'string' && !seenId.has(entry.node.targetId)) {
+      problems.push(`${entry.slug}: targetId ชี้ id ที่ไม่มีอยู่ (${entry.node.targetId})`);
+    }
+  }
 
   if (problems.length) throw new RoomDataError(problems);
   return new SceneCatalog(found);
