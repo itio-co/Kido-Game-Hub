@@ -1,4 +1,4 @@
-const C='nes-poc-v0.4.5';
+const C='nes-poc-v0.4.6';
 const F=["./","./index.html","./manifest.webmanifest","./icon-192.png","./icon-512.png","./img/album-found.jpg","./img/cutscene-01-p1.jpg","./img/cutscene-01-p2.jpg","./img/cutscene-01-p3.jpg","./img/house-map.jpg","./img/kitchen-close.jpg","./img/kitchen-wide.jpg","./img/living-grandma.jpg","./img/living-shelf-tray.jpg","./img/living-table.jpg","./img/living-wide-afternoon.jpg","./img/living-wide-yesterday.jpg","./img/living-wide.jpg","./img/player-room-wide.jpg","./img/rin.jpg","./img/study-box.jpg","./img/study-wide.jpg","./img/uncle-mek.jpg"];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(C).then(c=>c.addAll(F)));self.skipWaiting()});
 self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(k=>Promise.all(k.filter(x=>x!==C).map(x=>caches.delete(x)))));self.clients.claim()});

@@ -23,6 +23,8 @@ svg.hl{position:absolute;inset:0;width:100%;height:100%;z-index:2;pointer-events
 .nextstep.big{font-size:clamp(19px,3.4vh,24px);margin:10px 0;padding:10px 12px;text-align:center}
 #hud{position:absolute;left:0;right:0;top:0;padding:8px 10px;background:rgba(6,20,32,.94);border-bottom:1px solid #39e0ff;font-size:clamp(15px,2.8vh,19px);pointer-events:none;z-index:5}
 #back{position:absolute;left:12px;bottom:12px;width:64px;height:64px;border-radius:50%;border:3px solid #39e0ff;background:rgba(6,30,48,.9);color:#fff;font-size:30px;cursor:pointer;z-index:6}
+#evDot{display:none;position:absolute;top:-7px;right:-7px;width:18px;height:18px;border-radius:50%;background:#ff2d2d;border:2px solid #fff;animation:nsfade .3s ease-out}
+#evDot.on{display:block}
 #caseBtn{position:absolute;right:12px;bottom:12px;padding:12px 14px;border-radius:12px;border:2px solid #39e0ff;background:rgba(6,30,48,.9);color:#fff;font-size:18px;cursor:pointer;z-index:6}
 #dlg{position:absolute;left:4%;right:4%;bottom:96px;background:rgba(6,24,40,.95);border:2px solid #39e0ff;border-radius:12px;padding:12px 14px;font-size:clamp(17px,3vh,21px);line-height:1.5;display:none;z-index:7}
 #dlg b{color:#7fe9ff}#dlg .btns{margin-top:8px;display:flex;flex-wrap:wrap;gap:6px}
@@ -105,7 +107,7 @@ button.opt{background:#0d4a66;border:1px solid #39e0ff;color:#fff;border-radius:
  <div id="hud"></div>
  <div id="dlg"></div><div id="cal"></div><div id="board"></div><div id="toast"></div>
  <button id="back" title="ย้อนกลับ" aria-label="ย้อนกลับ">←</button>
- <button id="caseBtn">📋 สมุดคดี</button>
+ <button id="caseBtn">📋 สมุดคดี<span id="evDot"></span></button>
 </div>
 <script>
 const S={screen:'room',hist:[],ev:{},solved:false,reward:false,slots:{},played:{},practice:false,lv:{cross:[],jig:[],slide:[]},lvGame:'cross',lvN:1};
@@ -117,8 +119,8 @@ const EV={E01:'ข้อความของน้าริน: "ขอย้�
 const LINES={open:'หลานมาแล้วเหรอจ๊ะ ยายหาอัลบั้มรูปครอบครัวไม่เจอ ในนั้นมีรูปตาตอนหนุ่ม ๆ ด้วยนะ',ask:'เมื่อเช้ายายยังเห็นวางอยู่บนโต๊ะกลางเลย แต่บ่ายนี้น้ารินเข้ามาเก็บกวาดนะ',stuck:'รูปเก่า ๆ บ้านนี้เขาเก็บไว้ที่เดียวกันมาตลอดแหละ ลองต่อแผนที่ที่หล่นกระจายอยู่ดูสิ',win:'นี่ไงรูปตา ขอบใจนะหลาน มานั่งดูด้วยกันมา ยายจะเล่าให้ฟัง'};
 const $=id=>document.getElementById(id);
 function toast(t){const e=$('toast');e.textContent=t;e.style.display='block';clearTimeout(e._t);e._t=setTimeout(()=>e.style.display='none',1600)}
-function readyDed(){return !S.deduced&&['E01','E02','E03','E04'].every(k=>S.ev[k])}
-function addEv(k){if(!S.ev[k]){S.ev[k]=1;const t=TIMESLOTS.find(x=>x.unlockBy===k);toast('ได้หลักฐาน '+k+(t?' · ปลดล็อกเวลา: '+t.label:''))}}
+function readyDed(){return !S.deduced&&!!(S.ev.E01&&S.ev.E02&&S.ev.E04)}
+function addEv(k){if(!S.ev[k]){S.ev[k]=1;$('evDot').classList.add('on');const t=TIMESLOTS.find(x=>x.unlockBy===k);toast('ได้หลักฐาน '+k+(t?' · ปลดล็อกเวลา: '+t.label:''))}}
 function hs(pts,label,fn,done){return {pts,label,fn,done}}
 function say(who,text,opts){const d=$('dlg');d.innerHTML='<b>'+who+':</b> “'+text+'”<div class="btns"></div>';const b=d.querySelector('.btns');(opts||[['ปิด',()=>d.style.display='none']]).forEach(([t,f])=>{const x=document.createElement('button');x.className='opt';x.textContent=t;x.onclick=f;b.appendChild(x)});d.style.display='block'}
 const SLOTS=[['ผนัง',60,37,22,7],['ชั้นของที่ระลึก',58,25,25,9],['ขอบหน้าต่าง',2,41,18,7],['โต๊ะ',54,45,32,6],['เตียง',4,52,44,14],['พรมซ้าย',10,72,26,14],['พรมกลาง',38,74,26,14],['พรมขวา',66,76,28,14]];
@@ -373,9 +375,9 @@ function draw(){const sc=SC[S.screen],el=$('scene');let list;
 function go(n,replace){$('dlg').style.display='none';$('cal').style.display='none';$('board').style.display='none';if(!replace&&n!==S.screen)S.hist.push(S.screen);if(['cross','jig','slide'].includes(n)&&!S.practice&&!S.played[n]){S.played[n]=1;S.lv[n][0]=2}
  if(n!=='living')S.slot='now';const el=$('scene');el.classList.add('fade');setTimeout(()=>{S.screen=n;draw();el.classList.remove('fade');SC[n].enter&&SC[n].enter()},300)}
 $('back').onclick=()=>{if($('cal').style.display==='block'){$('cal').style.display='none';return}if($('dlg').style.display==='block'||$('board').style.display==='block'){$('dlg').style.display='none';$('board').style.display='none';return}const p=S.hist.pop();if(p==='room'||p==='lvmap')endPractice();if(p){const el=$('scene');el.classList.add('fade');setTimeout(()=>{S.screen=p;draw();el.classList.remove('fade')},300)}};
-$('caseBtn').onclick=()=>{const b=$('board');if(b.style.display==='block'){b.style.display='none';return}
+$('caseBtn').onclick=()=>{const b=$('board');$('evDot').classList.remove('on');if(b.style.display==='block'){b.style.display='none';return}
  b.innerHTML='<h3 style="margin-top:0">📋 กระดานคดี: อัลบั้มครอบครัวที่หายไป</h3><ul>'+Object.keys(EV).map(k=>S.ev[k]?`<li>✅ <b>${k}</b> ${EV[k]}</li>`:(k==='E05'&&!S.deduced?`<li style="opacity:.7">🔒 ${k} — ได้หลังสรุปคดี</li>`:`<li style="opacity:.45">⬜ ${k} — ยังไม่พบ</li>`)).join('')+'</ul>'+(S.deduced?'<p>✅ สรุปคดีแล้ว — ไปเปิดกล่องในห้องทำงาน</p>':S.ev.E01&&S.ev.E02&&S.ev.E04?(readyDed()?'<div class="nextstep big">✅ หลักฐานพอแล้ว! กดสรุปคดีได้เลย</div>':'')+'<button class="mgbtn" id="goDed">⚖ สรุปคดี (3 คำถาม)</button>':'<p style="opacity:.7">เก็บหลักฐาน E01, E02, E04 ให้ครบเพื่อสรุปคดี</p>');b.style.display='block';const g=$('goDed');if(g)g.onclick=()=>go('deduce')};
 draw();setTimeout(()=>tutorial(0),400);
-document.body.insertAdjacentHTML('beforeend','<div id="ver" style="position:fixed;top:4px;right:6px;z-index:9999;font:bold 13px sans-serif;color:#fff;background:rgba(0,0,0,.55);padding:2px 7px;border-radius:8px;pointer-events:none">v0.4.5</div>');
+document.body.insertAdjacentHTML('beforeend','<div id="ver" style="position:fixed;top:4px;right:6px;z-index:9999;font:bold 13px sans-serif;color:#fff;background:rgba(0,0,0,.55);padding:2px 7px;border-radius:8px;pointer-events:none">v0.4.6</div>');
 if("serviceWorker" in navigator&&location.protocol.startsWith("http"))navigator.serviceWorker.register("sw.js");
 </script></body></html>
