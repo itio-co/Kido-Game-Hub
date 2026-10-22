@@ -9,7 +9,7 @@
   import Sheet from './components/Sheet.svelte';
   import { loadPlayerRoom } from './lib/loadRoom';
   import { readSave, writeSave } from './lib/save';
-  import type { PlayerRoom, SaveV1, TextSize } from './lib/types';
+  import type { CalendarEntity, PlayerRoom, SaveV1, TextSize } from './lib/types';
 
   let room = $state<PlayerRoom | null>(null);
   let save = $state<SaveV1>(readSave());
@@ -28,8 +28,19 @@
   let hintTimer = 0;
   let hintTier = 0;
 
-  const themeId = $derived(save.player.calendarTheme || room?.calendar.theme || 'kid-room');
-  const decorHotspot = $derived(room?.hotspots.find((hotspot) => hotspot.slotId === decorSlotId) ?? null);
+  const calendar = $derived.by((): CalendarEntity | null => {
+    const found = room?.objects.find((obj) => obj.kind === 'calendar');
+    return found && found.kind === 'calendar' ? found : null;
+  });
+  const themeId = $derived.by(() => {
+    if (!calendar) return '';
+    const saved = save.player.calendarTheme;
+    if (saved && calendar.themes.some((theme) => theme.id === saved)) return saved;
+    return calendar.theme;
+  });
+  const decorHotspot = $derived(
+    room?.hotspots.find((hotspot) => hotspot.kind === 'decor-slot' && hotspot.id === decorSlotId) ?? null,
+  );
 
   function commit(): void {
     writeSave($state.snapshot(save));
@@ -67,14 +78,13 @@
       const hotspot = room.hotspots.find((item) => item.id === id);
       selectedId = null;
       if (!hotspot) return;
-      if (hotspot.action === 'event-select') void go('events');
+      if (hotspot.kind === 'decor-slot') {
+        decorSlotId = hotspot.id;
+        overlay = 'decor';
+      } else if (hotspot.action === 'event-select') void go('events');
       else if (hotspot.action === 'practice') overlay = 'practice';
       else if (hotspot.action === 'calendar') overlay = 'calendar';
       else if (hotspot.action === 'case-board') overlay = 'case';
-      else if (hotspot.action === 'decor') {
-        decorSlotId = hotspot.slotId ?? null;
-        overlay = 'decor';
-      }
       return;
     }
     selectedId = id;
@@ -177,7 +187,7 @@
     </div>
 
     <Hud
-      title={screen === 'events' ? room.screens.eventSelect.title : room.name}
+      title={screen === 'events' ? room.screens.eventSelect.title : room.title}
       hintLabel={room.hud.hintLabel}
       settingsLabel={room.hud.settingsLabel}
       showHint={screen === 'room'}
@@ -205,9 +215,9 @@
         onSound={setSound}
         onClose={() => (overlay = null)}
       />
-    {:else if overlay === 'calendar'}
+    {:else if overlay === 'calendar' && calendar}
       <CalendarPanel
-        calendar={room.calendar}
+        calendar={calendar}
         {themeId}
         solvedCaseIds={save.knowledge.solvedCaseIds}
         onTheme={setTheme}
@@ -220,8 +230,8 @@
       <Sheet title={room.screens.caseBoard.title} body={room.screens.caseBoard.body} onClose={() => (overlay = null)} />
     {:else if overlay === 'decor' && decorHotspot}
       <Sheet
-        title={decorHotspot.label}
-        body={decorHotspot.emptyHint ?? 'ช่องนี้ว่าง'}
+        title={decorHotspot.title}
+        body={decorHotspot.kind === 'decor-slot' ? decorHotspot.emptyHint : 'ช่องนี้ว่าง'}
         onClose={() => (overlay = null)}
       />
     {/if}

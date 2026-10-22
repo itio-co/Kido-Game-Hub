@@ -63,7 +63,7 @@ button { cursor: pointer; -webkit-tap-highlight-color: transparent; }
   height: 100dvh;
   max-height: 100dvh;
   overflow: hidden;
-  background: #c5dff0;
+  background: #e0b48a;
   user-select: none;
 }
 
