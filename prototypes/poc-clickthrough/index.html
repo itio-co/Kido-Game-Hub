@@ -8,11 +8,16 @@
 #scene{position:absolute;inset:0;transition:opacity .3s}#scene.fade{opacity:0}
 .bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 .bg.contain{object-fit:contain;background:#efe6d2}
-.hs{position:absolute;border:2px solid #39e0ff;background:rgba(57,224,255,.14);border-radius:6px;cursor:pointer;box-shadow:0 0 10px rgba(57,224,255,.6)}
-.hs:hover{background:rgba(57,224,255,.3)}
-.hs span{position:absolute;left:50%;top:-1.9em;transform:translateX(-50%);white-space:nowrap;background:rgba(6,30,48,.88);border:1px solid #39e0ff;padding:2px 8px;border-radius:4px;font-size:clamp(10px,2.4vh,14px)}
-.hs.r span{left:auto;right:0;transform:none}.hs.l span{left:0;transform:none}
-.hs.done{border-style:dashed;opacity:.6}
+svg.hl{position:absolute;inset:0;width:100%;height:100%;z-index:2;pointer-events:none}
+.hot polygon{fill:rgba(0,0,0,0);pointer-events:all;stroke:transparent;stroke-width:4;stroke-linejoin:round;cursor:pointer;transition:stroke .2s,fill .2s,filter .2s}
+.hot:hover polygon,.hot.on polygon{stroke:#8ff0ff;fill:rgba(120,235,255,.10);filter:drop-shadow(0 0 6px #39e0ff) drop-shadow(0 0 14px rgba(57,224,255,.7))}
+.hot .dot{fill:#bff6ff;stroke:#39e0ff;stroke-width:3;pointer-events:none;transform-box:fill-box;transform-origin:center;animation:pulse 1.8s ease-in-out infinite}
+.hot.done .dot{fill:#9aa;stroke:#678;animation:none;opacity:.6}
+@keyframes pulse{0%,100%{transform:scale(1);opacity:.85}50%{transform:scale(1.6);opacity:.35}}
+.hot .lbl{opacity:0;pointer-events:none;transition:opacity .2s}
+.hot:hover .lbl,.hot.on .lbl{opacity:1}
+.lbl rect{fill:rgba(6,30,48,.92);stroke:#39e0ff;stroke-width:2}.lbl text{fill:#eaf6ff;font-weight:600}
+.hot:hover .dot,.hot.on .dot{opacity:0}
 #hud{position:absolute;left:0;right:0;top:0;padding:8px 10px;background:rgba(6,20,32,.94);border-bottom:1px solid #39e0ff;font-size:clamp(11px,2.3vh,14px);pointer-events:none;z-index:5}
 #back{position:absolute;left:12px;bottom:12px;width:64px;height:64px;border-radius:50%;border:3px solid #39e0ff;background:rgba(6,30,48,.9);color:#fff;font-size:30px;cursor:pointer;z-index:6}
 #caseBtn{position:absolute;right:12px;bottom:12px;padding:12px 14px;border-radius:12px;border:2px solid #39e0ff;background:rgba(6,30,48,.9);color:#fff;font-size:15px;cursor:pointer;z-index:6}
@@ -41,7 +46,7 @@ const LINES={open:'หลานมาแล้วเหรอจ๊ะ ยาย
 const $=id=>document.getElementById(id);
 function toast(t){const e=$('toast');e.textContent=t;e.style.display='block';clearTimeout(e._t);e._t=setTimeout(()=>e.style.display='none',1600)}
 function addEv(k){if(!S.ev[k]){S.ev[k]=1;toast('ได้หลักฐาน '+k)}}
-function hs(x,y,w,h,label,fn,done){return {x,y,w,h,label,fn,done}}
+function hs(pts,label,fn,done){return {pts,label,fn,done}}
 function say(who,text,opts){const d=$('dlg');d.innerHTML='<b>'+who+':</b> “'+text+'”<div class="btns"></div>';const b=d.querySelector('.btns');(opts||[['ปิด',()=>d.style.display='none']]).forEach(([t,f])=>{const x=document.createElement('button');x.className='opt';x.textContent=t;x.onclick=f;b.appendChild(x)});d.style.display='block'}
 const SLOTS=[['ผนังซ้าย',8,22,26,12],['ผนังขวา',66,22,26,12],['ชั้นบน',36,22,28,10],['ชั้นของที่ระลึก',8,40,40,12],['โต๊ะ',54,40,38,12],['พื้นซ้าย',8,58,26,12],['พื้นกลาง',37,58,26,12],['พื้นขวา',66,58,26,12]];
 const SC={
@@ -53,34 +58,44 @@ const SC={
   el.querySelectorAll('.slot[data-i]').forEach(s=>s.onclick=()=>{const i=+s.dataset.i;
    if(S.reward&&!Object.values(S.slots).includes('📷 รูปตาจากอัลบั้ม')){S.slots[i]='📷 รูปตาจากอัลบั้ม';toast('วางของรางวัลแล้ว');go('room',true)}
    else if(S.slots[i]){toast('สลับของ: (ต้นแบบมีของชิ้นเดียว)')}else toast('ยังไม่มีของ — ไขคดีเพื่อรับของ')});
-  return [hs(66,74,26,9,S.solved?'ประตู → คดีถัดไป (เร็ว ๆ นี้)':'ประตู → บ้านย่า',()=>S.solved?toast('คดี 02: ห้องสมุดวันวาน (ยังไม่ทำ)'):go('map'))]}},
+  return [hs([[66,74],[92,74],[92,83],[66,83]],S.solved?'ประตู → คดีถัดไป (เร็ว ๆ นี้)':'ประตู → บ้านย่า',()=>S.solved?toast('คดี 02: ห้องสมุดวันวาน (ยังไม่ทำ)'):go('map'))]}},
  map:{title:'แผนผังบ้านย่า',hud:()=>'เลือกห้องที่จะไป · ภาพร่างเก่า (มีห้องนอน/กล่องในครัว) ใช้เป็นภาพประกอบ',img:'map-topdown.jpg',contain:true,hs:()=>[
-  hs(10,37,33,11,'ห้องนั่งเล่น (จุดเริ่ม)',()=>go('living')),hs(10,50,33,11,'ห้องทำงาน',()=>go('study')),hs(64,50,28,11,'ครัว (เสริม)',()=>go('kitchen'))]},
+  hs([[108,45],[445,45],[445,345],[108,345]],'ห้องนั่งเล่น (จุดเริ่ม)',()=>go('living')),hs([[108,352],[430,352],[430,628],[108,628]],'ห้องทำงาน',()=>go('study')),hs([[660,352],[940,352],[940,630],[660,630]],'ครัว (เสริม)',()=>go('kitchen'))]},
  living:{title:'ห้องนั่งเล่น — มุมกว้างจากประตู',hud:()=>'ภารกิจ: ตามหาอัลบั้มครอบครัว',img:'cam-living-wide.jpg',hs:()=>[
-  hs(51,36,21,19,'ยายมะลิ',()=>go('grandma')),hs(32,63,30,9,'โต๊ะกลาง',()=>go('table'),S.ev.E01),
-  hs(30,26,18,13,'ชั้นหนังสือ: ถาดชิ้นแผนผัง',()=>go('jigsaw'),S.ev.E04),
-  hs(0,46,18,17,'ลุงเมฆ (โซฟา)',()=>{addEv('E03');say('ลุงเมฆ','รินเอาอัลบั้มใส่กล่องที่ติดรูปดาว ลุงเห็นตอนเธอยกผ่านโต๊ะ แต่ไม่ได้มองว่าเอาไปวางที่ไหน')},S.ev.E03),
-  hs(82,56,17,13,'กล่องรูปดาว (ข้างโซฟา)',()=>say('ข้อความช่วยคิด','สัญลักษณ์ตรงแล้ว แต่ตำแหน่งนี้ตรงกับผังเก็บภาพถ่ายหรือยัง?')),
-  hs(80,20,14,28,'ประตู → ห้องทำงาน',()=>go('study')),hs(10,20,14,30,'ประตู → ครัว',()=>go('kitchen'))]},
+  hs([[55,38],[59,35.5],[65,36],[68,39],[68,44],[71,47],[72,54],[70,62],[63,64],[48,64],[44,60],[49,54],[51,47],[55,44],[54,40]],'ยายมะลิ',()=>go('grandma')),hs([[5,68],[30,63],[60,63],[72,67],[70,74],[55,78],[15,77],[6,72]],'โต๊ะกลาง',()=>go('table'),S.ev.E01),
+  hs([[29,24],[55,24],[55,36],[50,36],[50,46],[29,46]],'ชั้นหนังสือ: ถาดชิ้นแผนผัง',()=>go('jigsaw'),S.ev.E04),
+  hs([[0,46],[12,47],[18,52],[18,60],[10,64],[0,66]],'ลุงเมฆ (โซฟา)',()=>{addEv('E03');say('ลุงเมฆ','รินเอาอัลบั้มใส่กล่องที่ติดรูปดาว ลุงเห็นตอนเธอยกผ่านโต๊ะ แต่ไม่ได้มองว่าเอาไปวางที่ไหน')},S.ev.E03),
+  hs([[88,49],[95,48],[99,53],[97,58],[100,59],[100,70],[82,70],[82,59],[90,58],[87,53]],'กล่องรูปดาว (ข้างโซฟา)',()=>say('ข้อความช่วยคิด','สัญลักษณ์ตรงแล้ว แต่ตำแหน่งนี้ตรงกับผังเก็บภาพถ่ายหรือยัง?')),
+  hs([[81,20],[93,21],[93,48],[81,47]],'ประตู → ห้องทำงาน',()=>go('study')),hs([[11,20],[24,23],[24,51],[11,50]],'ประตู → ครัว',()=>go('kitchen'))]},
  grandma:{title:'ยายมะลิ (มุมใกล้)',hud:()=>'คุยกับยายมะลิ',img:'cam-living-grandma.jpg',hs:()=>[],enter(){
   if(S.solved)return say('ยายมะลิ',LINES.win);
   say('ยายมะลิ',LINES.open,[['ถามเรื่องอัลบั้ม',()=>say('ยายมะลิ',LINES.ask)],['ขอคำใบ้',()=>say('ยายมะลิ',LINES.stuck)],['ปิด',()=>$('dlg').style.display='none']])}},
  table:{title:'โต๊ะกลาง (มุมใกล้)',hud:()=>'แตะเพื่อตรวจ',img:'cam-living-table.jpg',hs:()=>[
-  hs(8,24,49,21,'ข้อความของน้าริน + รอยน้ำ',()=>{addEv('E01');addEv('E02');say('ข้อความ','ขอย้ายเก็บก่อน — ริน / (ด้านหลัง) เก็บตามผังเดิมนะ โต๊ะยังเปียกอยู่')},S.ev.E01),
-  hs(12,48,78,32,'แผนผังที่ฉีกขาด → ต่อจิ๊กซอว์',()=>go('jigsaw'))]},
+  hs([[9,26],[52,25],[57,30],[56,41],[52,44],[12,44],[9,38]],'ข้อความของน้าริน + รอยน้ำ',()=>{addEv('E01');addEv('E02');say('ข้อความ','ขอย้ายเก็บก่อน — ริน / (ด้านหลัง) เก็บตามผังเดิมนะ โต๊ะยังเปียกอยู่')},S.ev.E01),
+  hs([[13,49],[50,47],[52,49],[90,53],[85,80],[52,80],[20,78],[14,70]],'แผนผังที่ฉีกขาด → ต่อจิ๊กซอว์',()=>go('jigsaw'))]},
  jigsaw:{title:'จิ๊กซอว์แผนผังบ้าน (ภาพร่าง)',hud:()=>'⏱ 00:42 · สถิติดีที่สุด 00:35 · ⭐⭐⭐ ถ้าไม่ใช้คำใบ้',img:'map-topdown.jpg',contain:true,hs:()=>[
-  hs(25,70,50,9,'(stub) ต่อเสร็จแล้ว',()=>{addEv('E04');say('แผนผัง','หมวด “ภาพถ่ายและจดหมาย” อยู่ใต้หน้าต่างห้องทำงาน ส่วนข้างโซฟาเป็นของเล่น')},S.ev.E04)]},
+  hs([[100,40],[1000,40],[1000,700],[100,700]],'(stub) ต่อเสร็จแล้ว',()=>{addEv('E04');say('แผนผัง','หมวด “ภาพถ่ายและจดหมาย” อยู่ใต้หน้าต่างห้องทำงาน ส่วนข้างโซฟาเป็นของเล่น')},S.ev.E04)]},
  study:{title:'ห้องทำงาน — มุมกว้างจากประตู',hud:()=>'กล่องเป้าหมายต้องอยู่ใต้หน้าต่าง (ภาพร่างวางบนโต๊ะ)',img:'cam-study-wide.jpg',hs:()=>[
-  hs(40,48,28,13,'กล่องรูปดาวสีน้ำเงิน',()=>go('box')),hs(82,32,16,26,'ประตู → ห้องนั่งเล่น',()=>go('living'))]},
+  hs([[41,50.5],[64,49.5],[68,52],[67,57.5],[60,60],[44,60],[40,56]],'กล่องรูปดาวสีน้ำเงิน',()=>go('box')),hs([[83,20],[98,20],[98,58],[83,57]],'ประตู → ห้องนั่งเล่น',()=>go('living'))]},
  box:{title:'กล่องรูปดาว (มุมใกล้)',hud:()=>'⏱ 01:05 · สถิติดีที่สุด — · ไม่มีจำกัดเวลา',img:'cam-study-box.jpg',hs:()=>[
-  hs(15,37,72,20,S.solved?'เปิดแล้ว':'(stub) เลื่อนบล็อกสำเร็จ',()=>{if(S.solved)return;S.solved=true;addEv('E05');say('ยายมะลิ','เจอแล้ว! หน้าปกดอกไม้เล่มนี้เอง',[['นำอัลบั้มกลับไปให้ยาย',()=>{$('dlg').style.display='none';go('living');setTimeout(()=>say('ยายมะลิ',LINES.win,[['พบโปสการ์ด “ห้องสมุดวันวาน — ลิ้นชักหมายเลข 7” → กลับบ้าน',()=>{S.reward=true;$('dlg').style.display='none';S.hist=[];go('room')}]]),350)}]])})]},
+  hs([[17,40],[48,35],[84,38.5],[88,44],[60,56],[18,47]],S.solved?'เปิดแล้ว':'(stub) เลื่อนบล็อกสำเร็จ',()=>{if(S.solved)return;S.solved=true;addEv('E05');say('ยายมะลิ','เจอแล้ว! หน้าปกดอกไม้เล่มนี้เอง',[['นำอัลบั้มกลับไปให้ยาย',()=>{$('dlg').style.display='none';go('living');setTimeout(()=>say('ยายมะลิ',LINES.win,[['พบโปสการ์ด “ห้องสมุดวันวาน — ลิ้นชักหมายเลข 7” → กลับบ้าน',()=>{S.reward=true;$('dlg').style.display='none';S.hist=[];go('room')}]]),350)}]])})]},
  kitchen:{title:'ครัว (ห้องเสริม)',hud:()=>'ไม่บังคับ',render(el){el.innerHTML='<div class="card" style="background:linear-gradient(160deg,#e3f1ea,#f5ead6)"><h2>ครัว</h2><p>ภาพจำลอง (ยังไม่มีภาพร่าง)</p></div>';
-  return [hs(10,35,36,18,'ราวผ้า: ผ้าเปียก',()=>{addEv('E02');toast('ผ้าเปียก — มีน้ำหกจริง')}),hs(54,35,36,18,'แจกันเติมน้ำใหม่',()=>toast('แจกันถูกเติมน้ำใหม่')),hs(30,60,40,12,'ประตู → ห้องนั่งเล่น',()=>go('living'))]}}
+  return [hs([[10,35],[46,35],[46,53],[10,53]],'ราวผ้า: ผ้าเปียก',()=>{addEv('E02');toast('ผ้าเปียก — มีน้ำหกจริง')}),hs([[54,35],[90,35],[90,53],[54,53]],'แจกันเติมน้ำใหม่',()=>toast('แจกันถูกเติมน้ำใหม่')),hs([[30,60],[70,60],[70,72],[30,72]],'ประตู → ห้องนั่งเล่น',()=>go('living'))]}}
 };
 function draw(){const sc=SC[S.screen],el=$('scene');let list;
  if(sc.render)list=sc.render(el);else{el.innerHTML=`<img class="bg ${sc.contain?'contain':''}" src="img/${sc.img}" alt="">`;list=sc.hs()}
  if(sc.img&&/cam-/.test(sc.img))el.insertAdjacentHTML('beforeend','<div class="tag">ภาพร่าง AI</div>');
- list.forEach(h=>{const d=document.createElement('div');d.className='hs'+(h.done?' done':'')+(h.x+h.w>85?' r':h.x<8?' l':'');d.style.cssText=`left:${h.x}%;top:${h.y}%;width:${h.w}%;height:${h.h}%`;d.innerHTML='<span>'+h.label+'</span>';d.onclick=e=>{e.stopPropagation();h.fn()};el.appendChild(d)});
+ const map=!!sc.contain,W=map?1152:720,Hh=map?864:1280,NS='http://www.w3.org/2000/svg';
+ const svg=document.createElementNS(NS,'svg');svg.setAttribute('class','hl');svg.setAttribute('viewBox',`0 0 ${W} ${Hh}`);svg.setAttribute('preserveAspectRatio',map?'xMidYMid meet':'xMidYMid slice');
+ const fs=map?30:30;
+ list.forEach(h=>{const P=h.pts.map(([x,y])=>map?[x,y]:[x*7.2,y*12.8]);
+  const cx=P.reduce((a,p)=>a+p[0],0)/P.length,cy=P.reduce((a,p)=>a+p[1],0)/P.length,top=Math.min(...P.map(p=>p[1]));
+  const g=document.createElementNS(NS,'g');g.setAttribute('class','hot'+(h.done?' done':''));
+  const tw=h.label.length*fs*0.56+28;let lx=Math.max(4,Math.min(W-tw-4,cx-tw/2));let ly=top-fs-22;if(ly<150)ly=Math.min(Hh-fs-30,top+8);
+  g.innerHTML=`<polygon points="${P.map(p=>p.join(',')).join(' ')}"/><circle class="dot" cx="${cx}" cy="${cy}" r="${map?11:13}"/><g class="lbl"><rect x="${lx}" y="${ly}" width="${tw}" height="${fs+20}" rx="${(fs+20)/2}"/><text x="${lx+tw/2}" y="${ly+fs+2}" font-size="${fs}" text-anchor="middle">${h.label}</text></g>`;
+  g.querySelector('polygon').addEventListener('click',e=>{e.stopPropagation();g.classList.add('on');setTimeout(()=>{g.classList.remove('on');h.fn()},250)});
+  svg.appendChild(g)});
+ el.appendChild(svg);
  $('hud').innerHTML='<b>'+sc.title+'</b><br>'+sc.hud()+' · หลักฐาน '+Object.keys(S.ev).length+'/5';
  $('back').style.visibility=S.hist.length?'visible':'hidden'}
 function go(n,replace){$('dlg').style.display='none';$('board').style.display='none';if(!replace&&n!==S.screen)S.hist.push(S.screen);
