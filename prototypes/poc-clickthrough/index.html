@@ -38,6 +38,7 @@ button.opt{background:#0d4a66;border:1px solid #39e0ff;color:#fff;border-radius:
 .mgbar{display:flex;align-items:center;justify-content:space-between;gap:6px;background:rgba(6,30,48,.92);color:#eaf6ff;border:1px solid #39e0ff;border-radius:12px;padding:8px 10px;font-size:14px}
 .mgbar .t{font-variant-numeric:tabular-nums}.mgbar .stars{font-size:16px;letter-spacing:1px}
 .mgbtn{background:#0d4a66;border:1px solid #39e0ff;color:#fff;border-radius:10px;padding:8px 12px;font-size:14px;cursor:pointer}
+.opt.locked{opacity:.45;filter:grayscale(1)}.prac{background:#ffcf4a;color:#3a2a00;border-radius:8px;padding:2px 6px;font-size:12px;font-weight:bold}
 .mgdone{position:absolute;right:12px;bottom:84px;z-index:6}
 .cw{background:#f4efe2 repeating-linear-gradient(0deg,transparent 0 22px,rgba(0,0,0,.03) 22px 23px);border-radius:10px;padding:12px;box-shadow:0 4px 14px rgba(0,0,0,.35)}
 .cwg{display:grid;grid-template-columns:repeat(5,1fr);gap:3px;max-width:300px;margin:0 auto}
@@ -81,7 +82,9 @@ button.opt{background:#0d4a66;border:1px solid #39e0ff;color:#fff;border-radius:
  <button id="caseBtn">📋 สมุดคดี</button>
 </div>
 <script>
-const S={screen:'room',hist:[],ev:{},solved:false,reward:false,slots:{}};
+const S={screen:'room',hist:[],ev:{},solved:false,reward:false,slots:{},played:{},practice:false};
+const PRAC=[['cross','ครอสเวิร์ด (ภาษา)'],['jig','จิ๊กซอว์ (มิติสัมพันธ์)'],['slide','เลื่อนบล็อก (ตรรกะ)']];
+function practiceMenu(){say('มุมฝึกเล่น','เลือกมินิเกมที่ปลดล็อกแล้ว — โจทย์สุ่มทั่วไป ไม่เกี่ยวกับคดี',PRAC.map(([k,n])=>[S.played[k]?'▶ '+n:'🔒 '+n,()=>{if(!S.played[k]){toast('ปลดล็อกเมื่อได้เล่นในคดีแล้ว');return}S.practice=true;MG.hints=0;go(k)}]).concat([['ปิด',()=>$('dlg').style.display='none']]));$('dlg').querySelectorAll('button.opt').forEach(b=>{if(b.textContent.startsWith('🔒'))b.classList.add('locked')})}
 const EV={E01:'ข้อความของน้าริน: "ขอย้ายเก็บก่อน — ริน / เก็บตามผังเดิมนะ โต๊ะยังเปียกอยู่"',E02:'โต๊ะที่เปียก (น้ำจากแจกันหก)',E03:'ลุงเมฆ: กล่องมีรูปดาว',E04:'แผนผังบ้าน: ภาพถ่ายเก็บใต้หน้าต่างห้องทำงาน',E05:'พบอัลบั้มในกล่องรูปดาว'};
 const LINES={open:'หลานมาแล้วเหรอจ๊ะ ยายหาอัลบั้มรูปครอบครัวไม่เจอ ในนั้นมีรูปตาตอนหนุ่ม ๆ ด้วยนะ',ask:'เมื่อเช้ายายยังเห็นวางอยู่บนโต๊ะกลางเลย แต่บ่ายนี้น้ารินเข้ามาเก็บกวาดนะ',stuck:'รูปเก่า ๆ บ้านนี้เขาเก็บไว้ที่เดียวกันมาตลอดแหละ ลองต่อแผนที่ที่หล่นกระจายอยู่ดูสิ',win:'นี่ไงรูปตา ขอบใจนะหลาน มานั่งดูด้วยกันมา ยายจะเล่าให้ฟัง'};
 const $=id=>document.getElementById(id);
@@ -96,7 +99,7 @@ const SC={
   extra(el){SLOTS.forEach(([n,x,y,w,hh],i)=>{const f=S.slots[i];const d=document.createElement('div');d.className='slot'+(f?' filled':'');d.style.cssText=`left:${x}%;top:${y}%;width:${w}%;height:${hh}%`;d.innerHTML=f||n;
    d.onclick=()=>{if(S.reward&&!Object.values(S.slots).includes('📷 รูปตา')){S.slots[i]='📷 รูปตา';toast('วางของรางวัลแล้ว');go('room',true)}else if(S.slots[i])toast('สลับของ (ต้นแบบมีของชิ้นเดียว)');else toast('ยังไม่มีของ — ไขคดีเพื่อรับของ')};el.appendChild(d)});
    const b=document.createElement('div');b.className='slot board';b.style.cssText='left:22%;top:13%;width:20%;height:8%';b.innerHTML='🗂 คดีที่ไขแล้ว: '+(S.solved?'01 ✓':'—');el.appendChild(b)},
-  hs:()=>[hs([[90,18],[100,18],[100,61],[90,61]],S.solved?'ประตู → คดีถัดไป (เร็ว ๆ นี้)':'ประตู → ไปบ้านย่า',()=>S.solved?toast('คดี 02: ห้องสมุดวันวาน (ยังไม่ทำ)'):pickDiff())]},
+  hs:()=>[hs([[60,36],[88,36],[88,43],[60,43]],'🎮 มุมฝึกเล่น ('+Object.keys(S.played).length+'/3)',practiceMenu),hs([[90,18],[100,18],[100,61],[90,61]],S.solved?'ประตู → คดีถัดไป (เร็ว ๆ นี้)':'ประตู → ไปบ้านย่า',()=>S.solved?toast('คดี 02: ห้องสมุดวันวาน (ยังไม่ทำ)'):pickDiff())]},
  map:{title:'แผนผังบ้านย่า',hud:()=>'เลือกห้องที่จะไป',img:'house-map.jpg',contain:true,mw:864,mh:1152,hs:()=>[
   hs([[107,118],[760,118],[760,515],[107,515]],'ห้องนั่งเล่น (จุดเริ่ม)',()=>go('living')),
   hs([[118,530],[485,530],[485,905],[118,905]],'ห้องทำงาน',()=>go('study')),
@@ -143,9 +146,9 @@ let DIFF='ปานกลาง';const TGTS={'ง่าย':{cross:'06:00',jig:'
 const MG={hints:0,t0:0};
 function stars(){return MG.hints===0?'⭐⭐⭐':MG.hints===1?'⭐⭐☆':'⭐☆☆'}
 function mgbar(name,key,el){const b=document.createElement('div');b.className='mgbar';
- b.innerHTML=`<span class="t">⏱ <b id="el">${MG.fake||'00:00'}</b> · 🏆 ${MG.best||'—'} <small>(${DIFF})</small></span><span class="stars" id="st">${stars()}</span><button class="mgbtn" id="hint">💡 คำใบ้</button>`;
+ b.innerHTML=(S.practice?'<span class="prac">🎯 โหมดฝึกเล่น</span>':'')+`<span class="t">⏱ <b id="el">${MG.fake||'00:00'}</b> · 🏆 ${MG.best||'—'} <small>(${DIFF})</small></span><span class="stars" id="st">${stars()}</span><button class="mgbtn" id="hint">💡 คำใบ้</button>`;
  el.appendChild(b);b.querySelector('#hint').onclick=()=>{MG.hints++;S.hintsUsed=(S.hintsUsed||0)+1;if(MG.hints===1){toast('💡 คำใบ้ระดับ 2: '+MG.hintText[0]);MG.t2&&MG.t2()}else{toast('💡 คำใบ้ระดับ 3: เผยขั้นที่ถูก 1 ขั้น');MG.t3&&MG.t3()}$('st')&&($('st').textContent=stars());draw2()}}
-function doneBtn(el,label,fn){const d=document.createElement('button');d.className='mgbtn mgdone';d.textContent=label;d.onclick=fn;el.appendChild(d)}
+function doneBtn(el,label,fn){if(S.practice){label='✓ จบการฝึก';fn=()=>{toast('ฝึกเสร็จ — บันทึกดาวและสถิติดีที่สุด ('+DIFF+')');S.practice=false;S.hist=[];go('room',true)}}const d=document.createElement('button');d.className='mgbtn mgdone';d.textContent=label;d.onclick=fn;el.appendChild(d)}
 const CW={grid:['ดาว##','##า##','##งาม'],fill:{'0,0':'ด','0,1':'า','0,2':'ว','1,2':'า'},sel:'2,3',num:{'0,0':1,'0,2':2,'2,2':3}};
 SC.cross={title:'ครอสเวิร์ดของลุงเมฆ (งานเสริม)',hud:()=>'มินิเกม: ครอสเวิร์ด',render(el){MG.hintText=['ช่องที่ต้องเติมคือข้อ 3 แนวนอน (ไฮไลต์แล้ว)'];MG.t2=()=>{CW.sel='2,2';go('cross',true)};MG.t3=()=>{const sol={'2,2':'ง','2,3':'า','2,4':'ม'};const k=Object.keys(sol).find(k=>CW.fill[k]!==sol[k]);if(k){CW.fill[k]=sol[k]}go('cross',true)};MG.fake='01:12';MG.best='00:58';
  const w=document.createElement('div');w.className='mg';el.appendChild(w);mgbar('','cross',w);
@@ -243,9 +246,9 @@ function draw(){const sc=SC[S.screen],el=$('scene');let list;
  $('hud').innerHTML='<b>'+sc.title+'</b><br>'+sc.hud()+' · หลักฐาน '+Object.keys(S.ev).length+'/5';
  $('back').style.visibility=S.hist.length?'visible':'hidden';
  if(!sc.render){const hb=document.createElement('button');hb.className='hintbtn';hb.title='คำใบ้';hb.textContent='💡';hb.onclick=arHint;el.appendChild(hb)}draw2()}
-function go(n,replace){$('dlg').style.display='none';$('board').style.display='none';if(!replace&&n!==S.screen)S.hist.push(S.screen);
+function go(n,replace){$('dlg').style.display='none';$('board').style.display='none';if(!replace&&n!==S.screen)S.hist.push(S.screen);if(['cross','jig','slide'].includes(n)&&!S.practice&&!S.played[n]){S.played[n]=1}
  const el=$('scene');el.classList.add('fade');setTimeout(()=>{S.screen=n;draw();el.classList.remove('fade');SC[n].enter&&SC[n].enter()},300)}
-$('back').onclick=()=>{if($('dlg').style.display==='block'||$('board').style.display==='block'){$('dlg').style.display='none';$('board').style.display='none';return}const p=S.hist.pop();if(p){const el=$('scene');el.classList.add('fade');setTimeout(()=>{S.screen=p;draw();el.classList.remove('fade')},300)}};
+$('back').onclick=()=>{if($('dlg').style.display==='block'||$('board').style.display==='block'){$('dlg').style.display='none';$('board').style.display='none';return}const p=S.hist.pop();if(p==='room')S.practice=false;if(p){const el=$('scene');el.classList.add('fade');setTimeout(()=>{S.screen=p;draw();el.classList.remove('fade')},300)}};
 $('caseBtn').onclick=()=>{const b=$('board');if(b.style.display==='block'){b.style.display='none';return}
  b.innerHTML='<h3 style="margin-top:0">📋 กระดานคดี: อัลบั้มครอบครัวที่หายไป</h3><ul>'+Object.keys(EV).map(k=>S.ev[k]?`<li>✅ <b>${k}</b> ${EV[k]}</li>`:`<li style="opacity:.45">⬜ ${k} — ยังไม่พบ</li>`).join('')+'</ul>'+(S.deduced?'<p>✅ สรุปคดีแล้ว — ไปเปิดกล่องในห้องทำงาน</p>':S.ev.E01&&S.ev.E02&&S.ev.E04?'<button class="mgbtn" id="goDed">⚖ สรุปคดี (3 คำถาม)</button>':'<p style="opacity:.7">เก็บหลักฐาน E01, E02, E04 ให้ครบเพื่อสรุปคดี</p>');b.style.display='block';const g=$('goDed');if(g)g.onclick=()=>go('deduce')};
 draw();setTimeout(()=>tutorial(0),400);
