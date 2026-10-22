@@ -312,7 +312,9 @@ export function buildNightstand(build: Build, parent: THREE.Object3D, entity: Bu
   addBox(build, group, drawerW * 0.88, drawerH * 0.7, 0.018, 0, drawerY, frontZ, table.colors.wood, {
     shadow: 'none',
   });
-  addCyl(build, group, 0.034, 0.034, 0.042, 0, drawerY, frontZ + 0.022, table.colors.knob, 'z', 10);
+  addBox(build, group, w * 0.16, 0.014, 0.016, 0, drawerY, frontZ + 0.014, table.colors.knob, {
+    shadow: 'none',
+  });
 
   const legTop = drawerY - drawerH / 2;
   const leg = 0.042;
