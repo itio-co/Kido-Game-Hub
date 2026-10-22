@@ -11,16 +11,16 @@ P=lambda f:'../poc-clickthrough/img/'+f
 def A(id,th,en,cat,src,crop,scenes,status='concept-only',note=''):
   return dict(id=id,nameTh=th,nameEn=en,category=cat,thumb=dict(src=src,crop=crop) if src else None,scenes=scenes,status=status,note=note)
 a3=[
- A('grandma-mali','ยายมะลิ','Grandma Mali','character',P('living-grandma.jpg'),[22,8,58,58],['living','cutscene p2-p3'],'concept-only','ภาพอ้างอิงสไตล์ low-poly'),
+ A('grandma-mali','ย่ามะลิ','Grandma Mali','character',P('living-grandma.jpg'),[22,8,58,58],['living','cutscene p2-p3'],'concept-only','ภาพอ้างอิงสไตล์ low-poly'),
  A('child-player','หนู (ตัวละครผู้เล่น)','Child (player)','character',P('cutscene-01-p1.jpg'),[8,34,40,32],['cutscene p1-p3'],'concept-only','ผมทรงกะลาครอบสีดำ เสื้อเหลือง กางเกงน้ำเงิน — พลังควบคุมเวลา'),
  A('mom','แม่','Mom','character',P('cutscene-01-p1.jpg'),[34,0,46,32],['cutscene p1-p2']),
  A('uncle-mek','ลุงเมฆ','Uncle Mek','character',P('uncle-mek.jpg'),[28,10,52,48],['living']),
  A('aunt-rin','น้าริน','Aunt Rin','character',P('rin.jpg'),[22,8,58,58],['living@afternoon','deduction','ending'],'concept-only','ผมหางม้าต่ำ เสื้อเขียวอ่อน ผ้ากันเปื้อน — ผู้ย้ายอัลบั้ม (ไม่ใช่คนร้าย)'),
  A('room-player','ห้องของฉัน','Player room (hub)','room',P('player-room-wide.jpg'),[0,0,100,100],['room']),
- A('room-living','ห้องนั่งเล่นบ้านยาย','Grandma living room','room',P('living-wide.jpg'),[0,0,100,100],['living (3 ช่วงเวลา)']),
+ A('room-living','ห้องนั่งเล่นบ้านย่า','Grandma living room','room',P('living-wide.jpg'),[0,0,100,100],['living (3 ช่วงเวลา)']),
  A('room-study','ห้องทำงาน','Study','room',P('study-wide.jpg'),[0,0,100,100],['study']),
  A('room-kitchen','ครัว','Kitchen','room',P('kitchen-wide.jpg'),[0,0,100,100],['kitchen']),
- A('house-exterior','บ้านไม้ของยาย (ภายนอก)','Grandma house exterior','room',P('cutscene-01-p2.jpg'),[0,0,100,32],['cutscene p2']),
+ A('house-exterior','บ้านไม้ของย่า (ภายนอก)','Grandma house exterior','room',P('cutscene-01-p2.jpg'),[0,0,100,32],['cutscene p2']),
  A('album','อัลบั้มครอบครัว (ปกดอกไม้)','Family album','prop',P('living-wide-afternoon.jpg'),[46,63,24,11],['living@afternoon','living@yesterday','album'],'to-model'),
  A('star-box','กล่องสีน้ำเงินรูปดาว','Blue star box','prop',P('study-box.jpg'),[4,33,92,48],['study','box'],'to-model'),
  A('sliding-lock','ตัวล็อกเลื่อนบล็อก','Sliding-block lock','prop',P('study-box.jpg'),[16,34,72,24],['box'],'to-model'),
@@ -33,7 +33,7 @@ a3=[
  A('map-pieces','ชิ้นแผนผังแม่เหล็ก + ถาด','Magnetic map pieces + tray','prop',P('living-shelf-tray.jpg'),[0,47,100,38],['tray','jigsaw'],'to-model'),
  A('postcard','โปสการ์ดห้องสมุดวันวาน','Library postcard','prop',P('album-found.jpg'),[60,30,40,30],['album'],'to-model'),
  A('calendar-wall','ปฏิทินแขวน (ห้องเด็ก)','Wall calendar (kid room)','prop',P('player-room-wide.jpg'),[33,25,17,13],['room'],'to-model','แตะเพื่อเปิด UI ปฏิทิน · ใช้ธีมได้'),
- A('calendar-grandma','ปฏิทินของยาย','Grandma calendar','prop',P('living-wide.jpg'),[72,21,17,12],['living'],'to-model','ควบคุมวัน (ย้อนวัน)'),
+ A('calendar-grandma','ปฏิทินของย่า','Grandma calendar','prop',P('living-wide.jpg'),[72,21,17,12],['living'],'to-model','ควบคุมวัน (ย้อนวัน)'),
  A('clock','นาฬิกาแขวน','Wall clock','prop',P('living-wide.jpg'),[6,8,14,9],['living'],'to-model','ควบคุมชั่วโมง (ย้อนเวลา)'),
  A('grandpa-photo','กรอบรูปตา','Grandpa photo frame','decor',P('album-found.jpg'),[18,30,38,30],['ของรางวัล → ช่องตกแต่ง'],'to-model'),
  A('keepsake-shelf','ชั้นของที่ระลึก','Keepsake shelf','decor',P('player-room-wide.jpg'),[57,23,28,12],['room'],'to-model'),

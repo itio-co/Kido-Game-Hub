@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="th"><head><meta charset="utf-8">
+<html lang="th"><head><meta charset="utf-8"><link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#0b1e2d"><link rel="apple-touch-icon" href="icon-192.png"><meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>POC: คดี 01 อัลบั้มครอบครัวที่หายไป (click-through)</title>
 <style>
@@ -18,36 +18,42 @@ svg.hl{position:absolute;inset:0;width:100%;height:100%;z-index:2;pointer-events
 .hot.on .lbl{opacity:1}
 .lbl rect{fill:rgba(6,30,48,.92);stroke:#39e0ff;stroke-width:2}.lbl text{fill:#eaf6ff;font-weight:600}
 
-#hud{position:absolute;left:0;right:0;top:0;padding:8px 10px;background:rgba(6,20,32,.94);border-bottom:1px solid #39e0ff;font-size:clamp(11px,2.3vh,14px);pointer-events:none;z-index:5}
+@keyframes nsfade{from{opacity:0}to{opacity:1}}
+.nextstep{margin-top:4px;padding:4px 8px;background:#ffd23f;color:#1a1a1a;font-weight:bold;border-radius:8px;font-size:clamp(16px,3vh,21px);animation:nsfade .3s ease-out}
+.nextstep.big{font-size:clamp(19px,3.4vh,24px);margin:10px 0;padding:10px 12px;text-align:center}
+#hud{position:absolute;left:0;right:0;top:0;padding:8px 10px;background:rgba(6,20,32,.94);border-bottom:1px solid #39e0ff;font-size:clamp(15px,2.8vh,19px);pointer-events:none;z-index:5}
 #back{position:absolute;left:12px;bottom:12px;width:64px;height:64px;border-radius:50%;border:3px solid #39e0ff;background:rgba(6,30,48,.9);color:#fff;font-size:30px;cursor:pointer;z-index:6}
-#caseBtn{position:absolute;right:12px;bottom:12px;padding:12px 14px;border-radius:12px;border:2px solid #39e0ff;background:rgba(6,30,48,.9);color:#fff;font-size:15px;cursor:pointer;z-index:6}
-#dlg{position:absolute;left:4%;right:4%;bottom:96px;background:rgba(6,24,40,.95);border:2px solid #39e0ff;border-radius:12px;padding:12px 14px;font-size:clamp(13px,2.5vh,16px);line-height:1.5;display:none;z-index:7}
+#evDot{display:none;position:absolute;top:-7px;right:-7px;width:18px;height:18px;border-radius:50%;background:#ff2d2d;border:2px solid #fff;animation:nsfade .3s ease-out}
+#evDot.on{display:block}
+.optpill{display:inline-block;margin-left:6px;padding:1px 10px;border-radius:999px;background:#7fd8ff;color:#06202f;font-weight:bold;font-size:17px;vertical-align:middle}
+#caseBtn{position:absolute;right:12px;bottom:12px;padding:12px 14px;border-radius:12px;border:2px solid #39e0ff;background:rgba(6,30,48,.9);color:#fff;font-size:18px;cursor:pointer;z-index:6}
+#dlg{position:absolute;left:4%;right:4%;bottom:96px;background:rgba(6,24,40,.95);border:2px solid #39e0ff;border-radius:12px;padding:12px 14px;font-size:clamp(17px,3vh,21px);line-height:1.5;display:none;z-index:7}
 #dlg b{color:#7fe9ff}#dlg .btns{margin-top:8px;display:flex;flex-wrap:wrap;gap:6px}
-button.opt{background:#0d4a66;border:1px solid #39e0ff;color:#fff;border-radius:8px;padding:6px 10px;font-size:14px;cursor:pointer}
+button.opt{background:#0d4a66;border:1px solid #39e0ff;color:#fff;border-radius:8px;padding:6px 10px;font-size:18px;cursor:pointer}
 #board{position:absolute;left:4%;right:4%;top:10%;bottom:96px;background:rgba(6,24,40,.97);border:2px solid #39e0ff;border-radius:12px;padding:14px;display:none;z-index:8;overflow:auto}
-#board li{margin:6px 0}#toast{position:absolute;left:50%;top:12%;transform:translateX(-50%);background:#0d4a66;border:1px solid #39e0ff;padding:6px 12px;border-radius:8px;display:none;z-index:9;font-size:14px}
+#board li{margin:6px 0}#toast{position:absolute;left:50%;top:calc(var(--hudH,56px) + 58px);transform:translateX(-50%);background:#0d4a66;border:1px solid #39e0ff;padding:6px 12px;border-radius:8px;display:none;z-index:9;font-size:18px}
 .card{position:absolute;inset:0;background:linear-gradient(160deg,#f6e7d7,#e8d3f0);color:#3a3550}
-.card h2{margin:0;padding:64px 16px 4px;text-align:center;font-size:20px}.card p{text-align:center;margin:4px 16px;font-size:13px;opacity:.8}
-.slot{position:absolute;z-index:3;display:flex;align-items:center;justify-content:center;cursor:pointer;background:none;border:none}.slot i{display:block;width:16px;height:16px;border-radius:50%;background:rgba(191,246,255,.9);color:#0d4a66;font:bold 13px/16px sans-serif;text-align:center;font-style:normal}.slot .pill{position:absolute;bottom:60%;background:rgba(6,30,48,.92);color:#eaf6ff;border:2px solid #39e0ff;border-radius:14px;padding:3px 10px;font-size:13px;white-space:nowrap;opacity:0;transition:opacity .2s}.slot.on .pill{opacity:1}.slot.filled i{width:7px;height:7px;border-width:0;background:#bff6ff;animation:none;opacity:.7}.slot .item{font-size:22px;position:absolute}
+.card h2{margin:0;padding:64px 16px 4px;text-align:center;font-size:20px}.card p{text-align:center;margin:4px 16px;font-size:17px;opacity:.8}
+.slot{position:absolute;z-index:3;display:flex;align-items:center;justify-content:center;cursor:pointer;background:none;border:none}.slot i{display:block;width:16px;height:16px;border-radius:50%;background:rgba(191,246,255,.9);color:#0d4a66;font:bold 13px/16px sans-serif;text-align:center;font-style:normal}.slot .pill{position:absolute;bottom:60%;background:rgba(6,30,48,.92);color:#eaf6ff;border:2px solid #39e0ff;border-radius:14px;padding:3px 10px;font-size:17px;white-space:nowrap;opacity:0;transition:opacity .2s}.slot.on .pill{opacity:1}.slot.filled i{width:7px;height:7px;border-width:0;background:#bff6ff;animation:none;opacity:.7}.slot .item{font-size:22px;position:absolute}
 
-.mapbtn{position:absolute;right:10px;top:62px;z-index:4;background:rgba(6,30,48,.85);border:1px solid #39e0ff;color:#fff;border-radius:16px;padding:5px 10px;font-size:13px;cursor:pointer}
+.mapbtn{position:absolute;right:10px;top:calc(var(--hudH,56px) + 6px);z-index:4;background:rgba(6,30,48,.85);border:1px solid #39e0ff;color:#fff;border-radius:16px;padding:5px 10px;font-size:17px;cursor:pointer}
 
-.tag{position:absolute;right:8px;top:60px;background:#c0392b;color:#fff;font-size:11px;padding:2px 6px;border-radius:4px;z-index:5}
+.tag{position:absolute;right:8px;top:calc(var(--hudH,56px) + 6px);background:#c0392b;color:#fff;font-size:15px;padding:2px 6px;border-radius:4px;z-index:5}
 
-.mg{position:absolute;inset:0;padding:64px 12px 90px;display:flex;flex-direction:column;gap:10px;color:#13324a}
-.mgbar{display:flex;align-items:center;justify-content:space-between;gap:6px;background:rgba(6,30,48,.92);color:#eaf6ff;border:1px solid #39e0ff;border-radius:12px;padding:8px 10px;font-size:14px}
-.mgbar .t{font-variant-numeric:tabular-nums}.mgbar .stars{font-size:16px;letter-spacing:1px}
-.mgbtn{background:#0d4a66;border:1px solid #39e0ff;color:#fff;border-radius:10px;padding:8px 12px;font-size:14px;cursor:pointer}
-.opt.locked{opacity:.45;filter:grayscale(1)}.prac{background:#ffcf4a;color:#3a2a00;border-radius:8px;padding:2px 6px;font-size:12px;font-weight:bold}
-.pgrid{position:absolute;inset:0;overflow-y:auto;padding:66px 10px 90px}.chips{display:flex;gap:6px;margin-bottom:10px}.chip{border:1px solid #39e0ff;background:#0d2a3d;color:#cfefff;border-radius:16px;padding:5px 12px;font-size:13px}.chip.on{background:#39e0ff;color:#06212f;font-weight:bold}.cards{display:grid;grid-template-columns:1fr 1fr;gap:10px}.gcard{position:relative;background:#fffaf0;border-radius:14px;padding:12px 8px;display:flex;flex-direction:column;align-items:center;gap:3px;text-align:center;box-shadow:0 3px 0 rgba(0,0,0,.25);cursor:pointer;color:#13324a}.gcard .gic{font-size:36px}.gcard.off{background:#2b3640;color:#8996a2;filter:grayscale(1)}.gcard .new{position:absolute;top:6px;right:6px;background:#ff5d73;color:#fff;font-style:normal;font-size:11px;border-radius:8px;padding:1px 6px}
-.lvwrap{position:absolute;inset:0;overflow-y:auto;padding-top:60px}.lvpath{position:absolute;left:0;top:0;width:100%}.lvn{position:absolute;transform:translate(-50%,-50%);width:62px;height:62px;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 4px 0 rgba(0,0,0,.3);font-size:20px}.lvn span{position:absolute;top:60px;font-size:13px;white-space:nowrap}.lvn.done{background:#ffcf4a;border:3px solid #fff}.lvn.open{background:#39e0ff;border:3px solid #fff}.lvn.lock{background:#9aa4ad;opacity:.75}.lvtitle{position:absolute;left:50%;transform:translateX(-50%);background:#fff;border-radius:12px;padding:4px 10px;font-weight:bold}
+.mg{position:absolute;inset:0;padding:calc(var(--hudH,56px) + 8px) 12px 90px;display:flex;flex-direction:column;gap:10px;color:#13324a}
+.mgbar{display:flex;align-items:center;justify-content:space-between;gap:6px;background:rgba(6,30,48,.92);color:#eaf6ff;border:1px solid #39e0ff;border-radius:12px;padding:8px 10px;font-size:18px}
+.mgbar .t{font-variant-numeric:tabular-nums}.mgbar .stars{font-size:19px;letter-spacing:1px}
+.mgbtn{background:#0d4a66;border:1px solid #39e0ff;color:#fff;border-radius:10px;padding:8px 12px;font-size:18px;cursor:pointer}
+.opt.locked{opacity:.45;filter:grayscale(1)}.prac{background:#ffcf4a;color:#3a2a00;border-radius:8px;padding:2px 6px;font-size:16px;font-weight:bold}
+.pgrid{position:absolute;inset:0;overflow-y:auto;padding:calc(var(--hudH,56px) + 10px) 10px 90px}.chips{display:flex;gap:6px;margin-bottom:10px}.chip{border:1px solid #39e0ff;background:#0d2a3d;color:#cfefff;border-radius:16px;padding:5px 12px;font-size:17px}.chip.on{background:#39e0ff;color:#06212f;font-weight:bold}.cards{display:grid;grid-template-columns:1fr 1fr;gap:10px}.gcard{position:relative;background:#fffaf0;border-radius:14px;padding:12px 8px;display:flex;flex-direction:column;align-items:center;gap:3px;text-align:center;box-shadow:0 3px 0 rgba(0,0,0,.25);cursor:pointer;color:#13324a}.gcard .gic{font-size:36px}.gcard.off{background:#2b3640;color:#8996a2;filter:grayscale(1)}.gcard .new{position:absolute;top:6px;right:6px;background:#ff5d73;color:#fff;font-style:normal;font-size:15px;border-radius:8px;padding:1px 6px}
+.lvwrap{position:absolute;inset:0;overflow-y:auto;padding-top:calc(var(--hudH,56px) + 4px)}.lvpath{position:absolute;left:0;top:0;width:100%}.lvn{position:absolute;transform:translate(-50%,-50%);width:62px;height:62px;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 4px 0 rgba(0,0,0,.3);font-size:20px}.lvn span{position:absolute;top:60px;font-size:17px;white-space:nowrap}.lvn.done{background:#ffcf4a;border:3px solid #fff}.lvn.open{background:#39e0ff;border:3px solid #fff}.lvn.lock{background:#9aa4ad;opacity:.75}.lvtitle{position:absolute;left:50%;transform:translateX(-50%);background:#fff;border-radius:12px;padding:4px 10px;font-weight:bold}
 .mgdone{position:absolute;right:12px;bottom:84px;z-index:6}
 .cw{background:#f4efe2 repeating-linear-gradient(0deg,transparent 0 22px,rgba(0,0,0,.03) 22px 23px);border-radius:10px;padding:12px;box-shadow:0 4px 14px rgba(0,0,0,.35)}
 .cwg{display:grid;grid-template-columns:repeat(5,1fr);gap:3px;max-width:300px;margin:0 auto}
 .cwc{aspect-ratio:1;border:2px solid #333;background:#fff;display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:700;position:relative;cursor:pointer}
 .cwc.blk{background:#2b2b2b;border-color:#2b2b2b;cursor:default}.cwc.sel{background:#c9f3ff;outline:3px solid #39e0ff}.cwc.hl{background:#eafaff}
-.cwc i{position:absolute;left:3px;top:1px;font-size:11px;font-style:normal;font-weight:600}
-.clues{font-size:13px;line-height:1.55;margin-top:8px}.clues b{color:#0d4a66}
+.cwc i{position:absolute;left:3px;top:1px;font-size:15px;font-style:normal;font-weight:600}
+.clues{font-size:17px;line-height:1.55;margin-top:8px}.clues b{color:#0d4a66}
 .keys{display:flex;flex-wrap:wrap;gap:6px;justify-content:center}.keys button{width:46px;height:46px;font-size:22px;border-radius:10px;border:2px solid #39a8d8;background:#fff;cursor:pointer}
 .jg{background:#6b4a2f;border-radius:12px;padding:10px;box-shadow:inset 0 0 0 4px #4d3420}
 .jgb{position:relative;margin:0 auto;width:min(100%,300px);aspect-ratio:3/4;background:#efe6d2;display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(4,1fr);gap:2px}
@@ -62,39 +68,41 @@ button.opt{background:#0d4a66;border:1px solid #39e0ff;color:#fff;border-radius:
 .exit{position:absolute;right:-16px;width:16px;background:#1b2f5a;border-radius:0 6px 6px 0}
 .keyhole{position:absolute;right:-46px;font-size:26px}
 
-.dq{background:rgba(6,24,40,.93);border:1px solid #39e0ff;border-radius:12px;padding:8px 10px;color:#eaf6ff;font-size:13px}
-.dq h4{margin:0 0 6px;font-size:14px}.dq.ok{border-color:#5fd38a}.dq.bad{border-color:#ff8a7a}
+.dq{background:rgba(6,24,40,.93);border:1px solid #39e0ff;border-radius:12px;padding:8px 10px;color:#eaf6ff;font-size:17px}
+.dq h4{margin:0 0 6px;font-size:18px}.dq.ok{border-color:#5fd38a}.dq.bad{border-color:#ff8a7a}
 .row{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
-.ch{border:2px solid #2d6d8a;background:#0d3346;color:#fff;border-radius:10px;padding:5px 8px;cursor:pointer;font-size:13px}
+.ch{border:2px solid #2d6d8a;background:#0d3346;color:#fff;border-radius:10px;padding:5px 8px;cursor:pointer;font-size:17px}
 .ch.sel{border-color:#7fe9ff;background:#14607f;box-shadow:0 0 8px #39e0ff}
 .por{width:58px;height:58px;margin-bottom:16px;border-radius:50%;background-size:cover;background-position:50% 18%;border:3px solid #2d6d8a;cursor:pointer;display:flex;align-items:flex-end;justify-content:center}
-.por.sel{border-color:#7fe9ff;box-shadow:0 0 10px #39e0ff}.por span{white-space:nowrap;background:rgba(0,0,0,.6);font-size:11px;border-radius:6px;padding:0 4px;margin-bottom:-14px}
-.evc{border:1px dashed #9adfff;border-radius:8px;padding:3px 7px;font-size:12px;cursor:pointer;background:#f6f0dd;color:#3a3020}
-.evc.sel{border:2px solid #39e0ff;background:#dff8ff}
+.por.sel{border-color:#7fe9ff;box-shadow:0 0 10px #39e0ff}.por span{white-space:nowrap;background:rgba(0,0,0,.6);font-size:15px;border-radius:6px;padding:0 4px;margin-bottom:-14px}
+.steplbl{font-size:18px;font-weight:bold;color:#ffd84d;margin:4px 0}
+.evgrid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:4px}
+.evc{border:2px dashed #9adfff;border-radius:10px;padding:8px 8px;font-size:18px;text-align:center;cursor:pointer;background:#f6f0dd;color:#3a3020}
+.evc.sel{border:2px solid #0a7a3a;background:#1fae5b;color:#fff;font-weight:bold}
 .mini{position:relative;width:96px;aspect-ratio:3/4;background:url(img/house-map.jpg) center/contain no-repeat #efe6d2;border-radius:6px}
 .mini div{position:absolute;cursor:pointer;border-radius:4px}.mini div.sel{background:rgba(57,224,255,.35);outline:2px solid #39e0ff}
-.hintbtn{position:absolute;left:10px;top:62px;z-index:4;width:44px;height:44px;border-radius:50%;border:2px solid #ffd84d;background:rgba(6,30,48,.88);font-size:22px;cursor:pointer;box-shadow:0 0 10px rgba(255,216,77,.6)}
+.hintbtn{position:absolute;left:10px;top:calc(var(--hudH,56px) + 6px);z-index:4;width:44px;height:44px;border-radius:50%;border:2px solid #ffd84d;background:rgba(6,30,48,.88);font-size:22px;cursor:pointer;box-shadow:0 0 10px rgba(255,216,77,.6)}
 .tutfx{outline:4px solid #ffd84d;outline-offset:3px}
 .evlist{position:absolute;inset:0;overflow-y:auto;padding:70px 12px 96px;display:flex;flex-direction:column;gap:12px;background:linear-gradient(170deg,#2a2440,#3a2f2a)}
-.evh{color:#ffe6b8;font-size:13px;opacity:.85;text-align:center}
+.evh{color:#ffe6b8;font-size:17px;opacity:.85;text-align:center}
 .evcard{position:relative;border-radius:16px;overflow:hidden;min-height:150px;background:#1a1a22;box-shadow:0 4px 0 rgba(0,0,0,.35);cursor:pointer;flex:none}
 .evcard img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 .evcard .evt{position:absolute;left:0;right:0;bottom:0;padding:26px 12px 10px;background:linear-gradient(transparent,rgba(0,0,0,.82));color:#fff}
-.evcard .evt b{font-size:18px;display:block}.evcard .evt small{font-size:13px;opacity:.9}
-.evcard .badge{position:absolute;top:8px;left:8px;background:#ffcf4a;color:#3a2a00;font-size:12px;font-weight:bold;border-radius:8px;padding:2px 8px}
+.evcard .evt b{font-size:18px;display:block}.evcard .evt small{font-size:17px;opacity:.9}
+.evcard .badge{position:absolute;top:8px;left:8px;background:#ffcf4a;color:#3a2a00;font-size:16px;font-weight:bold;border-radius:8px;padding:2px 8px}
 .evcard.off{cursor:default}.evcard.off img{filter:grayscale(1) brightness(.12)}.evcard.off .evt{color:#9aa4ad}.evcard.off .lock{position:absolute;top:34%;left:50%;transform:translate(-50%,-50%);font-size:34px;opacity:.7}
 .cs{position:absolute;inset:0;background:#000}.cs img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
-.bub{position:absolute;max-width:62%;background:#fff;color:#2b2233;border-radius:16px;padding:7px 11px;font-size:clamp(13px,2.3vh,16px);line-height:1.4;box-shadow:0 2px 6px rgba(0,0,0,.35)}
-.bub b{display:block;font-size:11px;color:#b0567a}
-.cap{position:absolute;left:4%;right:4%;bottom:96px;background:#fff6dc;color:#3a2a10;border-radius:10px;padding:8px 12px;font-size:clamp(13px,2.4vh,16px);line-height:1.45;box-shadow:0 2px 8px rgba(0,0,0,.4)}
+.bub{position:absolute;max-width:62%;background:#fff;color:#2b2233;border-radius:16px;padding:7px 11px;font-size:clamp(16px,2.7vh,19px);line-height:1.4;box-shadow:0 2px 6px rgba(0,0,0,.35)}
+.bub b{display:block;font-size:15px;color:#b0567a}
+.cap{position:absolute;left:4%;right:4%;bottom:96px;background:#fff6dc;color:#3a2a10;border-radius:10px;padding:8px 12px;font-size:clamp(17px,2.8vh,20px);line-height:1.45;box-shadow:0 2px 8px rgba(0,0,0,.4)}
 .dots{position:absolute;left:0;right:0;bottom:30px;display:flex;justify-content:center;gap:8px;pointer-events:none}.dots i{width:9px;height:9px;border-radius:50%;background:rgba(255,255,255,.4)}.dots i.on{background:#fff}
-.skip{position:absolute;right:12px;bottom:16px;z-index:6;background:rgba(0,0,0,.55);color:#fff;border:none;border-radius:16px;padding:8px 14px;font-size:14px;cursor:pointer}
-.tapnext{position:absolute;right:12px;bottom:58px;color:#fff;font-size:12px;opacity:.8;pointer-events:none}
+.skip{position:absolute;right:12px;bottom:16px;z-index:6;background:rgba(0,0,0,.55);color:#fff;border:none;border-radius:16px;padding:8px 14px;font-size:18px;cursor:pointer}
+.tapnext{position:absolute;right:12px;bottom:58px;color:#fff;font-size:16px;opacity:.8;pointer-events:none}
 #cal{position:absolute;inset:0;z-index:6;display:none;background:rgba(0,0,0,.55);padding:64px 14px 90px;overflow:auto}
-.calc{border-radius:14px;padding:12px;box-shadow:0 6px 18px rgba(0,0,0,.5)}.calh{display:flex;align-items:center;justify-content:space-between;border-radius:10px;padding:8px 10px;color:#fff;font-weight:bold;font-size:17px}.calh small{font-weight:normal;font-size:12px;opacity:.9}
-.calg{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin:8px 0;text-align:center;font-size:13px}.calg .dw{font-weight:bold;opacity:.7;font-size:11px}.calg .d{aspect-ratio:1;border-radius:6px;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(255,255,255,.55);line-height:1.1}.calg .d.m{font-weight:bold}.calg .d.t{box-shadow:inset 0 0 0 2px currentColor}.calg .d i{font-style:normal;font-size:12px}
-.cale{font-size:13px;line-height:1.5;margin:0;padding-left:0;list-style:none}.cale li{padding:5px 6px;border-radius:8px;margin:3px 0;background:rgba(255,255,255,.5);cursor:pointer}.cale li.clue{background:rgba(255,220,200,.75)}
-.calt{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}.calt button{border-radius:14px;border:1px solid #888;padding:4px 10px;font-size:12px;background:#fff;cursor:pointer}.calt button.on{background:#333;color:#fff}.calt button.lk{opacity:.5}
+.calc{border-radius:14px;padding:12px;box-shadow:0 6px 18px rgba(0,0,0,.5)}.calh{display:flex;align-items:center;justify-content:space-between;border-radius:10px;padding:8px 10px;color:#fff;font-weight:bold;font-size:20px}.calh small{font-weight:normal;font-size:16px;opacity:.9}
+.calg{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin:8px 0;text-align:center;font-size:17px}.calg .dw{font-weight:bold;opacity:.7;font-size:15px}.calg .d{aspect-ratio:1;border-radius:6px;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(255,255,255,.55);line-height:1.1}.calg .d.m{font-weight:bold}.calg .d.t{box-shadow:inset 0 0 0 2px currentColor}.calg .d i{font-style:normal;font-size:16px}
+.cale{font-size:17px;line-height:1.5;margin:0;padding-left:0;list-style:none}.cale li{padding:5px 6px;border-radius:8px;margin:3px 0;background:rgba(255,255,255,.5);cursor:pointer}.cale li.clue{background:rgba(255,220,200,.75)}
+.calt{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}.calt button{border-radius:14px;border:1px solid #888;padding:4px 10px;font-size:16px;background:#fff;cursor:pointer}.calt button.on{background:#333;color:#fff}.calt button.lk{opacity:.5}
 .calx{position:absolute;right:20px;top:70px;width:34px;height:34px;border-radius:50%;border:none;background:#fff;font-size:18px;cursor:pointer}
 </style></head><body>
 <div id="phone">
@@ -102,19 +110,22 @@ button.opt{background:#0d4a66;border:1px solid #39e0ff;color:#fff;border-radius:
  <div id="hud"></div>
  <div id="dlg"></div><div id="cal"></div><div id="board"></div><div id="toast"></div>
  <button id="back" title="ย้อนกลับ" aria-label="ย้อนกลับ">←</button>
- <button id="caseBtn">📋 สมุดคดี</button>
+ <button id="caseBtn">📋 สมุดคดี<span id="evDot"></span></button>
 </div>
 <script>
+(()=>{const h=document.getElementById('hud'),f=()=>document.getElementById('phone').style.setProperty('--hudH',h.offsetHeight+'px');new ResizeObserver(f).observe(h);f()})();
 const S={screen:'room',hist:[],ev:{},solved:false,reward:false,slots:{},played:{},practice:false,lv:{cross:[],jig:[],slide:[]},lvGame:'cross',lvN:1};
 const LVN=14,LVT={cross:{n:'ครอสเวิร์ด',bg:'repeating-linear-gradient(0deg,#f7f3e6 0 27px,#b9d3e8 27px 28px)',path:'#2b4a6b',ic:'📰'},jig:{n:'จิ๊กซอว์',bg:'radial-gradient(circle at 30% 20%,#f3e7c9,#d9c39a)',path:'#7a5a2e',ic:'🗺'},slide:{n:'เลื่อนบล็อก',bg:'repeating-linear-gradient(90deg,#a8743f 0 46px,#9a6836 46px 92px)',path:'#3b2412',ic:'🧩'}};
 function nstar(t){return (t.match(/⭐/g)||[]).length}
 const PRAC=[['cross','ครอสเวิร์ด (ภาษา)'],['jig','จิ๊กซอว์ (มิติสัมพันธ์)'],['slide','เลื่อนบล็อก (ตรรกะ)']];
 function practiceMenu(){go('prac')}
 const EV={E01:'ข้อความของน้าริน: "ขอย้ายเก็บก่อน — ริน / เก็บตามผังเดิมนะ โต๊ะยังเปียกอยู่"',E02:'โต๊ะที่เปียก (น้ำจากแจกันหก)',E03:'ลุงเมฆ: กล่องมีรูปดาว',E04:'แผนผังบ้าน: ภาพถ่ายเก็บใต้หน้าต่างห้องทำงาน',E05:'พบอัลบั้มในกล่องรูปดาว'};
-const LINES={open:'หลานมาแล้วเหรอจ๊ะ ยายหาอัลบั้มรูปครอบครัวไม่เจอ ในนั้นมีรูปตาตอนหนุ่ม ๆ ด้วยนะ',ask:'เมื่อเช้ายายยังเห็นวางอยู่บนโต๊ะกลางเลย แต่บ่ายนี้น้ารินเข้ามาเก็บกวาดนะ',stuck:'รูปเก่า ๆ บ้านนี้เขาเก็บไว้ที่เดียวกันมาตลอดแหละ ลองต่อแผนที่ที่หล่นกระจายอยู่ดูสิ',win:'นี่ไงรูปตา ขอบใจนะหลาน มานั่งดูด้วยกันมา ยายจะเล่าให้ฟัง'};
+const LINES={open:'หลานมาแล้วเหรอจ๊ะ ย่าหาอัลบั้มรูปครอบครัวไม่เจอ ในนั้นมีรูปตาตอนหนุ่ม ๆ ด้วยนะ',ask:'เมื่อเช้าย่ายังเห็นวางอยู่บนโต๊ะกลางเลย แต่บ่ายนี้น้ารินเข้ามาเก็บกวาดนะ',stuck:'รูปเก่า ๆ บ้านนี้เขาเก็บไว้ที่เดียวกันมาตลอดแหละ ลองต่อแผนที่ที่หล่นกระจายอยู่ดูสิ',win:'นี่ไงรูปตา ขอบใจนะหลาน มานั่งดูด้วยกันมา ย่าจะเล่าให้ฟัง'};
 const $=id=>document.getElementById(id);
 function toast(t){const e=$('toast');e.textContent=t;e.style.display='block';clearTimeout(e._t);e._t=setTimeout(()=>e.style.display='none',1600)}
-function addEv(k){if(!S.ev[k]){S.ev[k]=1;const t=TIMESLOTS.find(x=>x.unlockBy===k);toast('ได้หลักฐาน '+k+(t?' · ปลดล็อกเวลา: '+t.label:''))}}
+function inCase(){return !S.practice&&!['room','events','cutscene','prac','lvmap','deduce'].includes(S.screen)}
+function readyDed(){return !S.deduced&&!!(S.ev.E01&&S.ev.E02&&S.ev.E04)}
+function addEv(k){if(!S.ev[k]){S.ev[k]=1;$('evDot').classList.add('on');const t=TIMESLOTS.find(x=>x.unlockBy===k);toast('ได้หลักฐาน '+k+(t?' · ปลดล็อกเวลา: '+t.label:''))}}
 function hs(pts,label,fn,done){return {pts,label,fn,done}}
 function say(who,text,opts){const d=$('dlg');d.innerHTML='<b>'+who+':</b> “'+text+'”<div class="btns"></div>';const b=d.querySelector('.btns');(opts||[['ปิด',()=>d.style.display='none']]).forEach(([t,f])=>{const x=document.createElement('button');x.className='opt';x.textContent=t;x.onclick=f;b.appendChild(x)});d.style.display='block'}
 const SLOTS=[['ผนัง',60,37,22,7],['ชั้นของที่ระลึก',58,25,25,9],['ขอบหน้าต่าง',2,41,18,7],['โต๊ะ',54,45,32,6],['เตียง',4,52,44,14],['พรมซ้าย',10,72,26,14],['พรมกลาง',38,74,26,14],['พรมขวา',66,76,28,14]];
@@ -131,17 +142,17 @@ const SC={
   hs([[505,530],[748,530],[748,905],[505,905]],'ครัว (เสริม)',()=>go('kitchen'))]},
  living:{title:'ห้องนั่งเล่น — มุมกว้างจากประตู',hud:()=>'⏳ '+slotOf().label+' · ภารกิจ: ตามหาอัลบั้มครอบครัว',img:()=>slotOf().img,hs:()=>S.slot!=='now'?pastHs():[
   hs([[8,9],[18,9],[18,16],[8,16]],'นาฬิกา',()=>openTime('clock')),
-  hs([[74,22],[86,22],[86,32],[74,32]],'ปฏิทินของยาย',()=>openCal('living')),
+  hs([[74,22],[86,22],[86,32],[74,32]],'ปฏิทินของย่า',()=>openCal('living')),
   hs([[30,33],[52,33],[52,41],[30,41]],'ถาดชิ้นแผนผัง',()=>go('tray'),S.ev.E04),
   hs([[2,17],[22,18],[22,33],[2,33]],'ประตู → ครัว',()=>go('kitchen')),
   hs([[88,20],[96,21],[96,48],[88,46]],'ประตู → ห้องทำงาน',()=>go('study')),
-  hs([[76,66],[92,66],[93,70],[91,75],[84,75],[76,71]],'กล่องรูปดาว (ข้างโซฟา)',()=>say('ข้อความช่วยคิด','สัญลักษณ์ตรงแล้ว แต่ตำแหน่งนี้ตรงกับผังเก็บภาพถ่ายหรือยัง?')),
+  hs([[76,66],[92,66],[93,70],[91,75],[84,75],[76,71]],'กล่องรูปดาว (ข้างโซฟา)',()=>say('ข้อความช่วยคิด','กล่องนี้มีรูปดาวก็จริง แต่อยู่ห้องนั่งเล่น ลองดูผังเก็บภาพว่ารูปถ่ายเก็บไว้ห้องไหนนะ')),
   hs([[13,67],[45,64],[74,66],[73,72],[56,79],[20,78],[13,72]],'โต๊ะกลาง',()=>go('table'),S.ev.E01),
   hs([[8,38],[16,35],[23,38],[24,44],[34,48],[34,55],[30,62],[22,64],[10,62],[2,57],[2,47],[8,45]],'ลุงเมฆ',()=>go('mek'),S.ev.E03),
-  hs([[57,37],[62,36],[70,38],[71,44],[73,48],[72,54],[71,60],[66,63],[48,65],[47,60],[52,54],[53,48],[56,44]],'ยายมะลิ',()=>go('grandma'))]},
- grandma:{title:'ยายมะลิ',hud:()=>'คุยกับยายมะลิ',img:'living-grandma.jpg',hs:()=>[],enter(){
-  if(S.solved)return say('ยายมะลิ',LINES.win);
-  say('ยายมะลิ',LINES.open,[['ถามเรื่องอัลบั้ม',()=>say('ยายมะลิ',LINES.ask)],['ปิด',()=>$('dlg').style.display='none']])}},
+  hs([[57,37],[62,36],[70,38],[71,44],[73,48],[72,54],[71,60],[66,63],[48,65],[47,60],[52,54],[53,48],[56,44]],'ย่ามะลิ',()=>go('grandma'))]},
+ grandma:{title:'ย่ามะลิ',hud:()=>'คุยกับย่ามะลิ',img:'living-grandma.jpg',hs:()=>[],enter(){
+  if(S.solved)return say('ย่ามะลิ',LINES.win);
+  say('ย่ามะลิ',LINES.open,[['ถามเรื่องอัลบั้ม',()=>say('ย่ามะลิ',LINES.ask)],['ปิด',()=>$('dlg').style.display='none']])}},
  mek:{title:'ลุงเมฆ',hud:()=>'คุยกับลุงเมฆ',img:'uncle-mek.jpg',hs:()=>[],enter(){addEv('E03');
   say('ลุงเมฆ','รินเอาอัลบั้มใส่กล่องที่ติดรูปดาว ลุงเห็นตอนเธอยกผ่านโต๊ะ แต่ไม่ได้มองว่าเอาไปวางที่ไหน',[['ช่วยเติมครอสเวิร์ด (เสริม)',()=>say('ลุงเมฆ','ถ้าชอบเกมคำศัพท์ มาช่วยลุงเติมหน้านี้ด้วยก็ได้นะ อีกไม่กี่คำเอง',[['เปิดครอสเวิร์ด',()=>{MG.hints=0;go('cross')}]])],['ปิด',()=>$('dlg').style.display='none']])}},
  table:{title:'โต๊ะกลาง',hud:()=>'แตะเพื่อตรวจ',img:'living-table.jpg',hs:()=>[
@@ -153,14 +164,14 @@ const SC={
  jigsaw:{title:'จิ๊กซอว์แผนผังบ้าน',hud:()=>'⏱ 00:42 · สถิติดีที่สุด 00:35 · ⭐⭐⭐ ถ้าไม่ใช้คำใบ้',img:'house-map.jpg',contain:true,mw:864,mh:1152,hs:()=>[
   hs([[100,100],[770,100],[770,1050],[100,1050]],'(stub) ต่อเสร็จแล้ว',()=>{addEv('E04');say('แผนผัง','หมวด “ภาพถ่ายและจดหมาย” อยู่ใต้หน้าต่างห้องทำงาน ส่วนข้างโซฟาในห้องนั่งเล่นเป็นของเล่น')},S.ev.E04)]},
  study:{title:'ห้องทำงาน — มุมกว้างจากประตู',hud:()=>'ภารกิจ: หากล่องที่ถูกต้อง',img:'study-wide.jpg',hs:()=>[
-  hs([[58,59],[75,59],[75,69],[58,69]],'กล่องรูปใบไม้',()=>say('ข้อความช่วยคิด','อยู่ในโซนที่หาแล้ว ลองเทียบสัญลักษณ์กับสิ่งที่ลุงเมฆเห็นอีกครั้ง')),
+  hs([[58,59],[75,59],[75,69],[58,69]],'กล่องรูปใบไม้',()=>say('ข้อความช่วยคิด','กล่องนี้ลายใบไม้ แต่ลุงเมฆเห็นกล่องที่มีรูปดาวนะ ลองหากล่องรูปดาวดู')),
   hs([[41,58],[60,58],[60,68],[42,68]],'กล่องรูปดาว (ใต้หน้าต่าง)',()=>go('box'))]},
  box:{title:'กล่องรูปดาว',hud:()=>'กล่องสีน้ำเงินติดรูปดาว · ตัวล็อกเลื่อนบล็อกบนฝา',img:'study-box.jpg',hs:()=>[
   hs([[41,66],[53,67],[50,74],[42,73]],'สติกเกอร์รูปดาว',()=>toast('กล่องสีน้ำเงินติดรูปดาว')),
-  hs([[17,37],[82,37],[86,46],[60,57],[18,47]],S.solved?'เปิดแล้ว':S.deduced?'เล่นเลื่อนบล็อก':'ตัวล็อก (ต้องสรุปคดีก่อน)',()=>{if(S.solved)return;if(!S.deduced)return say('ยายมะลิ','กล่องนี้ล็อกอยู่นะ ลองสรุปคดีบนกระดานให้ครบก่อนสิจ๊ะ');MG.hints=0;go('slide')})]},
+  hs([[17,37],[82,37],[86,46],[60,57],[18,47]],S.solved?'เปิดแล้ว':S.deduced?'เล่นเลื่อนบล็อก':'ตัวล็อก (ต้องสรุปคดีก่อน)',()=>{if(S.solved)return;if(!S.deduced)return say('ย่ามะลิ','กล่องนี้ล็อกอยู่นะ ลองสรุปคดีบนกระดานให้ครบก่อนสิจ๊ะ');MG.hints=0;go('slide')})]},
  album:{title:'พบอัลบั้มแล้ว!',hud:()=>'หลักฐาน E05',img:'album-found.jpg',hs:()=>[
-  hs([[19,31],[54,31],[55,58],[23,58]],'รูปตาตอนหนุ่ม',()=>say('ยายมะลิ',LINES.win,[['ต่อ',()=>say('ริน','หาเจอแล้วใช่ไหม? เมื่อกี้น้ำหกบนโต๊ะ ฉันเลยรีบยกอัลบั้มใส่กล่อง แล้วทิ้งข้อความไว้')]])),
-  hs([[61,31],[99,33],[98,60],[62,56]],'โปสการ์ด',()=>say('โปสการ์ด','ภาพที่เหลือฝากไว้ที่ห้องสมุดวันวาน — ลิ้นชักหมายเลข 7',[['เก็บโปสการ์ด แล้วกลับบ้าน',()=>{S.reward=true;$('dlg').style.display='none';S.hist=[];go('room')}]]))],enter(){say('ยายมะลิ','เจอแล้ว! หน้าปกดอกไม้เล่มนี้เอง')}},
+  hs([[19,31],[54,31],[55,58],[23,58]],'รูปตาตอนหนุ่ม',()=>say('ย่ามะลิ',LINES.win,[['ต่อ',()=>say('ริน','หาเจอแล้วใช่ไหม? เมื่อกี้น้ำหกบนโต๊ะ ฉันเลยรีบยกอัลบั้มใส่กล่อง แล้วทิ้งข้อความไว้')]])),
+  hs([[61,31],[99,33],[98,60],[62,56]],'โปสการ์ด',()=>say('โปสการ์ด','ภาพที่เหลือฝากไว้ที่ห้องสมุดวันวาน — ลิ้นชักหมายเลข 7',[['เก็บโปสการ์ด แล้วกลับบ้าน',()=>{S.reward=true;$('dlg').style.display='none';S.hist=[];go('room')}]]))],enter(){say('ย่ามะลิ','เจอแล้ว! หน้าปกดอกไม้เล่มนี้เอง')}},
  kitchen:{title:'ครัว (ห้องเสริม)',hud:()=>'ไม่บังคับ',img:'kitchen-wide.jpg',hs:()=>[
   hs([[25,35],[38,35],[38,46],[25,46]],'ผ้าเปียกบนราว',()=>go('kclose')),
   hs([[74,43],[85,43],[85,57],[74,57]],'แจกันเติมน้ำใหม่',()=>go('kclose'))]},
@@ -171,13 +182,13 @@ const SC={
 
 
 const EVENTS=[
- {id:'case-01',title:'เยี่ยมบ้านคุณยาย',sub:'อัลบั้มครอบครัวหายไป',cover:'cutscene-01-p2.jpg',unlock:null},
+ {id:'case-01',title:'เยี่ยมบ้านคุณย่า',sub:'อัลบั้มครอบครัวหายไป',cover:'cutscene-01-p2.jpg',unlock:null},
  {id:'case-02',title:'ห้องสมุดวันวาน',sub:'ลิ้นชักหมายเลข 7',cover:'study-wide.jpg',unlock:{afterCase:'case-01'},hint:'ปลดล็อกเมื่อจบคดี 01'},
  {id:'case-03',title:'ตลาดน้ำยามเช้า',sub:'เร็ว ๆ นี้',cover:'kitchen-wide.jpg',unlock:{afterCase:'case-02'},hint:'ปลดล็อกเมื่อจบคดี 02'}];
 const CUTSCENE={'case-01':[
- {image:'cutscene-01-p1.jpg',caption:'คืนวันศุกร์ คุณยายมะลิโทรมาหาแม่',lines:[{who:'แม่',text:'พรุ่งนี้เราไปเยี่ยมบ้านคุณยายกันนะ',x:4,y:22,w:48},{who:'หนู',text:'เย้! ไปหาคุณยาย!',x:40,y:58,w:44}]},
- {image:'cutscene-01-p2.jpg',caption:'เช้าวันเสาร์ ครอบครัวมาถึงบ้านไม้ของคุณยาย',lines:[{who:'ยายมะลิ',text:'มาแล้วเหรอจ๊ะหลาน ยายคิดถึงจังเลย',x:2,y:46,w:50}]},
- {image:'cutscene-01-p3.jpg',caption:'แต่คุณยายดูไม่สบายใจเลย…',lines:[{who:'ยายมะลิ',text:'อัลบั้มรูปครอบครัวหายไปจากชั้นจ้ะ ในนั้นมีรูปตาตอนหนุ่ม ๆ ด้วย',x:2,y:50,w:34},{who:'หนู',text:'ไม่ต้องห่วงนะยาย หนูจะช่วยตามหาเอง!',x:56,y:72,w:42}]}]};
+ {image:'cutscene-01-p1.jpg',caption:'คืนวันศุกร์ คุณย่ามะลิโทรมาหาแม่',lines:[{who:'แม่',text:'พรุ่งนี้เราไปเยี่ยมบ้านคุณย่ากันนะ',x:4,y:22,w:48},{who:'หนู',text:'เย้! ไปหาคุณย่า!',x:40,y:58,w:44}]},
+ {image:'cutscene-01-p2.jpg',caption:'เช้าวันเสาร์ ครอบครัวมาถึงบ้านไม้ของคุณย่า',lines:[{who:'ย่ามะลิ',text:'มาแล้วเหรอจ๊ะหลาน ย่าคิดถึงจังเลย',x:2,y:46,w:50}]},
+ {image:'cutscene-01-p3.jpg',caption:'แต่คุณย่าดูไม่สบายใจเลย…',lines:[{who:'ย่ามะลิ',text:'อัลบั้มรูปครอบครัวหายไปจากชั้นจ้ะ ในนั้นมีรูปตาตอนหนุ่ม ๆ ด้วย',x:2,y:50,w:34},{who:'หนู',text:'ไม่ต้องห่วงนะย่า หนูจะช่วยตามหาเอง!',x:56,y:72,w:42}]}]};
 S.csEv='case-01';S.csPage=0;
 SC.events={title:'เลือกเหตุการณ์',hud:()=>'แตะการ์ดเพื่อเริ่มเหตุการณ์',render(el){const w=document.createElement('div');w.className='evlist';
  let h='<div class="evh">ออกจากห้องแล้ว จะไปไหนดีนะ?</div>';
@@ -187,7 +198,7 @@ SC.events={title:'เลือกเหตุการณ์',hud:()=>'แตะ
  w.querySelectorAll('.evcard').forEach(c=>c.onclick=()=>{const e=EVENTS.find(x=>x.id===c.dataset.id);if(c.classList.contains('off'))return toast('🔒 '+e.hint);S.csEv=e.id;S.csPage=0;S.csEnd=0;go('cutscene')});return []}};
 function csNext(){const P=CUTSCENE[S.csEv];if(S.csPage<P.length-1){S.csPage++;go('cutscene',true)}else csEnd()}
 function csEnd(){document.querySelectorAll('.cap,.bub,.tapnext,.skip').forEach(e=>e.remove());S.csEnd=1;pickDiff()}
-SC.cutscene={title:'เยี่ยมบ้านคุณยาย',hud:()=>'หน้า '+(S.csPage+1)+'/'+CUTSCENE[S.csEv].length,render(el){const P=CUTSCENE[S.csEv],pg=P[S.csPage];
+SC.cutscene={title:'เยี่ยมบ้านคุณย่า',hud:()=>'หน้า '+(S.csPage+1)+'/'+CUTSCENE[S.csEv].length,render(el){const P=CUTSCENE[S.csEv],pg=P[S.csPage];
  const w=document.createElement('div');w.className='cs';
  w.innerHTML=`<img src="img/${pg.image}" alt="">`+pg.lines.map(l=>`<div class="bub" style="left:${l.x}%;top:${l.y}%;max-width:${l.w||62}%"><b>${l.who}</b>${l.text}</div>`).join('')+`<div class="cap">${pg.caption}</div><div class="tapnext">${S.csPage<P.length-1?'แตะเพื่ออ่านต่อ ›':'แตะเพื่อเริ่มคดี ›'}</div><div class="dots">${P.map((_,i)=>`<i class="${i===S.csPage?'on':''}"></i>`).join('')}</div>`;
  const sk=document.createElement('button');sk.className='skip';sk.textContent='ข้าม ⏭';sk.onclick=e=>{e.stopPropagation();csEnd()};w.appendChild(sk);
@@ -202,11 +213,11 @@ const CAL_THEMES={
 const CALENDARS={
  room:{theme:'kid-room',themeSwitch:true,purpose:'upcoming',title:'ปฏิทินของฉัน',month:'ตุลาคม 2569',year:2026,m:9,today:22,entries:[
   {date:22,icon:'🎯',label:'ฝึกเล่นประจำวัน: เล่น 1 ด่าน รับ ⭐ โบนัส'},
-  {date:24,icon:'🏡',label:'เยี่ยมบ้านคุณยาย (คดี 01)',eventRef:'case-01'},
+  {date:24,icon:'🏡',label:'เยี่ยมบ้านคุณย่า (คดี 01)',eventRef:'case-01'},
   {date:31,icon:'🔒',label:'ห้องสมุดวันวาน — ปลดล็อกเมื่อจบคดี 01',eventRef:'case-02'}]},
- living:{theme:'wooden-home',purpose:'clue',title:'ปฏิทินของยายมะลิ',month:'ตุลาคม 2569',year:2026,m:9,today:22,entries:[
-  {date:12,icon:'💐',label:'วันครบรอบแต่งงานของตากับยาย'},
-  {date:22,icon:'⭕',label:'วงแดงวันนี้: “บ่ายนี้ รินมาช่วยเก็บกวาดบ้าน”',clue:'ยายเขียนไว้เองว่าบ่ายนี้น้ารินมาเก็บบ้าน — ใครอาจย้ายอัลบั้มนะ?'}]}};
+ living:{theme:'wooden-home',purpose:'clue',title:'ปฏิทินของย่ามะลิ',month:'ตุลาคม 2569',year:2026,m:9,today:22,entries:[
+  {date:12,icon:'💐',label:'วันครบรอบแต่งงานของปู่กับย่า'},
+  {date:22,icon:'⭕',label:'วงแดงวันนี้: “บ่ายนี้ รินมาช่วยเก็บกวาดบ้าน”',clue:'ย่าเขียนไว้เองว่าบ่ายนี้น้ารินมาเก็บบ้าน — ใครอาจย้ายอัลบั้มนะ?'}]}};
 S.calTheme='kid-room';
 function openCal(id,th){const C=CALENDARS[id];const tk=th||(id==='room'?S.calTheme:C.theme),T=CAL_THEMES[tk];const el=$('cal');
  const first=new Date(C.year,C.m,1).getDay(),n=new Date(C.year,C.m+1,0).getDate(),mk={};C.entries.forEach(e=>mk[e.date]=e.icon);
@@ -223,13 +234,13 @@ const TIMESLOTS=[
  {id:'afternoon',kind:'hour',label:'บ่ายนี้ 14:00',img:'living-wide-afternoon.jpg',unlockBy:'E02',hint:'ลองตรวจรอยน้ำบนโต๊ะก่อน'},
  {id:'now',kind:'hour',label:'ตอนนี้ 17:00',img:'living-wide.jpg',unlockBy:null}];
 S.slot='now';
-const PAST={rin:['แย่จัง แจกันล้ม น้ำหกเต็มโต๊ะเลย ต้องรีบเช็ดก่อน','ของบนโต๊ะต้องยกออกไปก่อน เดี๋ยวเปียกหมด'],grandma:['พรุ่งนี้หลานจะมา ยายจะหยิบอัลบั้มเล่มนี้ลงไปเปิดให้ดูตอนเช้า','รูปเก่า ๆ บ้านเรามีที่เก็บประจำนะ แต่เล่มนี้ยายชอบไว้ใกล้ตัว']};
+const PAST={rin:['แย่จัง แจกันล้ม น้ำหกเต็มโต๊ะเลย ต้องรีบเช็ดก่อน','ของบนโต๊ะต้องยกออกไปก่อน เดี๋ยวเปียกหมด'],grandma:['พรุ่งนี้หลานจะมา ย่าจะหยิบอัลบั้มเล่มนี้ลงไปเปิดให้ดูตอนเช้า','รูปเก่า ๆ บ้านเรามีที่เก็บประจำนะ แต่เล่มนี้ย่าชอบไว้ใกล้ตัว']};
 const slotOf=()=>TIMESLOTS.find(t=>t.id===S.slot);
 const slotOpen=t=>!t.unlockBy||S.ev[t.unlockBy];
-function pastHs(){const L=[hs([[8,9],[18,9],[18,16],[8,16]],'นาฬิกา',()=>openTime('clock')),hs([[74,22],[86,22],[86,32],[74,32]],'ปฏิทินของยาย',()=>openCal('living')),
+function pastHs(){const L=[hs([[8,9],[18,9],[18,16],[8,16]],'นาฬิกา',()=>openTime('clock')),hs([[74,22],[86,22],[86,32],[74,32]],'ปฏิทินของย่า',()=>openCal('living')),
   hs([[76,66],[92,66],[93,75],[76,75]],'กล่องรูปดาว (ข้างโซฟา)',()=>toast('กล่องนี้อยู่ที่เดิมทุกช่วงเวลา'))];
  if(S.slot==='afternoon')L.push(hs([[22,27],[42,28],[42,52],[30,58],[12,60],[14,40]],'น้าริน (บ่ายนี้)',()=>say2('น้าริน',PAST.rin)),hs([[30,64],[42,64],[48,72],[34,72]],'แจกันล้ม',()=>say('ย้อนเวลา: บ่ายนี้','แจกันล้ม น้ำหกนองโต๊ะ — อัลบั้มวางอยู่ข้าง ๆ เกือบเปียก!')),hs([[48,66],[68,66],[68,73],[48,73]],'อัลบั้ม (บ่ายนี้)',()=>say('ย้อนเวลา: บ่ายนี้','บ่ายนี้อัลบั้มยังอยู่บนโต๊ะ แต่ตอนนี้หายไป ใครยกไปตอนเช็ดน้ำนะ?')),hs([[44,34],[50,34],[50,40],[44,40]],'ถาดชิ้นแผนผัง',()=>toast('ชิ้นแผนผังยังอยู่ในถาด')));
- if(S.slot==='yesterday')L.push(hs([[20,25],[34,25],[36,40],[34,52],[18,52],[18,40]],'ยายมะลิ (เมื่อวาน)',()=>say2('ยายมะลิ',PAST.grandma)),hs([[38,27],[48,27],[48,33],[38,33]],'อัลบั้มบนชั้น',()=>say('ย้อนเวลา: เมื่อวาน','อัลบั้มปกดอกไม้ตั้งอยู่บนชั้นบน ใกล้มือยาย')),hs([[37,35],[48,35],[48,40],[37,40]],'ถาดชิ้นแผนผัง',()=>toast('ชิ้นแผนผังยังเรียงอยู่ในถาดครบ')));
+ if(S.slot==='yesterday')L.push(hs([[20,25],[34,25],[36,40],[34,52],[18,52],[18,40]],'ย่ามะลิ (เมื่อวาน)',()=>say2('ย่ามะลิ',PAST.grandma)),hs([[38,27],[48,27],[48,33],[38,33]],'อัลบั้มบนชั้น',()=>say('ย้อนเวลา: เมื่อวาน','อัลบั้มปกดอกไม้ตั้งอยู่บนชั้นบน ใกล้มือย่า')),hs([[37,35],[48,35],[48,40],[37,40]],'ถาดชิ้นแผนผัง',()=>toast('ชิ้นแผนผังยังเรียงอยู่ในถาดครบ')));
  return L}
 function openTime(kind){const el=$('cal');const list=TIMESLOTS.filter(t=>kind==='clock'?t.kind==='hour':true);
  let h=`<button class="calx" aria-label="ปิด">✕</button><div class="calc" style="background:repeating-linear-gradient(0deg,#f3e3c3 0 6px,#efdcb8 6px 7px);color:#4a2e18;border:8px solid #8a5a34"><div class="calh" style="background:linear-gradient(90deg,#6b3f22,#8a5a34)"><span>${kind==='clock'?'🕰 นาฬิกา: ย้อนชั่วโมง':'📅 ปฏิทิน: ย้อนวัน'}</span><small>พลังย้อนเวลา</small></div><ul class="cale">`+
@@ -306,27 +317,27 @@ SC.slide={title:'ตัวล็อกเลื่อนบล็อก',hud:()=
  for(const[n,b]of Object.entries(SB)){const d=document.createElement('div');d.className='blk2';const W=b.v?P:P*b.len,H=b.v?P*b.len:P;
   d.style.cssText=`left:calc(${b.c*P}% + 4px);top:calc(${b.r*P}% + 4px);width:calc(${W}% - 8px);height:calc(${H}% - 8px);background:${b.col}`;d.textContent=b.key?'🗝 K':n;
   d.onclick=()=>{const r=step(n);if(r==='win'&&S.practice){go('slide',true);setTimeout(()=>document.querySelector('.mgdone').click(),400);return}if(r==='win'){toast('กุญแจถึงรูกุญแจ!');setTimeout(()=>{S.solved=true;addEv('E05');S.hist=[];go('album')},500)}else if(r)go('slide',true);else toast('บล็อกนี้ขยับไม่ได้ตอนนี้')};g.appendChild(d)}
- w.appendChild(sb);w.insertAdjacentHTML('beforeend','<div style="color:#eaf6ff;font-size:13px;text-align:center">แตะบล็อกเพื่อเลื่อน · A แนวตั้ง · B, K แนวนอน · ไม่มีจำกัดเวลา</div>');return []}};
+ w.appendChild(sb);w.insertAdjacentHTML('beforeend','<div style="color:#eaf6ff;font-size:17px;text-align:center">แตะบล็อกเพื่อเลื่อน · A แนวตั้ง · B, K แนวนอน · ไม่มีจำกัดเวลา</div>');return []}};
 
 const DQ={a:[null,null,null],e:[null,null,null],ok:[0,0,0]};
 const DQA=[{q:'1. ใครย้ายอัลบั้ม?',right:'rin',ev:['E01','E03'],hint:'ลองอ่านกระดาษบนโต๊ะอีกทีสิจ๊ะ ใครเป็นคนเขียนไว้นะ'},
  {q:'2. ย้ายทำไม?',right:'water',ev:['E02'],hint:'โต๊ะยังเปียกอยู่เลยนะ หลานว่าเกิดอะไรขึ้น'},
  {q:'3. เก็บไว้ที่ไหน? (แตะบนแผนผัง)',right:'study',ev:['E04'],hint:LINES.stuck}];
-const EVHINT='คำตอบอาจถูกแล้ว แต่หลักฐานใบนี้ยังไม่ได้บอกเรื่องนั้นนะ';
+const EVHINT=["หลักฐานใบนี้ยังไม่ได้บอกว่าใครย้ายอัลบั้มนะ ลองหาใบที่บอกชื่อคนย้ายดู", "หลักฐานใบนี้ยังไม่ได้บอกว่าทำไมต้องย้ายนะ ลองหาใบที่เกี่ยวกับโต๊ะดู", "หลักฐานใบนี้ยังไม่ได้บอกว่ารูปถ่ายเก็บไว้ห้องไหนนะ ลองหาใบที่บอกที่เก็บรูปดู"],EVSHORT={"E01": "โน้ตน้าริน", "E02": "โต๊ะเปียก", "E03": "ลุงเมฆ", "E04": "แผนผังบ้าน"};
 SC.deduce={title:'กระดานคดี — สรุปคดี',hud:()=>'ตอบ 3 ข้อ + เลือกหลักฐานยืนยันทุกข้อ',render(el){
  const w=document.createElement('div');w.className='mg';w.style.gap='8px';w.style.overflow='auto';el.appendChild(w);
  const evs=Object.keys(S.ev).filter(k=>k!=='E05');
  DQA.forEach((d,i)=>{const b=document.createElement('div');b.className='dq'+(DQ.ok[i]===1?' ok':DQ.ok[i]===-1?' bad':'');
-  let h=`<h4>${d.q} ${DQ.ok[i]===1?'✅':''}</h4><div class="row">`;
-  if(i===0)[['grandma','ยายมะลิ','img/living-grandma.jpg'],['mek','ลุงเมฆ','img/uncle-mek.jpg'],['rin','น้าริน','img/rin.jpg']].forEach(([k,n,im])=>h+=`<div class="por ${DQ.a[0]===k?'sel':''}" data-a="${k}" style="${im?`background-image:url(${im})`:'background:#c58fb0;font-size:28px'}">${im?'':'👩'}<span>${n}</span></div>`);
+  let h=`<h4>${d.q} ${DQ.ok[i]===1?'✅':''}</h4><div class="steplbl">① เลือกคำตอบ</div><div class="row">`;
+  if(i===0)[['grandma','ย่ามะลิ','img/living-grandma.jpg'],['mek','ลุงเมฆ','img/uncle-mek.jpg'],['rin','น้าริน','img/rin.jpg']].forEach(([k,n,im])=>h+=`<div class="por ${DQ.a[0]===k?'sel':''}" data-a="${k}" style="${im?`background-image:url(${im})`:'background:#c58fb0;font-size:28px'}">${im?'':'👩'}<span>${n}</span></div>`);
   if(i===1)[['water','น้ำหกบนโต๊ะ'],['hide','แอบซ่อนไว้'],['look','หยิบไปดูรูป']].forEach(([k,n])=>h+=`<button class="ch ${DQ.a[1]===k?'sel':''}" data-a="${k}">${n}</button>`);
   if(i===2){h+='<div class="mini">'+[['living',10,10,80,35],['study',12,46,40,34],['kitchen',53,46,35,34]].map(([k,x,y,ww,hh])=>`<div class="${DQ.a[2]===k?'sel':''}" data-a="${k}" title="${k}" style="left:${x}%;top:${y}%;width:${ww}%;height:${hh}%"></div>`).join('')+`</div><span>${{living:'ห้องนั่งเล่น',study:'ห้องทำงาน (ใต้หน้าต่าง)',kitchen:'ครัว'}[DQ.a[2]]||'แตะห้องบนแผนผัง'}</span>`}
-  h+='</div><div class="row" style="margin-top:6px">หลักฐาน: '+evs.map(k=>`<span class="evc ${DQ.e[i]===k?'sel':''}" data-e="${k}">${k}</span>`).join('')+'</div>';
+  h+='</div><div style="margin-top:6px;font-size:18px" class="steplbl">② เลือกหลักฐาน 1 ใบ</div><div class="evgrid">'+evs.map(k=>`<span class="evc ${DQ.e[i]===k?'sel':''}" data-e="${k}">${DQ.e[i]===k?'✓ ':''}<b>${k}</b> ${EVSHORT[k]||''}</span>`).join('')+'</div>';
   b.innerHTML=h;b.querySelectorAll('[data-a]').forEach(x=>x.onclick=()=>{DQ.a[i]=x.dataset.a;DQ.ok[i]=0;go('deduce',true)});
   b.querySelectorAll('[data-e]').forEach(x=>x.onclick=()=>{DQ.e[i]=x.dataset.e;DQ.ok[i]=0;go('deduce',true)});w.appendChild(b)});
- w.insertAdjacentHTML('beforeend','<div style="font-size:11px;color:#bfe9ff">'+evs.map(k=>k+': '+EV[k]).join('<br>')+'</div>');
- doneBtn(w,'⚖ ยืนยันข้อสรุป',()=>{let hint=null;DQA.forEach((d,i)=>{const okA=DQ.a[i]===d.right,okE=d.ev.includes(DQ.e[i]);DQ.ok[i]=okA&&okE?1:-1;if(!hint&&!(okA&&okE))hint=!okA?d.hint:EVHINT});
-  go('deduce',true);setTimeout(()=>{if(hint)say('ยายมะลิ',hint);else{S.deduced=true;say('ยายมะลิ','เก่งมากหลาน! งั้นไปดูที่ห้องทำงานกันเถอะ',[['ไปห้องทำงาน',()=>{S.hist=['living'];go('study',true)}]])}},350)});return []}};
+ w.insertAdjacentHTML('beforeend','<div style="font-size:15px;color:#bfe9ff">'+evs.map(k=>k+': '+EV[k]).join('<br>')+'</div>');
+ w.style.paddingBottom='96px';doneBtn(w,'⚖ ยืนยันข้อสรุป',()=>{let hint=null;DQA.forEach((d,i)=>{const okA=DQ.a[i]===d.right,okE=d.ev.includes(DQ.e[i]);DQ.ok[i]=okA&&okE?1:-1;if(!hint&&!(okA&&okE))hint='ข้อ '+(i+1)+(!okA?' ยังไม่ถูก: '+d.hint:' — หลักฐานยังไม่ตรง: '+EVHINT[i])});
+  go('deduce',true);setTimeout(()=>{if(hint)say('ย่ามะลิ',hint);else{S.deduced=true;say('ย่ามะลิ','เก่งมากหลาน! งั้นไปดูที่ห้องทำงานกันเถอะ',[['ไปห้องทำงาน',()=>{S.hist=['living'];go('study',true)}]])}},350)});[...w.children].forEach(c=>c.style.flexShrink='0');const db=w.querySelector('.mgdone');if(db){db.style.position='static';db.style.alignSelf='flex-end';db.style.flexShrink='0'}return []}};
 
 const GOALS=[
  {c:()=>!S.ev.E01||!S.ev.E02,room:'ห้องนั่งเล่น',at:'living',obj:'โต๊ะกลาง',sub:()=>({table:!S.ev.E01?'ข้อความของน้าริน':'รอยน้ำ'})},
@@ -343,18 +354,19 @@ function arHint(){const gi=GOALS.findIndex(g=>g.c());const g=GOALS[gi];if(HINT.g
  const el=label&&[...document.querySelectorAll('.hot')].find(h=>h.textContent.includes(label));
  if(el){el.classList.add('hint');setTimeout(()=>el.classList.remove('hint'),2500);toast('💡 คำใบ้ 2 (ฟรี): แตะ “'+label+'”')}
  else toast('💡 คำใบ้ 2 (ฟรี): ไปที่ '+g.room+' แล้วแตะ “'+g.obj+'”');draw2()}
-function draw2(){const h=$('hud');const c=$('hc');if(c)c.textContent=MG.hints||0;else if(h&&SC[S.screen].render&&!['deduce','prac','lvmap','events','cutscene'].includes(S.screen))h.innerHTML+=' · คำใบ้ในมินิเกมนี้ <span id="hc">'+(MG.hints||0)+'</span> (มีผลต่อดาว)';else if(h&&!['prac','lvmap','events','cutscene'].includes(S.screen)&&!h.innerHTML.includes('สำรวจใช้ฟรี'))h.innerHTML+=' · 💡 คำใบ้สำรวจใช้ฟรี'}
+function hudAdd(h,x){const n=h.querySelector('.nextstep');if(n)n.insertAdjacentHTML('beforebegin',x);else h.innerHTML+=x}
+function draw2(){const h=$('hud');const c=$('hc');if(c)c.textContent=MG.hints||0;else if(h&&SC[S.screen].render&&!['deduce','prac','lvmap','events','cutscene'].includes(S.screen))hudAdd(h,' · คำใบ้ในมินิเกมนี้ <span id="hc">'+(MG.hints||0)+'</span> (มีผลต่อดาว)');else if(h&&inCase()&&!h.innerHTML.includes('สำรวจใช้ฟรี'))hudAdd(h,' · 💡 คำใบ้สำรวจใช้ฟรี')}
 function pickDiff(){say('เลือกระดับความยากของคดีนี้','เลือกได้ใหม่ทุกครั้งที่เริ่มคดี ไม่มีจำกัดเวลา',['ง่าย','ปานกลาง','ยาก'].map(d=>[d,()=>{DIFF=d;toast('ระดับ: '+d);if(S.screen==='cutscene'){S.hist=['room'];S.screen='events';S.csEnd=0}go('map')}]))}
 const TUT=['ขั้น 1/3: แตะจุดเล็ก ๆ เพื่อดูหรือใช้วัตถุ','ขั้น 2/3: ปุ่ม ← มุมล่างซ้าย ใช้ย้อนกลับเสมอ','ขั้น 3/3: ปุ่ม 📋 สมุดคดี เปิดกระดานคดีและหลักฐาน'];
-function tutorial(i){document.querySelectorAll('.tutfx').forEach(e=>e.classList.remove('tutfx'));if(i>=TUT.length){$('dlg').style.display='none';S.tut=1;return}
- const t=[null,'back','caseBtn'][i];if(t){$(t).classList.add('tutfx');$(t).style.visibility='visible'}say('บทสอน (HUD)',TUT[i],[[i<2?'ต่อ':'เริ่มเล่น',()=>tutorial(i+1)]])}
+function tutorial(i){document.querySelectorAll('.tutfx').forEach(e=>e.classList.remove('tutfx'));if(i>=TUT.length){$('dlg').style.display='none';S.tut=1;$('caseBtn').style.display=inCase()?'':'none';return}
+ const t=[null,'back','caseBtn'][i];if(t){$(t).classList.add('tutfx');$(t).style.visibility='visible';$(t).style.display=''}say('บทสอน (HUD)',TUT[i],[[i<2?'ต่อ':'เริ่มเล่น',()=>tutorial(i+1)]])}
 const HOUSE=['living','study','kitchen','table','tray','mek','grandma','kclose'];
 function draw(){const sc=SC[S.screen],el=$('scene');let list;
  if(sc.render){el.innerHTML='<div class="bg" style="background:linear-gradient(160deg,#1d3346,#2c4a5e)"></div>';list=sc.render(el)}else{el.innerHTML=`<img class="bg ${sc.contain?'contain':''}" src="img/${typeof sc.img==='function'?sc.img():sc.img}" alt="">`;list=sc.hs();sc.extra&&sc.extra(el)}
  if(HOUSE.includes(S.screen)){const m=document.createElement('button');m.className='mapbtn';m.textContent='🗺 แผนผังบ้าน';m.onclick=()=>go('map');el.appendChild(m)}
  const map=!!sc.contain,W=map?sc.mw:720,Hh=map?sc.mh:1280,NS='http://www.w3.org/2000/svg';
  const svg=document.createElementNS(NS,'svg');svg.setAttribute('class','hl');svg.setAttribute('viewBox',`0 0 ${W} ${Hh}`);svg.setAttribute('preserveAspectRatio',map?'xMidYMid meet':'xMidYMid slice');
- const fs=map?34:30;
+ const fs=map?46:42;
  list.forEach(h=>{const P=h.pts.map(([x,y])=>map?[x,y]:[x*7.2,y*12.8]);
   const cx=P.reduce((a,p)=>a+p[0],0)/P.length,cy=P.reduce((a,p)=>a+p[1],0)/P.length,top=Math.min(...P.map(p=>p[1]));
   const g=document.createElementNS(NS,'g');g.setAttribute('class','hot'+(h.done?' done':''));
@@ -363,13 +375,15 @@ function draw(){const sc=SC[S.screen],el=$('scene');let list;
   g.querySelector('polygon').addEventListener('click',e=>{e.stopPropagation();g.classList.add('on');setTimeout(()=>{g.classList.remove('on');h.fn()},450)});
   svg.appendChild(g)});
  el.appendChild(svg);
- $('hud').innerHTML='<b>'+sc.title+'</b><br>'+sc.hud()+(['events','cutscene'].includes(S.screen)?'':' · หลักฐาน '+Object.keys(S.ev).length+'/5');
- $('back').style.visibility=S.hist.length?'visible':'hidden';$('caseBtn').style.display=['events','cutscene'].includes(S.screen)?'none':'';
- if(!sc.render){const hb=document.createElement('button');hb.className='hintbtn';hb.title='คำใบ้';hb.textContent='💡';hb.onclick=arHint;el.appendChild(hb)}draw2()}
+ $('hud').innerHTML='<b>'+sc.title+'</b><br>'+sc.hud()+(!inCase()?'':' · หลักฐาน '+Object.keys(S.ev).length+'/5')+(readyDed()&&inCase()&&!SC[S.screen].render?'<div class="nextstep">👉 หลักฐานพอแล้ว! กดสรุปคดีได้เลย (ปุ่ม 📋 สมุดคดี)</div>':'');$('caseBtn').style.display=inCase()?'':'none';if(!inCase())$('board').style.display='none';
+ $('back').style.visibility=S.hist.length?'visible':'hidden';
+ if(!sc.render&&inCase()){const hb=document.createElement('button');hb.className='hintbtn';hb.title='คำใบ้';hb.textContent='💡';hb.onclick=arHint;el.appendChild(hb)}draw2()}
 function go(n,replace){$('dlg').style.display='none';$('cal').style.display='none';$('board').style.display='none';if(!replace&&n!==S.screen)S.hist.push(S.screen);if(['cross','jig','slide'].includes(n)&&!S.practice&&!S.played[n]){S.played[n]=1;S.lv[n][0]=2}
  if(n!=='living')S.slot='now';const el=$('scene');el.classList.add('fade');setTimeout(()=>{S.screen=n;draw();el.classList.remove('fade');SC[n].enter&&SC[n].enter()},300)}
 $('back').onclick=()=>{if($('cal').style.display==='block'){$('cal').style.display='none';return}if($('dlg').style.display==='block'||$('board').style.display==='block'){$('dlg').style.display='none';$('board').style.display='none';return}const p=S.hist.pop();if(p==='room'||p==='lvmap')endPractice();if(p){const el=$('scene');el.classList.add('fade');setTimeout(()=>{S.screen=p;draw();el.classList.remove('fade')},300)}};
-$('caseBtn').onclick=()=>{const b=$('board');if(b.style.display==='block'){b.style.display='none';return}
- b.innerHTML='<h3 style="margin-top:0">📋 กระดานคดี: อัลบั้มครอบครัวที่หายไป</h3><ul>'+Object.keys(EV).map(k=>S.ev[k]?`<li>✅ <b>${k}</b> ${EV[k]}</li>`:`<li style="opacity:.45">⬜ ${k} — ยังไม่พบ</li>`).join('')+'</ul>'+(S.deduced?'<p>✅ สรุปคดีแล้ว — ไปเปิดกล่องในห้องทำงาน</p>':S.ev.E01&&S.ev.E02&&S.ev.E04?'<button class="mgbtn" id="goDed">⚖ สรุปคดี (3 คำถาม)</button>':'<p style="opacity:.7">เก็บหลักฐาน E01, E02, E04 ให้ครบเพื่อสรุปคดี</p>');b.style.display='block';const g=$('goDed');if(g)g.onclick=()=>go('deduce')};
+$('caseBtn').onclick=()=>{const b=$('board');$('evDot').classList.remove('on');if(b.style.display==='block'){b.style.display='none';return}
+ b.innerHTML='<h3 style="margin-top:0">📋 กระดานคดี: อัลบั้มครอบครัวที่หายไป</h3><ul>'+Object.keys(EV).map(k=>S.ev[k]?`<li>✅ <b>${k}</b> ${EV[k]} ${k==='E03'?'<span class="optpill">เสริม</span>':''}</li>`:(k==='E05'&&!S.deduced?`<li style="opacity:.7">🔒 ${k} — ได้หลังสรุปคดี</li>`:`<li style="opacity:${k==='E03'?.75:.45}">⬜ ${k} — ยังไม่พบ ${k==='E03'?'<span class="optpill">เสริม</span>':''}</li>`)).join('')+'</ul>'+(S.deduced?'<p>✅ สรุปคดีแล้ว — ไปเปิดกล่องในห้องทำงาน</p>':S.ev.E01&&S.ev.E02&&S.ev.E04?(readyDed()?'<div class="nextstep big">✅ หลักฐานพอแล้ว! กดสรุปคดีได้เลย</div>':'')+'<button class="mgbtn" id="goDed">⚖ สรุปคดี (3 คำถาม)</button>':'<p style="opacity:.7">เก็บหลักฐาน E01, E02, E04 ให้ครบเพื่อสรุปคดี</p>');b.style.display='block';const g=$('goDed');if(g)g.onclick=()=>go('deduce')};
 draw();setTimeout(()=>tutorial(0),400);
+document.body.insertAdjacentHTML('beforeend','<div id="ver" style="position:fixed;top:4px;right:6px;z-index:9999;font:bold 13px sans-serif;color:#fff;background:rgba(0,0,0,.55);padding:2px 7px;border-radius:8px;pointer-events:none">v0.4.12</div>');
+if("serviceWorker" in navigator&&location.protocol.startsWith("http"))navigator.serviceWorker.register("sw.js");
 </script></body></html>
