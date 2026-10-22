@@ -6,6 +6,7 @@
   import Hud from './components/Hud.svelte';
   import Onboarding from './components/Onboarding.svelte';
   import RoomView from './components/RoomView.svelte';
+  import ShowcaseView from './components/ShowcaseView.svelte';
   import SettingsPanel from './components/SettingsPanel.svelte';
   import Sheet from './components/Sheet.svelte';
   import { loadFlow } from './lib/flow/loadFlow';
@@ -28,6 +29,8 @@
   let toastTimer = 0;
   let hintTimer = 0;
   let hintTier = 0;
+  let route = $state(window.location.hash);
+  const showcasing = $derived(route.startsWith('#/showcase'));
 
   const calendar = $derived.by((): CalendarEntity | null => {
     const found = room?.objects.find((obj) => obj.kind === 'calendar');
@@ -165,6 +168,10 @@
       .catch((reason: unknown) => {
         if (!ac.signal.aborted) error = reason instanceof Error ? reason.message : 'เปิดห้องไม่ได้';
       });
+    const onHash = () => {
+      route = window.location.hash;
+    };
+    window.addEventListener('hashchange', onHash);
     loadFlow()
       .then((loaded) => {
         if (!ac.signal.aborted) session.use(loaded.flow, loaded.screens, save.flow);
@@ -174,6 +181,7 @@
       });
     return () => {
       ac.abort();
+      window.removeEventListener('hashchange', onHash);
       window.clearTimeout(toastTimer);
       window.clearTimeout(hintTimer);
     };
@@ -185,6 +193,8 @@
     <p class="error">{error}</p>
   {:else if !room}
     <p class="status">กำลังเปิดห้อง…</p>
+  {:else if showcasing}
+    <ShowcaseView {room} />
   {:else}
     <div class="stage" class:is-fading={session.fading}>
       <div class="room-layer" class:hidden={session.screen !== 'player-room'}>
