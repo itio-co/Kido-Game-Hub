@@ -214,7 +214,7 @@
       <button type="button" class="calx" aria-label="ปิด" onclick={() => session.closeOverlay()}>✕</button>
       <div class="calc">
         {#if session.overlay === 'calendar'}
-          <div class="calh"><span>ปฏิทินของยายมะลิ</span><small>ตุลาคม 2569</small></div>
+          <div class="calh"><span>ปฏิทินของย่ามะลิ</span><small>ตุลาคม 2569</small></div>
           <div class="calg">
             {#each ['อา', 'จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส'] as name (name)}<div class="dw">{name}</div>{/each}
             {#each Array.from({ length: firstWeekday }) as _, index (index)}<div></div>{/each}
@@ -223,8 +223,8 @@
             {/each}
           </div>
           <ul>
-            <li><b>12 ต.ค.</b> วันครบรอบแต่งงานของตากับยาย</li>
-            <li class="clue"><button type="button" onclick={() => session.showToast('ยายเขียนไว้เองว่าบ่ายนี้น้ารินมาเก็บบ้าน — ใครอาจย้ายอัลบั้มนะ?')}>⭕ <b>22 ต.ค.</b> วงแดงวันนี้: บ่ายนี้ รินมาช่วยเก็บกวาดบ้าน</button></li>
+            <li><b>12 ต.ค.</b> วันครบรอบแต่งงานของปู่กับย่า</li>
+            <li class="clue"><button type="button" onclick={() => session.showToast('ย่าเขียนไว้เองว่าบ่ายนี้น้ารินมาเก็บบ้าน — ใครอาจย้ายอัลบั้มนะ?')}>⭕ <b>22 ต.ค.</b> วงแดงวันนี้: บ่ายนี้ รินมาช่วยเก็บกวาดบ้าน</button></li>
           </ul>
           <button type="button" class="link" onclick={() => session.openDayTravel()}>ย้อนวันด้วยปฏิทิน</button>
         {:else}

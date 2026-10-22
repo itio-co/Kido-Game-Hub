@@ -252,7 +252,7 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
         return;
       }
       if (!deduced) {
-        openLines('ยายมะลิ', ['กล่องนี้ล็อกอยู่นะ ลองสรุปคดีบนกระดานให้ครบก่อนสิจ๊ะ']);
+        openLines('ย่ามะลิ', ['กล่องนี้ล็อกอยู่นะ ลองสรุปคดีบนกระดานให้ครบก่อนสิจ๊ะ']);
         return;
       }
       hints = 0;
@@ -579,7 +579,7 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
         return rightAnswer && rightProof ? 1 : -1;
       });
       marks = nextMarks;
-      if (hint) openLines('ยายมะลิ', [hint]);
+      if (hint) openLines('ย่ามะลิ', [hint]);
       else {
         deduced = true;
         persist();

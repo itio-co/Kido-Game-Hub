@@ -25,7 +25,7 @@ const screens = [
   ['kitchen-close', 'ครัวมุมใกล้', 'Kitchen close-up', 'demo'],
   ['table', 'โต๊ะกลาง', 'Coffee table', 'demo'],
   ['tray', 'ถาดชิ้นแผนผัง', 'Map-piece tray', 'demo'],
-  ['grandma', 'ยายมะลิ', 'Grandma Mali', 'demo'],
+  ['grandma', 'ย่ามะลิ', 'Grandma Mali', 'demo'],
   ['uncle', 'ลุงเมฆ', 'Uncle Mek', 'demo'],
   ['star-box', 'กล่องรูปดาว', 'Star box', 'demo'],
   ['crossword', 'ครอสเวิร์ด', 'Crossword', 'demo'],
@@ -87,14 +87,14 @@ const scenes = [
     hud: 'ภารกิจ: ตามหาอัลบั้มครอบครัว',
     spots: [
       spot('นาฬิกา', 'flow/living-room/clock', 13, 12.5, { type: 'clock' }, { en: 'Clock' }),
-      spot('ปฏิทินของยาย', 'flow/living-room/calendar', 80, 27, { type: 'calendar' }, { en: 'Grandma calendar' }),
+      spot('ปฏิทินของย่า', 'flow/living-room/calendar', 80, 27, { type: 'calendar' }, { en: 'Grandma calendar' }),
       spot('ถาดชิ้นแผนผัง', 'flow/living-room/tray', 41, 37, go('tray'), { en: 'Map tray', when: 'now', done: 'E04' }),
       spot('ประตูไปครัว', 'flow/living-room/kitchen-door', 12, 25.3, go('kitchen'), { en: 'Door to the kitchen', when: 'now' }),
       spot('ประตูไปห้องทำงาน', 'flow/living-room/study-door', 92, 33.8, go('study'), { en: 'Door to the study', when: 'now' }),
       spot('กล่องรูปดาว (ข้างโซฟา)', 'flow/living-room/star-box', 85.3, 70.5, toast('สัญลักษณ์ตรงแล้ว แต่ตำแหน่งนี้ตรงกับผังเก็บภาพถ่ายหรือยัง?'), { en: 'Star box by the sofa', when: 'now' }),
       spot('โต๊ะกลาง', 'flow/living-room/table', 42, 71.1, go('table'), { en: 'Coffee table', when: 'now', done: 'E01' }),
       spot('ลุงเมฆ', 'flow/living-room/mek', 17.8, 49.6, go('uncle'), { en: 'Uncle Mek', when: 'now', done: 'E03' }),
-      spot('ยายมะลิ', 'flow/living-room/grandma', 61.4, 50.1, go('grandma'), { en: 'Grandma Mali', when: 'now' }),
+      spot('ย่ามะลิ', 'flow/living-room/grandma', 61.4, 50.1, go('grandma'), { en: 'Grandma Mali', when: 'now' }),
       spot('กล่องรูปดาว (ข้างโซฟา)', 'flow/living-room/star-box-past', 84.3, 70.5, toast('กล่องนี้อยู่ที่เดิมทุกช่วงเวลา'), { when: 'afternoon' }),
       spot('น้าริน (บ่ายนี้)', 'flow/living-room/rin', 27, 44.2, {
         type: 'lines',
@@ -113,15 +113,15 @@ const scenes = [
       }, { when: 'afternoon' }),
       spot('ถาดชิ้นแผนผัง', 'flow/living-room/tray-afternoon', 47, 37, toast('ชิ้นแผนผังยังอยู่ในถาด'), { when: 'afternoon' }),
       spot('กล่องรูปดาว (ข้างโซฟา)', 'flow/living-room/star-box-yesterday', 84.3, 70.5, toast('กล่องนี้อยู่ที่เดิมทุกช่วงเวลา'), { when: 'yesterday' }),
-      spot('ยายมะลิ (เมื่อวาน)', 'flow/living-room/grandma-yesterday', 26.7, 39, {
+      spot('ย่ามะลิ (เมื่อวาน)', 'flow/living-room/grandma-yesterday', 26.7, 39, {
         type: 'lines',
-        who: 'ยายมะลิ',
-        lines: ['พรุ่งนี้หลานจะมา ยายจะหยิบอัลบั้มเล่มนี้ลงไปเปิดให้ดูตอนเช้า', 'รูปเก่า ๆ บ้านเรามีที่เก็บประจำนะ แต่เล่มนี้ยายชอบไว้ใกล้ตัว'],
+        who: 'ย่ามะลิ',
+        lines: ['พรุ่งนี้หลานจะมา ย่าจะหยิบอัลบั้มเล่มนี้ลงไปเปิดให้ดูตอนเช้า', 'รูปเก่า ๆ บ้านเรามีที่เก็บประจำนะ แต่เล่มนี้ย่าชอบไว้ใกล้ตัว'],
       }, { when: 'yesterday' }),
       spot('อัลบั้มบนชั้น', 'flow/living-room/album-shelf', 43, 30, {
         type: 'lines',
         who: 'ย้อนเวลา: เมื่อวาน',
-        lines: ['อัลบั้มปกดอกไม้ตั้งอยู่บนชั้นบน ใกล้มือยาย'],
+        lines: ['อัลบั้มปกดอกไม้ตั้งอยู่บนชั้นบน ใกล้มือย่า'],
       }, { when: 'yesterday' }),
       spot('ถาดชิ้นแผนผัง', 'flow/living-room/tray-yesterday', 42.5, 37.5, toast('ชิ้นแผนผังยังเรียงอยู่ในถาดครบ'), { when: 'yesterday' }),
     ],
@@ -186,15 +186,15 @@ const scenes = [
       spot('ต่อจิ๊กซอว์แผนผังบ้าน', 'flow/tray/jigsaw', 58.7, 65.5, { type: 'minigame', screen: 'jigsaw' }, { en: 'House-map jigsaw', done: 'E04' }),
     ],
   }),
-  ent('scene', 'ยายมะลิ', 'flow/scene/grandma', {
+  ent('scene', 'ย่ามะลิ', 'flow/scene/grandma', {
     titleEn: 'Grandma Mali',
     screen: 'grandma',
     image: 'living-grandma.jpg',
     map: true,
-    hud: 'คุยกับยายมะลิ',
+    hud: 'คุยกับย่ามะลิ',
     enter: 'flow/dialogue/grandma-open',
     enterWhenSolved: 'flow/dialogue/grandma-win',
-    spots: [spot('คุยกับยาย', 'flow/grandma/talk', 50, 42, { type: 'dialogue', dialogue: 'flow/dialogue/grandma-open' }, { en: 'Talk' })],
+    spots: [spot('คุยกับย่า', 'flow/grandma/talk', 50, 42, { type: 'dialogue', dialogue: 'flow/dialogue/grandma-open' }, { en: 'Talk' })],
   }),
   ent('scene', 'ลุงเมฆ', 'flow/scene/uncle', {
     titleEn: 'Uncle Mek',
@@ -232,22 +232,22 @@ const scenes = [
 const choice = (title, slug, extra) => ent('choice', title, slug, extra);
 
 const dialogues = [
-  ent('dialogue', 'ยายเปิดเรื่อง', 'flow/dialogue/grandma-open', {
-    who: 'ยายมะลิ',
-    text: 'หลานมาแล้วเหรอจ๊ะ ยายหาอัลบั้มรูปครอบครัวไม่เจอ ในนั้นมีรูปตาตอนหนุ่ม ๆ ด้วยนะ',
+  ent('dialogue', 'ย่าเปิดเรื่อง', 'flow/dialogue/grandma-open', {
+    who: 'ย่ามะลิ',
+    text: 'หลานมาแล้วเหรอจ๊ะ ย่าหาอัลบั้มรูปครอบครัวไม่เจอ ในนั้นมีรูปตาตอนหนุ่ม ๆ ด้วยนะ',
     choices: [
       choice('ถามเรื่องอัลบั้ม', 'flow/dialogue/grandma-open/ask', { next: 'flow/dialogue/grandma-ask' }),
       choice('ปิด', 'flow/dialogue/grandma-open/close', { action: { type: 'toast', text: '' } }),
     ],
   }),
-  ent('dialogue', 'ยายเล่าเรื่องอัลบั้ม', 'flow/dialogue/grandma-ask', {
-    who: 'ยายมะลิ',
-    text: 'เมื่อเช้ายายยังเห็นวางอยู่บนโต๊ะกลางเลย แต่บ่ายนี้น้ารินเข้ามาเก็บกวาดนะ',
+  ent('dialogue', 'ย่าเล่าเรื่องอัลบั้ม', 'flow/dialogue/grandma-ask', {
+    who: 'ย่ามะลิ',
+    text: 'เมื่อเช้าย่ายังเห็นวางอยู่บนโต๊ะกลางเลย แต่บ่ายนี้น้ารินเข้ามาเก็บกวาดนะ',
     choices: [choice('ปิด', 'flow/dialogue/grandma-ask/close', {})],
   }),
-  ent('dialogue', 'ยายดีใจ', 'flow/dialogue/grandma-win', {
-    who: 'ยายมะลิ',
-    text: 'นี่ไงรูปตา ขอบใจนะหลาน มานั่งดูด้วยกันมา ยายจะเล่าให้ฟัง',
+  ent('dialogue', 'ย่าดีใจ', 'flow/dialogue/grandma-win', {
+    who: 'ย่ามะลิ',
+    text: 'นี่ไงรูปตา ขอบใจนะหลาน มานั่งดูด้วยกันมา ย่าจะเล่าให้ฟัง',
     choices: [choice('ปิด', 'flow/dialogue/grandma-win/close', {})],
   }),
   ent('dialogue', 'ลุงเมฆเล่า', 'flow/dialogue/mek-open', {
@@ -272,13 +272,13 @@ const dialogues = [
     choices: [choice('ปิด', 'flow/dialogue/mek-thanks/close', {})],
   }),
   ent('dialogue', 'เปิดอัลบั้ม', 'flow/dialogue/album-open', {
-    who: 'ยายมะลิ',
+    who: 'ย่ามะลิ',
     text: 'เจอแล้ว! หน้าปกดอกไม้เล่มนี้เอง',
     choices: [choice('ปิด', 'flow/dialogue/album-open/close', {})],
   }),
   ent('dialogue', 'รูปตา', 'flow/dialogue/album-portrait', {
-    who: 'ยายมะลิ',
-    text: 'นี่ไงรูปตา ขอบใจนะหลาน มานั่งดูด้วยกันมา ยายจะเล่าให้ฟัง',
+    who: 'ย่ามะลิ',
+    text: 'นี่ไงรูปตา ขอบใจนะหลาน มานั่งดูด้วยกันมา ย่าจะเล่าให้ฟัง',
     choices: [choice('ต่อ', 'flow/dialogue/album-portrait/next', { next: 'flow/dialogue/album-rin' })],
   }),
   ent('dialogue', 'รินอธิบาย', 'flow/dialogue/album-rin', {
@@ -292,7 +292,7 @@ const dialogues = [
     choices: [choice('เก็บโปสการ์ด แล้วกลับบ้าน', 'flow/dialogue/album-card/home', { action: { type: 'home' } })],
   }),
   ent('dialogue', 'สรุปคดีผ่าน', 'flow/dialogue/deduce-ok', {
-    who: 'ยายมะลิ',
+    who: 'ย่ามะลิ',
     text: 'เก่งมากหลาน! งั้นไปดูที่ห้องทำงานกันเถอะ',
     choices: [choice('ไปห้องทำงาน', 'flow/dialogue/deduce-ok/go', { action: go('study') })],
   }),
@@ -324,7 +324,7 @@ const flow = ent('story-flow', 'คดี 01 อัลบั้มครอบ�
   titleEn: 'Case 01',
   difficulties: ['ง่าย', 'ปานกลาง', 'ยาก'],
   events: [
-    ent('event', 'เยี่ยมบ้านคุณยาย', 'flow/event/case-01', {
+    ent('event', 'เยี่ยมบ้านคุณย่า', 'flow/event/case-01', {
       titleEn: 'Visit grandma',
       eventId: 'case-01',
       subtitle: 'อัลบั้มครอบครัวหายไป',
@@ -350,21 +350,21 @@ const flow = ent('story-flow', 'คดี 01 อัลบั้มครอบ�
     }),
   ],
   pages: [
-    ent('cutscene-page', 'ยายโทรมา', 'flow/cutscene/case-01/p1', {
+    ent('cutscene-page', 'ย่าโทรมา', 'flow/cutscene/case-01/p1', {
       eventId: 'case-01',
       image: 'cutscene-01-p1.jpg',
-      caption: 'คืนวันศุกร์ คุณยายมะลิโทรมาหาแม่',
+      caption: 'คืนวันศุกร์ คุณย่ามะลิโทรมาหาแม่',
       lines: [
         ent('speech-line', 'แม่', 'flow/cutscene/case-01/p1/mom', {
           who: 'แม่',
-          text: 'พรุ่งนี้เราไปเยี่ยมบ้านคุณยายกันนะ',
+          text: 'พรุ่งนี้เราไปเยี่ยมบ้านคุณย่ากันนะ',
           x: 4,
           y: 22,
           w: 48,
         }),
         ent('speech-line', 'หนู', 'flow/cutscene/case-01/p1/child', {
           who: 'หนู',
-          text: 'เย้! ไปหาคุณยาย!',
+          text: 'เย้! ไปหาคุณย่า!',
           x: 40,
           y: 58,
           w: 44,
@@ -374,11 +374,11 @@ const flow = ent('story-flow', 'คดี 01 อัลบั้มครอบ�
     ent('cutscene-page', 'ถึงบ้านไม้', 'flow/cutscene/case-01/p2', {
       eventId: 'case-01',
       image: 'cutscene-01-p2.jpg',
-      caption: 'เช้าวันเสาร์ ครอบครัวมาถึงบ้านไม้ของคุณยาย',
+      caption: 'เช้าวันเสาร์ ครอบครัวมาถึงบ้านไม้ของคุณย่า',
       lines: [
-        ent('speech-line', 'ยายมะลิ', 'flow/cutscene/case-01/p2/grandma', {
-          who: 'ยายมะลิ',
-          text: 'มาแล้วเหรอจ๊ะหลาน ยายคิดถึงจังเลย',
+        ent('speech-line', 'ย่ามะลิ', 'flow/cutscene/case-01/p2/grandma', {
+          who: 'ย่ามะลิ',
+          text: 'มาแล้วเหรอจ๊ะหลาน ย่าคิดถึงจังเลย',
           x: 2,
           y: 46,
           w: 50,
@@ -388,10 +388,10 @@ const flow = ent('story-flow', 'คดี 01 อัลบั้มครอบ�
     ent('cutscene-page', 'อัลบั้มหาย', 'flow/cutscene/case-01/p3', {
       eventId: 'case-01',
       image: 'cutscene-01-p3.jpg',
-      caption: 'แต่คุณยายดูไม่สบายใจเลย…',
+      caption: 'แต่คุณย่าดูไม่สบายใจเลย…',
       lines: [
-        ent('speech-line', 'ยายมะลิ', 'flow/cutscene/case-01/p3/grandma', {
-          who: 'ยายมะลิ',
+        ent('speech-line', 'ย่ามะลิ', 'flow/cutscene/case-01/p3/grandma', {
+          who: 'ย่ามะลิ',
           text: 'อัลบั้มรูปครอบครัวหายไปจากชั้นจ้ะ ในนั้นมีรูปตาตอนหนุ่ม ๆ ด้วย',
           x: 2,
           y: 50,
@@ -399,7 +399,7 @@ const flow = ent('story-flow', 'คดี 01 อัลบั้มครอบ�
         }),
         ent('speech-line', 'หนู', 'flow/cutscene/case-01/p3/child', {
           who: 'หนู',
-          text: 'ไม่ต้องห่วงนะยาย หนูจะช่วยตามหาเอง!',
+          text: 'ไม่ต้องห่วงนะย่า หนูจะช่วยตามหาเอง!',
           x: 56,
           y: 72,
           w: 42,
@@ -498,7 +498,7 @@ const flow = ent('story-flow', 'คดี 01 อัลบั้มครอบ�
       hint: 'ลองอ่านกระดาษบนโต๊ะอีกทีสิจ๊ะ ใครเป็นคนเขียนไว้นะ',
       mode: 'portrait',
       answers: [
-        choice('ยายมะลิ', 'flow/question/who/grandma', { value: 'grandma', image: 'living-grandma.jpg' }),
+        choice('ย่ามะลิ', 'flow/question/who/grandma', { value: 'grandma', image: 'living-grandma.jpg' }),
         choice('ลุงเมฆ', 'flow/question/who/mek', { value: 'mek', image: 'uncle-mek.jpg' }),
         choice('น้าริน', 'flow/question/who/rin', { value: 'rin', image: 'rin.jpg' }),
       ],
