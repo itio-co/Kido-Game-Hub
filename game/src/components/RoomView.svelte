@@ -5,18 +5,20 @@
 
   let {
     room,
-    selectedId,
-    hintId,
-    decor,
-    onTap,
-    onMiss,
+    selectedId = null,
+    hintId = null,
+    decor = {},
+    onTap = () => {},
+    onMiss = () => {},
+    showMarkers = true,
   }: {
     room: PlayerRoom;
-    selectedId: string | null;
-    hintId: string | null;
-    decor: Record<string, string | null>;
-    onTap: (id: string) => void;
-    onMiss: () => void;
+    selectedId?: string | null;
+    hintId?: string | null;
+    decor?: Record<string, string | null>;
+    onTap?: (id: string) => void;
+    onMiss?: () => void;
+    showMarkers?: boolean;
   } = $props();
 
   let canvas: HTMLCanvasElement | undefined = $state();
@@ -37,11 +39,12 @@
     observer.observe(canvas);
     layout();
     const onPointerUp = (event: PointerEvent) => {
+      if (!showMarkers) return;
       const id = view.pick(event.clientX, event.clientY);
       if (id) onTap(id);
       else onMiss();
     };
-    canvas.addEventListener('pointerup', onPointerUp);
+    if (showMarkers) canvas.addEventListener('pointerup', onPointerUp);
     return () => {
       observer.disconnect();
       canvas?.removeEventListener('pointerup', onPointerUp);
@@ -53,7 +56,7 @@
 <div class="room">
   <canvas bind:this={canvas} aria-label={room.title}></canvas>
   <div class="spots">
-    {#if ready}
+    {#if ready && showMarkers}
       {#each spots as spot (spot.id)}
         {@const hotspot = byId.get(spot.id)}
         {#if hotspot && spot.visible}

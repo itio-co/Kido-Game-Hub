@@ -13,7 +13,7 @@ import type {
   RugEntity,
   WindowEntity,
 } from '../types';
-import { addBox, addCyl, canvasTexture, patternTexture, place, tag, type Build } from './kit';
+import { addBox, addCyl, canvasTexture, material, patternTexture, place, tag, type Build } from './kit';
 
 function use<T extends Buildable>(entity: Buildable, kind: T['kind']): T {
   if (entity.kind !== kind) throw new Error(`expected ${kind}`);
@@ -233,23 +233,102 @@ export function buildBed(build: Build, parent: THREE.Object3D, entity: Buildable
   return group;
 }
 
+/** Low-poly top: a raised center and a lower front edge so flat shading shows wood facets. */
+function addFacetedSlab(
+  build: Build,
+  parent: THREE.Object3D,
+  w: number,
+  h: number,
+  d: number,
+  y: number,
+  color: string,
+): void {
+  const hw = w / 2;
+  const hd = d / 2;
+  const y0 = y - h / 2;
+  const y1 = y + h / 2;
+  const verts: [number, number, number][] = [
+    [-hw, y0, -hd],
+    [hw, y0, -hd],
+    [hw, y0, hd],
+    [-hw, y0, hd],
+    [-hw, y1 + 0.006, -hd],
+    [hw, y1 + 0.004, -hd],
+    [hw, y1 - 0.008, hd],
+    [-hw, y1 - 0.006, hd],
+    [0, y1 + 0.016, 0],
+  ];
+  const faces = [
+    [0, 2, 1],
+    [0, 3, 2],
+    [0, 1, 5],
+    [0, 5, 4],
+    [1, 2, 6],
+    [1, 6, 5],
+    [2, 3, 7],
+    [2, 7, 6],
+    [3, 0, 4],
+    [3, 4, 7],
+    [4, 5, 8],
+    [5, 6, 8],
+    [6, 7, 8],
+    [7, 4, 8],
+  ];
+  const positions: number[] = [];
+  for (const face of faces) {
+    for (const index of face) {
+      const vert = verts[index];
+      if (!vert) continue;
+      positions.push(vert[0], vert[1], vert[2]);
+    }
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geo.computeVertexNormals();
+  build.geos.push(geo);
+  const mesh = new THREE.Mesh(geo, material(build, color));
+  mesh.castShadow = true;
+  mesh.receiveShadow = true;
+  parent.add(mesh);
+}
+
 export function buildNightstand(build: Build, parent: THREE.Object3D, entity: Buildable): THREE.Object3D {
   const table = use<NightstandEntity>(entity, 'nightstand');
   const group = new THREE.Group();
   tag(group, table);
   place(group, table.position, table.rotation);
   const [w, h, d] = table.size;
-  const topT = 0.045;
-  addBox(build, group, w + 0.04, topT, d + 0.03, 0, h - topT / 2, 0, table.colors.top);
-  const bodyH = h * 0.62;
-  addBox(build, group, w * 0.86, bodyH, d * 0.82, 0, h - topT - bodyH / 2, 0, table.colors.wood);
-  addBox(build, group, w * 0.72, bodyH * 0.7, 0.02, 0, h - topT - bodyH * 0.5, d * 0.41, table.colors.wood, { shadow: 'none' });
-  addBox(build, group, 0.06, 0.02, 0.02, 0, h - topT - bodyH * 0.5, d * 0.43, table.colors.knob, { shadow: 'none' });
-  const leg = 0.045;
-  const legH = h - topT - bodyH;
+  const topT = 0.05;
+  const topW = w + 0.1;
+  const topD = d + 0.08;
+  addFacetedSlab(build, group, topW, topT, topD, h - topT / 2, table.colors.top);
+
+  const drawerH = h * 0.36;
+  const drawerW = w * 0.78;
+  const drawerD = d * 0.7;
+  const drawerY = h - topT - drawerH / 2 - 0.01;
+  addBox(build, group, drawerW, drawerH, drawerD, 0, drawerY, -0.02, table.colors.wood);
+  const frontZ = -0.02 + drawerD / 2 + 0.01;
+  addBox(build, group, drawerW * 0.88, drawerH * 0.7, 0.018, 0, drawerY, frontZ, table.colors.wood, {
+    shadow: 'none',
+  });
+  addCyl(build, group, 0.034, 0.034, 0.042, 0, drawerY, frontZ + 0.022, table.colors.knob, 'z', 10);
+
+  const legTop = drawerY - drawerH / 2;
+  const leg = 0.042;
   for (const sx of [-1, 1]) {
     for (const sz of [-1, 1]) {
-      addBox(build, group, leg, legH, leg, sx * (w / 2 - 0.06), legH / 2, sz * (d / 2 - 0.06), table.colors.wood);
+      addBox(
+        build,
+        group,
+        leg,
+        legTop,
+        leg,
+        sx * (w * 0.34),
+        legTop / 2,
+        sz * (d * 0.3),
+        table.colors.wood,
+      );
     }
   }
   parent.add(group);
