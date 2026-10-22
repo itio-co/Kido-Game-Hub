@@ -15,7 +15,7 @@ a3=[
  A('child-player','หนู (ตัวละครผู้เล่น)','Child (player)','character',P('cutscene-01-p1.jpg'),[8,34,40,32],['cutscene p1-p3'],'concept-only','ผมทรงกะลาครอบสีดำ เสื้อเหลือง กางเกงน้ำเงิน — พลังควบคุมเวลา'),
  A('mom','แม่','Mom','character',P('cutscene-01-p1.jpg'),[34,0,46,32],['cutscene p1-p2']),
  A('uncle-mek','ลุงเมฆ','Uncle Mek','character',P('uncle-mek.jpg'),[28,10,52,48],['living']),
- A('aunt-rin','น้าริน','Aunt Rin','character',None,None,['(ยังไม่ปรากฏตัว)'],'to-design','ยังไม่มีภาพ'),
+ A('aunt-rin','น้าริน','Aunt Rin','character',P('rin.jpg'),[22,8,58,58],['living@afternoon','deduction','ending'],'concept-only','ผมหางม้าต่ำ เสื้อเขียวอ่อน ผ้ากันเปื้อน — ผู้ย้ายอัลบั้ม (ไม่ใช่คนร้าย)'),
  A('room-player','ห้องของฉัน','Player room (hub)','room',P('player-room-wide.jpg'),[0,0,100,100],['room']),
  A('room-living','ห้องนั่งเล่นบ้านยาย','Grandma living room','room',P('living-wide.jpg'),[0,0,100,100],['living (3 ช่วงเวลา)']),
  A('room-study','ห้องทำงาน','Study','room',P('study-wide.jpg'),[0,0,100,100],['study']),
@@ -53,6 +53,7 @@ for p in sorted(glob.glob(IMG+'/*.jpg')):
   if f.startswith('cutscene'):w=['cutscene: case-01 page '+f[-5]]
   if '-afternoon' in f or '-yesterday' in f:w=['living @ '+f.split('-')[-1][:-4]]
   if f=='cutscene-01-p2.jpg':w.append('event card cover')
+  if f=='rin.jpg':w=['น้าริน portrait · deduction (ใครย้ายอัลบั้ม?)']
   if f=='living-wide.jpg':w=['living @ now (ค่าเริ่ม)']
   if f=='house-map.jpg':w.append('jigsaw pieces / deduction mini-map')
   i2.append(dict(file='prototypes/poc-clickthrough/img/'+f,thumb=P(f),category=cat(f),usedIn=w or ['(closeup)'],size=f"{im.width}×{im.height}",kb=round(os.path.getsize(p)/1024)))

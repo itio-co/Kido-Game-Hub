@@ -177,7 +177,7 @@ const EVENTS=[
 const CUTSCENE={'case-01':[
  {image:'cutscene-01-p1.jpg',caption:'คืนวันศุกร์ คุณยายมะลิโทรมาหาแม่',lines:[{who:'แม่',text:'พรุ่งนี้เราไปเยี่ยมบ้านคุณยายกันนะ',x:4,y:22,w:48},{who:'หนู',text:'เย้! ไปหาคุณยาย!',x:40,y:58,w:44}]},
  {image:'cutscene-01-p2.jpg',caption:'เช้าวันเสาร์ ครอบครัวมาถึงบ้านไม้ของคุณยาย',lines:[{who:'ยายมะลิ',text:'มาแล้วเหรอจ๊ะหลาน ยายคิดถึงจังเลย',x:2,y:46,w:50}]},
- {image:'cutscene-01-p3.jpg',caption:'แต่คุณยายดูไม่สบายใจเลย…',lines:[{who:'ยายมะลิ',text:'อัลบั้มรูปครอบครัวหายไปจากชั้นจ้ะ ในนั้นมีรูปตาตอนหนุ่ม ๆ ด้วย',x:2,y:22,w:52},{who:'หนู',text:'ไม่ต้องห่วงนะยาย หนูจะช่วยตามหาเอง!',x:56,y:72,w:42}]}]};
+ {image:'cutscene-01-p3.jpg',caption:'แต่คุณยายดูไม่สบายใจเลย…',lines:[{who:'ยายมะลิ',text:'อัลบั้มรูปครอบครัวหายไปจากชั้นจ้ะ ในนั้นมีรูปตาตอนหนุ่ม ๆ ด้วย',x:2,y:50,w:34},{who:'หนู',text:'ไม่ต้องห่วงนะยาย หนูจะช่วยตามหาเอง!',x:56,y:72,w:42}]}]};
 S.csEv='case-01';S.csPage=0;
 SC.events={title:'เลือกเหตุการณ์',hud:()=>'แตะการ์ดเพื่อเริ่มเหตุการณ์',render(el){const w=document.createElement('div');w.className='evlist';
  let h='<div class="evh">ออกจากห้องแล้ว จะไปไหนดีนะ?</div>';
@@ -223,12 +223,13 @@ const TIMESLOTS=[
  {id:'afternoon',kind:'hour',label:'บ่ายนี้ 14:00',img:'living-wide-afternoon.jpg',unlockBy:'E02',hint:'ลองตรวจรอยน้ำบนโต๊ะก่อน'},
  {id:'now',kind:'hour',label:'ตอนนี้ 17:00',img:'living-wide.jpg',unlockBy:null}];
 S.slot='now';
+const PAST={rin:['แย่จัง แจกันล้ม น้ำหกเต็มโต๊ะเลย ต้องรีบเช็ดก่อน','ของบนโต๊ะต้องยกออกไปก่อน เดี๋ยวเปียกหมด'],grandma:['พรุ่งนี้หลานจะมา ยายจะหยิบอัลบั้มเล่มนี้ลงไปเปิดให้ดูตอนเช้า','รูปเก่า ๆ บ้านเรามีที่เก็บประจำนะ แต่เล่มนี้ยายชอบไว้ใกล้ตัว']};
 const slotOf=()=>TIMESLOTS.find(t=>t.id===S.slot);
 const slotOpen=t=>!t.unlockBy||S.ev[t.unlockBy];
 function pastHs(){const L=[hs([[8,9],[18,9],[18,16],[8,16]],'นาฬิกา',()=>openTime('clock')),hs([[74,22],[86,22],[86,32],[74,32]],'ปฏิทินของยาย',()=>openCal('living')),
   hs([[76,66],[92,66],[93,75],[76,75]],'กล่องรูปดาว (ข้างโซฟา)',()=>toast('กล่องนี้อยู่ที่เดิมทุกช่วงเวลา'))];
- if(S.slot==='afternoon')L.push(hs([[28,61],[42,61],[44,70],[30,71]],'แจกันล้ม',()=>say('ย้อนเวลา: บ่ายนี้','แจกันล้ม น้ำหกนองโต๊ะ — อัลบั้มวางอยู่ข้าง ๆ เกือบเปียก!')),hs([[48,66],[68,66],[68,73],[48,73]],'อัลบั้ม (บ่ายนี้)',()=>say('ย้อนเวลา: บ่ายนี้','บ่ายนี้อัลบั้มยังอยู่บนโต๊ะ แต่ตอนนี้หายไป ใครยกไปตอนเช็ดน้ำนะ?')),hs([[30,33],[52,33],[52,41],[30,41]],'ถาดชิ้นแผนผัง',()=>toast('ชิ้นแผนผังยังอยู่ในถาด')));
- if(S.slot==='yesterday')L.push(hs([[33,34],[47,34],[47,41],[33,41]],'อัลบั้มบนชั้น',()=>say('ย้อนเวลา: เมื่อวาน','เมื่อวานอัลบั้มยังอยู่บนชั้น ยายหยิบลงมาดูบนโต๊ะเมื่อเช้า')));
+ if(S.slot==='afternoon')L.push(hs([[22,27],[42,28],[42,52],[30,58],[12,60],[14,40]],'น้าริน (บ่ายนี้)',()=>say2('น้าริน',PAST.rin)),hs([[30,64],[42,64],[48,72],[34,72]],'แจกันล้ม',()=>say('ย้อนเวลา: บ่ายนี้','แจกันล้ม น้ำหกนองโต๊ะ — อัลบั้มวางอยู่ข้าง ๆ เกือบเปียก!')),hs([[48,66],[68,66],[68,73],[48,73]],'อัลบั้ม (บ่ายนี้)',()=>say('ย้อนเวลา: บ่ายนี้','บ่ายนี้อัลบั้มยังอยู่บนโต๊ะ แต่ตอนนี้หายไป ใครยกไปตอนเช็ดน้ำนะ?')),hs([[44,34],[50,34],[50,40],[44,40]],'ถาดชิ้นแผนผัง',()=>toast('ชิ้นแผนผังยังอยู่ในถาด')));
+ if(S.slot==='yesterday')L.push(hs([[20,25],[34,25],[36,40],[34,52],[18,52],[18,40]],'ยายมะลิ (เมื่อวาน)',()=>say2('ยายมะลิ',PAST.grandma)),hs([[38,27],[48,27],[48,33],[38,33]],'อัลบั้มบนชั้น',()=>say('ย้อนเวลา: เมื่อวาน','อัลบั้มปกดอกไม้ตั้งอยู่บนชั้นบน ใกล้มือยาย')),hs([[37,35],[48,35],[48,40],[37,40]],'ถาดชิ้นแผนผัง',()=>toast('ชิ้นแผนผังยังเรียงอยู่ในถาดครบ')));
  return L}
 function openTime(kind){const el=$('cal');const list=TIMESLOTS.filter(t=>kind==='clock'?t.kind==='hour':true);
  let h=`<button class="calx" aria-label="ปิด">✕</button><div class="calc" style="background:repeating-linear-gradient(0deg,#f3e3c3 0 6px,#efdcb8 6px 7px);color:#4a2e18;border:8px solid #8a5a34"><div class="calh" style="background:linear-gradient(90deg,#6b3f22,#8a5a34)"><span>${kind==='clock'?'🕰 นาฬิกา: ย้อนชั่วโมง':'📅 ปฏิทิน: ย้อนวัน'}</span><small>พลังย้อนเวลา</small></div><ul class="cale">`+
@@ -317,7 +318,7 @@ SC.deduce={title:'กระดานคดี — สรุปคดี',hud:()=
  const evs=Object.keys(S.ev).filter(k=>k!=='E05');
  DQA.forEach((d,i)=>{const b=document.createElement('div');b.className='dq'+(DQ.ok[i]===1?' ok':DQ.ok[i]===-1?' bad':'');
   let h=`<h4>${d.q} ${DQ.ok[i]===1?'✅':''}</h4><div class="row">`;
-  if(i===0)[['grandma','ยายมะลิ','img/living-grandma.jpg'],['mek','ลุงเมฆ','img/uncle-mek.jpg'],['rin','น้าริน','']].forEach(([k,n,im])=>h+=`<div class="por ${DQ.a[0]===k?'sel':''}" data-a="${k}" style="${im?`background-image:url(${im})`:'background:#c58fb0;font-size:28px'}">${im?'':'👩'}<span>${n}</span></div>`);
+  if(i===0)[['grandma','ยายมะลิ','img/living-grandma.jpg'],['mek','ลุงเมฆ','img/uncle-mek.jpg'],['rin','น้าริน','img/rin.jpg']].forEach(([k,n,im])=>h+=`<div class="por ${DQ.a[0]===k?'sel':''}" data-a="${k}" style="${im?`background-image:url(${im})`:'background:#c58fb0;font-size:28px'}">${im?'':'👩'}<span>${n}</span></div>`);
   if(i===1)[['water','น้ำหกบนโต๊ะ'],['hide','แอบซ่อนไว้'],['look','หยิบไปดูรูป']].forEach(([k,n])=>h+=`<button class="ch ${DQ.a[1]===k?'sel':''}" data-a="${k}">${n}</button>`);
   if(i===2){h+='<div class="mini">'+[['living',10,10,80,35],['study',12,46,40,34],['kitchen',53,46,35,34]].map(([k,x,y,ww,hh])=>`<div class="${DQ.a[2]===k?'sel':''}" data-a="${k}" title="${k}" style="left:${x}%;top:${y}%;width:${ww}%;height:${hh}%"></div>`).join('')+`</div><span>${{living:'ห้องนั่งเล่น',study:'ห้องทำงาน (ใต้หน้าต่าง)',kitchen:'ครัว'}[DQ.a[2]]||'แตะห้องบนแผนผัง'}</span>`}
   h+='</div><div class="row" style="margin-top:6px">หลักฐาน: '+evs.map(k=>`<span class="evc ${DQ.e[i]===k?'sel':''}" data-e="${k}">${k}</span>`).join('')+'</div>';
