@@ -70,6 +70,8 @@ button.opt{background:#0d4a66;border:1px solid #39e0ff;color:#fff;border-radius:
 .evc.sel{border:2px solid #39e0ff;background:#dff8ff}
 .mini{position:relative;width:96px;aspect-ratio:3/4;background:url(img/house-map.jpg) center/contain no-repeat #efe6d2;border-radius:6px}
 .mini div{position:absolute;cursor:pointer;border-radius:4px}.mini div.sel{background:rgba(57,224,255,.35);outline:2px solid #39e0ff}
+.hintbtn{position:absolute;left:10px;top:62px;z-index:4;width:44px;height:44px;border-radius:50%;border:2px solid #ffd84d;background:rgba(6,30,48,.88);font-size:22px;cursor:pointer;box-shadow:0 0 10px rgba(255,216,77,.6)}
+.tutfx{outline:4px solid #ffd84d;outline-offset:3px}
 </style></head><body>
 <div id="phone">
  <div id="scene"></div>
@@ -94,7 +96,7 @@ const SC={
   extra(el){SLOTS.forEach(([n,x,y,w,hh],i)=>{const f=S.slots[i];const d=document.createElement('div');d.className='slot'+(f?' filled':'');d.style.cssText=`left:${x}%;top:${y}%;width:${w}%;height:${hh}%`;d.innerHTML=f||n;
    d.onclick=()=>{if(S.reward&&!Object.values(S.slots).includes('📷 รูปตา')){S.slots[i]='📷 รูปตา';toast('วางของรางวัลแล้ว');go('room',true)}else if(S.slots[i])toast('สลับของ (ต้นแบบมีของชิ้นเดียว)');else toast('ยังไม่มีของ — ไขคดีเพื่อรับของ')};el.appendChild(d)});
    const b=document.createElement('div');b.className='slot board';b.style.cssText='left:22%;top:13%;width:20%;height:8%';b.innerHTML='🗂 คดีที่ไขแล้ว: '+(S.solved?'01 ✓':'—');el.appendChild(b)},
-  hs:()=>[hs([[90,18],[100,18],[100,61],[90,61]],S.solved?'ประตู → คดีถัดไป (เร็ว ๆ นี้)':'ประตู → ไปบ้านย่า',()=>S.solved?toast('คดี 02: ห้องสมุดวันวาน (ยังไม่ทำ)'):go('map'))]},
+  hs:()=>[hs([[90,18],[100,18],[100,61],[90,61]],S.solved?'ประตู → คดีถัดไป (เร็ว ๆ นี้)':'ประตู → ไปบ้านย่า',()=>S.solved?toast('คดี 02: ห้องสมุดวันวาน (ยังไม่ทำ)'):pickDiff())]},
  map:{title:'แผนผังบ้านย่า',hud:()=>'เลือกห้องที่จะไป',img:'house-map.jpg',contain:true,mw:864,mh:1152,hs:()=>[
   hs([[107,118],[760,118],[760,515],[107,515]],'ห้องนั่งเล่น (จุดเริ่ม)',()=>go('living')),
   hs([[118,530],[485,530],[485,905],[118,905]],'ห้องทำงาน',()=>go('study')),
@@ -109,7 +111,7 @@ const SC={
   hs([[57,37],[62,36],[70,38],[71,44],[73,48],[72,54],[71,60],[66,63],[48,65],[47,60],[52,54],[53,48],[56,44]],'ยายมะลิ',()=>go('grandma'))]},
  grandma:{title:'ยายมะลิ',hud:()=>'คุยกับยายมะลิ',img:'living-grandma.jpg',hs:()=>[],enter(){
   if(S.solved)return say('ยายมะลิ',LINES.win);
-  say('ยายมะลิ',LINES.open,[['ถามเรื่องอัลบั้ม',()=>say('ยายมะลิ',LINES.ask)],['ขอคำใบ้',()=>say('ยายมะลิ',LINES.stuck)],['ปิด',()=>$('dlg').style.display='none']])}},
+  say('ยายมะลิ',LINES.open,[['ถามเรื่องอัลบั้ม',()=>say('ยายมะลิ',LINES.ask)],['ปิด',()=>$('dlg').style.display='none']])}},
  mek:{title:'ลุงเมฆ',hud:()=>'คุยกับลุงเมฆ',img:'uncle-mek.jpg',hs:()=>[],enter(){addEv('E03');
   say('ลุงเมฆ','รินเอาอัลบั้มใส่กล่องที่ติดรูปดาว ลุงเห็นตอนเธอยกผ่านโต๊ะ แต่ไม่ได้มองว่าเอาไปวางที่ไหน',[['ช่วยเติมครอสเวิร์ด (เสริม)',()=>say('ลุงเมฆ','ถ้าชอบเกมคำศัพท์ มาช่วยลุงเติมหน้านี้ด้วยก็ได้นะ อีกไม่กี่คำเอง',[['เปิดครอสเวิร์ด',()=>{MG.hints=0;go('cross')}]])],['ปิด',()=>$('dlg').style.display='none']])}},
  table:{title:'โต๊ะกลาง',hud:()=>'แตะเพื่อตรวจ',img:'living-table.jpg',hs:()=>[
@@ -123,7 +125,7 @@ const SC={
  study:{title:'ห้องทำงาน — มุมกว้างจากประตู',hud:()=>'ภารกิจ: หากล่องที่ถูกต้อง',img:'study-wide.jpg',hs:()=>[
   hs([[58,59],[75,59],[75,69],[58,69]],'กล่องรูปใบไม้',()=>say('ข้อความช่วยคิด','อยู่ในโซนที่หาแล้ว ลองเทียบสัญลักษณ์กับสิ่งที่ลุงเมฆเห็นอีกครั้ง')),
   hs([[41,58],[60,58],[60,68],[42,68]],'กล่องรูปดาว (ใต้หน้าต่าง)',()=>go('box'))]},
- box:{title:'กล่องรูปดาว',hud:()=>'⏱ 01:05 · สถิติดีที่สุด — · ไม่มีจำกัดเวลา',img:'study-box.jpg',hs:()=>[
+ box:{title:'กล่องรูปดาว',hud:()=>'กล่องสีน้ำเงินติดรูปดาว · ตัวล็อกเลื่อนบล็อกบนฝา',img:'study-box.jpg',hs:()=>[
   hs([[41,66],[53,67],[50,74],[42,73]],'สติกเกอร์รูปดาว',()=>toast('กล่องสีน้ำเงินติดรูปดาว')),
   hs([[5,35],[47,34],[95,43],[93,55],[62,58],[10,49]],S.solved?'เปิดแล้ว':S.deduced?'เล่นเลื่อนบล็อก':'ตัวล็อก (ต้องสรุปคดีก่อน)',()=>{if(S.solved)return;if(!S.deduced)return say('ยายมะลิ','กล่องนี้ล็อกอยู่นะ ลองสรุปคดีบนกระดานให้ครบก่อนสิจ๊ะ');MG.hints=0;go('slide')})]},
  album:{title:'พบอัลบั้มแล้ว!',hud:()=>'หลักฐาน E05',img:'album-found.jpg',hs:()=>[
@@ -137,15 +139,15 @@ const SC={
   hs([[52,34],[90,40],[85,61],[80,80],[53,81],[52,61]],'แจกันเติมน้ำใหม่',()=>toast('แจกันถูกเติมน้ำใหม่ — มีน้ำหกจริง'))]}
 };
 
-const DIFF='ปกติ';const TGT={cross:'04:00',jig:'03:00',slide:'02:00'};
+let DIFF='ปานกลาง';const TGTS={'ง่าย':{cross:'06:00',jig:'04:00',slide:'03:00'},'ปานกลาง':{cross:'04:00',jig:'03:00',slide:'02:00'},'ยาก':{cross:'03:00',jig:'02:00',slide:'01:30'}};const TGT=()=>TGTS[DIFF];
 const MG={hints:0,t0:0};
 function stars(){return MG.hints===0?'⭐⭐⭐':MG.hints===1?'⭐⭐☆':'⭐☆☆'}
 function mgbar(name,key,el){const b=document.createElement('div');b.className='mgbar';
- b.innerHTML=`<span class="t">⏱ <b id="el">${MG.fake||'00:00'}</b> / 🎯 ${TGT[key]} <small>(${DIFF})</small></span><span class="stars" id="st">${stars()}</span><button class="mgbtn" id="hint">💡 คำใบ้</button>`;
- el.appendChild(b);b.querySelector('#hint').onclick=()=>{MG.hints++;$('st').textContent=stars();toast(MG.hintText[Math.min(MG.hints,MG.hintText.length)-1])}}
+ b.innerHTML=`<span class="t">⏱ <b id="el">${MG.fake||'00:00'}</b> / 🎯 ${TGT()[key]} <small>(${DIFF})</small></span><span class="stars" id="st">${stars()}</span><button class="mgbtn" id="hint">💡 คำใบ้</button>`;
+ el.appendChild(b);b.querySelector('#hint').onclick=()=>{MG.hints++;S.hintsUsed=(S.hintsUsed||0)+1;if(MG.hints===1){toast('💡 คำใบ้ระดับ 2: '+MG.hintText[0]);MG.t2&&MG.t2()}else{toast('💡 คำใบ้ระดับ 3: เผยขั้นที่ถูก 1 ขั้น');MG.t3&&MG.t3()}$('st')&&($('st').textContent=stars())}}
 function doneBtn(el,label,fn){const d=document.createElement('button');d.className='mgbtn mgdone';d.textContent=label;d.onclick=fn;el.appendChild(d)}
 const CW={grid:['ดาว##','##า##','##งาม'],fill:{'0,0':'ด','0,1':'า','0,2':'ว','1,2':'า'},sel:'2,3',num:{'0,0':1,'0,2':2,'2,2':3}};
-SC.cross={title:'ครอสเวิร์ดของลุงเมฆ (งานเสริม)',hud:()=>'มินิเกม: ครอสเวิร์ด',render(el){MG.hintText=['ภาพใบ้: 💐 ดอกไม้ที่สวย…','เติมอักษรต้นให้ 1 ตัว','ตัวเลือก: งาม / ง่าย / งู'];MG.fake='01:12';
+SC.cross={title:'ครอสเวิร์ดของลุงเมฆ (งานเสริม)',hud:()=>'มินิเกม: ครอสเวิร์ด',render(el){MG.hintText=['ช่องที่ต้องเติมคือข้อ 3 แนวนอน (ไฮไลต์แล้ว)'];MG.t2=()=>{CW.sel='2,2';go('cross',true)};MG.t3=()=>{const sol={'2,2':'ง','2,3':'า','2,4':'ม'};const k=Object.keys(sol).find(k=>CW.fill[k]!==sol[k]);if(k){CW.fill[k]=sol[k]}go('cross',true)};MG.fake='01:12';
  const w=document.createElement('div');w.className='mg';el.appendChild(w);mgbar('','cross',w);
  const c=document.createElement('div');c.className='cw';let g='<div class="cwg">';
  for(let r=0;r<3;r++)for(let k=0;k<5;k++){const ch=[...CW.grid[r]][k];const id=r+','+k;
@@ -158,7 +160,7 @@ SC.cross={title:'ครอสเวิร์ดของลุงเมฆ (ง�
  doneBtn(w,'✓ ส่งคำตอบ',()=>{const ok=CW.fill['2,2']==='ง'&&CW.fill['2,3']==='า'&&CW.fill['2,4']==='ม';
   if(!ok)return toast('ยังไม่ครบหรือไม่ถูก — ลองคำใบ้ได้');S.cw=1;S.hist.pop();S.screen='mek';draw();say('ลุงเมฆ','ครบแล้ว! เดี๋ยวให้ทุกคนลองเล่นกัน ขอบใจมากนะ')});return []}};
 const JG={placed:[0,1,2,3,5,6,9],sel:null};
-SC.jig={title:'จิ๊กซอว์แผนผังบ้าน',hud:()=>'มินิเกม: จิ๊กซอว์ (ชิ้นไม่ต้องหมุน)',render(el){MG.hintText=['แสดงขอบภาพ','ไฮไลต์ช่องของชิ้นที่เลือก','วางตัวอย่างให้ 1 ชิ้น'];MG.fake='00:42';
+SC.jig={title:'จิ๊กซอว์แผนผังบ้าน',hud:()=>'มินิเกม: จิ๊กซอว์ (ชิ้นไม่ต้องหมุน)',render(el){MG.hintText=['เลือกชิ้นให้แล้ว ลองหาช่องของมัน'];MG.t2=()=>{JG.sel=[4,11,7,8,10].find(i=>!JG.placed.includes(i));go('jig',true)};MG.t3=()=>{const i=[4,11,7,8,10].find(i=>!JG.placed.includes(i));if(i!=null)JG.placed.push(i);JG.sel=null;go('jig',true)};MG.fake='00:42';
  const w=document.createElement('div');w.className='mg';el.appendChild(w);mgbar('','jig',w);
  const box=document.createElement('div');box.className='jg';const b=document.createElement('div');b.className='jgb';
  const pos=i=>`background-position:${(i%3)*50}% ${Math.floor(i/3)*33.333}%`;
@@ -173,7 +175,7 @@ function step(n){const b=SB[n],o=occ(n);const fw=b.v?[b.r+b.len,b.c]:[b.r,b.c+b.
  const ok=([r,c])=>r>=0&&c>=0&&r<4&&c<4&&!o[r+','+c];
  if(n==='K'&&b.c===2)return 'win';
  if(n==='A'){if(ok(fw)){b.r++;return 1}if(ok(bw)){b.r--;return 1}}else if(n==='B'){if(ok(bw)){b.c--;return 1}if(ok(fw)){b.c++;return 1}}else{if(ok(fw)){b.c++;return b.c===2?'win':1}}return 0}
-SC.slide={title:'ตัวล็อกเลื่อนบล็อก',hud:()=>'มินิเกม: พากุญแจ K ไปทางออกด้านขวา',render(el){MG.hintText=['ชี้สิ่งที่ขวางกุญแจ: บล็อก A','ชี้บล็อกที่ต้องขยับก่อน: B','ตัวอย่างจังหวะแรก: B ไปซ้าย'];MG.fake='01:05';
+SC.slide={title:'ตัวล็อกเลื่อนบล็อก',hud:()=>'มินิเกม: พากุญแจ K ไปทางออกด้านขวา',render(el){MG.hintText=['บล็อก A ขวางทางกุญแจอยู่ — ลองขยับ A'];MG.t2=()=>{};MG.t3=()=>{const r=step(SB.A.r<2?'A':'K');if(r==='win'){toast('กุญแจถึงรูกุญแจ!');setTimeout(()=>{S.solved=true;addEv('E05');S.hist=[];go('album')},500)}else go('slide',true)};MG.fake='01:05';
  const w=document.createElement('div');w.className='mg';el.appendChild(w);mgbar('','slide',w);
  const sb=document.createElement('div');sb.className='sb';const g=document.createElement('div');g.className='sbg';sb.appendChild(g);
  const P=25;for(let r=0;r<4;r++)for(let c=0;c<4;c++)g.insertAdjacentHTML('beforeend',`<div class="sbcell" style="left:${c*P}%;top:${r*P}%;width:${P}%;height:${P}%"></div>`);
@@ -186,7 +188,7 @@ SC.slide={title:'ตัวล็อกเลื่อนบล็อก',hud:()=
 const DQ={a:[null,null,null],e:[null,null,null],ok:[0,0,0]};
 const DQA=[{q:'1. ใครย้ายอัลบั้ม?',right:'rin',ev:['E01','E03'],hint:'ลองอ่านกระดาษบนโต๊ะอีกทีสิจ๊ะ ใครเป็นคนเขียนไว้นะ'},
  {q:'2. ย้ายทำไม?',right:'water',ev:['E02'],hint:'โต๊ะยังเปียกอยู่เลยนะ หลานว่าเกิดอะไรขึ้น'},
- {q:'3. เก็บไว้ที่ไหน? (แตะบนแผนผัง)',right:'study',ev:['E04'],hint:'ผังเก็บของบอกว่ารูปถ่ายเก็บไว้ตรงไหนนะ'}];
+ {q:'3. เก็บไว้ที่ไหน? (แตะบนแผนผัง)',right:'study',ev:['E04'],hint:LINES.stuck}];
 const EVHINT='คำตอบอาจถูกแล้ว แต่หลักฐานใบนี้ยังไม่ได้บอกเรื่องนั้นนะ';
 SC.deduce={title:'กระดานคดี — สรุปคดี',hud:()=>'ตอบ 3 ข้อ + เลือกหลักฐานยืนยันทุกข้อ',render(el){
  const w=document.createElement('div');w.className='mg';w.style.gap='8px';w.style.overflow='auto';el.appendChild(w);
@@ -202,6 +204,27 @@ SC.deduce={title:'กระดานคดี — สรุปคดี',hud:()=
  w.insertAdjacentHTML('beforeend','<div style="font-size:11px;color:#bfe9ff">'+evs.map(k=>k+': '+EV[k]).join('<br>')+'</div>');
  doneBtn(w,'⚖ ยืนยันข้อสรุป',()=>{let hint=null;DQA.forEach((d,i)=>{const okA=DQ.a[i]===d.right,okE=d.ev.includes(DQ.e[i]);DQ.ok[i]=okA&&okE?1:-1;if(!hint&&!(okA&&okE))hint=!okA?d.hint:EVHINT});
   go('deduce',true);setTimeout(()=>{if(hint)say('ยายมะลิ',hint);else{S.deduced=true;say('ยายมะลิ','เก่งมากหลาน! งั้นไปดูที่ห้องทำงานกันเถอะ',[['ไปห้องทำงาน',()=>{S.hist=['living'];go('study',true)}]])}},350)});return []}};
+
+const GOALS=[
+ {c:()=>!S.ev.E01||!S.ev.E02,room:'ห้องนั่งเล่น',at:'living',obj:'โต๊ะกลาง',sub:()=>({table:!S.ev.E01?'ข้อความของน้าริน':'รอยน้ำ'})},
+ {c:()=>!S.ev.E04,room:'ห้องนั่งเล่น',at:'living',obj:'ถาดชิ้นแผนผัง',sub:{tray:'ต่อจิ๊กซอว์แผนผังบ้าน'}},
+ {c:()=>!S.ev.E03,room:'ห้องนั่งเล่น',at:'living',obj:'ลุงเมฆ'},
+ {c:()=>!S.deduced,room:'สมุดคดี',at:null,obj:'ปุ่ม 📋 สมุดคดี → สรุปคดี'},
+ {c:()=>!S.solved,room:'ห้องทำงาน',at:'study',obj:'กล่องรูปดาว (ใต้หน้าต่าง)',sub:{box:'เล่นเลื่อนบล็อก'}},
+ {c:()=>true,room:'บ้านของฉัน',at:'room',obj:'ช่องวางของ'}];
+const HINT={goal:-1,tier:0};
+function arHint(){const gi=GOALS.findIndex(g=>g.c());const g=GOALS[gi];if(HINT.goal!==gi){HINT.goal=gi;HINT.tier=0}
+ HINT.tier=Math.min(HINT.tier+1,2);S.hintsUsed=(S.hintsUsed||0)+1;
+ if(HINT.tier===1){toast('💡 คำใบ้ 1: ลองไปดูที่ '+g.room);return}
+ const sb=typeof g.sub==='function'?g.sub():g.sub;let label=sb&&sb[S.screen]||(S.screen===g.at?g.obj:null);
+ const el=label&&[...document.querySelectorAll('.hot')].find(h=>h.textContent.includes(label));
+ if(el){el.classList.add('on');setTimeout(()=>el.classList.remove('on'),2500);toast('💡 คำใบ้ 2: แตะ “'+label+'”')}
+ else toast('💡 คำใบ้ 2: ไปที่ '+g.room+' แล้วแตะ “'+g.obj+'”');draw2()}
+function draw2(){const h=$('hud');const c=$('hc');if(c)c.textContent=S.hintsUsed||0;else if(h)h.innerHTML+=' · คำใบ้ที่ใช้ <span id="hc">'+(S.hintsUsed||0)+'</span>'}
+function pickDiff(){say('เลือกระดับความยากของคดีนี้','เวลาเป้าหมายสำหรับ 3 ดาวขึ้นกับระดับที่เลือก (ไม่มีจำกัดเวลา)',['ง่าย','ปานกลาง','ยาก'].map(d=>[d+' — ครอสเวิร์ด '+TGTS[d].cross+' · จิ๊กซอว์ '+TGTS[d].jig+' · เลื่อนบล็อก '+TGTS[d].slide,()=>{DIFF=d;toast('ระดับ: '+d);go('map')}]))}
+const TUT=['ขั้น 1/3: แตะจุดกะพริบเพื่อดูหรือใช้วัตถุ','ขั้น 2/3: ปุ่ม ← มุมล่างซ้าย ใช้ย้อนกลับเสมอ','ขั้น 3/3: ปุ่ม 📋 สมุดคดี เปิดกระดานคดีและหลักฐาน'];
+function tutorial(i){document.querySelectorAll('.tutfx').forEach(e=>e.classList.remove('tutfx'));if(i>=TUT.length){$('dlg').style.display='none';S.tut=1;return}
+ const t=[null,'back','caseBtn'][i];if(t){$(t).classList.add('tutfx');$(t).style.visibility='visible'}say('บทสอน (HUD)',TUT[i],[[i<2?'ต่อ':'เริ่มเล่น',()=>tutorial(i+1)]])}
 const HOUSE=['living','study','kitchen','table','tray','mek','grandma','kclose'];
 function draw(){const sc=SC[S.screen],el=$('scene');let list;
  if(sc.render){el.innerHTML='<div class="bg" style="background:linear-gradient(160deg,#1d3346,#2c4a5e)"></div>';list=sc.render(el)}else{el.innerHTML=`<img class="bg ${sc.contain?'contain':''}" src="img/${sc.img}" alt="">`;list=sc.hs();sc.extra&&sc.extra(el)}
@@ -218,11 +241,12 @@ function draw(){const sc=SC[S.screen],el=$('scene');let list;
   svg.appendChild(g)});
  el.appendChild(svg);
  $('hud').innerHTML='<b>'+sc.title+'</b><br>'+sc.hud()+' · หลักฐาน '+Object.keys(S.ev).length+'/5';
- $('back').style.visibility=S.hist.length?'visible':'hidden'}
+ $('back').style.visibility=S.hist.length?'visible':'hidden';
+ if(!sc.render){const hb=document.createElement('button');hb.className='hintbtn';hb.title='คำใบ้';hb.textContent='💡';hb.onclick=arHint;el.appendChild(hb)}draw2()}
 function go(n,replace){$('dlg').style.display='none';$('board').style.display='none';if(!replace&&n!==S.screen)S.hist.push(S.screen);
  const el=$('scene');el.classList.add('fade');setTimeout(()=>{S.screen=n;draw();el.classList.remove('fade');SC[n].enter&&SC[n].enter()},300)}
 $('back').onclick=()=>{if($('dlg').style.display==='block'||$('board').style.display==='block'){$('dlg').style.display='none';$('board').style.display='none';return}const p=S.hist.pop();if(p){const el=$('scene');el.classList.add('fade');setTimeout(()=>{S.screen=p;draw();el.classList.remove('fade')},300)}};
 $('caseBtn').onclick=()=>{const b=$('board');if(b.style.display==='block'){b.style.display='none';return}
  b.innerHTML='<h3 style="margin-top:0">📋 กระดานคดี: อัลบั้มครอบครัวที่หายไป</h3><ul>'+Object.keys(EV).map(k=>S.ev[k]?`<li>✅ <b>${k}</b> ${EV[k]}</li>`:`<li style="opacity:.45">⬜ ${k} — ยังไม่พบ</li>`).join('')+'</ul>'+(S.deduced?'<p>✅ สรุปคดีแล้ว — ไปเปิดกล่องในห้องทำงาน</p>':S.ev.E01&&S.ev.E02&&S.ev.E04?'<button class="mgbtn" id="goDed">⚖ สรุปคดี (3 คำถาม)</button>':'<p style="opacity:.7">เก็บหลักฐาน E01, E02, E04 ให้ครบเพื่อสรุปคดี</p>');b.style.display='block';const g=$('goDed');if(g)g.onclick=()=>go('deduce')};
-draw();
+draw();setTimeout(()=>tutorial(0),400);
 </script></body></html>
