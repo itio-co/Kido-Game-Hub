@@ -33,6 +33,31 @@ button.opt{background:#0d4a66;border:1px solid #39e0ff;color:#fff;border-radius:
 .mapbtn{position:absolute;right:10px;top:62px;z-index:4;background:rgba(6,30,48,.85);border:1px solid #39e0ff;color:#fff;border-radius:16px;padding:5px 10px;font-size:13px;cursor:pointer}
 .slot.board{border-color:#8a6;background:rgba(255,255,255,.75)}
 .tag{position:absolute;right:8px;top:60px;background:#c0392b;color:#fff;font-size:11px;padding:2px 6px;border-radius:4px;z-index:5}
+
+.mg{position:absolute;inset:0;padding:64px 12px 90px;display:flex;flex-direction:column;gap:10px;color:#13324a}
+.mgbar{display:flex;align-items:center;justify-content:space-between;gap:6px;background:rgba(6,30,48,.92);color:#eaf6ff;border:1px solid #39e0ff;border-radius:12px;padding:8px 10px;font-size:14px}
+.mgbar .t{font-variant-numeric:tabular-nums}.mgbar .stars{font-size:16px;letter-spacing:1px}
+.mgbtn{background:#0d4a66;border:1px solid #39e0ff;color:#fff;border-radius:10px;padding:8px 12px;font-size:14px;cursor:pointer}
+.mgdone{position:absolute;right:12px;bottom:84px;z-index:6}
+.cw{background:#f4efe2 repeating-linear-gradient(0deg,transparent 0 22px,rgba(0,0,0,.03) 22px 23px);border-radius:10px;padding:12px;box-shadow:0 4px 14px rgba(0,0,0,.35)}
+.cwg{display:grid;grid-template-columns:repeat(5,1fr);gap:3px;max-width:300px;margin:0 auto}
+.cwc{aspect-ratio:1;border:2px solid #333;background:#fff;display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:700;position:relative;cursor:pointer}
+.cwc.blk{background:#2b2b2b;border-color:#2b2b2b;cursor:default}.cwc.sel{background:#c9f3ff;outline:3px solid #39e0ff}.cwc.hl{background:#eafaff}
+.cwc i{position:absolute;left:3px;top:1px;font-size:11px;font-style:normal;font-weight:600}
+.clues{font-size:13px;line-height:1.55;margin-top:8px}.clues b{color:#0d4a66}
+.keys{display:flex;flex-wrap:wrap;gap:6px;justify-content:center}.keys button{width:46px;height:46px;font-size:22px;border-radius:10px;border:2px solid #39a8d8;background:#fff;cursor:pointer}
+.jg{background:#6b4a2f;border-radius:12px;padding:10px;box-shadow:inset 0 0 0 4px #4d3420}
+.jgb{position:relative;margin:0 auto;width:min(100%,300px);aspect-ratio:3/4;background:#efe6d2;display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(4,1fr);gap:2px}
+.jgs{border:1px dashed rgba(0,0,0,.25)}
+.pc{background-image:url(img/house-map.jpg);background-size:300% 400%;border-radius:4px;box-shadow:0 2px 6px rgba(0,0,0,.45);cursor:pointer}
+.jgt{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;background:#8a8f96;border-radius:12px;padding:10px}
+.jgt .pc{width:62px;height:62px}.jgt .pc.sel{outline:3px solid #39e0ff}
+.sb{background:#2d55a6;border-radius:16px;padding:16px;box-shadow:0 6px 18px rgba(0,0,0,.45);position:relative;width:min(100%,320px);margin:0 auto}
+.sbg{position:relative;background:#c9a676;border-radius:8px;aspect-ratio:1;box-shadow:inset 0 0 0 4px #a07c4c}
+.sbcell{position:absolute;border:1px dashed rgba(0,0,0,.15)}
+.blk2{position:absolute;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:800;color:#fff;cursor:pointer;transition:left .25s,top .25s;box-shadow:0 3px 0 rgba(0,0,0,.3)}
+.exit{position:absolute;right:-16px;width:16px;background:#1b2f5a;border-radius:0 6px 6px 0}
+.keyhole{position:absolute;right:-46px;font-size:26px}
 </style></head><body>
 <div id="phone">
  <div id="scene"></div>
@@ -74,13 +99,13 @@ const SC={
   if(S.solved)return say('ยายมะลิ',LINES.win);
   say('ยายมะลิ',LINES.open,[['ถามเรื่องอัลบั้ม',()=>say('ยายมะลิ',LINES.ask)],['ขอคำใบ้',()=>say('ยายมะลิ',LINES.stuck)],['ปิด',()=>$('dlg').style.display='none']])}},
  mek:{title:'ลุงเมฆ',hud:()=>'คุยกับลุงเมฆ',img:'uncle-mek.jpg',hs:()=>[],enter(){addEv('E03');
-  say('ลุงเมฆ','รินเอาอัลบั้มใส่กล่องที่ติดรูปดาว ลุงเห็นตอนเธอยกผ่านโต๊ะ แต่ไม่ได้มองว่าเอาไปวางที่ไหน',[['ช่วยเติมครอสเวิร์ด (เสริม)',()=>say('ลุงเมฆ','ถ้าชอบเกมคำศัพท์ มาช่วยลุงเติมหน้านี้ด้วยก็ได้นะ อีกไม่กี่คำเอง',[['(stub) เติมครบแล้ว ⏱ 01:12 ⭐⭐⭐',()=>{S.cw=1;say('ลุงเมฆ','ครบแล้ว! เดี๋ยวให้ทุกคนลองเล่นกัน ขอบใจมากนะ')}]])],['ปิด',()=>$('dlg').style.display='none']])}},
+  say('ลุงเมฆ','รินเอาอัลบั้มใส่กล่องที่ติดรูปดาว ลุงเห็นตอนเธอยกผ่านโต๊ะ แต่ไม่ได้มองว่าเอาไปวางที่ไหน',[['ช่วยเติมครอสเวิร์ด (เสริม)',()=>say('ลุงเมฆ','ถ้าชอบเกมคำศัพท์ มาช่วยลุงเติมหน้านี้ด้วยก็ได้นะ อีกไม่กี่คำเอง',[['เปิดครอสเวิร์ด',()=>{MG.hints=0;go('cross')}]])],['ปิด',()=>$('dlg').style.display='none']])}},
  table:{title:'โต๊ะกลาง',hud:()=>'แตะเพื่อตรวจ',img:'living-table.jpg',hs:()=>[
   hs([[18,23],[45,22],[51,33],[25,36]],'ข้อความของน้าริน',()=>{addEv('E01');say('ข้อความ','ขอย้ายเก็บก่อน — ริน / (ด้านหลัง) เก็บตามผังเดิมนะ โต๊ะยังเปียกอยู่')},S.ev.E01),
   hs([[17,42],[40,40],[59,48],[55,58],[40,62],[18,61],[19,52]],'รอยน้ำ',()=>{addEv('E02');toast('โต๊ะเปียก — น้ำหกจากแจกัน')},S.ev.E02),
   hs([[55,52],[87,55],[85,77],[53,73]],'รอยที่อัลบั้มเคยวาง',()=>toast('ตรงนี้เคยมีอัลบั้มวางอยู่'))]},
  tray:{title:'ถาดชิ้นแผนผัง',hud:()=>'ชิ้นแผนผังแม่เหล็กหล่นกระจาย',img:'living-shelf-tray.jpg',hs:()=>[
-  hs([[2,50],[95,49],[100,58],[97,80],[55,82],[3,74]],'ต่อจิ๊กซอว์แผนผังบ้าน',()=>go('jigsaw'),S.ev.E04)]},
+  hs([[2,50],[95,49],[100,58],[97,80],[55,82],[3,74]],'ต่อจิ๊กซอว์แผนผังบ้าน',()=>{MG.hints=0;go('jig')},S.ev.E04)]},
  jigsaw:{title:'จิ๊กซอว์แผนผังบ้าน',hud:()=>'⏱ 00:42 · สถิติดีที่สุด 00:35 · ⭐⭐⭐ ถ้าไม่ใช้คำใบ้',img:'house-map.jpg',contain:true,mw:864,mh:1152,hs:()=>[
   hs([[100,100],[770,100],[770,1050],[100,1050]],'(stub) ต่อเสร็จแล้ว',()=>{addEv('E04');say('แผนผัง','หมวด “ภาพถ่ายและจดหมาย” อยู่ใต้หน้าต่างห้องทำงาน ส่วนข้างโซฟาในห้องนั่งเล่นเป็นของเล่น')},S.ev.E04)]},
  study:{title:'ห้องทำงาน — มุมกว้างจากประตู',hud:()=>'ภารกิจ: หากล่องที่ถูกต้อง',img:'study-wide.jpg',hs:()=>[
@@ -88,7 +113,7 @@ const SC={
   hs([[41,58],[60,58],[60,68],[42,68]],'กล่องรูปดาว (ใต้หน้าต่าง)',()=>go('box'))]},
  box:{title:'กล่องรูปดาว',hud:()=>'⏱ 01:05 · สถิติดีที่สุด — · ไม่มีจำกัดเวลา',img:'study-box.jpg',hs:()=>[
   hs([[41,66],[53,67],[50,74],[42,73]],'สติกเกอร์รูปดาว',()=>toast('กล่องสีน้ำเงินติดรูปดาว')),
-  hs([[5,35],[47,34],[95,43],[93,55],[62,58],[10,49]],S.solved?'เปิดแล้ว':'เลื่อนบล็อก (stub: สำเร็จ)',()=>{if(S.solved)return;S.solved=true;addEv('E05');S.hist=[];go('album')})]},
+  hs([[5,35],[47,34],[95,43],[93,55],[62,58],[10,49]],S.solved?'เปิดแล้ว':'เล่นเลื่อนบล็อก',()=>{if(S.solved)return;MG.hints=0;go('slide')})]},
  album:{title:'พบอัลบั้มแล้ว!',hud:()=>'หลักฐาน E05',img:'album-found.jpg',hs:()=>[
   hs([[19,31],[54,31],[55,58],[23,58]],'รูปตาตอนหนุ่ม',()=>say('ยายมะลิ',LINES.win,[['ต่อ',()=>say('ริน','หาเจอแล้วใช่ไหม? เมื่อกี้น้ำหกบนโต๊ะ ฉันเลยรีบยกอัลบั้มใส่กล่อง แล้วทิ้งข้อความไว้')]])),
   hs([[61,31],[99,33],[98,60],[62,56]],'โปสการ์ด',()=>say('โปสการ์ด','ภาพที่เหลือฝากไว้ที่ห้องสมุดวันวาน — ลิ้นชักหมายเลข 7',[['เก็บโปสการ์ด แล้วกลับบ้าน',()=>{S.reward=true;$('dlg').style.display='none';S.hist=[];go('room')}]]))],enter(){say('ยายมะลิ','เจอแล้ว! หน้าปกดอกไม้เล่มนี้เอง')}},
@@ -99,9 +124,55 @@ const SC={
   hs([[8,20],[46,19],[48,48],[33,65],[8,48]],'ผ้าเปียก',()=>{addEv('E02');toast('ผ้าที่ใช้เช็ดโต๊ะยังเปียก')}),
   hs([[52,34],[90,40],[85,61],[80,80],[53,81],[52,61]],'แจกันเติมน้ำใหม่',()=>toast('แจกันถูกเติมน้ำใหม่ — มีน้ำหกจริง'))]}
 };
+
+const DIFF='ปกติ';const TGT={cross:'04:00',jig:'03:00',slide:'02:00'};
+const MG={hints:0,t0:0};
+function stars(){return MG.hints===0?'⭐⭐⭐':MG.hints===1?'⭐⭐☆':'⭐☆☆'}
+function mgbar(name,key,el){const b=document.createElement('div');b.className='mgbar';
+ b.innerHTML=`<span class="t">⏱ <b id="el">${MG.fake||'00:00'}</b> / 🎯 ${TGT[key]} <small>(${DIFF})</small></span><span class="stars" id="st">${stars()}</span><button class="mgbtn" id="hint">💡 คำใบ้</button>`;
+ el.appendChild(b);b.querySelector('#hint').onclick=()=>{MG.hints++;$('st').textContent=stars();toast(MG.hintText[Math.min(MG.hints,MG.hintText.length)-1])}}
+function doneBtn(el,label,fn){const d=document.createElement('button');d.className='mgbtn mgdone';d.textContent=label;d.onclick=fn;el.appendChild(d)}
+const CW={grid:['ดาว##','##า##','##งาม'],fill:{'0,0':'ด','0,1':'า','0,2':'ว','1,2':'า'},sel:'2,3',num:{'0,0':1,'0,2':2,'2,2':3}};
+SC.cross={title:'ครอสเวิร์ดของลุงเมฆ (งานเสริม)',hud:()=>'มินิเกม: ครอสเวิร์ด',render(el){MG.hintText=['ภาพใบ้: 💐 ดอกไม้ที่สวย…','เติมอักษรต้นให้ 1 ตัว','ตัวเลือก: งาม / ง่าย / งู'];MG.fake='01:12';
+ const w=document.createElement('div');w.className='mg';el.appendChild(w);mgbar('','cross',w);
+ const c=document.createElement('div');c.className='cw';let g='<div class="cwg">';
+ for(let r=0;r<3;r++)for(let k=0;k<5;k++){const ch=[...CW.grid[r]][k];const id=r+','+k;
+  if(ch==='#'){g+='<div class="cwc blk"></div>';continue}
+  const inSel=r===2;g+=`<div class="cwc ${CW.sel===id?'sel':inSel?'hl':''}" data-id="${id}">${CW.num[id]?'<i>'+CW.num[id]+'</i>':''}${CW.fill[id]||''}</div>`}
+ g+='</div><div class="clues"><b>แนวนอน</b> 1. สิ่งที่เห็นเป็นจุดส่องแสงบนท้องฟ้ายามค่ำคืน ✓<br>3. อีกคำหนึ่งที่หมายถึง “สวย” ←<br><b>แนวตั้ง</b> 2. ทำให้สิ่งของอยู่บนโต๊ะ เช่น “___ หนังสือบนโต๊ะ”</div>';
+ c.innerHTML=g;w.appendChild(c);
+ c.querySelectorAll('.cwc:not(.blk)').forEach(x=>x.onclick=()=>{CW.sel=x.dataset.id;go('cross',true)});
+ const kb=document.createElement('div');kb.className='keys';'งามาวดสล'.split('').forEach(ch=>{const b=document.createElement('button');b.textContent=ch;b.onclick=()=>{CW.fill[CW.sel]=ch;const [r,k]=CW.sel.split(',').map(Number);if(r===2&&k<4)CW.sel='2,'+(k+1);go('cross',true)};kb.appendChild(b)});w.appendChild(kb);
+ doneBtn(w,'✓ ส่งคำตอบ',()=>{const ok=CW.fill['2,2']==='ง'&&CW.fill['2,3']==='า'&&CW.fill['2,4']==='ม';
+  if(!ok)return toast('ยังไม่ครบหรือไม่ถูก — ลองคำใบ้ได้');S.cw=1;S.hist.pop();S.screen='mek';draw();say('ลุงเมฆ','ครบแล้ว! เดี๋ยวให้ทุกคนลองเล่นกัน ขอบใจมากนะ')});return []}};
+const JG={placed:[0,1,2,3,5,6,9],sel:null};
+SC.jig={title:'จิ๊กซอว์แผนผังบ้าน',hud:()=>'มินิเกม: จิ๊กซอว์ (ชิ้นไม่ต้องหมุน)',render(el){MG.hintText=['แสดงขอบภาพ','ไฮไลต์ช่องของชิ้นที่เลือก','วางตัวอย่างให้ 1 ชิ้น'];MG.fake='00:42';
+ const w=document.createElement('div');w.className='mg';el.appendChild(w);mgbar('','jig',w);
+ const box=document.createElement('div');box.className='jg';const b=document.createElement('div');b.className='jgb';
+ const pos=i=>`background-position:${(i%3)*50}% ${Math.floor(i/3)*33.333}%`;
+ for(let i=0;i<12;i++){const d=document.createElement('div');if(JG.placed.includes(i)){d.className='pc';d.style.cssText=pos(i)}else{d.className='jgs';d.onclick=()=>{if(JG.sel===i){JG.placed.push(i);JG.sel=null;go('jig',true)}else if(JG.sel!=null)toast('ยังไม่ใช่ช่องนี้ ลองอีกที')}}b.appendChild(d)}
+ box.appendChild(b);w.appendChild(box);
+ const t=document.createElement('div');t.className='jgt';[4,11,7,8,10].filter(i=>!JG.placed.includes(i)).forEach(i=>{const d=document.createElement('div');d.className='pc'+(JG.sel===i?' sel':'');d.style.cssText=pos(i);d.onclick=()=>{JG.sel=i;go('jig',true)};t.appendChild(d)});
+ if(t.children.length)w.appendChild(t);
+ doneBtn(w,JG.placed.length===12?'✓ เสร็จ':'(stub) ต่อที่เหลือให้',()=>{JG.placed=[...Array(12).keys()];addEv('E04');S.hist.pop();S.screen='tray';draw();say('แผนผัง','หมวด “ภาพถ่ายและจดหมาย” อยู่ใต้หน้าต่างห้องทำงาน ส่วนข้างโซฟาในห้องนั่งเล่นเป็นของเล่น')});return []}};
+const SB={A:{r:0,c:2,len:2,v:1,col:'#e0574f'},B:{r:2,c:0,len:2,v:0,col:'#4f8fe0'},K:{r:1,c:0,len:2,v:0,col:'#f2b632',key:1}};
+function occ(ex){const o={};for(const[n,b]of Object.entries(SB)){if(n===ex)continue;for(let i=0;i<b.len;i++)o[(b.r+(b.v?i:0))+','+(b.c+(b.v?0:i))]=1}return o}
+function step(n){const b=SB[n],o=occ(n);const fw=b.v?[b.r+b.len,b.c]:[b.r,b.c+b.len],bw=b.v?[b.r-1,b.c]:[b.r,b.c-1];
+ const ok=([r,c])=>r>=0&&c>=0&&r<4&&c<4&&!o[r+','+c];
+ if(n==='K'&&b.c===2)return 'win';
+ if(n==='A'){if(ok(fw)){b.r++;return 1}if(ok(bw)){b.r--;return 1}}else if(n==='B'){if(ok(bw)){b.c--;return 1}if(ok(fw)){b.c++;return 1}}else{if(ok(fw)){b.c++;return b.c===2?'win':1}}return 0}
+SC.slide={title:'ตัวล็อกเลื่อนบล็อก',hud:()=>'มินิเกม: พากุญแจ K ไปทางออกด้านขวา',render(el){MG.hintText=['ชี้สิ่งที่ขวางกุญแจ: บล็อก A','ชี้บล็อกที่ต้องขยับก่อน: B','ตัวอย่างจังหวะแรก: B ไปซ้าย'];MG.fake='01:05';
+ const w=document.createElement('div');w.className='mg';el.appendChild(w);mgbar('','slide',w);
+ const sb=document.createElement('div');sb.className='sb';const g=document.createElement('div');g.className='sbg';sb.appendChild(g);
+ const P=25;for(let r=0;r<4;r++)for(let c=0;c<4;c++)g.insertAdjacentHTML('beforeend',`<div class="sbcell" style="left:${c*P}%;top:${r*P}%;width:${P}%;height:${P}%"></div>`);
+ g.insertAdjacentHTML('beforeend',`<div class="exit" style="top:${P+3}%;height:${P-6}%"></div><div class="keyhole" style="top:${P+5}%">🔒</div>`);
+ for(const[n,b]of Object.entries(SB)){const d=document.createElement('div');d.className='blk2';const W=b.v?P:P*b.len,H=b.v?P*b.len:P;
+  d.style.cssText=`left:calc(${b.c*P}% + 4px);top:calc(${b.r*P}% + 4px);width:calc(${W}% - 8px);height:calc(${H}% - 8px);background:${b.col}`;d.textContent=b.key?'🗝 K':n;
+  d.onclick=()=>{const r=step(n);if(r==='win'){toast('กุญแจถึงรูกุญแจ!');setTimeout(()=>{S.solved=true;addEv('E05');S.hist=[];go('album')},500)}else if(r)go('slide',true);else toast('บล็อกนี้ขยับไม่ได้ตอนนี้')};g.appendChild(d)}
+ w.appendChild(sb);w.insertAdjacentHTML('beforeend','<div style="color:#eaf6ff;font-size:13px;text-align:center">แตะบล็อกเพื่อเลื่อน · A แนวตั้ง · B, K แนวนอน · ไม่มีจำกัดเวลา</div>');return []}};
 const HOUSE=['living','study','kitchen','table','tray','mek','grandma','kclose'];
 function draw(){const sc=SC[S.screen],el=$('scene');let list;
- el.innerHTML=`<img class="bg ${sc.contain?'contain':''}" src="img/${sc.img}" alt="">`;list=sc.hs();sc.extra&&sc.extra(el);
+ if(sc.render){el.innerHTML='<div class="bg" style="background:linear-gradient(160deg,#1d3346,#2c4a5e)"></div>';list=sc.render(el)}else{el.innerHTML=`<img class="bg ${sc.contain?'contain':''}" src="img/${sc.img}" alt="">`;list=sc.hs();sc.extra&&sc.extra(el)}
  if(HOUSE.includes(S.screen)){const m=document.createElement('button');m.className='mapbtn';m.textContent='🗺 แผนผังบ้าน';m.onclick=()=>go('map');el.appendChild(m)}
  const map=!!sc.contain,W=map?sc.mw:720,Hh=map?sc.mh:1280,NS='http://www.w3.org/2000/svg';
  const svg=document.createElementNS(NS,'svg');svg.setAttribute('class','hl');svg.setAttribute('viewBox',`0 0 ${W} ${Hh}`);svg.setAttribute('preserveAspectRatio',map?'xMidYMid meet':'xMidYMid slice');
