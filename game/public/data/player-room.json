@@ -1,0 +1,419 @@
+{
+  "id": "player-room",
+  "name": "ห้องของฉัน",
+  "_note": "Positions are meters. Local +Z of a wall piece points into the room before rotation. rotation is degrees. Y=90 faces +X (left wall). Y=-90 faces -X (right wall).",
+  "camera": {
+    "position": [0.0, 1.36, 3.62],
+    "target": [0.02, 0.7, -0.25],
+    "fov": 102
+  },
+  "lighting": {
+    "ambient": { "color": "#fff6ea", "intensity": 0.78 },
+    "hemisphere": { "sky": "#fff8f0", "ground": "#e7c79a", "intensity": 0.42 },
+    "sun": { "color": "#ffe3b8", "intensity": 1.15, "position": [-3.4, 3.8, 0.4] },
+    "fill": { "color": "#d7e8ff", "intensity": 0.38, "position": [0.8, 2.4, 3.6] }
+  },
+  "objects": [
+    {
+      "id": "floor",
+      "kind": "floor",
+      "position": [0, 0, 0],
+      "size": [3.6, 0.08, 3.3],
+      "colors": ["#e8bc74", "#d9a45c", "#f0cb8c", "#c9954c"]
+    },
+    {
+      "id": "wall-left",
+      "kind": "box",
+      "position": [-1.86, 1.25, 0],
+      "size": [0.12, 2.5, 3.42],
+      "color": "#f6e6c8",
+      "shadow": "receive"
+    },
+    {
+      "id": "wall-right",
+      "kind": "box",
+      "position": [1.86, 1.25, 0],
+      "size": [0.12, 2.5, 3.42],
+      "color": "#f3e0c0",
+      "shadow": "receive"
+    },
+    {
+      "id": "wall-back",
+      "kind": "box",
+      "position": [0, 1.25, -1.71],
+      "size": [3.84, 2.5, 0.12],
+      "color": "#f7e7cc",
+      "shadow": "receive"
+    },
+    {
+      "id": "ceiling",
+      "kind": "box",
+      "position": [0, 2.54, 0],
+      "size": [3.84, 0.08, 3.42],
+      "color": "#fbf6ee",
+      "shadow": "receive"
+    },
+    {
+      "id": "trim-left",
+      "kind": "box",
+      "position": [-1.78, 0.05, 0],
+      "size": [0.04, 0.1, 3.28],
+      "color": "#edd8b4",
+      "shadow": "none"
+    },
+    {
+      "id": "trim-right",
+      "kind": "box",
+      "position": [1.78, 0.05, 0],
+      "size": [0.04, 0.1, 3.28],
+      "color": "#edd8b4",
+      "shadow": "none"
+    },
+    {
+      "id": "trim-back",
+      "kind": "box",
+      "position": [0, 0.05, -1.63],
+      "size": [3.56, 0.1, 0.04],
+      "color": "#edd8b4",
+      "shadow": "none"
+    },
+    {
+      "id": "window",
+      "kind": "window",
+      "position": [-1.8, 1.52, 0.12],
+      "rotation": [0, 90, 0],
+      "size": [1.12, 0.92],
+      "colors": {
+        "frame": "#f7fbff",
+        "glass": "#b9e4f8",
+        "curtain": "#8ecae6",
+        "rod": "#f4f7fb",
+        "sill": "#f6efe4",
+        "sun": "#ffe08a"
+      }
+    },
+    {
+      "id": "door",
+      "kind": "door",
+      "position": [1.8, 1.02, -0.05],
+      "rotation": [0, -90, 0],
+      "size": [0.84, 2.04],
+      "colors": { "frame": "#f0e2cc", "slab": "#d48945", "panel": "#c47b38", "knob": "#f0d78c" }
+    },
+    {
+      "id": "bed",
+      "kind": "bed",
+      "position": [-1.2, 0, 0.42],
+      "size": [0.96, 0.52, 1.75],
+      "colors": {
+        "frame": "#efd0a2",
+        "head": "#e4bc84",
+        "sheet": "#f7f4ee",
+        "blanket": "#8fd4c6",
+        "pillow": "#f6b6c8"
+      }
+    },
+    {
+      "id": "desk",
+      "kind": "desk",
+      "position": [1.12, 0, -1.18],
+      "size": [1.16, 0.74, 0.58],
+      "colors": {
+        "top": "#e8c892",
+        "leg": "#d7ad6e",
+        "bezel": "#31404e",
+        "screen": "#8fd4ee",
+        "key": "#f4f1ea"
+      }
+    },
+    {
+      "id": "shelf",
+      "kind": "shelf",
+      "position": [-0.9, 0, -1.42],
+      "size": [0.7, 1.38, 0.24],
+      "color": "#e4be8a",
+      "books": [
+        { "color": "#ef6f6c", "h": 0.22 },
+        { "color": "#f2c14e", "h": 0.18 },
+        { "color": "#6fbf8a", "h": 0.24 },
+        { "color": "#7eb6e0", "h": 0.2 },
+        { "color": "#c58ad4", "h": 0.16 },
+        { "color": "#f0a36b", "h": 0.22 },
+        { "color": "#ef8f9c", "h": 0.19 },
+        { "color": "#8fd4c6", "h": 0.21 },
+        { "color": "#f6d56a", "h": 0.17 }
+      ]
+    },
+    {
+      "id": "calendar-mesh",
+      "kind": "calendar",
+      "position": [0.16, 1.84, -1.6],
+      "size": [0.44, 0.52],
+      "colors": { "paper": "#fffaf3", "head": "#ff8b6a", "ink": "#5c463c" }
+    },
+    {
+      "id": "board-mesh",
+      "kind": "board",
+      "position": [0.16, 1.2, -1.6],
+      "size": [0.5, 0.38],
+      "colors": {
+        "cork": "#d3925a",
+        "frame": "#8d5a32",
+        "note": "#fff3b0",
+        "photoA": "#8ecae6",
+        "photoB": "#f6b6c8"
+      }
+    },
+    {
+      "id": "rug",
+      "kind": "rug",
+      "position": [0.12, 0, 0.32],
+      "size": [1.55, 1.15],
+      "colors": { "edge": "#f7f1e4", "fill": "#b7e3f6" }
+    },
+    {
+      "id": "plant",
+      "kind": "plant",
+      "position": [-1.48, 0, -1.05],
+      "colors": { "pot": "#e07a5f", "soil": "#6b4a32", "leaf": "#6fbf73" }
+    },
+    {
+      "id": "nightstand",
+      "kind": "box",
+      "position": [-0.5, 0.2, -0.18],
+      "size": [0.36, 0.4, 0.32],
+      "color": "#e8c892"
+    },
+    {
+      "id": "lamp",
+      "kind": "lamp",
+      "position": [-0.5, 0.4, -0.18],
+      "colors": { "base": "#f0d78c", "pole": "#d7ad6e", "shade": "#fff1c9" }
+    },
+    {
+      "id": "poster",
+      "kind": "poster",
+      "position": [-0.82, 1.66, -1.6],
+      "size": [0.28, 0.32],
+      "colors": { "paper": "#fff6d8", "star": "#f2c14e" }
+    },
+    {
+      "id": "ball",
+      "kind": "ball",
+      "position": [0.58, 0.08, 0.82],
+      "radius": 0.08,
+      "color": "#f2c14e"
+    },
+    {
+      "id": "mat",
+      "kind": "box",
+      "position": [1.48, 0.012, -0.05],
+      "size": [0.36, 0.02, 0.7],
+      "color": "#e7b07a",
+      "shadow": "receive"
+    }
+  ],
+  "hotspots": [
+    {
+      "id": "door-out",
+      "label": "ประตู",
+      "action": "event-select",
+      "anchor": [1.55, 1.15, -0.05],
+      "hit": { "position": [1.66, 1.05, -0.05], "size": [0.4, 1.9, 0.86] }
+    },
+    {
+      "id": "practice",
+      "label": "มุมฝึกเล่น",
+      "action": "practice",
+      "anchor": [1.12, 1.16, -0.95],
+      "hit": { "position": [1.12, 1.12, -1.22], "size": [0.62, 0.5, 0.36] }
+    },
+    {
+      "id": "calendar",
+      "label": "ปฏิทิน",
+      "action": "calendar",
+      "anchor": [0.16, 1.84, -1.46],
+      "hit": { "position": [0.16, 1.84, -1.52], "size": [0.5, 0.56, 0.22] }
+    },
+    {
+      "id": "case-board",
+      "label": "กระดานคดี",
+      "action": "case-board",
+      "anchor": [0.16, 1.2, -1.46],
+      "hit": { "position": [0.16, 1.2, -1.52], "size": [0.56, 0.42, 0.22] }
+    },
+    {
+      "id": "slot-wall",
+      "label": "ผนัง",
+      "action": "decor",
+      "slotId": "wall",
+      "emptyHint": "ช่องบนผนังว่างอยู่ ไขคดีแล้วค่อยมาวางของ",
+      "anchor": [-0.82, 1.66, -1.46],
+      "hit": { "position": [-0.82, 1.66, -1.52], "size": [0.32, 0.36, 0.2] }
+    },
+    {
+      "id": "slot-shelf",
+      "label": "ชั้นของที่ระลึก",
+      "action": "decor",
+      "slotId": "keepsake-shelf",
+      "emptyHint": "ชั้นนี้ยังว่าง ไว้โชว์ของจากคดี",
+      "anchor": [-0.68, 0.72, -1.22],
+      "hit": { "position": [-0.68, 0.7, -1.28], "size": [0.22, 0.22, 0.2] }
+    },
+    {
+      "id": "slot-sill",
+      "label": "ขอบหน้าต่าง",
+      "action": "decor",
+      "slotId": "window-sill",
+      "emptyHint": "ขอบหน้าต่างว่างอยู่",
+      "anchor": [-1.52, 1.04, 0.12],
+      "hit": { "position": [-1.55, 1.04, 0.12], "size": [0.2, 0.12, 0.36] }
+    },
+    {
+      "id": "slot-desk",
+      "label": "โต๊ะ",
+      "action": "decor",
+      "slotId": "desk",
+      "emptyHint": "มุมโต๊ะว่างอยู่ ยังไม่มีของมาวาง",
+      "anchor": [0.68, 0.82, -0.86],
+      "hit": { "position": [0.68, 0.78, -0.88], "size": [0.22, 0.12, 0.18] }
+    },
+    {
+      "id": "slot-bed",
+      "label": "เตียง",
+      "action": "decor",
+      "slotId": "bed",
+      "emptyHint": "บนเตียงยังว่าง",
+      "anchor": [-1.2, 0.5, 0.78],
+      "hit": { "position": [-1.2, 0.44, 0.76], "size": [0.36, 0.16, 0.32] }
+    },
+    {
+      "id": "slot-rug-left",
+      "label": "พรมซ้าย",
+      "action": "decor",
+      "slotId": "rug-left",
+      "emptyHint": "ช่องบนพรมว่างอยู่",
+      "anchor": [-0.32, 0.08, 0.55],
+      "hit": { "position": [-0.32, 0.08, 0.55], "size": [0.24, 0.16, 0.24] }
+    },
+    {
+      "id": "slot-rug-center",
+      "label": "พรมกลาง",
+      "action": "decor",
+      "slotId": "rug-center",
+      "emptyHint": "ช่องบนพรมว่างอยู่",
+      "anchor": [0.12, 0.08, 0.28],
+      "hit": { "position": [0.12, 0.08, 0.28], "size": [0.24, 0.16, 0.24] }
+    },
+    {
+      "id": "slot-rug-right",
+      "label": "พรมขวา",
+      "action": "decor",
+      "slotId": "rug-right",
+      "emptyHint": "ช่องบนพรมว่างอยู่",
+      "anchor": [0.55, 0.08, 0.55],
+      "hit": { "position": [0.55, 0.08, 0.55], "size": [0.24, 0.16, 0.24] }
+    }
+  ],
+  "calendar": {
+    "purpose": "upcoming",
+    "theme": "kid-room",
+    "themeSwitch": true,
+    "title": "ปฏิทินของฉัน",
+    "month": "2026-10",
+    "monthLabel": "ตุลาคม 2569",
+    "today": "2026-10-22",
+    "entries": [
+      {
+        "date": "2026-10-22",
+        "icon": "🎯",
+        "label": "ฝึกเล่นประจำวัน: เล่น 1 ด่าน",
+        "type": "daily-practice"
+      },
+      {
+        "date": "2026-10-24",
+        "icon": "🏡",
+        "label": "เยี่ยมบ้านคุณยาย (คดี 01)",
+        "eventRef": "case-01"
+      },
+      {
+        "date": "2026-10-31",
+        "icon": "🔒",
+        "label": "ห้องสมุดวันวาน — ปลดล็อกเมื่อจบคดี 01",
+        "eventRef": "case-02"
+      }
+    ],
+    "themes": [
+      {
+        "id": "kid-room",
+        "name": "ห้องเด็ก",
+        "paper": "#fff7e8",
+        "ink": "#3a3550",
+        "head": "#ff9a62",
+        "frame": "#7ec8e3",
+        "art": "🎈",
+        "unlock": null
+      },
+      {
+        "id": "wooden-home",
+        "name": "บ้านไม้",
+        "paper": "#f3e3c3",
+        "ink": "#4a2e18",
+        "head": "#6b3f22",
+        "frame": "#8a5a34",
+        "art": "🌺",
+        "unlock": null
+      },
+      {
+        "id": "night-sky",
+        "name": "ท้องฟ้ายามค่ำ",
+        "paper": "#e7ecff",
+        "ink": "#1f2a5c",
+        "head": "#1f2a5c",
+        "frame": "#4b3f8f",
+        "art": "🌙",
+        "unlock": { "afterCase": "case-01" },
+        "lockedHint": "ปลดล็อกเมื่อจบคดี 01"
+      }
+    ]
+  },
+  "hud": {
+    "backLabel": "ย้อนกลับ",
+    "caseLabel": "สมุดคดี",
+    "hintLabel": "คำใบ้",
+    "settingsLabel": "ตั้งค่า",
+    "hereToast": "อยู่ห้องนี้แล้ว",
+    "hintTarget": "door-out",
+    "hintLines": ["ลองออกทางประตู เพื่อไปเลือกเหตุการณ์", "แตะจุดที่ประตู"]
+  },
+  "onboarding": [
+    {
+      "title": "ขั้นที่ 1 จาก 3",
+      "body": "แตะจุดเล็ก ๆ บนวัตถุ\nแล้วแตะอีกครั้งเพื่อใช้"
+    },
+    {
+      "title": "ขั้นที่ 2 จาก 3",
+      "body": "ปุ่มลูกศร มุมล่างซ้าย\nใช้ย้อนกลับเสมอ"
+    },
+    {
+      "title": "ขั้นที่ 3 จาก 3",
+      "body": "ปุ่มสมุดคดี มุมล่างขวา\nเปิดกระดานคดี"
+    }
+  ],
+  "screens": {
+    "eventSelect": {
+      "title": "เลือกเหตุการณ์",
+      "body": "รายการเหตุการณ์จะมาจากชุดเรื่อง หน้านี้ยังเป็นที่ว่าง",
+      "cardTitle": "เร็ว ๆ นี้",
+      "cardBody": "ยังไม่มีเหตุการณ์ให้เลือก"
+    },
+    "practice": {
+      "title": "มุมฝึกเล่น",
+      "body": "ยังไม่มีเกมที่ปลดล็อก เล่นในคดีก่อน แล้วกลับมาฝึกที่นี่"
+    },
+    "caseBoard": {
+      "title": "สมุดคดี",
+      "body": "ยังไม่ได้เริ่มเหตุการณ์ ไม่มีหลักฐานให้ดู"
+    }
+  }
+}
