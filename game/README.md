@@ -21,7 +21,17 @@ npm run build
 npm run preview
 ```
 
-`npm run build` writes a static site to `game/dist`. `npm run preview` serves that folder. Asset paths are relative, so the same `dist` folder can be hosted as static files.
+`npm run build` writes a static site to `game/dist`. `npm run preview` serves that folder. Asset paths are relative, so the same `dist` folder can be hosted as static files at the site root or in a subfolder.
+
+## Install (PWA)
+
+The built site is an installable web app. `public/manifest.webmanifest` names it **Never Ending Story Game**, locks portrait orientation, and uses standalone display. Theme color is `#10141c`. Icons at 192 and 512 live in `public/icons/`, with a maskable pair whose artwork sits inside the center safe circle. The manifest does not set `id`. The installed app's identity is the start URL, so a copy served from a subfolder stays that folder's app.
+
+The production build writes `dist/sw.js`. That worker precaches every file in `dist` except itself. URLs in the cache list are relative (`./index.html`, `./assets/...`), so they resolve next to the worker when the folder is served from a subpath. The cache name includes a hash of those files. A new build installs, calls `skipWaiting`, deletes the previous cache, and reloads an already-open page once so the new files replace the old ones. The first visit does not reload. Returning to the app checks for an update.
+
+`npm run dev` does not register the worker.
+
+Open the hosted folder with a trailing slash, or open `index.html`. Relative files, including `sw.js`, resolve inside that folder. An installed app starts at `index.html`.
 
 ## Checks
 
