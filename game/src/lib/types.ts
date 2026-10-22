@@ -1,168 +1,107 @@
+import type { EntityKind } from './catalog';
+
 export type Vec3 = [number, number, number];
 
 export type ShadowMode = 'cast' | 'receive' | 'both' | 'none';
 
-export type HotspotAction = 'event-select' | 'practice' | 'calendar' | 'case-board' | 'decor';
-
-export type BoxObject = {
+export type Identity = {
   id: string;
-  kind: 'box';
-  position: Vec3;
-  size: Vec3;
-  rotation?: Vec3;
-  color: string;
-  shadow?: ShadowMode;
+  kind: EntityKind;
+  title: string;
+  titleEn?: string;
+  slug: string;
 };
 
-export type FloorObject = {
-  id: string;
+export type CameraShot = { position: Vec3; target: Vec3; fov: number };
+
+type Placed = { position: Vec3; rotation?: Vec3 };
+
+export type BoxEntity = Identity &
+  Placed & {
+    kind: 'box';
+    size: Vec3;
+    color: string;
+    shadow?: ShadowMode;
+  };
+
+export type FloorEntity = Identity & {
   kind: 'floor';
   position: Vec3;
   size: Vec3;
   colors: string[];
 };
 
-export type WindowObject = {
-  id: string;
-  kind: 'window';
-  position: Vec3;
-  rotation?: Vec3;
-  size: [number, number];
-  colors: {
-    frame: string;
-    glass: string;
-    curtain: string;
-    rod: string;
-    sill: string;
-    sun: string;
+export type WindowEntity = Identity &
+  Placed & {
+    kind: 'window';
+    size: [number, number];
+    colors: {
+      frame: string;
+      glass: string;
+      curtain: string;
+      rod: string;
+      sky: string;
+      tree: string;
+      sun: string;
+    };
   };
-};
 
-export type DoorObject = {
-  id: string;
-  kind: 'door';
-  position: Vec3;
-  rotation?: Vec3;
-  size: [number, number];
-  colors: { frame: string; slab: string; panel: string; knob: string };
-};
+export type DoorEntity = Identity &
+  Placed & {
+    kind: 'door';
+    size: [number, number];
+    colors: { frame: string; slab: string; panel: string; knob: string };
+  };
 
-export type BedObject = {
-  id: string;
-  kind: 'bed';
-  position: Vec3;
-  rotation?: Vec3;
-  size: [number, number, number];
-  colors: { frame: string; head: string; sheet: string; blanket: string; pillow: string };
-};
+export type BedEntity = Identity &
+  Placed & {
+    kind: 'bed';
+    size: [number, number, number];
+    colors: { wood: string; sheet: string; pillow: string; quilt: string[] };
+  };
 
-export type DeskObject = {
-  id: string;
-  kind: 'desk';
-  position: Vec3;
-  rotation?: Vec3;
-  size: [number, number, number];
-  colors: { top: string; leg: string; bezel: string; screen: string; key: string };
-};
+export type NightstandEntity = Identity &
+  Placed & {
+    kind: 'nightstand';
+    size: [number, number, number];
+    colors: { wood: string; top: string; knob: string };
+  };
 
-export type BookSpec = { color: string; h: number };
+export type DeskEntity = Identity &
+  Placed & {
+    kind: 'desk';
+    size: [number, number, number];
+    colors: { top: string; leg: string; bezel: string; screen: string; key: string };
+  };
 
-export type ShelfObject = {
-  id: string;
-  kind: 'shelf';
-  position: Vec3;
-  rotation?: Vec3;
-  size: [number, number, number];
+export type BookEntity = Identity & {
+  kind: 'book';
   color: string;
-  books: BookSpec[];
+  width: number;
+  height: number;
+  depth: number;
+  tilt?: number;
+  pose?: 'upright' | 'flat';
+  stackOn?: string;
 };
 
-export type CalendarMesh = {
-  id: string;
-  kind: 'calendar';
-  position: Vec3;
-  rotation?: Vec3;
-  size: [number, number];
-  colors: { paper: string; head: string; ink: string };
+export type ShelfRowEntity = Identity & {
+  kind: 'shelf-row';
+  y: number;
+  gapEnd?: number;
+  books: BookEntity[];
 };
 
-export type BoardObject = {
-  id: string;
-  kind: 'board';
-  position: Vec3;
-  rotation?: Vec3;
-  size: [number, number];
-  colors: { cork: string; frame: string; note: string; photoA: string; photoB: string };
-};
+export type BookshelfEntity = Identity &
+  Placed & {
+    kind: 'bookshelf';
+    size: [number, number, number];
+    color: string;
+    rows: ShelfRowEntity[];
+  };
 
-export type RugObject = {
-  id: string;
-  kind: 'rug';
-  position: Vec3;
-  size: [number, number];
-  colors: { edge: string; fill: string };
-};
-
-export type PlantObject = {
-  id: string;
-  kind: 'plant';
-  position: Vec3;
-  colors: { pot: string; soil: string; leaf: string };
-};
-
-export type LampObject = {
-  id: string;
-  kind: 'lamp';
-  position: Vec3;
-  colors: { base: string; pole: string; shade: string };
-};
-
-export type PosterObject = {
-  id: string;
-  kind: 'poster';
-  position: Vec3;
-  rotation?: Vec3;
-  size: [number, number];
-  colors: { paper: string; star: string };
-};
-
-export type BallObject = {
-  id: string;
-  kind: 'ball';
-  position: Vec3;
-  radius: number;
-  color: string;
-};
-
-export type RoomObject =
-  | BoxObject
-  | FloorObject
-  | WindowObject
-  | DoorObject
-  | BedObject
-  | DeskObject
-  | ShelfObject
-  | CalendarMesh
-  | BoardObject
-  | RugObject
-  | PlantObject
-  | LampObject
-  | PosterObject
-  | BallObject;
-
-export type Hotspot = {
-  id: string;
-  label: string;
-  action: HotspotAction;
-  slotId?: string;
-  emptyHint?: string;
-  anchor: Vec3;
-  hit: { position: Vec3; size: Vec3 };
-};
-
-export type CalendarTheme = {
-  id: string;
-  name: string;
+export type CalendarThemeEntity = Identity & {
+  kind: 'calendar-theme';
   paper: string;
   ink: string;
   head: string;
@@ -172,37 +111,98 @@ export type CalendarTheme = {
   lockedHint?: string;
 };
 
-export type CalendarEntry = {
+export type CalendarEntryEntity = Identity & {
+  kind: 'calendar-entry';
   date: string;
   icon: string;
-  label: string;
   type?: string;
   eventRef?: string;
 };
 
-export type PlayerRoom = {
-  id: string;
-  name: string;
-  camera: { position: Vec3; target: Vec3; fov: number };
+export type CalendarEntity = Identity &
+  Placed & {
+    kind: 'calendar';
+    size: [number, number];
+    colors: { paper: string; head: string; ink: string };
+    purpose: 'upcoming';
+    theme: string;
+    themeSwitch: boolean;
+    month: string;
+    monthLabel: string;
+    today: string;
+    entries: CalendarEntryEntity[];
+    themes: CalendarThemeEntity[];
+  };
+
+export type RugEntity = Identity & {
+  kind: 'rug';
+  position: Vec3;
+  size: [number, number];
+  colors: { edge: string; fill: string; patches: string[] };
+};
+
+export type PlantEntity = Identity &
+  Placed & {
+    kind: 'plant';
+    colors: { pot: string; soil: string; leaf: string };
+  };
+
+export type LampEntity = Identity &
+  Placed & {
+    kind: 'lamp';
+    colors: { wood: string; shade: string };
+  };
+
+export type SceneObject =
+  | BoxEntity
+  | FloorEntity
+  | WindowEntity
+  | DoorEntity
+  | BedEntity
+  | NightstandEntity
+  | DeskEntity
+  | BookshelfEntity
+  | CalendarEntity
+  | RugEntity
+  | PlantEntity
+  | LampEntity;
+
+export type Buildable = SceneObject | ShelfRowEntity | BookEntity;
+
+export type HotspotAction = 'event-select' | 'practice' | 'calendar' | 'case-board';
+
+export type HitBox = { position: Vec3; size: Vec3 };
+
+export type HotspotEntity = Identity & {
+  kind: 'hotspot';
+  action: HotspotAction;
+  targetId: string;
+  anchor: Vec3;
+  hit: HitBox;
+};
+
+export type DecorSlotEntity = Identity & {
+  kind: 'decor-slot';
+  action: 'decor';
+  targetId: string;
+  emptyHint: string;
+  anchor: Vec3;
+  hit: HitBox;
+};
+
+export type PlayerRoom = Identity & {
+  kind: 'room';
+  camera: CameraShot;
+  shots?: Record<string, CameraShot>;
   lighting: {
     ambient: { color: string; intensity: number };
     hemisphere: { sky: string; ground: string; intensity: number };
     sun: { color: string; intensity: number; position: Vec3 };
     fill: { color: string; intensity: number; position: Vec3 };
   };
-  objects: RoomObject[];
-  hotspots: Hotspot[];
-  calendar: {
-    purpose: 'upcoming';
-    theme: string;
-    themeSwitch: boolean;
-    title: string;
-    month: string;
-    monthLabel: string;
-    today: string;
-    entries: CalendarEntry[];
-    themes: CalendarTheme[];
-  };
+  background: string;
+  objects: SceneObject[];
+  hotspots: Array<HotspotEntity | DecorSlotEntity>;
   hud: {
     backLabel: string;
     caseLabel: string;
@@ -243,9 +243,21 @@ export type CaseState = {
   facts: Record<string, boolean>;
 };
 
+export type FlowProgress = {
+  evidence: string[];
+  solved: boolean;
+  deduced: boolean;
+  reward: boolean;
+  difficulty: string;
+  played: string[];
+  seen: string[];
+  levels: { cross: number[]; jig: number[]; slide: number[] };
+};
+
 export type SaveV1 = {
   version: 1;
   player: PlayerProfile;
   knowledge: PlayerKnowledge;
   caseState: CaseState;
+  flow: FlowProgress;
 };

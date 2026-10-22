@@ -51,30 +51,30 @@
 </script>
 
 <div class="room">
-  <canvas bind:this={canvas} aria-label={room.name}></canvas>
+  <canvas bind:this={canvas} aria-label={room.title}></canvas>
   <div class="spots">
     {#if ready}
       {#each spots as spot (spot.id)}
         {@const hotspot = byId.get(spot.id)}
         {#if hotspot && spot.visible}
-          {@const filled = hotspot.action === 'decor' && hotspot.slotId && decor[hotspot.slotId]}
+          {@const filled = hotspot.kind === 'decor-slot' && !!decor[hotspot.id]}
           <button
             type="button"
             class="spot"
-            class:decor={hotspot.action === 'decor' && !filled}
+            class:decor={hotspot.kind === 'decor-slot' && !filled}
             class:hint={hintId === spot.id}
             class:below={spot.y < 96}
             style="left:{spot.x}px;top:{spot.y}px"
-            aria-label={hotspot.label}
+            aria-label={hotspot.title}
             aria-pressed={selectedId === spot.id}
             onclick={(event) => {
               event.stopPropagation();
               onTap(spot.id);
             }}
           >
-            <span class="mark">{#if hotspot.action === 'decor' && !filled}<span>+</span>{/if}</span>
+            <span class="mark">{#if hotspot.kind === 'decor-slot' && !filled}<span>+</span>{/if}</span>
             {#if selectedId === spot.id}
-              <span class="pill">{hotspot.label}</span>
+              <span class="pill">{filled ? decor[hotspot.id] : hotspot.title}</span>
             {/if}
           </button>
         {/if}

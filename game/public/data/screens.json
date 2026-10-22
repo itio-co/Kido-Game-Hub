@@ -1,0 +1,216 @@
+{
+  "id": "a4c0e001-0000-4000-8000-000000000017",
+  "kind": "screen-registry",
+  "title": "ทะเบียนหน้าจอ",
+  "slug": "screen-registry",
+  "titleEn": "Screen registry",
+  "screens": [
+    {
+      "id": "a4c0e001-0000-4000-8000-000000000000",
+      "kind": "screen",
+      "title": "ห้องของฉัน",
+      "slug": "screen/player-room",
+      "titleEn": "My room",
+      "screen": "player-room",
+      "status": "real"
+    },
+    {
+      "id": "a4c0e001-0000-4000-8000-000000000001",
+      "kind": "screen",
+      "title": "เลือกเหตุการณ์",
+      "slug": "screen/event-select",
+      "titleEn": "Choose an event",
+      "screen": "event-select",
+      "status": "demo"
+    },
+    {
+      "id": "a4c0e001-0000-4000-8000-000000000002",
+      "kind": "screen",
+      "title": "ฉากเปิดเรื่อง",
+      "slug": "screen/cutscene",
+      "titleEn": "Opening cutscene",
+      "screen": "cutscene",
+      "status": "demo"
+    },
+    {
+      "id": "a4c0e001-0000-4000-8000-000000000003",
+      "kind": "screen",
+      "title": "เลือกระดับความยาก",
+      "slug": "screen/difficulty",
+      "titleEn": "Choose difficulty",
+      "screen": "difficulty",
+      "status": "demo"
+    },
+    {
+      "id": "a4c0e001-0000-4000-8000-000000000004",
+      "kind": "screen",
+      "title": "แผนผังบ้าน",
+      "slug": "screen/house-map",
+      "titleEn": "House map",
+      "screen": "house-map",
+      "status": "demo"
+    },
+    {
+      "id": "a4c0e001-0000-4000-8000-000000000005",
+      "kind": "screen",
+      "title": "ห้องนั่งเล่น",
+      "slug": "screen/living-room",
+      "titleEn": "Living room",
+      "screen": "living-room",
+      "status": "demo"
+    },
+    {
+      "id": "a4c0e001-0000-4000-8000-000000000006",
+      "kind": "screen",
+      "title": "ห้องทำงาน",
+      "slug": "screen/study",
+      "titleEn": "Study",
+      "screen": "study",
+      "status": "demo"
+    },
+    {
+      "id": "a4c0e001-0000-4000-8000-000000000007",
+      "kind": "screen",
+      "title": "ครัว",
+      "slug": "screen/kitchen",
+      "titleEn": "Kitchen",
+      "screen": "kitchen",
+      "status": "demo"
+    },
+    {
+      "id": "a4c0e001-0000-4000-8000-000000000008",
+      "kind": "screen",
+      "title": "ครัวมุมใกล้",
+      "slug": "screen/kitchen-close",
+      "titleEn": "Kitchen close-up",
+      "screen": "kitchen-close",
+      "status": "demo"
+    },
+    {
+      "id": "a4c0e001-0000-4000-8000-000000000009",
+      "kind": "screen",
+      "title": "โต๊ะกลาง",
+      "slug": "screen/table",
+      "titleEn": "Coffee table",
+      "screen": "table",
+      "status": "demo"
+    },
+    {
+      "id": "a4c0e001-0000-4000-8000-00000000000a",
+      "kind": "screen",
+      "title": "ถาดชิ้นแผนผัง",
+      "slug": "screen/tray",
+      "titleEn": "Map-piece tray",
+      "screen": "tray",
+      "status": "demo"
+    },
+    {
+      "id": "a4c0e001-0000-4000-8000-00000000000b",
+      "kind": "screen",
+      "title": "ย่ามะลิ",
+      "slug": "screen/grandma",
+      "titleEn": "Grandma Mali",
+      "screen": "grandma",
+      "status": "demo"
+    },
+    {
+      "id": "a4c0e001-0000-4000-8000-00000000000c",
+      "kind": "screen",
+      "title": "ลุงเมฆ",
+      "slug": "screen/uncle",
+      "titleEn": "Uncle Mek",
+      "screen": "uncle",
+      "status": "demo"
+    },
+    {
+      "id": "a4c0e001-0000-4000-8000-00000000000d",
+      "kind": "screen",
+      "title": "กล่องรูปดาว",
+      "slug": "screen/star-box",
+      "titleEn": "Star box",
+      "screen": "star-box",
+      "status": "demo"
+    },
+    {
+      "id": "a4c0e001-0000-4000-8000-00000000000e",
+      "kind": "screen",
+      "title": "ครอสเวิร์ด",
+      "slug": "screen/crossword",
+      "titleEn": "Crossword",
+      "screen": "crossword",
+      "status": "demo"
+    },
+    {
+      "id": "a4c0e001-0000-4000-8000-00000000000f",
+      "kind": "screen",
+      "title": "จิ๊กซอว์",
+      "slug": "screen/jigsaw",
+      "titleEn": "Jigsaw",
+      "screen": "jigsaw",
+      "status": "demo"
+    },
+    {
+      "id": "a4c0e001-0000-4000-8000-000000000010",
+      "kind": "screen",
+      "title": "เลื่อนบล็อก",
+      "slug": "screen/slide",
+      "titleEn": "Sliding block",
+      "screen": "slide",
+      "status": "demo"
+    },
+    {
+      "id": "a4c0e001-0000-4000-8000-000000000011",
+      "kind": "screen",
+      "title": "สมุดคดี",
+      "slug": "screen/notebook",
+      "titleEn": "Case notebook",
+      "screen": "notebook",
+      "status": "demo"
+    },
+    {
+      "id": "a4c0e001-0000-4000-8000-000000000012",
+      "kind": "screen",
+      "title": "กระดานสรุปคดี",
+      "slug": "screen/case-board",
+      "titleEn": "Case board",
+      "screen": "case-board",
+      "status": "demo"
+    },
+    {
+      "id": "a4c0e001-0000-4000-8000-000000000013",
+      "kind": "screen",
+      "title": "พบอัลบั้ม",
+      "slug": "screen/album",
+      "titleEn": "Album found",
+      "screen": "album",
+      "status": "demo"
+    },
+    {
+      "id": "a4c0e001-0000-4000-8000-000000000014",
+      "kind": "screen",
+      "title": "กลับบ้านพร้อมของรางวัล",
+      "slug": "screen/return-home",
+      "titleEn": "Return home with the reward",
+      "screen": "return-home",
+      "status": "real"
+    },
+    {
+      "id": "a4c0e001-0000-4000-8000-000000000015",
+      "kind": "screen",
+      "title": "มุมฝึกเล่น",
+      "slug": "screen/practice",
+      "titleEn": "Practice corner",
+      "screen": "practice",
+      "status": "demo"
+    },
+    {
+      "id": "a4c0e001-0000-4000-8000-000000000016",
+      "kind": "screen",
+      "title": "แผนที่ด่าน",
+      "slug": "screen/level-map",
+      "titleEn": "Level map",
+      "screen": "level-map",
+      "status": "demo"
+    }
+  ]
+}

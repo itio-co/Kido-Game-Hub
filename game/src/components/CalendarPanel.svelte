@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { CalendarTheme, PlayerRoom } from '../lib/types';
+  import type { CalendarEntity, CalendarThemeEntity } from '../lib/types';
 
   let {
     calendar,
@@ -9,7 +9,7 @@
     onEntry,
     onClose,
   }: {
-    calendar: PlayerRoom['calendar'];
+    calendar: CalendarEntity;
     themeId: string;
     solvedCaseIds: string[];
     onTheme: (id: string) => void;
@@ -36,7 +36,7 @@
     return cells;
   });
 
-  function locked(item: CalendarTheme): boolean {
+  function locked(item: CalendarThemeEntity): boolean {
     return !!item.unlock && !solvedCaseIds.includes(item.unlock.afterCase);
   }
 
@@ -73,9 +73,9 @@
               <button
                 type="button"
                 onclick={() =>
-                  onEntry(entry.eventRef ? `${entry.label} — ออกทางประตูเพื่อเลือกเหตุการณ์` : entry.label)}
+                  onEntry(entry.eventRef ? `${entry.title} — ออกทางประตูเพื่อเลือกเหตุการณ์` : entry.title)}
               >
-                {entry.icon} {dayLabel(entry.date)} {entry.label}
+                {entry.icon} {dayLabel(entry.date)} {entry.title}
               </button>
             </li>
           {/each}
@@ -96,7 +96,7 @@
                   else onTheme(item.id);
                 }}
               >
-                {locked(item) ? 'ล็อก ' : ''}{item.name}
+                {locked(item) ? 'ล็อก ' : ''}{item.title}
               </button>
             {/each}
           </div>
