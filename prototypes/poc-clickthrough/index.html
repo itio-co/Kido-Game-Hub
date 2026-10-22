@@ -120,7 +120,7 @@ function nstar(t){return (t.match(/⭐/g)||[]).length}
 const PRAC=[['cross','ครอสเวิร์ด (ภาษา)'],['jig','จิ๊กซอว์ (มิติสัมพันธ์)'],['slide','เลื่อนบล็อก (ตรรกะ)']];
 function practiceMenu(){go('prac')}
 const EV={E01:'ข้อความของน้าริน: "ขอย้ายเก็บก่อน — ริน / เก็บตามผังเดิมนะ โต๊ะยังเปียกอยู่"',E02:'โต๊ะที่เปียก (น้ำจากแจกันหก)',E03:'ลุงเมฆ: กล่องมีรูปดาว',E04:'แผนผังบ้าน: ภาพถ่ายเก็บใต้หน้าต่างห้องทำงาน',E05:'พบอัลบั้มในกล่องรูปดาว'};
-const LINES={open:'หลานมาแล้วเหรอจ๊ะ ยายหาอัลบั้มรูปครอบครัวไม่เจอ ในนั้นมีรูปตาตอนหนุ่ม ๆ ด้วยนะ',ask:'เมื่อเช้ายายยังเห็นวางอยู่บนโต๊ะกลางเลย แต่บ่ายนี้น้ารินเข้ามาเก็บกวาดนะ',stuck:'รูปเก่า ๆ บ้านนี้เขาเก็บไว้ที่เดียวกันมาตลอดแหละ ลองต่อแผนที่ที่หล่นกระจายอยู่ดูสิ',win:'นี่ไงรูปตา ขอบใจนะหลาน มานั่งดูด้วยกันมา ยายจะเล่าให้ฟัง'};
+const LINES={open:'หลานมาแล้วเหรอจ๊ะ ย่าหาอัลบั้มรูปครอบครัวไม่เจอ ในนั้นมีรูปตาตอนหนุ่ม ๆ ด้วยนะ',ask:'เมื่อเช้าย่ายังเห็นวางอยู่บนโต๊ะกลางเลย แต่บ่ายนี้น้ารินเข้ามาเก็บกวาดนะ',stuck:'รูปเก่า ๆ บ้านนี้เขาเก็บไว้ที่เดียวกันมาตลอดแหละ ลองต่อแผนที่ที่หล่นกระจายอยู่ดูสิ',win:'นี่ไงรูปตา ขอบใจนะหลาน มานั่งดูด้วยกันมา ย่าจะเล่าให้ฟัง'};
 const $=id=>document.getElementById(id);
 function toast(t){const e=$('toast');e.textContent=t;e.style.display='block';clearTimeout(e._t);e._t=setTimeout(()=>e.style.display='none',1600)}
 function inCase(){return !S.practice&&!['room','events','cutscene','prac','lvmap','deduce'].includes(S.screen)}
@@ -142,17 +142,17 @@ const SC={
   hs([[505,530],[748,530],[748,905],[505,905]],'ครัว (เสริม)',()=>go('kitchen'))]},
  living:{title:'ห้องนั่งเล่น — มุมกว้างจากประตู',hud:()=>'⏳ '+slotOf().label+' · ภารกิจ: ตามหาอัลบั้มครอบครัว',img:()=>slotOf().img,hs:()=>S.slot!=='now'?pastHs():[
   hs([[8,9],[18,9],[18,16],[8,16]],'นาฬิกา',()=>openTime('clock')),
-  hs([[74,22],[86,22],[86,32],[74,32]],'ปฏิทินของยาย',()=>openCal('living')),
+  hs([[74,22],[86,22],[86,32],[74,32]],'ปฏิทินของย่า',()=>openCal('living')),
   hs([[30,33],[52,33],[52,41],[30,41]],'ถาดชิ้นแผนผัง',()=>go('tray'),S.ev.E04),
   hs([[2,17],[22,18],[22,33],[2,33]],'ประตู → ครัว',()=>go('kitchen')),
   hs([[88,20],[96,21],[96,48],[88,46]],'ประตู → ห้องทำงาน',()=>go('study')),
   hs([[76,66],[92,66],[93,70],[91,75],[84,75],[76,71]],'กล่องรูปดาว (ข้างโซฟา)',()=>say('ข้อความช่วยคิด','กล่องนี้มีรูปดาวก็จริง แต่อยู่ห้องนั่งเล่น ลองดูผังเก็บภาพว่ารูปถ่ายเก็บไว้ห้องไหนนะ')),
   hs([[13,67],[45,64],[74,66],[73,72],[56,79],[20,78],[13,72]],'โต๊ะกลาง',()=>go('table'),S.ev.E01),
   hs([[8,38],[16,35],[23,38],[24,44],[34,48],[34,55],[30,62],[22,64],[10,62],[2,57],[2,47],[8,45]],'ลุงเมฆ',()=>go('mek'),S.ev.E03),
-  hs([[57,37],[62,36],[70,38],[71,44],[73,48],[72,54],[71,60],[66,63],[48,65],[47,60],[52,54],[53,48],[56,44]],'ยายมะลิ',()=>go('grandma'))]},
- grandma:{title:'ยายมะลิ',hud:()=>'คุยกับยายมะลิ',img:'living-grandma.jpg',hs:()=>[],enter(){
-  if(S.solved)return say('ยายมะลิ',LINES.win);
-  say('ยายมะลิ',LINES.open,[['ถามเรื่องอัลบั้ม',()=>say('ยายมะลิ',LINES.ask)],['ปิด',()=>$('dlg').style.display='none']])}},
+  hs([[57,37],[62,36],[70,38],[71,44],[73,48],[72,54],[71,60],[66,63],[48,65],[47,60],[52,54],[53,48],[56,44]],'ย่ามะลิ',()=>go('grandma'))]},
+ grandma:{title:'ย่ามะลิ',hud:()=>'คุยกับย่ามะลิ',img:'living-grandma.jpg',hs:()=>[],enter(){
+  if(S.solved)return say('ย่ามะลิ',LINES.win);
+  say('ย่ามะลิ',LINES.open,[['ถามเรื่องอัลบั้ม',()=>say('ย่ามะลิ',LINES.ask)],['ปิด',()=>$('dlg').style.display='none']])}},
  mek:{title:'ลุงเมฆ',hud:()=>'คุยกับลุงเมฆ',img:'uncle-mek.jpg',hs:()=>[],enter(){addEv('E03');
   say('ลุงเมฆ','รินเอาอัลบั้มใส่กล่องที่ติดรูปดาว ลุงเห็นตอนเธอยกผ่านโต๊ะ แต่ไม่ได้มองว่าเอาไปวางที่ไหน',[['ช่วยเติมครอสเวิร์ด (เสริม)',()=>say('ลุงเมฆ','ถ้าชอบเกมคำศัพท์ มาช่วยลุงเติมหน้านี้ด้วยก็ได้นะ อีกไม่กี่คำเอง',[['เปิดครอสเวิร์ด',()=>{MG.hints=0;go('cross')}]])],['ปิด',()=>$('dlg').style.display='none']])}},
  table:{title:'โต๊ะกลาง',hud:()=>'แตะเพื่อตรวจ',img:'living-table.jpg',hs:()=>[
@@ -168,10 +168,10 @@ const SC={
   hs([[41,58],[60,58],[60,68],[42,68]],'กล่องรูปดาว (ใต้หน้าต่าง)',()=>go('box'))]},
  box:{title:'กล่องรูปดาว',hud:()=>'กล่องสีน้ำเงินติดรูปดาว · ตัวล็อกเลื่อนบล็อกบนฝา',img:'study-box.jpg',hs:()=>[
   hs([[41,66],[53,67],[50,74],[42,73]],'สติกเกอร์รูปดาว',()=>toast('กล่องสีน้ำเงินติดรูปดาว')),
-  hs([[17,37],[82,37],[86,46],[60,57],[18,47]],S.solved?'เปิดแล้ว':S.deduced?'เล่นเลื่อนบล็อก':'ตัวล็อก (ต้องสรุปคดีก่อน)',()=>{if(S.solved)return;if(!S.deduced)return say('ยายมะลิ','กล่องนี้ล็อกอยู่นะ ลองสรุปคดีบนกระดานให้ครบก่อนสิจ๊ะ');MG.hints=0;go('slide')})]},
+  hs([[17,37],[82,37],[86,46],[60,57],[18,47]],S.solved?'เปิดแล้ว':S.deduced?'เล่นเลื่อนบล็อก':'ตัวล็อก (ต้องสรุปคดีก่อน)',()=>{if(S.solved)return;if(!S.deduced)return say('ย่ามะลิ','กล่องนี้ล็อกอยู่นะ ลองสรุปคดีบนกระดานให้ครบก่อนสิจ๊ะ');MG.hints=0;go('slide')})]},
  album:{title:'พบอัลบั้มแล้ว!',hud:()=>'หลักฐาน E05',img:'album-found.jpg',hs:()=>[
-  hs([[19,31],[54,31],[55,58],[23,58]],'รูปตาตอนหนุ่ม',()=>say('ยายมะลิ',LINES.win,[['ต่อ',()=>say('ริน','หาเจอแล้วใช่ไหม? เมื่อกี้น้ำหกบนโต๊ะ ฉันเลยรีบยกอัลบั้มใส่กล่อง แล้วทิ้งข้อความไว้')]])),
-  hs([[61,31],[99,33],[98,60],[62,56]],'โปสการ์ด',()=>say('โปสการ์ด','ภาพที่เหลือฝากไว้ที่ห้องสมุดวันวาน — ลิ้นชักหมายเลข 7',[['เก็บโปสการ์ด แล้วกลับบ้าน',()=>{S.reward=true;$('dlg').style.display='none';S.hist=[];go('room')}]]))],enter(){say('ยายมะลิ','เจอแล้ว! หน้าปกดอกไม้เล่มนี้เอง')}},
+  hs([[19,31],[54,31],[55,58],[23,58]],'รูปตาตอนหนุ่ม',()=>say('ย่ามะลิ',LINES.win,[['ต่อ',()=>say('ริน','หาเจอแล้วใช่ไหม? เมื่อกี้น้ำหกบนโต๊ะ ฉันเลยรีบยกอัลบั้มใส่กล่อง แล้วทิ้งข้อความไว้')]])),
+  hs([[61,31],[99,33],[98,60],[62,56]],'โปสการ์ด',()=>say('โปสการ์ด','ภาพที่เหลือฝากไว้ที่ห้องสมุดวันวาน — ลิ้นชักหมายเลข 7',[['เก็บโปสการ์ด แล้วกลับบ้าน',()=>{S.reward=true;$('dlg').style.display='none';S.hist=[];go('room')}]]))],enter(){say('ย่ามะลิ','เจอแล้ว! หน้าปกดอกไม้เล่มนี้เอง')}},
  kitchen:{title:'ครัว (ห้องเสริม)',hud:()=>'ไม่บังคับ',img:'kitchen-wide.jpg',hs:()=>[
   hs([[25,35],[38,35],[38,46],[25,46]],'ผ้าเปียกบนราว',()=>go('kclose')),
   hs([[74,43],[85,43],[85,57],[74,57]],'แจกันเติมน้ำใหม่',()=>go('kclose'))]},
@@ -182,13 +182,13 @@ const SC={
 
 
 const EVENTS=[
- {id:'case-01',title:'เยี่ยมบ้านคุณยาย',sub:'อัลบั้มครอบครัวหายไป',cover:'cutscene-01-p2.jpg',unlock:null},
+ {id:'case-01',title:'เยี่ยมบ้านคุณย่า',sub:'อัลบั้มครอบครัวหายไป',cover:'cutscene-01-p2.jpg',unlock:null},
  {id:'case-02',title:'ห้องสมุดวันวาน',sub:'ลิ้นชักหมายเลข 7',cover:'study-wide.jpg',unlock:{afterCase:'case-01'},hint:'ปลดล็อกเมื่อจบคดี 01'},
  {id:'case-03',title:'ตลาดน้ำยามเช้า',sub:'เร็ว ๆ นี้',cover:'kitchen-wide.jpg',unlock:{afterCase:'case-02'},hint:'ปลดล็อกเมื่อจบคดี 02'}];
 const CUTSCENE={'case-01':[
- {image:'cutscene-01-p1.jpg',caption:'คืนวันศุกร์ คุณยายมะลิโทรมาหาแม่',lines:[{who:'แม่',text:'พรุ่งนี้เราไปเยี่ยมบ้านคุณยายกันนะ',x:4,y:22,w:48},{who:'หนู',text:'เย้! ไปหาคุณยาย!',x:40,y:58,w:44}]},
- {image:'cutscene-01-p2.jpg',caption:'เช้าวันเสาร์ ครอบครัวมาถึงบ้านไม้ของคุณยาย',lines:[{who:'ยายมะลิ',text:'มาแล้วเหรอจ๊ะหลาน ยายคิดถึงจังเลย',x:2,y:46,w:50}]},
- {image:'cutscene-01-p3.jpg',caption:'แต่คุณยายดูไม่สบายใจเลย…',lines:[{who:'ยายมะลิ',text:'อัลบั้มรูปครอบครัวหายไปจากชั้นจ้ะ ในนั้นมีรูปตาตอนหนุ่ม ๆ ด้วย',x:2,y:50,w:34},{who:'หนู',text:'ไม่ต้องห่วงนะยาย หนูจะช่วยตามหาเอง!',x:56,y:72,w:42}]}]};
+ {image:'cutscene-01-p1.jpg',caption:'คืนวันศุกร์ คุณย่ามะลิโทรมาหาแม่',lines:[{who:'แม่',text:'พรุ่งนี้เราไปเยี่ยมบ้านคุณย่ากันนะ',x:4,y:22,w:48},{who:'หนู',text:'เย้! ไปหาคุณย่า!',x:40,y:58,w:44}]},
+ {image:'cutscene-01-p2.jpg',caption:'เช้าวันเสาร์ ครอบครัวมาถึงบ้านไม้ของคุณย่า',lines:[{who:'ย่ามะลิ',text:'มาแล้วเหรอจ๊ะหลาน ย่าคิดถึงจังเลย',x:2,y:46,w:50}]},
+ {image:'cutscene-01-p3.jpg',caption:'แต่คุณย่าดูไม่สบายใจเลย…',lines:[{who:'ย่ามะลิ',text:'อัลบั้มรูปครอบครัวหายไปจากชั้นจ้ะ ในนั้นมีรูปตาตอนหนุ่ม ๆ ด้วย',x:2,y:50,w:34},{who:'หนู',text:'ไม่ต้องห่วงนะย่า หนูจะช่วยตามหาเอง!',x:56,y:72,w:42}]}]};
 S.csEv='case-01';S.csPage=0;
 SC.events={title:'เลือกเหตุการณ์',hud:()=>'แตะการ์ดเพื่อเริ่มเหตุการณ์',render(el){const w=document.createElement('div');w.className='evlist';
  let h='<div class="evh">ออกจากห้องแล้ว จะไปไหนดีนะ?</div>';
@@ -198,7 +198,7 @@ SC.events={title:'เลือกเหตุการณ์',hud:()=>'แตะ
  w.querySelectorAll('.evcard').forEach(c=>c.onclick=()=>{const e=EVENTS.find(x=>x.id===c.dataset.id);if(c.classList.contains('off'))return toast('🔒 '+e.hint);S.csEv=e.id;S.csPage=0;S.csEnd=0;go('cutscene')});return []}};
 function csNext(){const P=CUTSCENE[S.csEv];if(S.csPage<P.length-1){S.csPage++;go('cutscene',true)}else csEnd()}
 function csEnd(){document.querySelectorAll('.cap,.bub,.tapnext,.skip').forEach(e=>e.remove());S.csEnd=1;pickDiff()}
-SC.cutscene={title:'เยี่ยมบ้านคุณยาย',hud:()=>'หน้า '+(S.csPage+1)+'/'+CUTSCENE[S.csEv].length,render(el){const P=CUTSCENE[S.csEv],pg=P[S.csPage];
+SC.cutscene={title:'เยี่ยมบ้านคุณย่า',hud:()=>'หน้า '+(S.csPage+1)+'/'+CUTSCENE[S.csEv].length,render(el){const P=CUTSCENE[S.csEv],pg=P[S.csPage];
  const w=document.createElement('div');w.className='cs';
  w.innerHTML=`<img src="img/${pg.image}" alt="">`+pg.lines.map(l=>`<div class="bub" style="left:${l.x}%;top:${l.y}%;max-width:${l.w||62}%"><b>${l.who}</b>${l.text}</div>`).join('')+`<div class="cap">${pg.caption}</div><div class="tapnext">${S.csPage<P.length-1?'แตะเพื่ออ่านต่อ ›':'แตะเพื่อเริ่มคดี ›'}</div><div class="dots">${P.map((_,i)=>`<i class="${i===S.csPage?'on':''}"></i>`).join('')}</div>`;
  const sk=document.createElement('button');sk.className='skip';sk.textContent='ข้าม ⏭';sk.onclick=e=>{e.stopPropagation();csEnd()};w.appendChild(sk);
@@ -213,11 +213,11 @@ const CAL_THEMES={
 const CALENDARS={
  room:{theme:'kid-room',themeSwitch:true,purpose:'upcoming',title:'ปฏิทินของฉัน',month:'ตุลาคม 2569',year:2026,m:9,today:22,entries:[
   {date:22,icon:'🎯',label:'ฝึกเล่นประจำวัน: เล่น 1 ด่าน รับ ⭐ โบนัส'},
-  {date:24,icon:'🏡',label:'เยี่ยมบ้านคุณยาย (คดี 01)',eventRef:'case-01'},
+  {date:24,icon:'🏡',label:'เยี่ยมบ้านคุณย่า (คดี 01)',eventRef:'case-01'},
   {date:31,icon:'🔒',label:'ห้องสมุดวันวาน — ปลดล็อกเมื่อจบคดี 01',eventRef:'case-02'}]},
- living:{theme:'wooden-home',purpose:'clue',title:'ปฏิทินของยายมะลิ',month:'ตุลาคม 2569',year:2026,m:9,today:22,entries:[
-  {date:12,icon:'💐',label:'วันครบรอบแต่งงานของตากับยาย'},
-  {date:22,icon:'⭕',label:'วงแดงวันนี้: “บ่ายนี้ รินมาช่วยเก็บกวาดบ้าน”',clue:'ยายเขียนไว้เองว่าบ่ายนี้น้ารินมาเก็บบ้าน — ใครอาจย้ายอัลบั้มนะ?'}]}};
+ living:{theme:'wooden-home',purpose:'clue',title:'ปฏิทินของย่ามะลิ',month:'ตุลาคม 2569',year:2026,m:9,today:22,entries:[
+  {date:12,icon:'💐',label:'วันครบรอบแต่งงานของปู่กับย่า'},
+  {date:22,icon:'⭕',label:'วงแดงวันนี้: “บ่ายนี้ รินมาช่วยเก็บกวาดบ้าน”',clue:'ย่าเขียนไว้เองว่าบ่ายนี้น้ารินมาเก็บบ้าน — ใครอาจย้ายอัลบั้มนะ?'}]}};
 S.calTheme='kid-room';
 function openCal(id,th){const C=CALENDARS[id];const tk=th||(id==='room'?S.calTheme:C.theme),T=CAL_THEMES[tk];const el=$('cal');
  const first=new Date(C.year,C.m,1).getDay(),n=new Date(C.year,C.m+1,0).getDate(),mk={};C.entries.forEach(e=>mk[e.date]=e.icon);
@@ -234,13 +234,13 @@ const TIMESLOTS=[
  {id:'afternoon',kind:'hour',label:'บ่ายนี้ 14:00',img:'living-wide-afternoon.jpg',unlockBy:'E02',hint:'ลองตรวจรอยน้ำบนโต๊ะก่อน'},
  {id:'now',kind:'hour',label:'ตอนนี้ 17:00',img:'living-wide.jpg',unlockBy:null}];
 S.slot='now';
-const PAST={rin:['แย่จัง แจกันล้ม น้ำหกเต็มโต๊ะเลย ต้องรีบเช็ดก่อน','ของบนโต๊ะต้องยกออกไปก่อน เดี๋ยวเปียกหมด'],grandma:['พรุ่งนี้หลานจะมา ยายจะหยิบอัลบั้มเล่มนี้ลงไปเปิดให้ดูตอนเช้า','รูปเก่า ๆ บ้านเรามีที่เก็บประจำนะ แต่เล่มนี้ยายชอบไว้ใกล้ตัว']};
+const PAST={rin:['แย่จัง แจกันล้ม น้ำหกเต็มโต๊ะเลย ต้องรีบเช็ดก่อน','ของบนโต๊ะต้องยกออกไปก่อน เดี๋ยวเปียกหมด'],grandma:['พรุ่งนี้หลานจะมา ย่าจะหยิบอัลบั้มเล่มนี้ลงไปเปิดให้ดูตอนเช้า','รูปเก่า ๆ บ้านเรามีที่เก็บประจำนะ แต่เล่มนี้ย่าชอบไว้ใกล้ตัว']};
 const slotOf=()=>TIMESLOTS.find(t=>t.id===S.slot);
 const slotOpen=t=>!t.unlockBy||S.ev[t.unlockBy];
-function pastHs(){const L=[hs([[8,9],[18,9],[18,16],[8,16]],'นาฬิกา',()=>openTime('clock')),hs([[74,22],[86,22],[86,32],[74,32]],'ปฏิทินของยาย',()=>openCal('living')),
+function pastHs(){const L=[hs([[8,9],[18,9],[18,16],[8,16]],'นาฬิกา',()=>openTime('clock')),hs([[74,22],[86,22],[86,32],[74,32]],'ปฏิทินของย่า',()=>openCal('living')),
   hs([[76,66],[92,66],[93,75],[76,75]],'กล่องรูปดาว (ข้างโซฟา)',()=>toast('กล่องนี้อยู่ที่เดิมทุกช่วงเวลา'))];
  if(S.slot==='afternoon')L.push(hs([[22,27],[42,28],[42,52],[30,58],[12,60],[14,40]],'น้าริน (บ่ายนี้)',()=>say2('น้าริน',PAST.rin)),hs([[30,64],[42,64],[48,72],[34,72]],'แจกันล้ม',()=>say('ย้อนเวลา: บ่ายนี้','แจกันล้ม น้ำหกนองโต๊ะ — อัลบั้มวางอยู่ข้าง ๆ เกือบเปียก!')),hs([[48,66],[68,66],[68,73],[48,73]],'อัลบั้ม (บ่ายนี้)',()=>say('ย้อนเวลา: บ่ายนี้','บ่ายนี้อัลบั้มยังอยู่บนโต๊ะ แต่ตอนนี้หายไป ใครยกไปตอนเช็ดน้ำนะ?')),hs([[44,34],[50,34],[50,40],[44,40]],'ถาดชิ้นแผนผัง',()=>toast('ชิ้นแผนผังยังอยู่ในถาด')));
- if(S.slot==='yesterday')L.push(hs([[20,25],[34,25],[36,40],[34,52],[18,52],[18,40]],'ยายมะลิ (เมื่อวาน)',()=>say2('ยายมะลิ',PAST.grandma)),hs([[38,27],[48,27],[48,33],[38,33]],'อัลบั้มบนชั้น',()=>say('ย้อนเวลา: เมื่อวาน','อัลบั้มปกดอกไม้ตั้งอยู่บนชั้นบน ใกล้มือยาย')),hs([[37,35],[48,35],[48,40],[37,40]],'ถาดชิ้นแผนผัง',()=>toast('ชิ้นแผนผังยังเรียงอยู่ในถาดครบ')));
+ if(S.slot==='yesterday')L.push(hs([[20,25],[34,25],[36,40],[34,52],[18,52],[18,40]],'ย่ามะลิ (เมื่อวาน)',()=>say2('ย่ามะลิ',PAST.grandma)),hs([[38,27],[48,27],[48,33],[38,33]],'อัลบั้มบนชั้น',()=>say('ย้อนเวลา: เมื่อวาน','อัลบั้มปกดอกไม้ตั้งอยู่บนชั้นบน ใกล้มือย่า')),hs([[37,35],[48,35],[48,40],[37,40]],'ถาดชิ้นแผนผัง',()=>toast('ชิ้นแผนผังยังเรียงอยู่ในถาดครบ')));
  return L}
 function openTime(kind){const el=$('cal');const list=TIMESLOTS.filter(t=>kind==='clock'?t.kind==='hour':true);
  let h=`<button class="calx" aria-label="ปิด">✕</button><div class="calc" style="background:repeating-linear-gradient(0deg,#f3e3c3 0 6px,#efdcb8 6px 7px);color:#4a2e18;border:8px solid #8a5a34"><div class="calh" style="background:linear-gradient(90deg,#6b3f22,#8a5a34)"><span>${kind==='clock'?'🕰 นาฬิกา: ย้อนชั่วโมง':'📅 ปฏิทิน: ย้อนวัน'}</span><small>พลังย้อนเวลา</small></div><ul class="cale">`+
@@ -329,7 +329,7 @@ SC.deduce={title:'กระดานคดี — สรุปคดี',hud:()=
  const evs=Object.keys(S.ev).filter(k=>k!=='E05');
  DQA.forEach((d,i)=>{const b=document.createElement('div');b.className='dq'+(DQ.ok[i]===1?' ok':DQ.ok[i]===-1?' bad':'');
   let h=`<h4>${d.q} ${DQ.ok[i]===1?'✅':''}</h4><div class="steplbl">① เลือกคำตอบ</div><div class="row">`;
-  if(i===0)[['grandma','ยายมะลิ','img/living-grandma.jpg'],['mek','ลุงเมฆ','img/uncle-mek.jpg'],['rin','น้าริน','img/rin.jpg']].forEach(([k,n,im])=>h+=`<div class="por ${DQ.a[0]===k?'sel':''}" data-a="${k}" style="${im?`background-image:url(${im})`:'background:#c58fb0;font-size:28px'}">${im?'':'👩'}<span>${n}</span></div>`);
+  if(i===0)[['grandma','ย่ามะลิ','img/living-grandma.jpg'],['mek','ลุงเมฆ','img/uncle-mek.jpg'],['rin','น้าริน','img/rin.jpg']].forEach(([k,n,im])=>h+=`<div class="por ${DQ.a[0]===k?'sel':''}" data-a="${k}" style="${im?`background-image:url(${im})`:'background:#c58fb0;font-size:28px'}">${im?'':'👩'}<span>${n}</span></div>`);
   if(i===1)[['water','น้ำหกบนโต๊ะ'],['hide','แอบซ่อนไว้'],['look','หยิบไปดูรูป']].forEach(([k,n])=>h+=`<button class="ch ${DQ.a[1]===k?'sel':''}" data-a="${k}">${n}</button>`);
   if(i===2){h+='<div class="mini">'+[['living',10,10,80,35],['study',12,46,40,34],['kitchen',53,46,35,34]].map(([k,x,y,ww,hh])=>`<div class="${DQ.a[2]===k?'sel':''}" data-a="${k}" title="${k}" style="left:${x}%;top:${y}%;width:${ww}%;height:${hh}%"></div>`).join('')+`</div><span>${{living:'ห้องนั่งเล่น',study:'ห้องทำงาน (ใต้หน้าต่าง)',kitchen:'ครัว'}[DQ.a[2]]||'แตะห้องบนแผนผัง'}</span>`}
   h+='</div><div style="margin-top:6px;font-size:18px" class="steplbl">② เลือกหลักฐาน 1 ใบ</div><div class="evgrid">'+evs.map(k=>`<span class="evc ${DQ.e[i]===k?'sel':''}" data-e="${k}">${DQ.e[i]===k?'✓ ':''}<b>${k}</b> ${EVSHORT[k]||''}</span>`).join('')+'</div>';
@@ -337,7 +337,7 @@ SC.deduce={title:'กระดานคดี — สรุปคดี',hud:()=
   b.querySelectorAll('[data-e]').forEach(x=>x.onclick=()=>{DQ.e[i]=x.dataset.e;DQ.ok[i]=0;go('deduce',true)});w.appendChild(b)});
  w.insertAdjacentHTML('beforeend','<div style="font-size:15px;color:#bfe9ff">'+evs.map(k=>k+': '+EV[k]).join('<br>')+'</div>');
  w.style.paddingBottom='96px';doneBtn(w,'⚖ ยืนยันข้อสรุป',()=>{let hint=null;DQA.forEach((d,i)=>{const okA=DQ.a[i]===d.right,okE=d.ev.includes(DQ.e[i]);DQ.ok[i]=okA&&okE?1:-1;if(!hint&&!(okA&&okE))hint='ข้อ '+(i+1)+(!okA?' ยังไม่ถูก: '+d.hint:' — หลักฐานยังไม่ตรง: '+EVHINT[i])});
-  go('deduce',true);setTimeout(()=>{if(hint)say('ยายมะลิ',hint);else{S.deduced=true;say('ยายมะลิ','เก่งมากหลาน! งั้นไปดูที่ห้องทำงานกันเถอะ',[['ไปห้องทำงาน',()=>{S.hist=['living'];go('study',true)}]])}},350)});[...w.children].forEach(c=>c.style.flexShrink='0');const db=w.querySelector('.mgdone');if(db){db.style.position='static';db.style.alignSelf='flex-end';db.style.flexShrink='0'}return []}};
+  go('deduce',true);setTimeout(()=>{if(hint)say('ย่ามะลิ',hint);else{S.deduced=true;say('ย่ามะลิ','เก่งมากหลาน! งั้นไปดูที่ห้องทำงานกันเถอะ',[['ไปห้องทำงาน',()=>{S.hist=['living'];go('study',true)}]])}},350)});[...w.children].forEach(c=>c.style.flexShrink='0');const db=w.querySelector('.mgdone');if(db){db.style.position='static';db.style.alignSelf='flex-end';db.style.flexShrink='0'}return []}};
 
 const GOALS=[
  {c:()=>!S.ev.E01||!S.ev.E02,room:'ห้องนั่งเล่น',at:'living',obj:'โต๊ะกลาง',sub:()=>({table:!S.ev.E01?'ข้อความของน้าริน':'รอยน้ำ'})},
@@ -384,6 +384,6 @@ $('back').onclick=()=>{if($('cal').style.display==='block'){$('cal').style.displ
 $('caseBtn').onclick=()=>{const b=$('board');$('evDot').classList.remove('on');if(b.style.display==='block'){b.style.display='none';return}
  b.innerHTML='<h3 style="margin-top:0">📋 กระดานคดี: อัลบั้มครอบครัวที่หายไป</h3><ul>'+Object.keys(EV).map(k=>S.ev[k]?`<li>✅ <b>${k}</b> ${EV[k]} ${k==='E03'?'<span class="optpill">เสริม</span>':''}</li>`:(k==='E05'&&!S.deduced?`<li style="opacity:.7">🔒 ${k} — ได้หลังสรุปคดี</li>`:`<li style="opacity:${k==='E03'?.75:.45}">⬜ ${k} — ยังไม่พบ ${k==='E03'?'<span class="optpill">เสริม</span>':''}</li>`)).join('')+'</ul>'+(S.deduced?'<p>✅ สรุปคดีแล้ว — ไปเปิดกล่องในห้องทำงาน</p>':S.ev.E01&&S.ev.E02&&S.ev.E04?(readyDed()?'<div class="nextstep big">✅ หลักฐานพอแล้ว! กดสรุปคดีได้เลย</div>':'')+'<button class="mgbtn" id="goDed">⚖ สรุปคดี (3 คำถาม)</button>':'<p style="opacity:.7">เก็บหลักฐาน E01, E02, E04 ให้ครบเพื่อสรุปคดี</p>');b.style.display='block';const g=$('goDed');if(g)g.onclick=()=>go('deduce')};
 draw();setTimeout(()=>tutorial(0),400);
-document.body.insertAdjacentHTML('beforeend','<div id="ver" style="position:fixed;top:4px;right:6px;z-index:9999;font:bold 13px sans-serif;color:#fff;background:rgba(0,0,0,.55);padding:2px 7px;border-radius:8px;pointer-events:none">v0.4.11</div>');
+document.body.insertAdjacentHTML('beforeend','<div id="ver" style="position:fixed;top:4px;right:6px;z-index:9999;font:bold 13px sans-serif;color:#fff;background:rgba(0,0,0,.55);padding:2px 7px;border-radius:8px;pointer-events:none">v0.4.12</div>');
 if("serviceWorker" in navigator&&location.protocol.startsWith("http"))navigator.serviceWorker.register("sw.js");
 </script></body></html>

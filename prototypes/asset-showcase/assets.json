@@ -6,7 +6,7 @@
  "assets3d": [
   {
    "id": "grandma-mali",
-   "nameTh": "ยายมะลิ",
+   "nameTh": "ย่ามะลิ",
    "nameEn": "Grandma Mali",
    "category": "character",
    "thumb": {
@@ -129,7 +129,7 @@
   },
   {
    "id": "room-living",
-   "nameTh": "ห้องนั่งเล่นบ้านยาย",
+   "nameTh": "ห้องนั่งเล่นบ้านย่า",
    "nameEn": "Grandma living room",
    "category": "room",
    "thumb": {
@@ -189,7 +189,7 @@
   },
   {
    "id": "house-exterior",
-   "nameTh": "บ้านไม้ของยาย (ภายนอก)",
+   "nameTh": "บ้านไม้ของย่า (ภายนอก)",
    "nameEn": "Grandma house exterior",
    "category": "room",
    "thumb": {
@@ -455,7 +455,7 @@
   },
   {
    "id": "calendar-grandma",
-   "nameTh": "ปฏิทินของยาย",
+   "nameTh": "ปฏิทินของย่า",
    "nameEn": "Grandma calendar",
    "category": "prop",
    "thumb": {
@@ -633,7 +633,7 @@
    "thumb": "../poc-clickthrough/img/living-grandma.jpg",
    "category": "closeup",
    "usedIn": [
-    "grandma (ยายมะลิ)"
+    "grandma (ย่ามะลิ)"
    ],
    "size": "720×1280",
    "kb": 243
@@ -874,7 +874,7 @@
    "slot": "yesterday",
    "image": "../../concepts/v2/living-wide-yesterday.jpg",
    "changes": [
-    "ยายมะลิยืนข้างชั้นหนังสือ",
+    "ย่ามะลิยืนข้างชั้นหนังสือ",
     "อัลบั้มตั้งอยู่บนชั้นบน ถาดชิ้นแผนผังยังอยู่ชั้นกลาง",
     "โต๊ะแห้ง ไม่มีข้อความ"
    ],
