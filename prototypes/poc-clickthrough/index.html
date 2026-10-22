@@ -90,11 +90,17 @@ button.opt{background:#0d4a66;border:1px solid #39e0ff;color:#fff;border-radius:
 .dots{position:absolute;left:0;right:0;bottom:30px;display:flex;justify-content:center;gap:8px;pointer-events:none}.dots i{width:9px;height:9px;border-radius:50%;background:rgba(255,255,255,.4)}.dots i.on{background:#fff}
 .skip{position:absolute;right:12px;bottom:16px;z-index:6;background:rgba(0,0,0,.55);color:#fff;border:none;border-radius:16px;padding:8px 14px;font-size:14px;cursor:pointer}
 .tapnext{position:absolute;right:12px;bottom:58px;color:#fff;font-size:12px;opacity:.8;pointer-events:none}
+#cal{position:absolute;inset:0;z-index:6;display:none;background:rgba(0,0,0,.55);padding:64px 14px 90px;overflow:auto}
+.calc{border-radius:14px;padding:12px;box-shadow:0 6px 18px rgba(0,0,0,.5)}.calh{display:flex;align-items:center;justify-content:space-between;border-radius:10px;padding:8px 10px;color:#fff;font-weight:bold;font-size:17px}.calh small{font-weight:normal;font-size:12px;opacity:.9}
+.calg{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin:8px 0;text-align:center;font-size:13px}.calg .dw{font-weight:bold;opacity:.7;font-size:11px}.calg .d{aspect-ratio:1;border-radius:6px;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(255,255,255,.55);line-height:1.1}.calg .d.m{font-weight:bold}.calg .d.t{box-shadow:inset 0 0 0 2px currentColor}.calg .d i{font-style:normal;font-size:12px}
+.cale{font-size:13px;line-height:1.5;margin:0;padding-left:0;list-style:none}.cale li{padding:5px 6px;border-radius:8px;margin:3px 0;background:rgba(255,255,255,.5);cursor:pointer}.cale li.clue{background:rgba(255,220,200,.75)}
+.calt{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}.calt button{border-radius:14px;border:1px solid #888;padding:4px 10px;font-size:12px;background:#fff;cursor:pointer}.calt button.on{background:#333;color:#fff}.calt button.lk{opacity:.5}
+.calx{position:absolute;right:20px;top:70px;width:34px;height:34px;border-radius:50%;border:none;background:#fff;font-size:18px;cursor:pointer}
 </style></head><body>
 <div id="phone">
  <div id="scene"></div>
  <div id="hud"></div>
- <div id="dlg"></div><div id="board"></div><div id="toast"></div>
+ <div id="dlg"></div><div id="cal"></div><div id="board"></div><div id="toast"></div>
  <button id="back" title="ย้อนกลับ" aria-label="ย้อนกลับ">←</button>
  <button id="caseBtn">📋 สมุดคดี</button>
 </div>
@@ -108,25 +114,27 @@ const EV={E01:'ข้อความของน้าริน: "ขอย้�
 const LINES={open:'หลานมาแล้วเหรอจ๊ะ ยายหาอัลบั้มรูปครอบครัวไม่เจอ ในนั้นมีรูปตาตอนหนุ่ม ๆ ด้วยนะ',ask:'เมื่อเช้ายายยังเห็นวางอยู่บนโต๊ะกลางเลย แต่บ่ายนี้น้ารินเข้ามาเก็บกวาดนะ',stuck:'รูปเก่า ๆ บ้านนี้เขาเก็บไว้ที่เดียวกันมาตลอดแหละ ลองต่อแผนที่ที่หล่นกระจายอยู่ดูสิ',win:'นี่ไงรูปตา ขอบใจนะหลาน มานั่งดูด้วยกันมา ยายจะเล่าให้ฟัง'};
 const $=id=>document.getElementById(id);
 function toast(t){const e=$('toast');e.textContent=t;e.style.display='block';clearTimeout(e._t);e._t=setTimeout(()=>e.style.display='none',1600)}
-function addEv(k){if(!S.ev[k]){S.ev[k]=1;toast('ได้หลักฐาน '+k)}}
+function addEv(k){if(!S.ev[k]){S.ev[k]=1;const t=TIMESLOTS.find(x=>x.unlockBy===k);toast('ได้หลักฐาน '+k+(t?' · ปลดล็อกเวลา: '+t.label:''))}}
 function hs(pts,label,fn,done){return {pts,label,fn,done}}
 function say(who,text,opts){const d=$('dlg');d.innerHTML='<b>'+who+':</b> “'+text+'”<div class="btns"></div>';const b=d.querySelector('.btns');(opts||[['ปิด',()=>d.style.display='none']]).forEach(([t,f])=>{const x=document.createElement('button');x.className='opt';x.textContent=t;x.onclick=f;b.appendChild(x)});d.style.display='block'}
-const SLOTS=[['ผนัง',42,20,16,10],['ชั้นของที่ระลึก',58,25,25,9],['ขอบหน้าต่าง',2,41,18,7],['โต๊ะ',54,45,32,6],['เตียง',4,52,44,14],['พรมซ้าย',10,72,26,14],['พรมกลาง',38,74,26,14],['พรมขวา',66,76,28,14]];
+const SLOTS=[['ผนัง',60,37,22,7],['ชั้นของที่ระลึก',58,25,25,9],['ขอบหน้าต่าง',2,41,18,7],['โต๊ะ',54,45,32,6],['เตียง',4,52,44,14],['พรมซ้าย',10,72,26,14],['พรมกลาง',38,74,26,14],['พรมขวา',66,76,28,14]];
 function say2(who,lines,i){i=i||0;say(who,lines[i],i<lines.length-1?[['ต่อ',()=>say2(who,lines,i+1)]]:null)}
 const SC={
  room:{title:'ห้องของฉัน (hub)',hud:()=>S.reward?'กลับถึงบ้านแล้ว — แตะช่องเพื่อวางของรางวัล':'ภารกิจ: ออกจากห้องไปเลือกเหตุการณ์',img:'player-room-wide.jpg',
   extra(el){SLOTS.forEach(([n,x,y,w,hh],i)=>{const f=S.slots[i];const d=document.createElement('div');d.className='slot'+(f?' filled':'');d.style.cssText=`left:${x}%;top:${y}%;width:${w}%;height:${hh}%`;d.innerHTML=(f?'<span class="item">'+f.split(' ')[0]+'</span>':'<i>+</i>')+'<span class="pill">'+(f||n)+'</span>';const act0=
    d.onclick=()=>{if(S.reward&&!Object.values(S.slots).includes('📷 รูปตา')){S.slots[i]='📷 รูปตา';toast('วางของรางวัลแล้ว');go('room',true)}else if(S.slots[i])toast('สลับของ (ต้นแบบมีของชิ้นเดียว)');else toast('ยังไม่มีของ — ไขคดีเพื่อรับของ')};const a1=d.onclick;d.onclick=()=>{d.classList.add('on');setTimeout(()=>{d.classList.remove('on');a1()},450)};el.appendChild(d)});
    const b=document.createElement('div');b.className='slot board';b.style.cssText='left:24%;top:12%;width:18%;height:8%';b.innerHTML='<i></i><span class="pill">🗂 คดีที่ไขแล้ว: '+(S.solved?'01 ✓':'—')+'</span>';b.onclick=()=>{b.classList.add('on');setTimeout(()=>b.classList.remove('on'),1600)};el.appendChild(b)},
-  hs:()=>[hs([[54,47],[86,47],[86,53],[54,53]],'🎮 มุมฝึกเล่น ('+Object.keys(S.played).length+'/3)',practiceMenu),hs([[90,18],[100,18],[100,61],[90,61]],'ประตู → ออกไปเลือกเหตุการณ์',()=>go('events'))]},
+  hs:()=>[hs([[35,27],[48,27],[48,37],[35,37]],'📅 ปฏิทิน',()=>openCal('room')),hs([[54,47],[86,47],[86,53],[54,53]],'🎮 มุมฝึกเล่น ('+Object.keys(S.played).length+'/3)',practiceMenu),hs([[90,18],[100,18],[100,61],[90,61]],'ประตู → ออกไปเลือกเหตุการณ์',()=>go('events'))]},
  map:{title:'แผนผังบ้านย่า',hud:()=>'เลือกห้องที่จะไป',img:'house-map.jpg',contain:true,mw:864,mh:1152,hs:()=>[
   hs([[107,118],[760,118],[760,515],[107,515]],'ห้องนั่งเล่น (จุดเริ่ม)',()=>go('living')),
   hs([[118,530],[485,530],[485,905],[118,905]],'ห้องทำงาน',()=>go('study')),
   hs([[505,530],[748,530],[748,905],[505,905]],'ครัว (เสริม)',()=>go('kitchen'))]},
- living:{title:'ห้องนั่งเล่น — มุมกว้างจากประตู',hud:()=>'ภารกิจ: ตามหาอัลบั้มครอบครัว',img:'living-wide.jpg',hs:()=>[
+ living:{title:'ห้องนั่งเล่น — มุมกว้างจากประตู',hud:()=>'⏳ '+slotOf().label+' · ภารกิจ: ตามหาอัลบั้มครอบครัว',img:()=>slotOf().img,hs:()=>S.slot!=='now'?pastHs():[
+  hs([[8,9],[18,9],[18,16],[8,16]],'นาฬิกา',()=>openTime('clock')),
+  hs([[74,22],[86,22],[86,32],[74,32]],'ปฏิทินของยาย',()=>openCal('living')),
   hs([[30,33],[52,33],[52,41],[30,41]],'ถาดชิ้นแผนผัง',()=>go('tray'),S.ev.E04),
   hs([[2,17],[22,18],[22,33],[2,33]],'ประตู → ครัว',()=>go('kitchen')),
-  hs([[81,19],[92,21],[92,48],[81,46]],'ประตู → ห้องทำงาน',()=>go('study')),
+  hs([[88,20],[96,21],[96,48],[88,46]],'ประตู → ห้องทำงาน',()=>go('study')),
   hs([[76,66],[92,66],[93,70],[91,75],[84,75],[76,71]],'กล่องรูปดาว (ข้างโซฟา)',()=>say('ข้อความช่วยคิด','สัญลักษณ์ตรงแล้ว แต่ตำแหน่งนี้ตรงกับผังเก็บภาพถ่ายหรือยัง?')),
   hs([[13,67],[45,64],[74,66],[73,72],[56,79],[20,78],[13,72]],'โต๊ะกลาง',()=>go('table'),S.ev.E01),
   hs([[8,38],[16,35],[23,38],[24,44],[34,48],[34,55],[30,62],[22,64],[10,62],[2,57],[2,47],[8,45]],'ลุงเมฆ',()=>go('mek'),S.ev.E03),
@@ -186,6 +194,47 @@ SC.cutscene={title:'เยี่ยมบ้านคุณยาย',hud:()=>'�
  let x0=null;w.addEventListener('touchstart',e=>{x0=e.touches[0].clientX},{passive:true});
  w.addEventListener('touchend',e=>{if(x0==null)return;const dx=e.changedTouches[0].clientX-x0;x0=null;if(dx>40&&S.csPage>0){S.csPage--;go('cutscene',true);e.preventDefault()}});
  w.onclick=()=>{if(!S.csEnd&&$('dlg').style.display!=='block')csNext()};el.appendChild(w);return []}};
+
+const CAL_THEMES={
+ 'kid-room':{name:'ห้องเด็ก',paper:'#fff7e8',head:'linear-gradient(90deg,#ff9f6e,#ffcf4a)',ink:'#3a3550',frame:'4px solid #7ec8e3',font:'"Itim","Noto Sans Thai",sans-serif',art:'🎈',unlock:null},
+ 'wooden-home':{name:'บ้านไม้',paper:'repeating-linear-gradient(0deg,#f3e3c3 0 6px,#efdcb8 6px 7px)',head:'linear-gradient(90deg,#6b3f22,#8a5a34)',ink:'#4a2e18',frame:'8px solid #8a5a34',font:'"Sarabun","Noto Sans Thai",serif',art:'🌺',unlock:null},
+ 'night-sky':{name:'ท้องฟ้ายามค่ำ',paper:'#e7ecff',head:'linear-gradient(90deg,#1f2a5c,#4b3f8f)',ink:'#1f2a5c',frame:'4px solid #4b3f8f',font:'"Noto Sans Thai",sans-serif',art:'🌙',unlock:{afterCase:'case-01'},lockedHint:'ปลดล็อกเมื่อจบคดี 01 (ของตกแต่ง)'}};
+const CALENDARS={
+ room:{theme:'kid-room',themeSwitch:true,purpose:'upcoming',title:'ปฏิทินของฉัน',month:'ตุลาคม 2569',year:2026,m:9,today:22,entries:[
+  {date:22,icon:'🎯',label:'ฝึกเล่นประจำวัน: เล่น 1 ด่าน รับ ⭐ โบนัส'},
+  {date:24,icon:'🏡',label:'เยี่ยมบ้านคุณยาย (คดี 01)',eventRef:'case-01'},
+  {date:31,icon:'🔒',label:'ห้องสมุดวันวาน — ปลดล็อกเมื่อจบคดี 01',eventRef:'case-02'}]},
+ living:{theme:'wooden-home',purpose:'clue',title:'ปฏิทินของยายมะลิ',month:'ตุลาคม 2569',year:2026,m:9,today:22,entries:[
+  {date:12,icon:'💐',label:'วันครบรอบแต่งงานของตากับยาย'},
+  {date:22,icon:'⭕',label:'วงแดงวันนี้: “บ่ายนี้ รินมาช่วยเก็บกวาดบ้าน”',clue:'ยายเขียนไว้เองว่าบ่ายนี้น้ารินมาเก็บบ้าน — ใครอาจย้ายอัลบั้มนะ?'}]}};
+S.calTheme='kid-room';
+function openCal(id,th){const C=CALENDARS[id];const tk=th||(id==='room'?S.calTheme:C.theme),T=CAL_THEMES[tk];const el=$('cal');
+ const first=new Date(C.year,C.m,1).getDay(),n=new Date(C.year,C.m+1,0).getDate(),mk={};C.entries.forEach(e=>mk[e.date]=e.icon);
+ let g='<div class="calg">'+['อา','จ','อ','พ','พฤ','ศ','ส'].map(x=>`<div class="dw">${x}</div>`).join('')+'<div></div>'.repeat(first);
+ for(let d=1;d<=n;d++)g+=`<div class="d ${mk[d]?'m':''} ${d===C.today?'t':''}">${d}${mk[d]?'<i>'+mk[d]+'</i>':''}</div>`;g+='</div>';
+ let h=`<button class="calx" aria-label="ปิด">✕</button><div class="calc" style="background:${T.paper};color:${T.ink};border:${T.frame};font-family:${T.font}"><div class="calh" style="background:${T.head}"><span>${T.art} ${C.title}</span><small>${C.month}</small></div>${g}<ul class="cale">`+C.entries.map((e,i)=>`<li class="${e.clue?'clue':''}" data-i="${i}">${e.icon} <b>${e.date} ต.ค.</b> ${e.label}</li>`).join('')+'</ul>';
+ if(id==='living')h+='<div class="calt"><button id="toDay">⏳ ย้อนวันด้วยปฏิทิน</button></div>';if(C.themeSwitch)h+='<div class="calt">ธีม: '+Object.entries(CAL_THEMES).map(([k,t])=>{const lk=t.unlock&&!S.solved;return `<button data-t="${k}" class="${k===tk?'on':''} ${lk?'lk':''}">${lk?'🔒 ':''}${t.name}</button>`}).join('')+'</div>';
+ el.innerHTML=h+'</div>';el.style.display='block';el.querySelector('.calx').onclick=()=>el.style.display='none';
+ el.querySelectorAll('.cale li').forEach(li=>li.onclick=()=>{const e=C.entries[li.dataset.i];if(e.clue)toast('🔎 '+e.clue);else if(e.eventRef==='case-01'){el.style.display='none';go('events')}else toast(e.label)});
+ const td=el.querySelector('#toDay');if(td)td.onclick=()=>openTime('calendar');el.querySelectorAll('.calt button[data-t]').forEach(b=>b.onclick=()=>{const t=CAL_THEMES[b.dataset.t];if(t.unlock&&!S.solved)return toast('🔒 '+t.lockedHint);S.calTheme=b.dataset.t;openCal(id)})}
+
+const TIMESLOTS=[
+ {id:'yesterday',kind:'day',label:'เมื่อวานเย็น (21 ต.ค.)',img:'living-wide-yesterday.jpg',unlockBy:'E01',hint:'ลองหาข้อความบนโต๊ะกลางก่อน'},
+ {id:'afternoon',kind:'hour',label:'บ่ายนี้ 14:00',img:'living-wide-afternoon.jpg',unlockBy:'E02',hint:'ลองตรวจรอยน้ำบนโต๊ะก่อน'},
+ {id:'now',kind:'hour',label:'ตอนนี้ 17:00',img:'living-wide.jpg',unlockBy:null}];
+S.slot='now';
+const slotOf=()=>TIMESLOTS.find(t=>t.id===S.slot);
+const slotOpen=t=>!t.unlockBy||S.ev[t.unlockBy];
+function pastHs(){const L=[hs([[8,9],[18,9],[18,16],[8,16]],'นาฬิกา',()=>openTime('clock')),hs([[74,22],[86,22],[86,32],[74,32]],'ปฏิทินของยาย',()=>openCal('living')),
+  hs([[76,66],[92,66],[93,75],[76,75]],'กล่องรูปดาว (ข้างโซฟา)',()=>toast('กล่องนี้อยู่ที่เดิมทุกช่วงเวลา'))];
+ if(S.slot==='afternoon')L.push(hs([[28,61],[42,61],[44,70],[30,71]],'แจกันล้ม',()=>say('ย้อนเวลา: บ่ายนี้','แจกันล้ม น้ำหกนองโต๊ะ — อัลบั้มวางอยู่ข้าง ๆ เกือบเปียก!')),hs([[48,66],[68,66],[68,73],[48,73]],'อัลบั้ม (บ่ายนี้)',()=>say('ย้อนเวลา: บ่ายนี้','บ่ายนี้อัลบั้มยังอยู่บนโต๊ะ แต่ตอนนี้หายไป ใครยกไปตอนเช็ดน้ำนะ?')),hs([[30,33],[52,33],[52,41],[30,41]],'ถาดชิ้นแผนผัง',()=>toast('ชิ้นแผนผังยังอยู่ในถาด')));
+ if(S.slot==='yesterday')L.push(hs([[33,34],[47,34],[47,41],[33,41]],'อัลบั้มบนชั้น',()=>say('ย้อนเวลา: เมื่อวาน','เมื่อวานอัลบั้มยังอยู่บนชั้น ยายหยิบลงมาดูบนโต๊ะเมื่อเช้า')));
+ return L}
+function openTime(kind){const el=$('cal');const list=TIMESLOTS.filter(t=>kind==='clock'?t.kind==='hour':true);
+ let h=`<button class="calx" aria-label="ปิด">✕</button><div class="calc" style="background:repeating-linear-gradient(0deg,#f3e3c3 0 6px,#efdcb8 6px 7px);color:#4a2e18;border:8px solid #8a5a34"><div class="calh" style="background:linear-gradient(90deg,#6b3f22,#8a5a34)"><span>${kind==='clock'?'🕰 นาฬิกา: ย้อนชั่วโมง':'📅 ปฏิทิน: ย้อนวัน'}</span><small>พลังย้อนเวลา</small></div><ul class="cale">`+
+  list.map(t=>{const o=slotOpen(t);return `<li data-t="${t.id}" style="${o?'':'background:#2b3640;color:#8996a2'}">${o?(t.id===S.slot?'▶ ':'⏳ ')+'<b>'+t.label+'</b>':'🔒 <b>???</b> — '+t.hint}</li>`}).join('')+'</ul></div>';
+ el.innerHTML=h;el.style.display='block';el.querySelector('.calx').onclick=()=>el.style.display='none';
+ el.querySelectorAll('li').forEach(li=>li.onclick=()=>{const t=TIMESLOTS.find(x=>x.id===li.dataset.t);if(!slotOpen(t))return toast('🔒 '+t.hint);el.style.display='none';S.slot=t.id;go('living',true);setTimeout(()=>toast('⏳ '+t.label),350)})}
 let DIFF='ปานกลาง';const TGTS={'ง่าย':{cross:'06:00',jig:'04:00',slide:'03:00'},'ปานกลาง':{cross:'04:00',jig:'03:00',slide:'02:00'},'ยาก':{cross:'03:00',jig:'02:00',slide:'01:30'}};const TGT=()=>TGTS[DIFF];
 const MG={hints:0,t0:0};
 function stars(){return MG.hints===0?'⭐⭐⭐':MG.hints===1?'⭐⭐☆':'⭐☆☆'}
@@ -300,7 +349,7 @@ function tutorial(i){document.querySelectorAll('.tutfx').forEach(e=>e.classList.
  const t=[null,'back','caseBtn'][i];if(t){$(t).classList.add('tutfx');$(t).style.visibility='visible'}say('บทสอน (HUD)',TUT[i],[[i<2?'ต่อ':'เริ่มเล่น',()=>tutorial(i+1)]])}
 const HOUSE=['living','study','kitchen','table','tray','mek','grandma','kclose'];
 function draw(){const sc=SC[S.screen],el=$('scene');let list;
- if(sc.render){el.innerHTML='<div class="bg" style="background:linear-gradient(160deg,#1d3346,#2c4a5e)"></div>';list=sc.render(el)}else{el.innerHTML=`<img class="bg ${sc.contain?'contain':''}" src="img/${sc.img}" alt="">`;list=sc.hs();sc.extra&&sc.extra(el)}
+ if(sc.render){el.innerHTML='<div class="bg" style="background:linear-gradient(160deg,#1d3346,#2c4a5e)"></div>';list=sc.render(el)}else{el.innerHTML=`<img class="bg ${sc.contain?'contain':''}" src="img/${typeof sc.img==='function'?sc.img():sc.img}" alt="">`;list=sc.hs();sc.extra&&sc.extra(el)}
  if(HOUSE.includes(S.screen)){const m=document.createElement('button');m.className='mapbtn';m.textContent='🗺 แผนผังบ้าน';m.onclick=()=>go('map');el.appendChild(m)}
  const map=!!sc.contain,W=map?sc.mw:720,Hh=map?sc.mh:1280,NS='http://www.w3.org/2000/svg';
  const svg=document.createElementNS(NS,'svg');svg.setAttribute('class','hl');svg.setAttribute('viewBox',`0 0 ${W} ${Hh}`);svg.setAttribute('preserveAspectRatio',map?'xMidYMid meet':'xMidYMid slice');
@@ -316,9 +365,9 @@ function draw(){const sc=SC[S.screen],el=$('scene');let list;
  $('hud').innerHTML='<b>'+sc.title+'</b><br>'+sc.hud()+(['events','cutscene'].includes(S.screen)?'':' · หลักฐาน '+Object.keys(S.ev).length+'/5');
  $('back').style.visibility=S.hist.length?'visible':'hidden';$('caseBtn').style.display=['events','cutscene'].includes(S.screen)?'none':'';
  if(!sc.render){const hb=document.createElement('button');hb.className='hintbtn';hb.title='คำใบ้';hb.textContent='💡';hb.onclick=arHint;el.appendChild(hb)}draw2()}
-function go(n,replace){$('dlg').style.display='none';$('board').style.display='none';if(!replace&&n!==S.screen)S.hist.push(S.screen);if(['cross','jig','slide'].includes(n)&&!S.practice&&!S.played[n]){S.played[n]=1;S.lv[n][0]=2}
- const el=$('scene');el.classList.add('fade');setTimeout(()=>{S.screen=n;draw();el.classList.remove('fade');SC[n].enter&&SC[n].enter()},300)}
-$('back').onclick=()=>{if($('dlg').style.display==='block'||$('board').style.display==='block'){$('dlg').style.display='none';$('board').style.display='none';return}const p=S.hist.pop();if(p==='room'||p==='lvmap')endPractice();if(p){const el=$('scene');el.classList.add('fade');setTimeout(()=>{S.screen=p;draw();el.classList.remove('fade')},300)}};
+function go(n,replace){$('dlg').style.display='none';$('cal').style.display='none';$('board').style.display='none';if(!replace&&n!==S.screen)S.hist.push(S.screen);if(['cross','jig','slide'].includes(n)&&!S.practice&&!S.played[n]){S.played[n]=1;S.lv[n][0]=2}
+ if(n!=='living')S.slot='now';const el=$('scene');el.classList.add('fade');setTimeout(()=>{S.screen=n;draw();el.classList.remove('fade');SC[n].enter&&SC[n].enter()},300)}
+$('back').onclick=()=>{if($('cal').style.display==='block'){$('cal').style.display='none';return}if($('dlg').style.display==='block'||$('board').style.display==='block'){$('dlg').style.display='none';$('board').style.display='none';return}const p=S.hist.pop();if(p==='room'||p==='lvmap')endPractice();if(p){const el=$('scene');el.classList.add('fade');setTimeout(()=>{S.screen=p;draw();el.classList.remove('fade')},300)}};
 $('caseBtn').onclick=()=>{const b=$('board');if(b.style.display==='block'){b.style.display='none';return}
  b.innerHTML='<h3 style="margin-top:0">📋 กระดานคดี: อัลบั้มครอบครัวที่หายไป</h3><ul>'+Object.keys(EV).map(k=>S.ev[k]?`<li>✅ <b>${k}</b> ${EV[k]}</li>`:`<li style="opacity:.45">⬜ ${k} — ยังไม่พบ</li>`).join('')+'</ul>'+(S.deduced?'<p>✅ สรุปคดีแล้ว — ไปเปิดกล่องในห้องทำงาน</p>':S.ev.E01&&S.ev.E02&&S.ev.E04?'<button class="mgbtn" id="goDed">⚖ สรุปคดี (3 คำถาม)</button>':'<p style="opacity:.7">เก็บหลักฐาน E01, E02, E04 ให้ครบเพื่อสรุปคดี</p>');b.style.display='block';const g=$('goDed');if(g)g.onclick=()=>go('deduce')};
 draw();setTimeout(()=>tutorial(0),400);

@@ -123,7 +123,55 @@
           "to": "map",
           "hotspot": "door-out"
         }
-      ]
+      ],
+      "calendar": {
+        "hotspot": {
+          "polygon": [
+            [
+              35,
+              27
+            ],
+            [
+              48,
+              27
+            ],
+            [
+              48,
+              37
+            ],
+            [
+              35,
+              37
+            ]
+          ],
+          "label": "ปฏิทิน"
+        },
+        "purpose": "upcoming",
+        "theme": "kid-room",
+        "themeSwitch": true,
+        "title": "ปฏิทินของฉัน",
+        "month": "2026-10",
+        "entries": [
+          {
+            "date": "2026-10-22",
+            "icon": "🎯",
+            "label": "ฝึกเล่นประจำวัน: เล่น 1 ด่าน รับ ⭐ โบนัส",
+            "type": "daily-practice"
+          },
+          {
+            "date": "2026-10-24",
+            "icon": "🏡",
+            "label": "เยี่ยมบ้านคุณยาย (คดี 01)",
+            "eventRef": "case-01"
+          },
+          {
+            "date": "2026-10-31",
+            "icon": "🔒",
+            "label": "ห้องสมุดวันวาน — ปลดล็อกเมื่อจบคดี 01",
+            "eventRef": "case-02"
+          }
+        ]
+      }
     },
     {
       "id": "living",
@@ -156,7 +204,176 @@
           "id": "tray",
           "image": "../../concepts/v2/living-shelf-tray.jpg"
         }
-      ]
+      ],
+      "calendar": {
+        "hotspot": {
+          "polygon": [
+            [
+              74,
+              22
+            ],
+            [
+              86,
+              22
+            ],
+            [
+              86,
+              32
+            ],
+            [
+              74,
+              32
+            ]
+          ],
+          "label": "ปฏิทินของยาย"
+        },
+        "purpose": "clue",
+        "theme": "wooden-home",
+        "title": "ปฏิทินของยายมะลิ",
+        "month": "2026-10",
+        "timeControl": "day",
+        "entries": [
+          {
+            "date": "2026-10-12",
+            "icon": "💐",
+            "label": "วันครบรอบแต่งงานของตากับยาย"
+          },
+          {
+            "date": "2026-10-22",
+            "icon": "⭕",
+            "label": "วงแดงวันนี้: “บ่ายนี้ รินมาช่วยเก็บกวาดบ้าน”",
+            "clue": "ยายเขียนไว้เองว่าบ่ายนี้น้ารินมาเก็บบ้าน — ใครอาจย้ายอัลบั้มนะ?"
+          }
+        ]
+      },
+      "clock": {
+        "hotspot": {
+          "polygon": [
+            [
+              8,
+              9
+            ],
+            [
+              18,
+              9
+            ],
+            [
+              18,
+              16
+            ],
+            [
+              8,
+              16
+            ]
+          ],
+          "label": "นาฬิกา"
+        },
+        "timeControl": "hour"
+      },
+      "states": {
+        "now": {
+          "image": "../../concepts/v2/living-wide.jpg",
+          "hotspots": "default (hotspots[] view=living)"
+        },
+        "afternoon": {
+          "image": "../../concepts/v2/living-wide-afternoon.jpg",
+          "lighting": "bright afternoon",
+          "changes": [
+            "ไม่มีคนในห้อง",
+            "แจกันล้ม น้ำนองโต๊ะ",
+            "อัลบั้มวางบนโต๊ะ",
+            "ยังไม่มีข้อความของน้าริน"
+          ],
+          "hotspots": [
+            {
+              "id": "tipped-vase",
+              "polygon": [
+                [
+                  28,
+                  61
+                ],
+                [
+                  42,
+                  61
+                ],
+                [
+                  44,
+                  70
+                ],
+                [
+                  30,
+                  71
+                ]
+              ],
+              "label": "แจกันล้ม",
+              "action": {
+                "say": "แจกันล้ม น้ำหกนองโต๊ะ — อัลบั้มวางอยู่ข้าง ๆ เกือบเปียก!"
+              }
+            },
+            {
+              "id": "album-afternoon",
+              "polygon": [
+                [
+                  48,
+                  66
+                ],
+                [
+                  68,
+                  66
+                ],
+                [
+                  68,
+                  73
+                ],
+                [
+                  48,
+                  73
+                ]
+              ],
+              "label": "อัลบั้ม (บ่ายนี้)",
+              "action": {
+                "say": "บ่ายนี้อัลบั้มยังอยู่บนโต๊ะ แต่ตอนนี้หายไป ใครยกไปตอนเช็ดน้ำนะ?"
+              }
+            }
+          ]
+        },
+        "yesterday": {
+          "image": "../../concepts/v2/living-wide-yesterday.jpg",
+          "lighting": "evening lamp",
+          "changes": [
+            "ไม่มีคนในห้อง",
+            "อัลบั้มตั้งอยู่บนชั้นหนังสือ",
+            "โต๊ะแห้ง ไม่มีข้อความ"
+          ],
+          "hotspots": [
+            {
+              "id": "album-shelf",
+              "polygon": [
+                [
+                  33,
+                  34
+                ],
+                [
+                  47,
+                  34
+                ],
+                [
+                  47,
+                  41
+                ],
+                [
+                  33,
+                  41
+                ]
+              ],
+              "label": "อัลบั้มบนชั้น",
+              "action": {
+                "say": "เมื่อวานอัลบั้มยังอยู่บนชั้น ยายหยิบลงมาดูบนโต๊ะเมื่อเช้า"
+              }
+            }
+          ]
+        }
+      }
     },
     {
       "id": "study",
@@ -1402,5 +1619,85 @@
       "star"
     ],
     "voiceOver": "th-TTS from dialogue.text (toggle)"
-  }
+  },
+  "calendarThemes": [
+    {
+      "id": "kid-room",
+      "name": "ห้องเด็ก",
+      "colors": {
+        "paper": "#fff7e8",
+        "header": [
+          "#ff9f6e",
+          "#ffcf4a"
+        ],
+        "ink": "#3a3550"
+      },
+      "frame": "thin-blue",
+      "paperTexture": "plain",
+      "font": "Itim",
+      "headerArt": "balloon",
+      "unlock": null
+    },
+    {
+      "id": "wooden-home",
+      "name": "บ้านไม้",
+      "colors": {
+        "paper": "#f3e3c3",
+        "header": [
+          "#6b3f22",
+          "#8a5a34"
+        ],
+        "ink": "#4a2e18"
+      },
+      "frame": "thick-wood",
+      "paperTexture": "lined-kraft",
+      "font": "Sarabun",
+      "headerArt": "frangipani",
+      "unlock": null
+    },
+    {
+      "id": "night-sky",
+      "name": "ท้องฟ้ายามค่ำ",
+      "colors": {
+        "paper": "#e7ecff",
+        "header": [
+          "#1f2a5c",
+          "#4b3f8f"
+        ],
+        "ink": "#1f2a5c"
+      },
+      "frame": "thin-indigo",
+      "paperTexture": "plain",
+      "font": "Noto Sans Thai",
+      "headerArt": "moon",
+      "unlock": {
+        "afterCase": "case-01"
+      },
+      "lockedHint": "ปลดล็อกเมื่อจบคดี 01 (ของตกแต่ง)",
+      "asDecor": true
+    }
+  ],
+  "timeSlots": [
+    {
+      "id": "yesterday",
+      "kind": "day",
+      "label": "เมื่อวานเย็น (21 ต.ค.)",
+      "unlockBy": "E01",
+      "lockedHint": "ลองหาข้อความบนโต๊ะกลางก่อน"
+    },
+    {
+      "id": "afternoon",
+      "kind": "hour",
+      "label": "บ่ายนี้ 14:00",
+      "unlockBy": "E02",
+      "lockedHint": "ลองตรวจรอยน้ำบนโต๊ะก่อน"
+    },
+    {
+      "id": "now",
+      "kind": "hour",
+      "label": "ตอนนี้ 17:00",
+      "unlockBy": null,
+      "default": true
+    }
+  ]
 }

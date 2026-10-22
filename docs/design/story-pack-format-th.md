@@ -24,6 +24,11 @@ story-packs/
 | `meta` | `id` `title` `version` ภาษา และระบบพิกัด (เปอร์เซ็นต์ของภาพ 9:16; แผนผังใช้พิกเซล) |
 | `start` | ห้อง hub ห้องเริ่ม ตัวเลือกความยาก และลำดับเริ่ม (`flow`: hub → event-select → cutscene → difficulty → map) |
 | `event` | ข้อมูลการ์ดในหน้าเลือกเหตุการณ์: `id` `title` `subtitle` `cover` (ภาพปก) `order` `unlock` (`null` = เปิดเลย หรือ `{afterCase:"case-01"}`) `lockedHint` (เช่น "ปลดล็อกเมื่อจบคดี 01") |
+| `rooms[].calendar` | ปฏิทินในห้อง: `hotspot` (polygon + label) `purpose` (`upcoming`/`clue`) `theme` `themeSwitch` `month` `entries[]` (`date` `icon` `label` และ `clue` หรือ `eventRef`) `timeControl:"day"` |
+| `rooms[].clock` | นาฬิกาในห้อง: `hotspot` และ `timeControl:"hour"` |
+| `calendarThemes[]` | `id` `name` `colors` `frame` `paperTexture` `font` `headerArt` `unlock` `lockedHint` `asDecor` (ใช้เป็นของตกแต่งได้) |
+| `timeSlots[]` | `id` `kind` (`day`/`hour`) `label` `unlockBy` (รหัสหลักฐาน; `null` = เปิดตั้งแต่เริ่ม) `lockedHint` |
+| `rooms[].states{slot}` | ภาพห้องต่อช่วงเวลา: `image` `lighting` `changes[]` และ `hotspots[]` ของช่วงนั้น (ช่วง `now` ใช้ hotspots หลัก) — ผู้เขียนเพิ่มสภาพห้องได้โดยไม่แก้โค้ด |
 | `cutscene[]` | การ์ตูนเปิดเรื่อง 2–3 หน้า: ต่อหน้ามี `image` (ภาพแนวตั้ง ไม่มีตัวหนังสือ) `caption` (คำบรรยาย) และ `lines[]` (`speaker` `name` `text` `bubble:{x,y}` เป็น % ของภาพ) — ข้อความซ้อนเป็น HTML ใช้ TTS ได้ |
 | `rooms[]` | `id` ชื่อ ภาพมุมกว้าง (`wide`) ประตู (`doors`) มุมใกล้ (`closeups`) และเงื่อนไขล็อก |
 | `map` | ภาพแผนผังบ้าน ขนาด และพื้นที่แตะของแต่ละห้อง |
