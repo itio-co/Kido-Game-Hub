@@ -2,7 +2,7 @@
   "meta": {
     "id": "case-01",
     "title": "อัลบั้มครอบครัวที่หายไป",
-    "version": "0.2.6",
+    "version": "0.3.0",
     "source": "docs/design/never-ending-story-game-case-01-missing-family-album-th.md",
     "language": "th",
     "imageCoordSpace": "percent of 9:16 image (0-100); map uses image pixels"
@@ -14,8 +14,89 @@
       "easy",
       "medium",
       "hard"
+    ],
+    "flow": [
+      "hub",
+      "event-select",
+      "cutscene",
+      "difficulty",
+      "map"
     ]
   },
+  "event": {
+    "id": "case-01",
+    "title": "เยี่ยมบ้านคุณยาย",
+    "subtitle": "อัลบั้มครอบครัวหายไป",
+    "cover": "../../concepts/v2/cutscene-01-p2.jpg",
+    "order": 1,
+    "unlock": null,
+    "lockedHint": null
+  },
+  "cutscene": [
+    {
+      "image": "../../concepts/v2/cutscene-01-p1.jpg",
+      "caption": "คืนวันศุกร์ คุณยายมะลิโทรมาหาแม่",
+      "lines": [
+        {
+          "speaker": "mom",
+          "name": "แม่",
+          "text": "พรุ่งนี้เราไปเยี่ยมบ้านคุณยายกันนะ",
+          "bubble": {
+            "x": 4,
+            "y": 8
+          }
+        },
+        {
+          "speaker": "player",
+          "name": "หนู",
+          "text": "เย้! ไปหาคุณยาย!",
+          "bubble": {
+            "x": 6,
+            "y": 40
+          }
+        }
+      ]
+    },
+    {
+      "image": "../../concepts/v2/cutscene-01-p2.jpg",
+      "caption": "เช้าวันเสาร์ ครอบครัวมาถึงบ้านไม้ของคุณยาย",
+      "lines": [
+        {
+          "speaker": "grandma",
+          "name": "ยายมะลิ",
+          "text": "มาแล้วเหรอจ๊ะหลาน ยายคิดถึงจังเลย",
+          "bubble": {
+            "x": 34,
+            "y": 36
+          }
+        }
+      ]
+    },
+    {
+      "image": "../../concepts/v2/cutscene-01-p3.jpg",
+      "caption": "แต่คุณยายดูไม่สบายใจเลย…",
+      "lines": [
+        {
+          "speaker": "grandma",
+          "name": "ยายมะลิ",
+          "text": "อัลบั้มรูปครอบครัวหายไปจากชั้นจ้ะ ในนั้นมีรูปตาตอนหนุ่ม ๆ ด้วย",
+          "bubble": {
+            "x": 4,
+            "y": 8
+          }
+        },
+        {
+          "speaker": "player",
+          "name": "หนู",
+          "text": "ไม่ต้องห่วงนะยาย หนูจะช่วยตามหาเอง!",
+          "bubble": {
+            "x": 34,
+            "y": 68
+          }
+        }
+      ]
+    }
+  ],
   "rooms": [
     {
       "id": "player-room",
