@@ -92,13 +92,13 @@ button.opt{background:#0d4a66;border:1px solid #39e0ff;color:#fff;border-radius:
 .evcard .evt b{font-size:18px;display:block}.evcard .evt small{font-size:17px;opacity:.9}
 .evcard .badge{position:absolute;top:8px;left:8px;background:#ffcf4a;color:#3a2a00;font-size:16px;font-weight:bold;border-radius:8px;padding:2px 8px}
 .evcard.off{cursor:default}.evcard.off img{filter:grayscale(1) brightness(.12)}.evcard.off .evt{color:#9aa4ad}.evcard.off .lock{position:absolute;top:34%;left:50%;transform:translate(-50%,-50%);font-size:34px;opacity:.7}
-.cs{position:absolute;inset:0;background:#000}.cs img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.cs{position:absolute;inset:0;background:#0b0f18;display:flex;flex-direction:column;padding:calc(var(--hudH,56px) + 8px) 0 var(--csBar,100px)}.cs .pan{position:relative;flex:1;min-height:0;overflow:hidden;margin:0 8px;border-radius:10px}.cs img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 .bub{position:absolute;max-width:62%;background:#fff;color:#2b2233;border-radius:16px;padding:7px 11px;font-size:clamp(16px,2.7vh,19px);line-height:1.4;box-shadow:0 2px 6px rgba(0,0,0,.35)}
-.bub b{display:block;font-size:15px;color:#b0567a}
-.cap{position:absolute;left:4%;right:4%;bottom:96px;background:#fff6dc;color:#3a2a10;border-radius:10px;padding:8px 12px;font-size:clamp(17px,2.8vh,20px);line-height:1.45;box-shadow:0 2px 8px rgba(0,0,0,.4)}
-.dots{position:absolute;left:0;right:0;bottom:30px;display:flex;justify-content:center;gap:8px;pointer-events:none}.dots i{width:9px;height:9px;border-radius:50%;background:rgba(255,255,255,.4)}.dots i.on{background:#fff}
+.bub b{display:block;font-size:16px;color:#b0567a}
+.cap{position:relative;flex:none;margin:0 8px 8px;background:#fff6dc;color:#3a2a10;border-radius:10px;padding:8px 12px;font-size:clamp(17px,2.8vh,20px);line-height:1.45;box-shadow:0 2px 8px rgba(0,0,0,.4)}
+.dots{position:absolute;left:84px;right:110px;bottom:22px;display:flex;justify-content:center;gap:8px;pointer-events:none}.dots i{width:9px;height:9px;border-radius:50%;background:rgba(255,255,255,.4)}.dots i.on{background:#fff}
 .skip{position:absolute;right:12px;bottom:16px;z-index:6;background:rgba(0,0,0,.55);color:#fff;border:none;border-radius:16px;padding:8px 14px;font-size:18px;cursor:pointer}
-.tapnext{position:absolute;right:12px;bottom:58px;color:#fff;font-size:16px;opacity:.8;pointer-events:none}
+.tapnext{position:absolute;left:84px;right:110px;bottom:44px;text-align:center;color:#fff;font-size:17px;opacity:.9;pointer-events:none}
 #cal{position:absolute;inset:0;z-index:6;display:none;background:rgba(0,0,0,.55);padding:64px 14px 90px;overflow:auto}
 .calc{border-radius:14px;padding:12px;box-shadow:0 6px 18px rgba(0,0,0,.5)}.calh{display:flex;align-items:center;justify-content:space-between;border-radius:10px;padding:8px 10px;color:#fff;font-weight:bold;font-size:20px}.calh small{font-weight:normal;font-size:16px;opacity:.9}
 .calg{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin:8px 0;text-align:center;font-size:17px}.calg .dw{font-weight:bold;opacity:.7;font-size:15px}.calg .d{aspect-ratio:1;border-radius:6px;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(255,255,255,.55);line-height:1.1}.calg .d.m{font-weight:bold}.calg .d.t{box-shadow:inset 0 0 0 2px currentColor}.calg .d i{font-style:normal;font-size:16px}
@@ -121,7 +121,7 @@ function nstar(t){return (t.match(/⭐/g)||[]).length}
 const PRAC=[['cross','ครอสเวิร์ด (ภาษา)'],['jig','จิ๊กซอว์ (มิติสัมพันธ์)'],['slide','เลื่อนบล็อก (ตรรกะ)']];
 function practiceMenu(){go('prac')}
 const EV={E01:'ข้อความของน้าริน: "ขอย้ายเก็บก่อน — ริน / เก็บตามผังเดิมนะ โต๊ะยังเปียกอยู่"',E02:'โต๊ะที่เปียก (น้ำจากแจกันหก)',E03:'ลุงเมฆ: กล่องมีรูปดาว',E04:'แผนผังบ้าน: ภาพถ่ายเก็บใต้หน้าต่างห้องทำงาน',E05:'พบอัลบั้มในกล่องรูปดาว'};
-const LINES={open:'หลานมาแล้วเหรอจ๊ะ ย่าหาอัลบั้มรูปครอบครัวไม่เจอ ในนั้นมีรูปตาตอนหนุ่ม ๆ ด้วยนะ',ask:'เมื่อเช้าย่ายังเห็นวางอยู่บนโต๊ะกลางเลย แต่บ่ายนี้น้ารินเข้ามาเก็บกวาดนะ',stuck:'รูปเก่า ๆ บ้านนี้เขาเก็บไว้ที่เดียวกันมาตลอดแหละ ลองต่อแผนที่ที่หล่นกระจายอยู่ดูสิ',win:'นี่ไงรูปตา ขอบใจนะหลาน มานั่งดูด้วยกันมา ย่าจะเล่าให้ฟัง'};
+const LINES={open:'หลานมาแล้วเหรอจ๊ะ ย่าหาอัลบั้มรูปครอบครัวไม่เจอ ในนั้นมีรูปปู่ตอนหนุ่ม ๆ ด้วยนะ',ask:'เมื่อเช้าย่ายังเห็นวางอยู่บนโต๊ะกลางเลย แต่บ่ายนี้น้ารินเข้ามาเก็บกวาดนะ',stuck:'รูปเก่า ๆ บ้านนี้เขาเก็บไว้ที่เดียวกันมาตลอดแหละ ลองต่อแผนที่ที่หล่นกระจายอยู่ดูสิ',win:'นี่ไงรูปปู่ ขอบใจนะหลาน มานั่งดูด้วยกันมา ย่าจะเล่าให้ฟัง'};
 const $=id=>document.getElementById(id);
 function toast(t){const e=$('toast');e.textContent=t;e.style.display='block';clearTimeout(e._t);e._t=setTimeout(()=>e.style.display='none',1600)}
 function inCase(){return !S.practice&&!['room','events','cutscene','prac','lvmap','deduce'].includes(S.screen)}
@@ -134,7 +134,7 @@ function say2(who,lines,i){i=i||0;say(who,lines[i],i<lines.length-1?[['ต่อ
 const SC={
  room:{title:'ห้องของฉัน (hub)',hud:()=>S.reward?'กลับถึงบ้านแล้ว — แตะช่องเพื่อวางของรางวัล':'ภารกิจ: ออกจากห้องไปเลือกเหตุการณ์',img:'player-room-wide.jpg',
   extra(el){SLOTS.forEach(([n,x,y,w,hh],i)=>{const f=S.slots[i];const d=document.createElement('div');d.className='slot'+(f?' filled':'');d.style.cssText=`left:${x}%;top:${y}%;width:${w}%;height:${hh}%`;d.innerHTML=(f?'<span class="item">'+f.split(' ')[0]+'</span>':'<i>+</i>')+'<span class="pill">'+(f||n)+'</span>';const act0=
-   d.onclick=()=>{if(S.reward&&!Object.values(S.slots).includes('📷 รูปตา')){S.slots[i]='📷 รูปตา';toast('วางของรางวัลแล้ว');go('room',true)}else if(S.slots[i])toast('สลับของ (ต้นแบบมีของชิ้นเดียว)');else toast('ยังไม่มีของ — ไขคดีเพื่อรับของ')};const a1=d.onclick;d.onclick=()=>{d.classList.add('on');setTimeout(()=>{d.classList.remove('on');a1()},450)};el.appendChild(d)});
+   d.onclick=()=>{if(S.reward&&!Object.values(S.slots).includes('📷 รูปปู่')){S.slots[i]='📷 รูปปู่';toast('วางของรางวัลแล้ว');go('room',true)}else if(S.slots[i])toast('สลับของ (ต้นแบบมีของชิ้นเดียว)');else toast('ยังไม่มีของ — ไขคดีเพื่อรับของ')};const a1=d.onclick;d.onclick=()=>{d.classList.add('on');setTimeout(()=>{d.classList.remove('on');a1()},450)};el.appendChild(d)});
    const b=document.createElement('div');b.className='slot board';b.style.cssText='left:24%;top:12%;width:18%;height:8%';b.innerHTML='<i></i><span class="pill">🗂 คดีที่ไขแล้ว: '+(S.solved?'01 ✓':'—')+'</span>';b.onclick=()=>{b.classList.add('on');setTimeout(()=>b.classList.remove('on'),1600)};el.appendChild(b)},
   hs:()=>[hs([[35,27],[48,27],[48,37],[35,37]],'📅 ปฏิทิน',()=>openCal('room')),hs([[54,47],[86,47],[86,53],[54,53]],'🎮 มุมฝึกเล่น ('+Object.keys(S.played).length+'/3)',practiceMenu),hs([[90,18],[100,18],[100,61],[90,61]],'ประตู → ออกไปเลือกเหตุการณ์',()=>go('events'))]},
  map:{title:'แผนผังบ้านย่า',hud:()=>'เลือกห้องที่จะไป',img:'house-map.jpg',contain:true,mw:864,mh:1152,hs:()=>[
@@ -171,7 +171,7 @@ const SC={
   hs([[41,66],[53,67],[50,74],[42,73]],'สติกเกอร์รูปดาว',()=>toast('กล่องสีน้ำเงินติดรูปดาว')),
   hs([[17,37],[82,37],[86,46],[60,57],[18,47]],S.solved?'เปิดแล้ว':S.deduced?'เล่นเลื่อนบล็อก':'ตัวล็อก (ต้องสรุปคดีก่อน)',()=>{if(S.solved)return;if(!S.deduced)return say('ย่ามะลิ','กล่องนี้ล็อกอยู่นะ ลองสรุปคดีบนกระดานให้ครบก่อนสิจ๊ะ');MG.hints=0;go('slide')})]},
  album:{title:'พบอัลบั้มแล้ว!',hud:()=>'หลักฐาน E05',img:'album-found.jpg',hs:()=>[
-  hs([[19,31],[54,31],[55,58],[23,58]],'รูปตาตอนหนุ่ม',()=>say('ย่ามะลิ',LINES.win,[['ต่อ',()=>say('ริน','หาเจอแล้วใช่ไหม? เมื่อกี้น้ำหกบนโต๊ะ ฉันเลยรีบยกอัลบั้มใส่กล่อง แล้วทิ้งข้อความไว้')]])),
+  hs([[19,31],[54,31],[55,58],[23,58]],'รูปปู่ตอนหนุ่ม',()=>say('ย่ามะลิ',LINES.win,[['ต่อ',()=>say('ริน','หาเจอแล้วใช่ไหม? เมื่อกี้น้ำหกบนโต๊ะ ฉันเลยรีบยกอัลบั้มใส่กล่อง แล้วทิ้งข้อความไว้')]])),
   hs([[61,31],[99,33],[98,60],[62,56]],'โปสการ์ด',()=>say('โปสการ์ด','ภาพที่เหลือฝากไว้ที่ห้องสมุดวันวาน — ลิ้นชักหมายเลข 7',[['เก็บโปสการ์ด แล้วกลับบ้าน',()=>{S.reward=true;$('dlg').style.display='none';S.hist=[];go('room')}]]))],enter(){say('ย่ามะลิ','เจอแล้ว! หน้าปกดอกไม้เล่มนี้เอง')}},
  kitchen:{title:'ครัว (ห้องเสริม)',hud:()=>'ไม่บังคับ',img:'kitchen-wide.jpg',hs:()=>[
   hs([[25,35],[38,35],[38,46],[25,46]],'ผ้าเปียกบนราว',()=>go('kclose')),
@@ -189,7 +189,7 @@ const EVENTS=[
 const CUTSCENE={'case-01':[
  {image:'cutscene-01-p1.jpg',caption:'คืนวันศุกร์ คุณย่ามะลิโทรมาหาแม่',lines:[{who:'แม่',text:'พรุ่งนี้เราไปเยี่ยมบ้านคุณย่ากันนะ',x:4,y:22,w:48},{who:'หนู',text:'เย้! ไปหาคุณย่า!',x:40,y:58,w:44}]},
  {image:'cutscene-01-p2.jpg',caption:'เช้าวันเสาร์ ครอบครัวมาถึงบ้านไม้ของคุณย่า',lines:[{who:'ย่ามะลิ',text:'มาแล้วเหรอจ๊ะหลาน ย่าคิดถึงจังเลย',x:2,y:46,w:50}]},
- {image:'cutscene-01-p3.jpg',caption:'แต่คุณย่าดูไม่สบายใจเลย…',lines:[{who:'ย่ามะลิ',text:'อัลบั้มรูปครอบครัวหายไปจากชั้นจ้ะ ในนั้นมีรูปตาตอนหนุ่ม ๆ ด้วย',x:2,y:50,w:34},{who:'หนู',text:'ไม่ต้องห่วงนะย่า หนูจะช่วยตามหาเอง!',x:56,y:72,w:42}]}]};
+ {image:'cutscene-01-p3.jpg',caption:'แต่คุณย่าดูไม่สบายใจเลย…',lines:[{who:'ย่ามะลิ',text:'อัลบั้มรูปครอบครัวหายไปจากชั้นจ้ะ ในนั้นมีรูปปู่ตอนหนุ่ม ๆ ด้วย',x:2,y:50,w:34},{who:'หนู',text:'ไม่ต้องห่วงนะย่า หนูจะช่วยตามหาเอง!',x:56,y:72,w:42}]}]};
 S.csEv='case-01';S.csPage=0;
 SC.events={title:'เลือกเหตุการณ์',hud:()=>'แตะการ์ดเพื่อเริ่มเหตุการณ์',render(el){const w=document.createElement('div');w.className='evlist';
  let h='<div class="evh">ออกจากห้องแล้ว จะไปไหนดีนะ?</div>';
@@ -197,11 +197,13 @@ SC.events={title:'เลือกเหตุการณ์',hud:()=>'แตะ
   h+=`<div class="evcard ${open?'':'off'}" data-id="${e.id}"><img src="img/${e.cover}" alt="">${open?(done?'<span class="badge">✓ ไขแล้ว · เล่นซ้ำได้</span>':'<span class="badge">ใหม่</span>'):'<span class="lock">🔒</span>'}<div class="evt"><b>${open?e.title:'???'}</b><small>${open?e.sub:lh}</small></div></div>`});
  w.innerHTML=h;el.appendChild(w);
  w.querySelectorAll('.evcard').forEach(c=>c.onclick=()=>{const e=EVENTS.find(x=>x.id===c.dataset.id);if(c.classList.contains('off'))return toast('🔒 '+e.hint);S.csEv=e.id;S.csPage=0;S.csEnd=0;go('cutscene')});return []}};
+function csFit(){const pn=document.querySelector('.cs .pan');if(!pn)return;const H=pn.clientHeight,W=pn.clientWidth,b=[...pn.querySelectorAll('.bub')];b.forEach(e=>{e.style.top=e.dataset.t||(e.dataset.t=e.style.top);if(e.offsetLeft+e.offsetWidth>W-4)e.style.left=Math.max(4,W-4-e.offsetWidth)+'px'});b.sort((a,c)=>a.offsetTop-c.offsetTop);let y=6;b.forEach(e=>{let t=Math.max(e.offsetTop,y);e.style.top=t+'px';y=t+e.offsetHeight+8});let over=y-8-(H-6);if(over>0)for(let i=b.length-1;i>=0&&over>0;i--){const e=b[i],lim=i?b[i-1].offsetTop+b[i-1].offsetHeight+8:6,can=Math.min(over,e.offsetTop-lim);b.slice(i).forEach(x=>x.style.top=(x.offsetTop-can)+'px');over-=can}}
 function csNext(){const P=CUTSCENE[S.csEv];if(S.csPage<P.length-1){S.csPage++;go('cutscene',true)}else csEnd()}
 function csEnd(){document.querySelectorAll('.cap,.bub,.tapnext,.skip').forEach(e=>e.remove());S.csEnd=1;pickDiff()}
 SC.cutscene={title:'เยี่ยมบ้านคุณย่า',hud:()=>'หน้า '+(S.csPage+1)+'/'+CUTSCENE[S.csEv].length,render(el){const P=CUTSCENE[S.csEv],pg=P[S.csPage];
  const w=document.createElement('div');w.className='cs';
- w.innerHTML=`<img src="img/${pg.image}" alt="">`+pg.lines.map(l=>`<div class="bub" style="left:${l.x}%;top:${l.y}%;max-width:${l.w||62}%"><b>${l.who}</b>${l.text}</div>`).join('')+`<div class="cap">${pg.caption}</div><div class="tapnext">${S.csPage<P.length-1?'แตะเพื่ออ่านต่อ ›':'แตะเพื่อเริ่มคดี ›'}</div><div class="dots">${P.map((_,i)=>`<i class="${i===S.csPage?'on':''}"></i>`).join('')}</div>`;
+ w.innerHTML=`<div class="cap">${pg.caption}</div><div class="pan"><img src="img/${pg.image}" alt="">`+pg.lines.map(l=>`<div class="bub" style="left:${l.x}%;top:${l.y}%;max-width:${Math.max(l.w||62,46)}%"><b>${l.who}</b>${l.text}</div>`).join('')+`</div><div class="tapnext">${S.csPage<P.length-1?'แตะเพื่ออ่านต่อ ›':'แตะเพื่อเริ่มคดี ›'}</div><div class="dots">${P.map((_,i)=>`<i class="${i===S.csPage?'on':''}"></i>`).join('')}</div>`;
+ setTimeout(csFit,0);setTimeout(csFit,350);addEventListener('resize',csFit);
  const sk=document.createElement('button');sk.className='skip';sk.textContent='ข้าม ⏭';sk.onclick=e=>{e.stopPropagation();csEnd()};w.appendChild(sk);
  let x0=null;w.addEventListener('touchstart',e=>{x0=e.touches[0].clientX},{passive:true});
  w.addEventListener('touchend',e=>{if(x0==null)return;const dx=e.changedTouches[0].clientX-x0;x0=null;if(dx>40&&S.csPage>0){S.csPage--;go('cutscene',true);e.preventDefault()}});
@@ -386,6 +388,6 @@ $('back').onclick=()=>{if($('cal').style.display==='block'){$('cal').style.displ
 $('caseBtn').onclick=()=>{const b=$('board');$('evDot').classList.remove('on');if(b.style.display==='block'){b.style.display='none';return}
  b.innerHTML='<h3 style="margin-top:0">📋 กระดานคดี: อัลบั้มครอบครัวที่หายไป</h3><ul>'+Object.keys(EV).map(k=>S.ev[k]?`<li>✅ <b>${k}</b> ${EV[k]} ${k==='E03'?'<span class="optpill">เสริม</span>':''}</li>`:(k==='E05'&&!S.deduced?`<li style="opacity:.7">🔒 ${k} — ได้หลังสรุปคดี</li>`:`<li style="opacity:${k==='E03'?.75:.45}">⬜ ${k} — ยังไม่พบ ${k==='E03'?'<span class="optpill">เสริม</span>':''}</li>`)).join('')+'</ul>'+(S.deduced?'<p>✅ สรุปคดีแล้ว — ไปเปิดกล่องในห้องทำงาน</p>':S.ev.E01&&S.ev.E02&&S.ev.E04?'<button class="mgbtn" id="goDed" style="position:relative;font-size:19px">⚖ สรุปคดี (3 คำถาม)'+(S.dedSeen?'':'<span class="dedDot"></span>')+'</button>':'<p style="opacity:.7">เก็บหลักฐาน E01, E02, E04 ให้ครบเพื่อสรุปคดี</p>');b.style.display='block';const g=$('goDed');if(g)g.onclick=()=>{S.dedSeen=1;go('deduce')}};
 draw();setTimeout(()=>tutorial(0),400);
-document.body.insertAdjacentHTML('beforeend','<div id="ver" style="position:fixed;top:4px;right:6px;z-index:9999;font:bold 13px sans-serif;color:#fff;background:rgba(0,0,0,.55);padding:2px 7px;border-radius:8px;pointer-events:none">v0.4.13</div>');
+document.body.insertAdjacentHTML('beforeend','<div id="ver" style="position:fixed;top:4px;right:6px;z-index:9999;font:bold 13px sans-serif;color:#fff;background:rgba(0,0,0,.55);padding:2px 7px;border-radius:8px;pointer-events:none">v0.4.14</div>');
 if("serviceWorker" in navigator&&location.protocol.startsWith("http"))navigator.serviceWorker.register("sw.js");
 </script></body></html>
