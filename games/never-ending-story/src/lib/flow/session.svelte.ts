@@ -459,16 +459,13 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
       if (prev === 'player-room' || prev === 'level-map') endPractice();
       await go(prev, true, prev !== 'uncle');
     },
+    /** A single tap (or click) acts at once; the spot's name pill stays up as feedback until the scene changes or the player taps empty space. */
     tapSpot(spot: FlowSpot) {
-      if (selected === spot.id) {
-        selected = null;
-        const action = spot.slug === 'flow/grandma/talk' && solved
-          ? { type: 'dialogue' as const, dialogue: 'flow/dialogue/grandma-win' }
-          : spot.action;
-        void perform(action);
-        return;
-      }
       selected = spot.id;
+      const action = spot.slug === 'flow/grandma/talk' && solved
+        ? { type: 'dialogue' as const, dialogue: 'flow/dialogue/grandma-win' }
+        : spot.action;
+      void perform(action);
     },
     clearSpot() { selected = null; },
     openEvent(eventId: string) {

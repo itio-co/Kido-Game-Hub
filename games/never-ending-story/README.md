@@ -157,7 +157,7 @@ The wall shelf is a Three.js group: `bookshelf` → `shelf-row` → `book`. Each
 ## This build
 
 - The game opens in the player's room. That room is a real 3D scene. It has no DEMO ribbon.
-- Dots are static. The first tap shows the object's name. The second tap acts.
+- Dots are static. A single tap (or click) acts at once. In image scenes the tapped spot's name stays up as a label while its dialogue or toast shows.
 - Door → event select, a 3-page cutscene, difficulty, the house map, then the living room, study, and kitchen.
 - The living room clock lists hour slots. The living-room calendar lists days and can travel to yesterday or this afternoon. Leaving the living room returns the slot to “now”.
 - The case button opens the evidence notebook. With E01, E02, and E04 it opens the case board. The star-box lock opens the sliding-block puzzle only after the case is deduced. Winning that puzzle opens the album. The postcard sends the player home with the portrait reward, which can be placed on an empty decor slot in the real room.

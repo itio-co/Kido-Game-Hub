@@ -100,8 +100,10 @@
   .mapbtn {
     position: absolute;
     z-index: 4;
-    top: 58px;
+    /* Bottom left, stacked above the back button: at the top it sat over the clock dot, and in the bottom centre it ran into a long case-notebook label. */
+    bottom: calc(88px + env(safe-area-inset-bottom, 0px));
     left: 12px;
+    min-height: 44px;
     background: rgba(6, 30, 48, 0.9);
     border: 1px solid #39e0ff;
     color: #fff;

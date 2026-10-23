@@ -79,22 +79,19 @@
     }, 2200);
   }
 
+  /** A single tap (or click) on a room dot acts at once. */
   function choose(id: string): void {
     if (!room) return;
-    if (selectedId === id) {
-      const hotspot = room.hotspots.find((item) => item.id === id);
-      selectedId = null;
-      if (!hotspot) return;
-      if (hotspot.kind === 'decor-slot') {
-        decorSlotId = hotspot.id;
-        overlay = 'decor';
-      } else if (hotspot.action === 'event-select') void session.go('event-select');
-      else if (hotspot.action === 'practice') void session.go('practice');
-      else if (hotspot.action === 'calendar') overlay = 'calendar';
-      else if (hotspot.action === 'case-board') void session.go('notebook');
-      return;
-    }
-    selectedId = id;
+    const hotspot = room.hotspots.find((item) => item.id === id);
+    selectedId = null;
+    if (!hotspot) return;
+    if (hotspot.kind === 'decor-slot') {
+      decorSlotId = hotspot.id;
+      overlay = 'decor';
+    } else if (hotspot.action === 'event-select') void session.go('event-select');
+    else if (hotspot.action === 'practice') void session.go('practice');
+    else if (hotspot.action === 'calendar') overlay = 'calendar';
+    else if (hotspot.action === 'case-board') void session.go('notebook');
   }
 
   function onBack(): void {
