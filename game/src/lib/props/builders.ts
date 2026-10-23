@@ -297,30 +297,25 @@ export function buildNightstand(build: Build, parent: THREE.Object3D, entity: Bu
   const group = new THREE.Group();
   tag(group, table);
   place(group, table.position, table.rotation);
-  const [w, h, d] = table.size;
+  const [, h] = table.size;
   const wood = table.colors.wood;
   const edge = '#c47d42';
-  // Chamfered slab, one recessed drawer with a block knob, four square posts to the top,
-  // low stretchers. Under the drawer the table is open.
-  const topT = h * 0.13;
-  const topW = w * 1.06;
-  const topD = d * 1.08;
-  addBox(build, group, topW, topT * 0.62, topD, 0, h - topT * 0.31, 0, table.colors.top);
-  addBox(build, group, topW, topT * 0.42, topD, 0, h - topT * 0.79, 0, edge);
-  const chamfer = Math.min(topT * 0.42, 0.02);
-  const frontBevel = addBox(build, group, topW, chamfer, chamfer, 0, h - topT * 0.55, topD / 2, edge, { shadow: 'none' });
-  frontBevel.rotation.x = Math.PI / 4;
-  const backBevel = addBox(build, group, topW, chamfer, chamfer, 0, h - topT * 0.55, -topD / 2, wood, { shadow: 'none' });
-  backBevel.rotation.x = Math.PI / 4;
-  const rightBevel = addBox(build, group, chamfer, chamfer, topD, topW / 2, h - topT * 0.55, 0, edge, { shadow: 'none' });
-  rightBevel.rotation.z = -Math.PI / 4;
-  const leftBevel = addBox(build, group, chamfer, chamfer, topD, -topW / 2, h - topT * 0.55, 0, wood, { shadow: 'none' });
-  leftBevel.rotation.z = Math.PI / 4;
+  // Wide slab: the 3/4 view adds the top surface on top of the height, so the
+  // world width is more than 1.25×h. Thickness is a little over 1/8 so the
+  // front edge stays thick. Posts are slightly under 1/7 so both faces of the
+  // square don't read chunkier than the crop.
+  const topW = h * 1.55;
+  const topD = h * 0.52;
+  const topT = h * 0.14;
+  const overhang = topW * 0.02;
+  // Thick slab, then a lower step so the front edge reads as a bevel.
+  addBox(build, group, topW, topT * 0.7, topD, 0, h - topT * 0.35, 0, table.colors.top);
+  addBox(build, group, topW - overhang, topT * 0.38, topD - overhang, 0, h - topT * 0.81, 0, edge);
 
-  const legT = topW * 0.22;
+  const legT = topW / 8.2;
   const legH = h - topT;
-  const legX = topW / 2 - legT / 2 - topW * 0.03;
-  const legZ = topD / 2 - legT / 2 - topD * 0.03;
+  const legX = topW / 2 - legT / 2 - overhang;
+  const legZ = topD / 2 - legT / 2 - overhang * 0.6;
   for (const sx of [-1, 1]) {
     for (const sz of [-1, 1]) {
       addBox(build, group, legT, legH, legT, sx * legX, legH / 2, sz * legZ, wood);
@@ -328,20 +323,26 @@ export function buildNightstand(build: Build, parent: THREE.Object3D, entity: Bu
   }
 
   const railT = legT * 0.42;
-  const railY = railT * 0.7;
+  const railY = h * 0.25;
   addBox(build, group, railT, railT, legZ * 2, legX, railY, 0, wood);
   addBox(build, group, railT, railT, legZ * 2, -legX, railY, 0, wood);
   addBox(build, group, legX * 2, railT, railT, 0, railY, -legZ, wood);
 
-  const drawerH = h * 0.15;
-  const drawerY = h - topT - h * 0.015 - drawerH / 2;
-  const opening = legX * 2 - legT;
+  const gap = legX * 2 - legT;
+  const drawerH = h * 0.42;
+  const drawerW = Math.min(topW * 0.75, gap * 0.94);
+  const drawerY = h - topT - drawerH / 2;
   const drawerDepth = topD * 0.62;
-  const drawerFront = legZ + legT / 2 - 0.016;
+  const legFront = legZ + legT / 2;
+  const drawerFront = legFront - h * 0.035;
   const drawerZ = drawerFront - drawerDepth / 2;
-  addBox(build, group, opening * 0.9, drawerH, drawerDepth, 0, drawerY, drawerZ, wood);
-  addBox(build, group, legT * 0.38, drawerH * 0.28, 0.016, 0, drawerY, drawerFront + 0.008, wood, { shadow: 'none' });
-  addBox(build, group, opening, h * 0.035, legT * 0.85, 0, drawerY - drawerH / 2 - h * 0.02, legZ, wood);
+  addBox(build, group, drawerW, drawerH, drawerDepth, 0, drawerY, drawerZ, wood);
+  const knobW = drawerW * 0.25;
+  const knobH = drawerH * 0.42;
+  const knobD = h * 0.11;
+  addBox(build, group, knobW, knobH, knobD, 0, drawerY, drawerFront + knobD * 0.2, wood, { shadow: 'none' });
+  const apronH = h * 0.055;
+  addBox(build, group, gap * 0.98, apronH, legT * 0.95, 0, drawerY - drawerH / 2 - apronH / 2, legZ, wood);
 
   parent.add(group);
   return group;
