@@ -29,7 +29,7 @@ sc.render.film_transparent=True; sc.render.resolution_x=IW*S; sc.render.resoluti
 sc.view_settings.view_transform='Standard'
 sc.render.image_settings.file_format='PNG'; sc.render.image_settings.color_mode='RGBA'
 # pivot for turntable
-objs=[o for o in sc.objects if o.type=='MESH']
+objs=[o for o in sc.objects if o.type not in ('CAMERA','LIGHT')]  # meshes and the root empty of a multi-part GLB
 piv=bpy.data.objects.new('Pivot',None); sc.collection.objects.link(piv)
 for o in objs:
     if o.parent is None: o.parent=piv
