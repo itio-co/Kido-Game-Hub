@@ -2,6 +2,7 @@
   import type { NightstandEntity, PlayerRoom } from '../lib/types';
   import CompareSlider from './CompareSlider.svelte';
   import NightstandView from './NightstandView.svelte';
+  import type { NightstandVariant } from '../lib/nightstandStage';
 
   let { room }: { room: PlayerRoom } = $props();
 
@@ -11,6 +12,13 @@
   });
 
   const mock = `${import.meta.env.BASE_URL}showcase/nightstand-ref.png`;
+
+  const initial: NightstandVariant = location.hash.includes('model=master') ? 'master' : 'lowpoly';
+  let variant = $state<NightstandVariant>(initial);
+  const variants: { id: NightstandVariant; label: string }[] = [
+    { id: 'lowpoly', label: 'Low-poly (เกม)' },
+    { id: 'master', label: 'Master' },
+  ];
 </script>
 
 <div class="showcase">
@@ -27,12 +35,27 @@
       <div><dt>slug</dt><dd>{nightstand.slug}</dd></div>
     </dl>
 
+    <div class="toggle" role="radiogroup" aria-label="รุ่นโมเดล">
+      {#each variants as v (v.id)}
+        <button
+          type="button"
+          role="radio"
+          aria-checked={variant === v.id}
+          class:on={variant === v.id}
+          data-variant={v.id}
+          onclick={() => (variant = v.id)}>{v.label}</button
+        >
+      {/each}
+    </div>
+
     <section>
       <h2>ตู้ข้างเตียง</h2>
       <div class="frame table-frame">
-        <CompareSlider src={mock}>
-          <NightstandView entity={nightstand} />
-        </CompareSlider>
+        {#key variant}
+          <CompareSlider src={mock}>
+            <NightstandView {variant} />
+          </CompareSlider>
+        {/key}
       </div>
     </section>
 
@@ -40,7 +63,9 @@
       <h2>หมุนดู</h2>
       <p class="hint">ลากเพื่อหมุน ภาพไม่หมุนเอง</p>
       <div class="frame orbit-frame">
-        <NightstandView entity={nightstand} orbit />
+        {#key variant}
+          <NightstandView {variant} orbit />
+        {/key}
       </div>
     </section>
   {/if}
@@ -91,5 +116,26 @@
   }
   .table-frame { aspect-ratio: 252 / 284; }
   .orbit-frame { aspect-ratio: 1; }
+  .toggle {
+    display: flex;
+    gap: 8px;
+    margin: 0 0 14px;
+  }
+  .toggle button {
+    flex: 1;
+    min-height: 44px;
+    border-radius: 10px;
+    border: 2px solid #3a5a74;
+    background: #10202e;
+    color: #eaf6ff;
+    font: inherit;
+    font-size: 15px;
+    font-weight: 700;
+  }
+  .toggle button.on {
+    background: #8fdfff;
+    border-color: #8fdfff;
+    color: #082030;
+  }
   .hint { margin: 0 0 8px; font-size: 14px; color: #c5d7e6; }
 </style>

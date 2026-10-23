@@ -1,14 +1,13 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import type { NightstandEntity } from '../lib/types';
-  import { mountNightstandStage } from '../lib/nightstandStage';
+  import { mountNightstandStage, type NightstandVariant } from '../lib/nightstandStage';
 
-  let { entity, orbit = false }: { entity: NightstandEntity; orbit?: boolean } = $props();
+  let { variant = 'lowpoly', orbit = false }: { variant?: NightstandVariant; orbit?: boolean } = $props();
   let canvas = $state<HTMLCanvasElement>();
 
   onMount(() => {
     if (!canvas) return;
-    const view = mountNightstandStage(canvas, entity, orbit ? 'orbit' : 'fit');
+    const view = mountNightstandStage(canvas, variant, orbit ? 'orbit' : 'fit');
     return () => view.dispose();
   });
 </script>
