@@ -1,0 +1,5 @@
+# generated
+*.blend1
+blender/_parts.blend
+blender/render/
+external/**/compare/

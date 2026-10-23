@@ -292,47 +292,115 @@ function addFacetedSlab(
   parent.add(mesh);
 }
 
+type FaceColors = { right: string; left: string; top: string; bottom?: string; front: string; back: string; under?: string };
+
+/** Box with a Lambert colour per face: +X, -X, +Y, -Y, +Z, -Z. */
+function addFacedBox(
+  build: Build,
+  parent: THREE.Object3D,
+  w: number,
+  h: number,
+  d: number,
+  x: number,
+  y: number,
+  z: number,
+  faces: FaceColors,
+): THREE.Mesh {
+  const geo = new THREE.BoxGeometry(w, h, d);
+  build.geos.push(geo);
+  const order = [faces.right, faces.left, faces.top, faces.under ?? faces.back, faces.front, faces.back];
+  const mats = order.map((color) => {
+    const mat = new THREE.MeshLambertMaterial({ color, flatShading: true });
+    build.mats.push(mat);
+    return mat;
+  });
+  const mesh = new THREE.Mesh(geo, mats);
+  mesh.position.set(x, y, z);
+  mesh.castShadow = true;
+  mesh.receiveShadow = true;
+  parent.add(mesh);
+  return mesh;
+}
+
 export function buildNightstand(build: Build, parent: THREE.Object3D, entity: Buildable): THREE.Object3D {
   const table = use<NightstandEntity>(entity, 'nightstand');
   const group = new THREE.Group();
   tag(group, table);
   place(group, table.position, table.rotation);
-  const [w, h, d] = table.size;
-  const topT = 0.05;
-  const topW = w + 0.1;
-  const topD = d + 0.08;
-  addFacetedSlab(build, group, topW, topT, topD, h - topT / 2, table.colors.top);
+  // Real size from the reprojection fit in nightstand-ref-points.json (metres).
+  const topW = 0.4966;
+  const topD = 0.2161;
+  const height = 0.5;
+  const legT = 0.05;
+  const topT = 0.04;
+  const overhang = 0.002;
+  const face = {
+    top: '#f2b56a',
+    front: '#c88845',
+    right: '#7a4524',
+    left: '#d09455',
+    back: '#9a6236',
+    under: '#6b3c22',
+  };
+  addFacedBox(build, group, topW, topT, topD, 0, height - topT / 2, 0, face);
+  const chamfer = 0.008;
+  const frontBevel = addFacedBox(
+    build, group, topW - 0.02, chamfer, chamfer, 0, height - topT + chamfer * 0.2, topD / 2 - 0.004,
+    { ...face, top: face.front, front: face.front },
+  );
+  frontBevel.rotation.x = Math.PI / 4;
+  const rightBevel = addFacedBox(
+    build, group, chamfer, chamfer, topD - 0.02, topW / 2 - 0.004, height - topT + chamfer * 0.2, 0,
+    { ...face, top: face.right, right: face.right },
+  );
+  rightBevel.rotation.z = -Math.PI / 4;
 
-  const drawerH = h * 0.36;
-  const drawerW = w * 0.78;
-  const drawerD = d * 0.7;
-  const drawerY = h - topT - drawerH / 2 - 0.01;
-  addBox(build, group, drawerW, drawerH, drawerD, 0, drawerY, -0.02, table.colors.wood);
-  const frontZ = -0.02 + drawerD / 2 + 0.01;
-  addBox(build, group, drawerW * 0.88, drawerH * 0.7, 0.018, 0, drawerY, frontZ, table.colors.wood, {
-    shadow: 'none',
-  });
-  addBox(build, group, w * 0.16, 0.014, 0.016, 0, drawerY, frontZ + 0.014, table.colors.knob, {
-    shadow: 'none',
-  });
-
-  const legTop = drawerY - drawerH / 2;
-  const leg = 0.042;
+  const legH = height - topT;
+  const legX = topW / 2 - legT / 2 - overhang;
+  const legZ = topD / 2 - legT / 2 - overhang;
   for (const sx of [-1, 1]) {
     for (const sz of [-1, 1]) {
-      addBox(
-        build,
-        group,
-        leg,
-        legTop,
-        leg,
-        sx * (w * 0.34),
-        legTop / 2,
-        sz * (d * 0.3),
-        table.colors.wood,
-      );
+      addFacedBox(build, group, legT, legH, legT, sx * legX, legH / 2, sz * legZ, face);
     }
   }
+
+  const railT = 0.025;
+  const railH = 0.04;
+  const railY = 0.1089;
+  addFacedBox(build, group, railT, railH, legZ * 2, legX, railY, 0, face);
+  addFacedBox(build, group, railT, railH, legZ * 2, -legX, railY, 0, face);
+  addFacedBox(build, group, legX * 2, railH, railT, 0, railY, -legZ, face);
+
+  const drawerH = 0.1028;
+  const drawerW = topW * 0.7;
+  const drawerTop = height - topT;
+  const drawerY = drawerTop - drawerH / 2;
+  const legFront = legZ + legT / 2;
+  const drawerFront = legFront - 0.004;
+  const drawerDepth = topD * 0.55;
+  const drawerZ = drawerFront - drawerDepth / 2;
+  addFacedBox(build, group, drawerW, drawerH, drawerDepth, 0, drawerY, drawerZ, {
+    ...face,
+    front: '#c17d40',
+    right: face.under,
+    left: face.under,
+    top: '#a86a38',
+  });
+  const knobW = 0.08;
+  const knobH = 0.03;
+  const knobD = 0.018;
+  addFacedBox(
+    build, group, knobW, knobH, knobD, 0, drawerY, drawerFront + knobD * 0.35,
+    { ...face, top: face.top, front: face.front, right: face.right, left: face.left },
+  );
+
+  // Shadowed interior, set back between the posts so the opening is darker than the wall.
+  const gap = legX * 2 - legT;
+  addFacedBox(
+    build, group, gap * 0.92, drawerTop - 0.02, 0.012, 0, (drawerTop - 0.02) / 2, -legZ + 0.02,
+    { top: '#3a2214', front: '#3a2214', right: '#3a2214', left: '#3a2214', back: '#3a2214', under: '#3a2214' },
+  );
+
   parent.add(group);
   return group;
 }
