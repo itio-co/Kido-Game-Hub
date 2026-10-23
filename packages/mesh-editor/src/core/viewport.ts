@@ -81,6 +81,8 @@ export interface EditorViewport {
   detach(): void;
   /** detach() + dispose overlays / gizmo. The viewport cannot be reattached. */
   dispose(): void;
+  /** Rebuild highlights after the host replaces a mesh outside a drag (undo, extrude, …). */
+  refresh(): void;
 
   // ---- modes ----
   readonly selectMode: SelectMode;

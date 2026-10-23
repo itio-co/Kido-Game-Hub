@@ -2,11 +2,14 @@
  * Equipment library store: built-in definitions (read-only, parts extracted from the procedural
  * models on first use) + the user's custom designs (localStorage + save files).
  */
+import { Euler, Matrix4, Quaternion, Vector3, type Object3D } from 'three';
+import { createHistory, createSnapshotCommand, editMeshOps, makeDelta, splitDelta, type EditorHost, type History, type Selection, type SnapCandidate, type Transform, type ViewportApi } from '@itio/mesh-editor';
 import { CATALOG, CATALOG_BY_ID, isBuiltin, setCustomLookup } from './catalog';
 import { EQUIP_FORMAT, EQUIP_VERSION, fitFootprint, mirrorPart, sanitizeEquip, toModuleDef, uidPart, type EquipDef, type EquipPart } from './equipment';
 import type { ModuleDef } from './types';
-import { bevelEdges, cloneMesh, deleteEdges, deleteFaces, deleteVerts, edgesOf, emptySel, extrudeFaces, flipFaces, insetFaces, meshBounds, mergeVerts, primitiveToMesh, recalcNormals, selVerts, setFaceMat, vcount, type CompMode, type CompSel, type EditMesh } from './editMesh';
-import type { MatName } from '$lib/three/materials';
+import { cloneMesh, deleteEdges, deleteFaces, deleteVerts, edgesOf, emptySel, meshBounds, primitiveToMesh, recalcNormals, selVerts, setFaceMat, vcount, type CompMode, type CompSel, type EditMesh } from './editMesh';
+import { t } from '$lib/i18n';
+import { mat as libMat, type MatName } from '$lib/three/materials';
 
 const KEY = 'starship-equipment-v1';
 
@@ -44,8 +47,12 @@ class EquipStore {
 	snap = $state<0.01 | 0.05>(0.01);
 	/** set by the designer scene: export the current equipment as GLB (returns bytes) */
 	exportGLB: (() => Promise<number>) | null = null;
-	undoStack: string[] = [];
-	redoStack: string[] = [];
+	/** Shared with the mesh-editor viewport so Ctrl+Z works after the overlay unmounts. */
+	readonly history: History = createHistory(60);
+	/** Solid mesh the viewport raycasts. Set by EditOverlay. */
+	editObject: Object3D | null = null;
+	/** Element-edit viewport, set while Vertex / Edge / Face mode is on screen. */
+	viewport: ViewportApi | null = null;
 	undoN = $state(0);
 	get selCount() {
 		return this.editMode === 'vertex' ? this.sel.v.length : this.editMode === 'edge' ? this.sel.e.length : this.editMode === 'face' ? this.sel.f.length : 0;
@@ -67,51 +74,146 @@ class EquipStore {
 		this.editMode = m;
 		return true;
 	}
-	private snapshot() {
-		return JSON.stringify(this.selected?.parts ?? []);
-	}
-	pushUndo() {
-		this.undoStack.push(this.snapshot());
-		if (this.undoStack.length > 60) this.undoStack.shift();
-		this.redoStack = [];
-		this.undoN++;
-	}
-	private restore(json: string) {
-		this.update(this.selectedId, (e) => (e.parts = JSON.parse(json)));
-		this.sel = emptySel();
-		this.undoN++;
-	}
 	undo() {
-		const s = this.undoStack.pop();
-		if (!s || !this.editable) return false;
-		this.redoStack.push(this.snapshot());
-		this.restore(s);
+		if (!this.editable || !this.history.canUndo) return false;
+		this.history.undo();
 		return true;
 	}
 	redo() {
-		const s = this.redoStack.pop();
-		if (!s || !this.editable) return false;
-		this.undoStack.push(this.snapshot());
-		this.restore(s);
+		if (!this.editable || !this.history.canRedo) return false;
+		this.history.redo();
 		return true;
 	}
-	/** write a new mesh to the selected part (converts a primitive on first edit); live = no undo / persist */
-	setMesh(m: EditMesh, opts: { undo?: boolean; live?: boolean } = {}) {
-		const pid = this.partId;
-		if (!pid || !this.editable) return;
-		if (opts.undo !== false && !opts.live) this.pushUndo();
+	/** Part-local mesh the editor reads. Primitives are converted in memory until the first commit. */
+	meshFor(id: string): EditMesh | null {
+		if (id !== this.partId) return null;
+		const p = this.part;
+		if (!p || p.shape === 'glb') return null;
+		return p.shape === 'mesh' && p.mesh ? p.mesh : primitiveToMesh(p.shape, p.size);
+	}
+	partTransform(): Transform {
+		const p = this.part;
+		const rot = p?.rot ?? [0, 0, 0];
+		const q = new Quaternion().setFromEuler(new Euler(rot[0] * (Math.PI / 180), rot[1] * (Math.PI / 180), rot[2] * (Math.PI / 180)));
+		const pos = p?.pos ?? [0, 0, 0];
+		return { position: [pos[0], pos[1], pos[2]], quaternion: [q.x, q.y, q.z, q.w], scale: [1, 1, 1] };
+	}
+	packageSelection(): Selection {
+		const mode = this.editMode;
+		const id = this.partId;
+		if (mode === 'object' || !id || !this.selCount) return { mode, objects: [], active: null, elements: {} };
+		return {
+			mode,
+			objects: [id],
+			active: id,
+			elements: { [id]: { verts: this.sel.v.slice(), edges: this.sel.e.slice() as Selection['elements'][string]['edges'], faces: this.sel.f.slice() } }
+		};
+	}
+	/** Apply a viewport selection back onto the designer without converting modes. */
+	adoptSelection(sel: Selection) {
+		const id = sel.objects[0];
+		const el = id ? sel.elements[id] : undefined;
+		const next: CompSel = { v: el?.verts.slice() ?? [], e: el?.edges.slice() ?? [], f: el?.faces.slice() ?? [] };
+		if (next.v.join() === this.sel.v.join() && next.e.join() === this.sel.e.join() && next.f.join() === this.sel.f.join()) return;
+		this.sel = next;
+	}
+	/** Drag snaps the translation delta; typed position snaps the absolute world axis. Rotation 5°, scale 0.01. */
+	snapCandidate(c: SnapCandidate): Matrix4 {
+		const { t, linear } = splitDelta(c.matrix, c.pivot);
+		const step = this.snap;
+		if (c.mode === 'rotate') {
+			const q = new Quaternion();
+			linear.decompose(new Vector3(), q, new Vector3());
+			const eu = new Euler().setFromQuaternion(q);
+			const rad = (5 * Math.PI) / 180;
+			eu.x = Math.round(eu.x / rad) * rad;
+			eu.y = Math.round(eu.y / rad) * rad;
+			eu.z = Math.round(eu.z / rad) * rad;
+			q.setFromEuler(eu);
+			return makeDelta(c.pivot, t, new Matrix4().makeRotationFromQuaternion(q));
+		}
+		if (c.mode === 'scale') {
+			const q = new Quaternion();
+			const s = new Vector3();
+			linear.decompose(new Vector3(), q, s);
+			const snapS = (v: number) => {
+				const n = Math.round(v / 0.01) * 0.01;
+				return n === 0 ? Math.sign(v) || 1 : n;
+			};
+			return makeDelta(c.pivot, new Vector3(), new Matrix4().makeScale(snapS(s.x), snapS(s.y), snapS(s.z)));
+		}
+		if (c.source === 'typed') {
+			const axis = c.axis === 'Y' ? 1 : c.axis === 'Z' ? 2 : 0;
+			const next = c.pivot.getComponent(axis) + t.getComponent(axis);
+			const snapped = Math.round(next / step) * step;
+			t.setComponent(axis, snapped - c.pivot.getComponent(axis));
+		} else t.set(Math.round(t.x / step) * step, Math.round(t.y / step) * step, Math.round(t.z / step) * step);
+		return makeDelta(c.pivot, t, linear);
+	}
+	readonly host: EditorHost = {
+		getMesh: (id) => this.meshFor(id),
+		commit: (id, mesh, opts) => this.writeMesh(id, mesh, opts.live),
+		onSelectionChange: (sel) => this.adoptSelection(sel),
+		setNavigationEnabled: () => {},
+		requestRender: () => {},
+		resolveMaterial: (id) => libMat((id as MatName | null) ?? this.part?.m ?? 'steel'),
+		listObjects: () => (this.partId && this.part && this.part.shape !== 'glb' ? [this.partId] : []),
+		getObject3D: () => this.editObject,
+		commitTransform: (id, tr) => {
+			if (id !== this.partId) return;
+			const eu = new Euler().setFromQuaternion(new Quaternion(tr.quaternion[0], tr.quaternion[1], tr.quaternion[2], tr.quaternion[3]));
+			const D = 180 / Math.PI;
+			this.setPose(id, { pos: [tr.position[0], tr.position[1], tr.position[2]], rot: [eu.x * D, eu.y * D, eu.z * D] });
+		},
+		canEdit: (id) => {
+			if (!this.editable) return t('designer.builtinReadOnly');
+			const p = id === this.partId ? this.part : (this.selected?.parts.find((x) => x.id === id) ?? null);
+			if (!p || p.shape === 'glb') return t('designer.glbNotEditable');
+			return true;
+		}
+	};
+	/** write a new mesh to a part (converts a primitive on first edit); live = no undo / persist */
+	writeMesh(id: string, m: EditMesh | { v: number[]; f: number[][]; fm?: (string | null)[]; sm?: boolean }, live: boolean) {
+		if (!this.editable) return;
 		const e = this.custom.find((x) => x.id === this.selectedId);
-		const p = e?.parts.find((x) => x.id === pid);
+		const p = e?.parts.find((x) => x.id === id);
 		if (!e || !p || p.shape === 'glb') return;
 		const wasSize = p.size;
 		const ratio = p.stowed?.size ? [p.stowed.size[0] / wasSize[0], p.stowed.size[1] / wasSize[1], p.stowed.size[2] / wasSize[2]] : null;
 		p.shape = 'mesh';
-		p.mesh = m;
-		p.size = meshBounds(m).size;
+		p.mesh = cloneMesh(m as EditMesh);
+		p.size = meshBounds(p.mesh).size;
 		if (ratio && p.stowed) p.stowed.size = [p.size[0] * ratio[0], p.size[1] * ratio[1], p.size[2] * ratio[2]];
-		if (opts.live) return;
-		if (e.autoFit) Object.assign(e, fitFootprint(e));
-		this.persist();
+		if (!live && e.autoFit) Object.assign(e, fitFootprint(e));
+		if (!live) this.persist();
+		this.viewport?.refresh();
+	}
+	/** write a new mesh to the selected part; one history step unless live or undo:false */
+	setMesh(m: EditMesh | { v: number[]; f: number[][]; fm?: (string | null)[]; sm?: boolean }, opts: { undo?: boolean; live?: boolean } = {}) {
+		const pid = this.partId;
+		if (!pid || !this.editable) return;
+		if (opts.live) {
+			this.writeMesh(pid, m, true);
+			return;
+		}
+		if (opts.undo === false) {
+			this.writeMesh(pid, m, false);
+			return;
+		}
+		const before = this.meshFor(pid);
+		if (!before) return;
+		const transform = this.partTransform();
+		this.history.push(
+			createSnapshotCommand({
+				label: t('designer.editMesh'),
+				before: { [pid]: { mesh: before, transform } },
+				after: { [pid]: { mesh: m, transform } },
+				selectionBefore: this.packageSelection(),
+				selectionAfter: this.packageSelection(),
+				host: this.host,
+				applySelection: (sel) => this.adoptSelection(sel)
+			})
+		);
 	}
 	/** component operation by name; returns a short message for the toast */
 	op(name: 'extrude' | 'inset' | 'delete' | 'bevel' | 'merge' | 'all' | 'flip' | 'recalc' | 'shade'): string {
@@ -132,7 +234,7 @@ class EquipStore {
 		if (name === 'flip') {
 			if (mode !== 'face') return 'Flip works on faces (Face mode, 4)';
 			if (!this.sel.f.length) return 'Select faces first';
-			this.setMesh(flipFaces(m, this.sel.f));
+			this.setMesh(editMeshOps.flip(m, this.sel.f));
 			return `Flipped ${this.sel.f.length} face normal(s)`;
 		}
 		if (name === 'all') {
@@ -144,14 +246,14 @@ class EquipStore {
 		if (!this.selCount) return 'Select components first';
 		if (name === 'extrude') {
 			if (mode !== 'face') return 'Extrude works on faces (Face mode, 4)';
-			const r = extrudeFaces(m, this.sel.f, 0.05);
+			const r = editMeshOps.extrude(m, this.sel.f, 0.05);
 			this.setMesh(r.mesh);
 			this.sel = { ...emptySel(), f: r.faces };
 			return `Extruded ${r.faces.length} face(s) 5 cm – move them with the gizmo`;
 		}
 		if (name === 'inset') {
 			if (mode !== 'face') return 'Inset works on faces (Face mode, 4)';
-			const r = insetFaces(m, this.sel.f);
+			const r = editMeshOps.inset(m, this.sel.f, insetThickness(m, this.sel.f));
 			this.setMesh(r.mesh);
 			this.sel = { ...emptySel(), f: r.faces };
 			return `Inset ${r.faces.length} face(s)`;
@@ -159,14 +261,18 @@ class EquipStore {
 		if (name === 'bevel') {
 			if (mode !== 'edge') return 'Bevel works on edges (Edge mode, 3)';
 			const n = this.sel.e.length;
-			this.setMesh(bevelEdges(m, this.sel.e, 0.02));
+			const edges = this.sel.e.map((key) => {
+				const [a, b] = key.split('-').map(Number);
+				return [Math.min(a ?? 0, b ?? 0), Math.max(a ?? 0, b ?? 0)] as [number, number];
+			});
+			this.setMesh(editMeshOps.bevel(m, edges, 0.02).mesh);
 			this.sel = emptySel();
 			return `Chamfered ${n} edge(s) 2 cm`;
 		}
 		if (name === 'merge') {
 			const v = selVerts(m, mode, this.sel);
 			if (v.length < 2) return 'Select 2+ vertices to merge';
-			this.setMesh(mergeVerts(m, v));
+			this.setMesh(editMeshOps.merge(m, v).mesh);
 			this.sel = emptySel();
 			return `Merged ${v.length} vertices`;
 		}
@@ -186,6 +292,9 @@ class EquipStore {
 	modules = $derived(Object.fromEntries(this.custom.map((e) => [e.id, toModuleDef(e)])) as Record<string, ModuleDef>);
 
 	constructor() {
+		this.history.onChange(() => {
+			this.undoN++;
+		});
 		setCustomLookup((id) => this.modules[id]);
 		if (typeof localStorage !== 'undefined') {
 			try {
@@ -246,9 +355,7 @@ class EquipStore {
 		this.partId = null;
 		this.editMode = 'object';
 		this.sel = emptySel();
-		this.undoStack = [];
-		this.redoStack = [];
-		this.undoN++;
+		this.history.clear();
 	}
 	/** write a pose change to the selected part (deployed or stowed pose) */
 	setPose(partId: string, ch: { pos?: [number, number, number]; rot?: [number, number, number]; size?: [number, number, number] }) {
@@ -384,6 +491,27 @@ class EquipStore {
 		const set = new Set(types);
 		return this.custom.filter((e) => set.has(e.id));
 	}
+}
+
+/** Match the old 0.2 lerp-to-centroid inset: thickness ≈ 0.2 × mean centroid-to-edge-midpoint. */
+function insetThickness(mesh: EditMesh, faces: number[]): number {
+	let acc = 0;
+	let n = 0;
+	for (const fi of faces) {
+		const face = mesh.f[fi];
+		if (!face || face.length < 3) continue;
+		const c = editMeshOps.centroid(mesh, face);
+		for (let k = 0; k < face.length; k++) {
+			const a = face[k] ?? 0;
+			const b = face[(k + 1) % face.length] ?? 0;
+			const mx = ((mesh.v[3 * a] ?? 0) + (mesh.v[3 * b] ?? 0)) / 2;
+			const my = ((mesh.v[3 * a + 1] ?? 0) + (mesh.v[3 * b + 1] ?? 0)) / 2;
+			const mz = ((mesh.v[3 * a + 2] ?? 0) + (mesh.v[3 * b + 2] ?? 0)) / 2;
+			acc += Math.hypot(mx - c[0], my - c[1], mz - c[2]);
+			n++;
+		}
+	}
+	return n ? 0.2 * (acc / n) : 0.02;
 }
 
 export const equip = new EquipStore();

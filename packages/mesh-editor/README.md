@@ -2,7 +2,7 @@
 
 A touch-friendly polygon mesh editor for three.js. It is shared by the games in this repo.
 
-> **Status: 0.0.1, skeleton only.** `src/` exports TypeScript types, plus one runtime piece: the snap composition helpers (`composeSnaps`, `splitDelta`, `makeDelta`, `GEOMETRIC_SNAP_KINDS`). The contract is in [API.md](API.md). Implementations land in follow-up PRs from GamesBuilder and Never Ending Game (ownership is in API.md §13).
+> **Status: mesh ops, viewport (picking, gizmo, transform sessions), history, and the Threlte adapter are implemented.** Snap *providers*, camera match, the GLB import pipeline, and the Svelte panels (`./svelte`) are still stubs. The contract is in [API.md](API.md). Ownership is in API.md §13.
 
 ## Entry points
 
@@ -13,7 +13,7 @@ A touch-friendly polygon mesh editor for three.js. It is shared by the games in 
 | `@itio/mesh-editor/threlte` | Adapter for Threlte apps |
 | `@itio/mesh-editor/camera-match` | Match a camera to a reference image and export it to Blender `cam.json` or three.js |
 
-`three` (^0.186) is a peer dependency. `svelte` (^5) is an optional peer, needed only for `./svelte`.
+`three` (^0.186) is a peer dependency. `svelte` (^5) and `@threlte/core` (^8) are optional peers, needed only for `./svelte` and `./threlte`.
 
 ## Develop
 
