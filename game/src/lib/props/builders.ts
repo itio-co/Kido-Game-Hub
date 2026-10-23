@@ -298,41 +298,40 @@ export function buildNightstand(build: Build, parent: THREE.Object3D, entity: Bu
   tag(group, table);
   place(group, table.position, table.rotation);
   const [w, h, d] = table.size;
-  const topT = 0.05;
-  const topW = w + 0.1;
-  const topD = d + 0.08;
-  addFacetedSlab(build, group, topW, topT, topD, h - topT / 2, table.colors.top);
+  // Measured from nightstand-ref.png: top wider than the body, one shallow drawer,
+  // long legs with a dark gap between them, a small dark box on the back-left.
+  const topT = h * 0.11;
+  const topW = w * 1.24;
+  const topD = d * 1.06;
+  const topY = h - topT / 2;
+  addBox(build, group, topW * 0.58, topT, topD, -topW * 0.21, topY, 0, table.colors.top);
+  addBox(build, group, topW * 0.42, topT, topD, topW * 0.29, topY, 0, '#b46830');
 
-  const drawerH = h * 0.36;
-  const drawerW = w * 0.78;
-  const drawerD = d * 0.7;
-  const drawerY = h - topT - drawerH / 2 - 0.01;
-  addBox(build, group, drawerW, drawerH, drawerD, 0, drawerY, -0.02, table.colors.wood);
-  const frontZ = -0.02 + drawerD / 2 + 0.01;
-  addBox(build, group, drawerW * 0.88, drawerH * 0.7, 0.018, 0, drawerY, frontZ, table.colors.wood, {
-    shadow: 'none',
-  });
-  addBox(build, group, w * 0.16, 0.014, 0.016, 0, drawerY, frontZ + 0.014, table.colors.knob, {
-    shadow: 'none',
-  });
+  const legH = h * 0.62;
+  const drawerH = h - topT - legH;
+  const drawerW = w * 0.94;
+  const drawerD = d * 0.8;
+  const drawerY = legH + drawerH / 2;
+  addBox(build, group, drawerW, drawerH, drawerD, 0, drawerY, 0, table.colors.wood);
+  const frontZ = drawerD / 2 + 0.006;
+  addBox(build, group, drawerW * 0.92, drawerH * 0.78, 0.012, 0, drawerY, frontZ, '#a15e2c', { shadow: 'none' });
+  addBox(build, group, drawerW * 0.5, 0.028, 0.014, 0, drawerY + drawerH * 0.06, frontZ + 0.01, table.colors.knob, { shadow: 'none' });
 
-  const legTop = drawerY - drawerH / 2;
-  const leg = 0.042;
+  const insetX = w * 0.42;
+  const insetZ = d * 0.28;
   for (const sx of [-1, 1]) {
     for (const sz of [-1, 1]) {
-      addBox(
-        build,
-        group,
-        leg,
-        legTop,
-        leg,
-        sx * (w * 0.34),
-        legTop / 2,
-        sz * (d * 0.3),
-        table.colors.wood,
-      );
+      addCyl(build, group, 0.024, 0.014, legH, sx * insetX, legH / 2, sz * insetZ, sx < 0 ? '#7a4018' : '#c17a3c', 'y', 4);
     }
   }
+
+  const propH = h * 0.42;
+  const propW = w * 0.065;
+  const propD = d * 0.09;
+  const propX = -topW * 0.42;
+  const propZ = -d * 0.22;
+  addBox(build, group, propW, propH, propD, propX, h + propH / 2, propZ, '#4a2206');
+
   parent.add(group);
   return group;
 }
