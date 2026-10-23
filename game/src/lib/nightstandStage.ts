@@ -1,16 +1,16 @@
 import * as THREE from 'three';
 import type { NightstandEntity } from './types';
 import { buildNightstand } from './props/builders';
-import type { Build } from './props/kit';
+import { canvasTexture, type Build } from './props/kit';
 
 export type NightstandStage = { dispose: () => void };
 
-/** Wall colour sampled from the upper-right of nightstand-ref.png. */
-const BACKDROP = '#d9a478';
+/** Cream wall sampled to the crop's background. */
+const WALL = '#f0c9a0';
 
 /**
  * Isolated nightstand for the showcase.
- * `fit` frames the front to the reference crop. `orbit` yaws while dragging.
+ * `fit` uses the crop's 3/4 angle. `orbit` yaws while dragging.
  */
 export function mountNightstandStage(
   canvas: HTMLCanvasElement,
@@ -21,41 +21,67 @@ export function mountNightstandStage(
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.NoToneMapping;
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-  renderer.setClearColor(BACKDROP);
+  renderer.setClearColor(WALL);
 
   const scene = new THREE.Scene();
-  const camera = new THREE.PerspectiveCamera(mode === 'fit' ? 18 : 32, 1, 0.05, 20);
-  // Lambert BRDF divides by π, so irradiance near π keeps the sampled albedo on screen.
-  scene.add(new THREE.AmbientLight('#fff8f2', 2.35));
-  const sun = new THREE.DirectionalLight('#fff4e6', 0.85);
-  sun.position.set(1.6, 3.6, 2.6);
+  const camera = new THREE.PerspectiveCamera(mode === 'fit' ? 30 : 32, 1, 0.05, 30);
+  // Lambert divides by π. Keep the lit top near the wood albedo, with light from the upper left.
+  scene.add(new THREE.AmbientLight('#fff6ee', 1.85));
+  const sun = new THREE.DirectionalLight('#fff1e0', 1.35);
+  sun.position.set(-2.4, 3.6, 2.1);
   scene.add(sun);
-  const fill = new THREE.DirectionalLight('#ffe8d2', 0.35);
-  fill.position.set(-1.2, 1.8, 2.2);
+  const fill = new THREE.DirectionalLight('#ffe6cc', 0.4);
+  fill.position.set(1.4, 1.5, 1.6);
   scene.add(fill);
 
-  const floor = new THREE.Mesh(
-    new THREE.PlaneGeometry(1.35, 1.05),
-    new THREE.MeshBasicMaterial({ color: '#7a4520' }),
+  const build: Build = { geos: [], mats: [], textures: [], matCache: new Map() };
+
+  const wall = new THREE.Mesh(new THREE.PlaneGeometry(4.2, 2.6), new THREE.MeshBasicMaterial({ color: WALL }));
+  wall.position.set(0, 1.05, -0.42);
+  scene.add(wall);
+
+  const skirt = new THREE.Mesh(
+    new THREE.BoxGeometry(4.2, 0.085, 0.04),
+    new THREE.MeshBasicMaterial({ color: '#e8c4a2' }),
   );
+  skirt.position.set(0, 0.042, -0.39);
+  scene.add(skirt);
+  const skirtLine = new THREE.Mesh(
+    new THREE.BoxGeometry(4.2, 0.012, 0.05),
+    new THREE.MeshBasicMaterial({ color: '#d7b08a' }),
+  );
+  skirtLine.position.set(0, 0.09, -0.385);
+  scene.add(skirtLine);
+
+  const planks = document.createElement('canvas');
+  planks.width = 256;
+  planks.height = 256;
+  const ctx = planks.getContext('2d');
+  if (ctx) {
+    const tones = ['#c88848', '#b87538', '#d09652', '#a86c34', '#c07e40'];
+    const band = 32;
+    for (let i = 0; i < 8; i += 1) {
+      ctx.fillStyle = tones[i % tones.length] ?? '#c88848';
+      ctx.fillRect(0, i * band, 256, band - 3);
+      ctx.fillStyle = '#8d5a30';
+      ctx.fillRect(0, i * band + band - 3, 256, 3);
+    }
+  }
+  const floorTex = canvasTexture(build, planks);
+  floorTex.wrapS = THREE.RepeatWrapping;
+  floorTex.wrapT = THREE.RepeatWrapping;
+  floorTex.repeat.set(4, 4);
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(4.2, 4.2), new THREE.MeshBasicMaterial({ map: floorTex }));
   floor.rotation.x = -Math.PI / 2;
-  floor.position.set(0, 0, 0.02);
+  floor.position.y = -0.004;
   scene.add(floor);
 
-  const build: Build = { geos: [], mats: [], textures: [], matCache: new Map() };
   const stand: NightstandEntity = { ...entity, position: [0, 0, 0], rotation: [0, 0, 0] };
   const group = buildNightstand(build, scene, stand);
-  const [bw, bh, bd] = stand.size;
-  const gap = new THREE.Mesh(
-    new THREE.BoxGeometry(bw * 0.62, bh * 0.58, bd * 0.46),
-    new THREE.MeshBasicMaterial({ color: '#2a1408' }),
-  );
-  gap.position.set(0, bh * 0.3, 0);
-  group.add(gap);
-  build.geos.push(floor.geometry, gap.geometry);
-  build.mats.push(floor.material, gap.material);
+  build.geos.push(wall.geometry, skirt.geometry, skirtLine.geometry, floor.geometry);
+  build.mats.push(wall.material, skirt.material, skirtLine.material, floor.material);
 
-  let yaw = mode === 'orbit' ? 0.55 : -0.24;
+  let yaw = mode === 'orbit' ? 0.7 : 0;
   let dragX = 0;
   let dragging = false;
 
@@ -70,13 +96,15 @@ export function mountNightstandStage(
     const distY = size.y / 2 / Math.tan(vFov / 2);
     const hFov = 2 * Math.atan(Math.tan(vFov / 2) * aspect);
     const distX = size.x / 2 / Math.tan(hFov / 2);
-    const dist = (Math.max(distX, distY) / 0.86) * (mode === 'orbit' ? 1.15 : 1);
+    const span = Math.max(distX, distY, size.z / 2 / Math.tan(hFov / 2));
+    const dist = (span / 0.62) * (mode === 'orbit' ? 1.2 : 1);
     if (mode === 'fit') {
-      camera.position.set(center.x + 0.015, center.y + dist * 0.13, center.z + dist);
-      camera.lookAt(center.x + 0.015, center.y - 0.045, center.z);
+      const az = 0.4;
+      camera.position.set(center.x + Math.sin(az) * dist, center.y + dist * 0.3, center.z + Math.cos(az) * dist);
+      camera.lookAt(center.x + 0.03, center.y + size.y * 0.12, center.z);
     } else {
       const spin = yaw;
-      camera.position.set(center.x + Math.sin(spin) * dist, center.y + dist * 0.22, center.z + Math.cos(spin) * dist);
+      camera.position.set(center.x + Math.sin(spin) * dist, center.y + dist * 0.38, center.z + Math.cos(spin) * dist);
       camera.lookAt(center.x, center.y, center.z);
       group.rotation.y = 0;
     }
