@@ -3,3 +3,4 @@
 blender/_parts.blend
 blender/render/
 external/**/compare/
+external/hunyuan3d/raw.glb
