@@ -134,7 +134,7 @@ export type PracticeGame = Identity & {
   kind: 'practice-game';
   game: 'cross' | 'jig' | 'slide' | 'ex';
   icon: string;
-  group: 'คำ' | 'ภาพ' | 'ตรรกะ';
+  group: 'word' | 'picture' | 'logic';
   caseNo: string;
   future: boolean;
 };

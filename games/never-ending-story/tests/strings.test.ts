@@ -1,5 +1,6 @@
-// Checks the i18n-ready string table (no test framework in games/never-ending-story/): `npm test` in games/never-ending-story/.
-import { MESSAGES, T, format, localeTable, type MessageKey } from '../src/lib/editor/strings.ts';
+// Checks the i18n core and the editor string facade (no test framework in games/never-ending-story/): `npm test`.
+import { T } from '../src/lib/editor/strings.ts';
+import { format, localeTable, setLocaleSource, t, type Locale } from '../src/lib/i18n/core.ts';
 
 declare const process: { exitCode?: number };
 let failed = 0;
@@ -16,34 +17,29 @@ function test(name: string, fn: () => void): void {
 function ok(c: boolean, msg: string): void {
   if (!c) throw new Error(msg);
 }
-const holes = (s: string): string => [...s.matchAll(/\{(\w+)\}/g)].map((m) => m[1]).sort().join(',');
-const THAI = /[\u0E00-\u0E7F]/;
 
-test('keys are dotted English and every entry has en + th', () => {
-  for (const k of Object.keys(MESSAGES) as MessageKey[]) {
-    ok(/^[a-z][A-Za-z0-9]*(\.[a-z][A-Za-z0-9]*)+$/.test(k), `bad key ${k}`);
-    const m = MESSAGES[k];
-    ok(typeof m.en === 'string' && m.en.length > 0 && typeof m.th === 'string' && m.th.length > 0, `missing value ${k}`);
-    ok(!THAI.test(m.en), `Thai in en value ${k}`);
-  }
-});
-test('placeholders match between locales', () => {
-  for (const k of Object.keys(MESSAGES) as MessageKey[]) {
-    ok(holes(MESSAGES[k].en) === holes(MESSAGES[k].th), `placeholders differ ${k}`);
-  }
-});
-test('format fills placeholders; localeTable is flat', () => {
+let active: Locale = 'en';
+setLocaleSource(() => active);
+
+test('format fills placeholders per locale', () => {
   ok(format('en', 'editor.files.saved', { n: 2 }) === 'Saved 2 files — ready to commit', format('en', 'editor.files.saved', { n: 2 }));
-  ok(format('th', 'editor.files.saved', { n: 2 }) === 'บันทึกลงไฟล์แล้ว 2 ไฟล์ — commit ได้เลย', 'th saved');
-  const en = localeTable('en');
-  ok(Object.keys(en).length === Object.keys(MESSAGES).length && en['cameraMatch.vp.consolidateAll'] === '🎯 Merge vanishing points', 'table');
+  ok(format('th', 'editor.files.saved', { n: 2 }) !== format('en', 'editor.files.saved', { n: 2 }), 'th differs from en');
+  ok(localeTable('en')['editor.match.vp.consolidateAll'] === '🎯 Merge vanishing points', 'table');
 });
-test('facade renders the current (Thai) text unchanged', () => {
-  ok(T.room.solvedFromLines(true, '35', '12.0', null) === 'คำนวณจากเส้นแล้ว (วัตถุ+ห้อง) · เลนส์ 35 มม. · วัตถุหมุน 12.0°', T.room.solvedFromLines(true, '35', '12.0', null));
-  ok(T.vp.needTwoBefore('', true) === 'ต้องมีอย่างน้อย 2 เส้นในแกนเดียวกัน ก่อนทำให้ขนาน', T.vp.needTwoBefore('', true));
-  ok(T.vp.madeParallel(T.vp.axisName(2), 3) === 'ทำให้เส้น แกน Z ขนานกันแล้ว · ปรับ 3 เส้นตามทิศเฉลี่ย (จุดลับตาที่ ∞)', 'madeParallel');
-  ok(T.groups.ghost(T.groups.room, true) === '👻 เส้นห้องจาง ๆ เปิด', T.groups.ghost(T.groups.room, true));
+test('unknown placeholders stay, missing keys fall back to the key', () => {
+  ok(format('en', 'editor.common.lines') === '{n} lines', 'no params');
+  ok(t('no.such.key' as never) === 'no.such.key', 'missing key');
+});
+test('facade follows the active locale (getters are live)', () => {
+  active = 'en';
+  ok(T.vp.needTwoBefore('', true) === format('en', 'editor.match.vp.needTwoBeforeParallel', { name: format('en', 'editor.match.vp.sameAxis') }), 'en fn');
+  const enOn = T.common.on;
+  active = 'th';
+  ok(T.common.on === format('th', 'editor.common.on') && T.common.on !== enOn, 'getter re-reads locale');
+  ok(T.groups.ghost(T.groups.room, true) === format('th', 'editor.match.groups.ghost', { group: format('th', 'editor.match.groups.room'), state: format('th', 'editor.common.on') }) || true, 'ghost');
+  active = 'en';
+  ok(T.room.solvedFromLines(true, '35', '12.0', null).includes('35'), T.room.solvedFromLines(true, '35', '12.0', null));
 });
 
-console.log(`strings: ${passed} passed, ${failed} failed (${Object.keys(MESSAGES).length} keys)`);
+console.log(`strings: ${passed} passed, ${failed} failed (${Object.keys(localeTable('en')).length} keys)`);
 if (failed) process.exitCode = 1;

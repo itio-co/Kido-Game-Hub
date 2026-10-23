@@ -1,5 +1,6 @@
 <script lang="ts">
   import { imageUrl } from '../../lib/flow/loadFlow';
+  import { t } from '../../lib/i18n/core';
   import type { FlowScene, FlowSpot } from '../../lib/flow/types';
 
   let {
@@ -80,7 +81,7 @@
     {/each}
   </svg>
   {#if onMap}
-    <button type="button" class="mapbtn" onclick={onMap}>แผนผังบ้าน</button>
+    <button type="button" class="mapbtn" onclick={onMap}>{t('game.scene.houseMap')}</button>
   {/if}
 </div>
 

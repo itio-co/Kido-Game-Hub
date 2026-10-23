@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import type { BookEntity, BookshelfEntity, Buildable, ShelfRowEntity } from '../types';
 import { addBox, place, tag, type Build } from './kit';
 import { dispatch } from './registry';
+import { t } from '../i18n/core.ts';
 
 type ShelfSize = { width: number; depth: number; color: string };
 
@@ -26,7 +27,7 @@ export function buildShelfRow(build: Build, parent: THREE.Object3D, entity: Buil
   if (entity.kind !== 'shelf-row') throw new Error('expected shelf-row');
   const row = entity as ShelfRowEntity;
   const shelf = parent.userData.shelf as ShelfSize | undefined;
-  if (!shelf) throw new Error(`${row.slug} ไม่อยู่ในชั้นหนังสือ`);
+  if (!shelf) throw new Error(t('game.error.notOnShelf', { slug: row.slug }));
   const group = new THREE.Group();
   tag(group, row);
   group.position.y = row.y;

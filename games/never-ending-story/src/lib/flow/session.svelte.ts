@@ -1,5 +1,5 @@
 import {
-  CROSS_SOLUTION,
+  crossSolution,
   cloneCross,
   cloneJig,
   cloneSlide,
@@ -15,6 +15,8 @@ import {
   type JigState,
   type SlideState,
 } from './puzzles';
+import { t, type MessageKey } from '../i18n/core';
+import { tx, txList } from '../i18n/content';
 import type {
   CaseFlow,
   FlowAction,
@@ -57,14 +59,14 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
   let solved = $state(false);
   let deduced = $state(false);
   let reward = $state(false);
-  let difficulty = $state('ปานกลาง');
+  let difficulty = $state('medium');
   let played = $state<string[]>([]);
   let seen = $state<string[]>([]);
   let levels = $state<FlowProgress['levels']>({ cross: [], jig: [], slide: [] });
   let practice = $state(false);
   let lvGame = $state<PuzzleKey>('cross');
   let lvN = $state(1);
-  let category = $state('ทั้งหมด');
+  let category = $state('all');
   let page = $state(0);
   let hints = $state(0);
   let hintTier = $state(0);
@@ -86,7 +88,7 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
     solved = saved?.solved ?? false;
     deduced = saved?.deduced ?? false;
     reward = saved?.reward ?? false;
-    difficulty = saved?.difficulty || 'ปานกลาง';
+    difficulty = saved?.difficulty || 'medium';
     played = [...(saved?.played ?? [])];
     seen = [...(saved?.seen ?? [])];
     levels = {
@@ -99,7 +101,10 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
 
   const scene = $derived(flow?.scenes.find((item) => item.screen === screen) ?? null);
   const status = $derived(registry?.screens.find((item) => item.screen === screen)?.status ?? 'demo');
-  const title = $derived(registry?.screens.find((item) => item.screen === screen)?.title ?? 'ห้องของฉัน');
+  const title = $derived.by(() => {
+    const entry = registry?.screens.find((item) => item.screen === screen);
+    return entry ? tx(entry, 'title') : t('game.flow.myRoom');
+  });
 
   function persist(): void {
     onSave({
@@ -131,7 +136,7 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
     if (has(code)) return;
     evidence = [...evidence, code];
     const unlocked = flow?.slots.find((item) => item.unlockBy === code);
-    showToast(`ได้หลักฐาน ${code}${unlocked ? ` · ปลดล็อกเวลา: ${unlocked.title}` : ''}`);
+    showToast(t('game.flow.evidenceFound', { code }) + (unlocked ? t('game.flow.timeUnlocked', { title: tx(unlocked, 'title') }) : ''));
     persist();
   }
 
@@ -147,10 +152,10 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
     const found = flow?.dialogues.find((item) => item.slug === slug);
     if (!found) return;
     talk = {
-      who: found.who,
-      text: found.text,
+      who: tx(found, 'who'),
+      text: tx(found, 'text'),
       choices: found.choices.map((choice) => ({
-        title: choice.title,
+        title: tx(choice, 'title'),
         run: () => {
           talk = null;
           if (choice.next) openDialogue(choice.next);
@@ -167,8 +172,8 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
       text: lines[index] ?? '',
       choices: [
         last
-          ? { title: 'ปิด', run: () => (talk = null) }
-          : { title: 'ต่อ', run: () => openLines(who, lines, index + 1) },
+          ? { title: t('game.flow.close'), run: () => (talk = null) }
+          : { title: t('game.flow.next'), run: () => openLines(who, lines, index + 1) },
       ],
     };
   }
@@ -208,12 +213,12 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
       return;
     }
     if (action.type === 'toast') {
-      showToast(action.text);
+      showToast(tx(action, 'text'));
       return;
     }
     if (action.type === 'evidence') {
       addEvidence(action.evidence);
-      openLines(action.who, [action.text]);
+      openLines(tx(action, 'who'), [tx(action, 'text')]);
       return;
     }
     if (action.type === 'dialogue') {
@@ -221,7 +226,7 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
       return;
     }
     if (action.type === 'lines') {
-      openLines(action.who, action.lines);
+      openLines(tx(action, 'who'), txList(action, 'lines'));
       return;
     }
     if (action.type === 'clock') {
@@ -248,11 +253,11 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
     }
     if (action.type === 'box-lock') {
       if (solved) {
-        showToast('เปิดกล่องนี้แล้ว');
+        showToast(t('game.flow.boxOpened'));
         return;
       }
       if (!deduced) {
-        openLines('ย่ามะลิ', ['กล่องนี้ล็อกอยู่นะ ลองสรุปคดีบนกระดานให้ครบก่อนสิจ๊ะ']);
+        openLines(t('game.flow.grandma'), [t('game.flow.boxLocked')]);
         return;
       }
       hints = 0;
@@ -265,7 +270,7 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
       history = [];
       talk = null;
       await go('player-room', true, false);
-      showToast('กลับถึงบ้านแล้ว แตะช่องว่างเพื่อวางรูปตา');
+      showToast(t('game.flow.backHome'));
     }
   }
 
@@ -292,7 +297,7 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
     }
     hintTier = Math.min(hintTier + 1, 2);
     if (hintTier === 1) {
-      showToast(`คำใบ้: ลองไปดูที่ ${goal.room}`);
+      showToast(t('game.hint.tryRoom', { room: tx(goal, 'room') }));
       return;
     }
     const here = scene?.spots.find((item) => item.title.includes(goal.object) && (item.when === 'always' || item.when === slot));
@@ -302,10 +307,10 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
       hintTimer = window.setTimeout(() => {
         hintSpot = null;
       }, 2500);
-      showToast(`คำใบ้: แตะ “${here.title}”`);
+      showToast(t('game.hint.tapSpot', { title: tx(here, 'title') }));
       return;
     }
-    showToast(`คำใบ้: ไปที่ ${goal.room} แล้วแตะ “${goal.object}”`);
+    showToast(t('game.hint.goAndTap', { room: tx(goal, 'room'), object: tx(goal, 'object') }));
   }
 
   function endPractice(): void {
@@ -332,7 +337,7 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
     row[lvN - 1] = Math.max(row[lvN - 1] ?? 0, stars);
     levels = { ...levels, [lvGame]: row };
     persist();
-    showToast(`ด่าน ${lvN} ได้ ${'⭐'.repeat(stars)} ปลดล็อกด่านถัดไป`);
+    showToast(t('game.practice.levelDone', { n: lvN, stars: '⭐'.repeat(stars) }));
     endPractice();
     history = history.slice(0, -1);
     await go('level-map', true, false);
@@ -343,7 +348,7 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
       await finishPracticeLevel();
       return;
     }
-    showToast('กุญแจถึงรูกุญแจ!');
+    showToast(t('game.slide.win'));
     solved = true;
     addEvidence('E05');
     history = ['study', 'star-box'];
@@ -353,9 +358,9 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
   function puzzleHint(): void {
     hints += 1;
     if (hints === 1) {
-      if (screen === 'crossword') showToast('คำใบ้: ช่องที่ต้องเติมคือข้อ 3 แนวนอน');
-      else if (screen === 'jigsaw') showToast('คำใบ้: เลือกชิ้นให้แล้ว ลองหาช่องของมัน');
-      else showToast('คำใบ้: บล็อก A ขวางทางกุญแจอยู่ — ลองขยับ A');
+      if (screen === 'crossword') showToast(t('game.hint.crossword'));
+      else if (screen === 'jigsaw') showToast(t('game.hint.jigsaw'));
+      else showToast(t('game.hint.slide'));
       if (screen === 'crossword') cross = { ...cross, sel: '2,2' };
       if (screen === 'jigsaw') {
         jig = { ...jig, sel: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].find((index) => !jig.placed.includes(index)) ?? null };
@@ -363,8 +368,9 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
       return;
     }
     if (screen === 'crossword') {
-      const key = Object.keys(CROSS_SOLUTION).find((cell) => cross.fill[cell] !== CROSS_SOLUTION[cell]);
-      if (key) cross = { ...cross, fill: { ...cross.fill, [key]: CROSS_SOLUTION[key] } };
+      const solution = crossSolution();
+      const key = Object.keys(solution).find((cell) => cross.fill[cell] !== solution[cell]);
+      if (key) cross = { ...cross, fill: { ...cross.fill, [key]: solution[key] } };
       return;
     }
     if (screen === 'jigsaw') {
@@ -383,19 +389,21 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
   });
 
   const subtitle = $derived.by(() => {
-    if (screen === 'event-select') return 'แตะการ์ดเพื่อเริ่มเหตุการณ์';
-    if (screen === 'cutscene') return `หน้า ${page + 1}/3`;
-    if (screen === 'difficulty') return 'เลือกได้ใหม่ทุกครั้งที่เริ่มคดี ไม่มีจำกัดเวลา';
-    if (screen === 'practice') return `ปลดล็อกแล้ว ${played.length}/${flow?.practice.length ?? 0}`;
-    if (screen === 'level-map') return 'ผ่านด่านเพื่อปลดล็อกด่านถัดไป';
-    if (screen === 'notebook') return `หลักฐาน ${evidence.length}/5`;
-    if (screen === 'case-board') return 'ตอบ 3 ข้อ แล้วเลือกหลักฐานยืนยัน';
+    if (screen === 'event-select') return t('game.sub.eventSelect');
+    if (screen === 'cutscene') return t('game.sub.cutscene', { page: page + 1, total: 3 });
+    if (screen === 'difficulty') return t('game.sub.difficulty');
+    if (screen === 'practice') return t('game.sub.practice', { played: played.length, total: flow?.practice.length ?? 0 });
+    if (screen === 'level-map') return t('game.sub.levelMap');
+    if (screen === 'notebook') return t('game.sub.evidence', { count: evidence.length, total: 5 });
+    if (screen === 'case-board') return t('game.sub.caseBoard');
     if (screen === 'crossword' || screen === 'jigsaw' || screen === 'slide') {
-      return `${flow?.games.find((item) => item.game === (screen === 'slide' ? 'slide' : screen === 'jigsaw' ? 'jigsaw' : 'crossword'))?.hud ?? ''} · คำใบ้ ${hints}`;
+      const game = flow?.games.find((item) => item.game === (screen === 'slide' ? 'slide' : screen === 'jigsaw' ? 'jigsaw' : 'crossword'));
+      return `${game ? tx(game, 'hud') : ''} · ${t('game.sub.hints', { count: hints })}`;
     }
     if (!scene || !flow) return '';
-    const clock = scene.timed ? `⏳ ${flow.slots.find((item) => item.slot === slot)?.title ?? ''} · ` : '';
-    return `${clock}${scene.hud} · หลักฐาน ${evidence.length}/5`;
+    const current = flow.slots.find((item) => item.slot === slot);
+    const clock = scene.timed ? `⏳ ${current ? tx(current, 'title') : ''} · ` : '';
+    return `${clock}${tx(scene, 'hud')} · ${t('game.sub.evidence', { count: evidence.length, total: 5 })}`;
   });
 
   return {
@@ -446,7 +454,7 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
       if (talk) { talk = null; return; }
       if (overlay) { overlay = null; return; }
       const prev = history[history.length - 1];
-      if (!prev) { showToast('อยู่หน้านี้แล้ว'); return; }
+      if (!prev) { showToast(t('game.flow.alreadyHere')); return; }
       history = history.slice(0, -1);
       if (prev === 'player-room' || prev === 'level-map') endPractice();
       await go(prev, true, prev !== 'uncle');
@@ -467,7 +475,7 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
       const event = flow?.events.find((item) => item.eventId === eventId);
       if (!event) return;
       if (event.unlockAfter) {
-        showToast(solved && event.unlockAfter === 'case-01' ? 'เร็ว ๆ นี้' : event.lockedHint ?? 'ยังล็อกอยู่');
+        showToast(solved && event.unlockAfter === 'case-01' ? t('game.flow.comingSoon') : event.lockedHint ? tx(event, 'lockedHint') : t('game.flow.stillLocked'));
         return;
       }
       page = 0;
@@ -491,7 +499,7 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
     pickDifficulty(name: string) {
       difficulty = name;
       persist();
-      showToast(`ระดับ: ${name}`);
+      showToast(t('game.flow.difficultyPicked', { name: t(`game.difficulty.${name}` as MessageKey) }));
       history = ['player-room', 'event-select'];
       void go('house-map', true, false);
     },
@@ -500,7 +508,7 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
       const card = flow?.practice.find((item) => item.slug === slug);
       if (!card) return;
       if (!played.includes(slug) || card.future || card.game === 'ex') {
-        showToast(`ยังล็อก — ปลดล็อกจากคดี ${card.caseNo}`);
+        showToast(t('game.practice.lockedFromCase', { caseNo: card.caseNo }));
         return;
       }
       seen = seen.includes(slug) ? seen : [...seen, slug];
@@ -511,7 +519,7 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
     openLevel(index: number) {
       const row = levels[lvGame];
       const open = index === 0 || (row[index - 1] ?? 0) > 0;
-      if (!open) { showToast('ผ่านด่านก่อนหน้าก่อนนะ'); return; }
+      if (!open) { showToast(t('game.practice.clearPrevious')); return; }
       lvN = index + 1;
       practice = true;
       hints = 0;
@@ -528,7 +536,7 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
     },
     async submitCross() {
       if (practice) { await finishPracticeLevel(); return; }
-      if (!crossCorrect(cross.fill)) { showToast('ยังไม่ครบหรือไม่ถูก — ลองคำใบ้ได้'); return; }
+      if (!crossCorrect(cross.fill)) { showToast(t('game.cross.wrong')); return; }
       history = history.slice(0, -1);
       await go('uncle', true, false);
       openDialogue('flow/dialogue/mek-thanks');
@@ -536,7 +544,7 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
     pickPiece(index: number) { jig = { ...jig, sel: index }; },
     placePiece(index: number) {
       if (jig.sel === index) jig = { placed: [...jig.placed, index], sel: null };
-      else if (jig.sel !== null) showToast('ยังไม่ใช่ช่องนี้ ลองอีกที');
+      else if (jig.sel !== null) showToast(t('game.jigsaw.wrongSlot'));
     },
     async finishJigsaw() {
       if (practice) { await finishPracticeLevel(); return; }
@@ -550,7 +558,7 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
       const move = stepBlock(slide, name);
       slide = cloneSlide(slide);
       if (move === 'win') await onSlideWin();
-      else if (!move) showToast('บล็อกนี้ขยับไม่ได้ตอนนี้');
+      else if (!move) showToast(t('game.slide.stuck'));
     },
     puzzleHint,
     pickAnswer(index: number, value: string) {
@@ -575,11 +583,11 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
       const nextMarks = flow.questions.map((question, index) => {
         const rightAnswer = picks[index] === question.right;
         const rightProof = question.evidence.includes(proof[index] ?? '');
-        if (!hint && !(rightAnswer && rightProof)) hint = rightAnswer ? 'คำตอบอาจถูกแล้ว แต่หลักฐานใบนี้ยังไม่ได้บอกเรื่องนั้นนะ' : question.hint;
+        if (!hint && !(rightAnswer && rightProof)) hint = rightAnswer ? t('game.case.wrongProof') : tx(question, 'hint');
         return rightAnswer && rightProof ? 1 : -1;
       });
       marks = nextMarks;
-      if (hint) openLines('ย่ามะลิ', [hint]);
+      if (hint) openLines(t('game.flow.grandma'), [hint]);
       else {
         deduced = true;
         persist();
@@ -590,13 +598,13 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
       const found = flow?.slots.find((item) => item.slot === next);
       if (!found) return;
       if (found.unlockBy && !has(found.unlockBy)) {
-        showToast(found.hint ?? 'ยังล็อกอยู่');
+        showToast(found.hint ? tx(found, 'hint') : t('game.flow.stillLocked'));
         return;
       }
       overlay = null;
       slot = next;
       if (screen !== 'living-room') void go('living-room', true, false);
-      showToast(`⏳ ${found.title}`);
+      showToast(`⏳ ${tx(found, 'title')}`);
     },
     openDayTravel() { overlay = 'day'; },
   };

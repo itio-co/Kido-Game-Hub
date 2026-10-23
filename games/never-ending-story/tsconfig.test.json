@@ -1,12 +1,13 @@
 {
   "compilerOptions": {
     "target": "ES2022",
-    "module": "ES2022",
+    "module": "ESNext",
     "moduleResolution": "bundler",
     "strict": true,
     "skipLibCheck": true,
     "rewriteRelativeImportExtensions": true,
     "verbatimModuleSyntax": true,
+    "resolveJsonModule": true,
     "rootDir": ".",
     "outDir": ".test-out",
     "types": []
