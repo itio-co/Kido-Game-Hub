@@ -13,8 +13,8 @@
   });
 
   const mock = `${import.meta.env.BASE_URL}img/player-room-wide.jpg`;
-  /** Nightstand bounds in the room camera, as percent of the 390×844 frame. */
-  const tableCrop = { x: 30, y: 42, w: 34, h: 26 };
+  /** Nightstand in player-room-wide.jpg: x 53–86%, y 47–65%. */
+  const tableCrop = { x: 53, y: 47, w: 33, h: 18 };
 
   let orbitCanvas = $state<HTMLCanvasElement>();
 

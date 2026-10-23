@@ -9,6 +9,7 @@
   import ShowcaseView from './components/ShowcaseView.svelte';
   import SettingsPanel from './components/SettingsPanel.svelte';
   import Sheet from './components/Sheet.svelte';
+  import VersionBadge from './components/VersionBadge.svelte';
   import { loadFlow } from './lib/flow/loadFlow';
   import { createFlow } from './lib/flow/session.svelte';
   import { loadPlayerRoom } from './lib/loadRoom';
@@ -189,6 +190,7 @@
 </script>
 
 <div class="phone" data-text={save.player.textSize}>
+  <VersionBadge />
   {#if error}
     <p class="error">{error}</p>
   {:else if !room}
