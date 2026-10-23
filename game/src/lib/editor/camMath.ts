@@ -20,8 +20,11 @@ export type M3 = [V3, V3, V3];
 
 export type Cam = { f: number; cx: number; cy: number; R: M3; C: V3 };
 export type Axis = 0 | 1 | 2;
-/** `links` (optional): joint id per endpoint; endpoints with the same id are a shared corner and move together. */
-export type GuideLine = { id: number; axis: Axis; a: V2; b: V2; links?: { a?: number; b?: number } };
+/**
+ * `links` (optional): joint id per endpoint; endpoints with the same id are a shared corner and move together.
+ * `master` (optional): the authoritative line of its axis (see vpFit.ts / masterLine.ts); one per axis per group.
+ */
+export type GuideLine = { id: number; axis: Axis; a: V2; b: V2; links?: { a?: number; b?: number }; master?: boolean };
 export type PointPair = { id: number; world: V3 | null; image: V2 | null; label?: string };
 
 // ---------- small linear algebra ----------

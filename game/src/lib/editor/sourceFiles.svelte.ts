@@ -8,6 +8,7 @@
  * the dev-only API (scripts/editorFilesPlugin.mjs) reads and writes the files; elsewhere the
  * baseline is the copy bundled at build time and saving falls back to downloads.
  */
+import { withDefaultMasters } from './masterLine';
 import type { ShowcaseAsset } from '../showcaseAssets';
 import type { EditState } from './modelEditor';
 import {
@@ -154,7 +155,7 @@ export class SourceFiles {
       const data = match.fileData();
       const file = this.matchFile;
       if (file) {
-        if (!sameData(stripDerived(file), stripDerived(data))) out.push({ name: matchFileName(), kind: 'match', status: 'modified', data });
+        if (!sameData(stripDerived(withDefaultMasters(file)), stripDerived(data))) out.push({ name: matchFileName(), kind: 'match', status: 'modified', data });
       } else if (stableStringify(data) !== match.defaultText) {
         out.push({ name: matchFileName(), kind: 'match', status: 'new', data });
       }
@@ -212,7 +213,7 @@ export class SourceFiles {
   }
 }
 
-/** The `solved` block is derived from `camera`; compare without it. */
+/** The `solved` block is derived from `camera`; compare without it. (A missing `master` map = the default rule.) */
 function stripDerived(v: unknown): unknown {
   if (!v || typeof v !== 'object') return v;
   const { solved: _s, ...rest } = v as Record<string, unknown>;

@@ -236,6 +236,19 @@ UI labels are shown in bold as they appear in the (Thai) UI, with an English glo
    - Built pages (e.g. the preview link) have no API: use the **ดาวน์โหลด** (download) buttons and put the files in
      that folder yourself.
 
+9. **★ Master line per axis**: each axis of each group (object, room) has exactly one master line — the
+   reference the other lines of that axis follow.
+   - The first line drawn on an axis is its master. Change it with **★ ตั้งเป็นเส้นหลัก** (★ set as master, the
+     selected line) or the **★ เส้นหลัก X/Y/Z** picker / **⟳ ถัดไป** (next) in the VP panel, or right-click /
+     long-press a line → **★ ตั้งเป็นเส้นหลัก**. Setting a new master demotes the old one (undoable with ↶).
+   - Deleting the master promotes the remaining line with the lowest residual and says so in a toast.
+   - The master is drawn thicker with a ★ badge at its midpoint (axis colour), its ray is brighter and it is
+     highlighted in the loupe.
+   - Meaning: the VP is constrained to the master's infinite line (fitted from the other lines; the master alone
+     gives no VP); in parallel mode the direction is the master's; **รวม / ขนาน** align the other lines and never
+     move the master; residual colours and the VP lock are relative to that VP (the master shows 0°). Edge
+     refine may still adjust the master.
+
 ### Notes (English)
 
 - Coordinates: world = Blender cm (Z up, front = −Y). Image points are crop ("ref") pixels; the full mock-up is
@@ -297,6 +310,20 @@ UI labels are shown in bold as they appear in the (Thai) UI, with an English glo
   (one-point perspective) lock the lens or use point pairs. Modes are shared by both groups; the agreement panel
   flags a group whose lines are > 1° RMS from parallel. A suggestion appears when an auto-fitted VP lies
   > 20× the image diagonal away. Line undo does not revert the mode. There is no separate "finite only" mode.
+- Master lines (v0.2.9, `src/lib/editor/masterLine.ts` + `vpFit.ts`, tested in `tests/master.test.ts`): a line
+  carries `master: true` (so undo and the local draft keep it); `camera-match.json` stores
+  `master: { object: [x, y, z], room: [x, y, z] }` (line ids, `null` = axis without lines). A missing map (older
+  files) or an id that does not match a line of that axis falls back to the default rule (first line of the axis
+  in file order), and such a file does not show as modified. Constrained fit: with the master's homogeneous line
+  m, the VP is the smallest eigenvector of `Σ wᵢ lᵢ lᵢᵀ` restricted to the plane `m · v = 0` (the master gets
+  weight 0 and is never an outlier); parallel mode takes θ = the master's angle. Lock-to-VP is off while dragging
+  the master itself (it is the reference). Deletion promotes the lowest residual against the *free* fit of the
+  remaining lines.
+  **Joint rule** (one fit that mixes both groups — every axis when the object is aligned with the room, only Z
+  when yawed): the **room master is authoritative** — the object's master on that axis becomes an ordinary line
+  of the joint fit (`roomAuthoritative`), and in the yawed refinement master residuals are weighted ×10
+  (`MASTER_WEIGHT`). An object master only governs the joint fit on an axis where the room has no lines. The
+  per-group fits (overlay colours, the object↔room agreement panel) always use each group's own master.
 - Source files + dev save API (`scripts/editorFilesPlugin.mjs`, `src/lib/editor/editorFilesCore.mjs`,
   `src/lib/editor/sourceFiles.svelte.ts`, tested in `tests/editorFiles.test.mjs`): a Vite plugin with
   `apply: 'serve'` (never in a build) serves `GET /__editor/files?item=<item>` and `POST /__editor/files`

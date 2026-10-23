@@ -26,6 +26,7 @@ import { blenderValues, camFromMatched, camJson, focalFromLens, fullExport, hfov
 import type { DisplayMode } from './modelEditor';
 import { T } from './strings';
 import { jointMembers, linkEnds, removeLineLinks, unlinkEnd, type EndRef } from './guideSnap';
+import { applyMasterIds, ensureMasters, masterIds, masterOf, parseMasterMap, promoteMaster, setMasterFlag, type MasterMap } from './masterLine';
 import { alignLine, edgeMapFromRGBA, edgeOverlayRGBA, refineLine, type EdgeAlign, type EdgeMap } from './edgeAlign';
 import { consolidate as consolidateLines, fitAxes, parallelSuggestion, type Frame, type VpFit, type VpMode, type VpModes } from './vpFit';
 import {
@@ -57,6 +58,8 @@ type Saved = {
   lines: (GuideLine & { group?: LineGroup })[];
   /** v2: crop → full transform the lines were stored with. */
   crop?: CropT;
+  /** Master line id per axis per group (missing → first line of the axis; see masterLine.ts). */
+  master?: Partial<MasterMap> | null;
   /** v2: faint other-group lines shown. */
   ghost?: boolean;
   /** v2: full rays (T.groups.rays). */
@@ -242,7 +245,8 @@ export class MatchState {
       asset: this.asset.slug,
       crop: { ...this.crop },
       fullImage: [this.full.w, this.full.h],
-      lines: this.groupedFullLines().map((l) => ({ ...l, a: pt(l.a)!, b: pt(l.b)! })),
+      lines: this.groupedFullLines().map(({ master: _m, ...l }) => ({ ...l, a: pt(l.a)!, b: pt(l.b)! })),
+      master: this.masterMap(),
       pairs: ($state.snapshot(this.pairs) as PointPair[]).map((p) => ({ ...p, image: pt(p.image) ?? null })),
       lockVp: this.lockVp,
       vpModes: [...this.vpModes],
@@ -267,6 +271,7 @@ export class MatchState {
       cam: f.camera as Cam,
       crop: f.crop as CropT,
       lines: Array.isArray(f.lines) ? f.lines : [],
+      master: parseMasterMap(f.master),
       pairs: Array.isArray(f.pairs) ? f.pairs : [],
       ghost: this.ghost,
       rays: this.rays,
@@ -565,15 +570,58 @@ export class MatchState {
     const len = Math.min(r.w, r.h) * 0.3;
     const dir = axis === 2 ? [0, 1] : axis === 0 ? [1, 0.15] : [0.8, -0.6];
     const id = this.nextId++;
-    this.lines.push({ id, axis, a: [cx - dir[0]! * len * 0.5, cy - dir[1]! * len * 0.5], b: [cx + dir[0]! * len * 0.5, cy + dir[1]! * len * 0.5] });
+    // the first line drawn on an axis becomes its master
+    this.lines.push({ id, axis, a: [cx - dir[0]! * len * 0.5, cy - dir[1]! * len * 0.5], b: [cx + dir[0]! * len * 0.5, cy + dir[1]! * len * 0.5], ...(n ? {} : { master: true }) });
     this.selectedLine = id;
   }
-  removeLine(id: number | null): void {
-    if (id === null) return;
+  /** Delete a line. Deleting a master promotes the remaining line with the lowest residual; returns that message. */
+  removeLine(id: number | null): string | null {
+    if (id === null) return null;
+    const gone = this.lines.find((l) => l.id === id);
+    if (!gone) return null;
     this.pushLines();
     removeLineLinks(this.lines, id);
     this.lines = this.lines.filter((l) => l.id !== id);
     if (this.selectedLine === id) this.selectedLine = null;
+    if (!gone.master) return null;
+    const next = promoteMaster(this.lines, gone.axis, this.vpFrame, this.vpModes[gone.axis]);
+    if (next === null) return null;
+    const msg = T.master.promoted(this.lineLabel(next), AXIS_NAMES[gone.axis]);
+    this.say(msg);
+    return msg;
+  }
+
+  // ---------- master line per axis ----------
+  /** "X2" = the 2nd X line of the active group (drawing order). */
+  lineLabel(id: number): string {
+    const l = this.lines.find((x) => x.id === id);
+    if (!l) return '?';
+    return `${AXIS_NAMES[l.axis]}${this.lines.filter((x) => x.axis === l.axis).indexOf(l) + 1}`;
+  }
+  /** Master line id of an axis in the active group. */
+  masterId(axis: Axis): number | null {
+    return masterOf(this.lines, axis)?.id ?? null;
+  }
+  /** Master ids per axis of both groups (what camera-match.json stores). */
+  masterMap(): MasterMap {
+    return { object: masterIds(this.objectLines), room: masterIds(this.roomLines) };
+  }
+  /** Make a line the master of its axis (undoable); returns the toast, or null when nothing changed. */
+  setMaster(id: number | null): string | null {
+    const l = this.lines.find((x) => x.id === id);
+    if (!l || l.master) return null;
+    this.pushLines();
+    setMasterFlag(this.lines, l.id);
+    const msg = T.master.setToast(this.lineLabel(l.id), AXIS_NAMES[l.axis]);
+    this.say(msg);
+    return msg;
+  }
+  /** Move the master of `axis` to the next line of that axis (drawing order, wrapping). */
+  cycleMaster(axis: Axis): string | null {
+    const ls = this.lines.filter((l) => l.axis === axis);
+    if (ls.length < 2) return null;
+    const i = ls.findIndex((l) => l.master);
+    return this.setMaster(ls[(i + 1) % ls.length]!.id);
   }
   clearLines(): void {
     this.pushLines();
@@ -612,6 +660,7 @@ export class MatchState {
     }
     // box corners shared by lines of different axes start as linked corners
     for (const ends of at.values()) for (let i = 1; i < ends.length; i++) linkEnds(lines, ends[0]!, ends[i]!);
+    ensureMasters(lines);
     this.lines = lines;
     this.selectedLine = null;
     return true;
@@ -946,6 +995,7 @@ export class MatchState {
       cam: this.cam,
       crop: { ...this.crop },
       lines: this.groupedFullLines(),
+      master: this.masterMap(),
       ghost: this.ghost,
       rays: this.rays,
       roomAligned: this.roomAligned,
@@ -999,6 +1049,10 @@ export class MatchState {
         this.roomAligned = d.roomAligned !== false;
         this.roomYaw = Number.isFinite(d.roomYaw) ? d.roomYaw! : 0;
       }
+      // masters: the stored map wins, then line flags (drafts), then the default rule (first line per axis)
+      const stored = parseMasterMap(d.master);
+      applyMasterIds(groups.object, stored?.object);
+      applyMasterIds(groups.room, stored?.room);
       this.lines = this.group === 'room' ? groups.room : groups.object;
       this.otherLines = this.group === 'room' ? groups.object : groups.room;
       this.pairs = d.pairs ?? [];

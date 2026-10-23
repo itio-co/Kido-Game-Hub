@@ -42,6 +42,28 @@
     onChange();
     say(msg);
   }
+  /** Make a line its axis master, re-solve from the master-constrained VPs, and toast. */
+  function setMaster(id: number | null): void {
+    const msg = st.setMaster(id);
+    if (msg === null) return;
+    st.solveLines();
+    onChange();
+    say(msg);
+  }
+  function cycleMaster(a: Axis): void {
+    const msg = st.cycleMaster(a);
+    if (msg === null) return;
+    st.solveLines();
+    onChange();
+    say(msg);
+  }
+  const selLine = $derived(st.lines.find((l) => l.id === st.selectedLine));
+  /** Residual (deg) of a line against its axis fit, for the master picker. */
+  function resOf(a: Axis, id: number): string {
+    const f = st.vpFits[a];
+    const i = f ? f.ids.indexOf(id) : -1;
+    return f && i >= 0 ? ` · ${fmtDeg(f.fit.resDeg[i]!)}` : '';
+  }
   function modeHint(a: Axis): string {
     const h = st.parallelHints[a];
     if (!h) return '';
@@ -152,7 +174,7 @@
   </div>
   <div class="actions">
     <button type="button" class="danger" disabled={st.selectedLine === null} data-act="del-line"
-      onclick={() => { st.removeLine(st.selectedLine); onChange(); }}>ลบเส้นที่เลือก</button>
+      onclick={() => { const m = st.removeLine(st.selectedLine); if (m) st.solveLines(); onChange(); if (m) say(m); }}>ลบเส้นที่เลือก</button>
     <button type="button" data-act="seed-lines" onclick={() => { st.seedLines(); onChange(); }}>วางเส้นตามกล้องปัจจุบัน</button>
     <button type="button" data-act="clear-lines" onclick={() => { st.clearLines(); onChange(); }}>ล้างเส้น</button>
   </div>
@@ -192,13 +214,31 @@
         <button type="button" class="hint" data-parallel-hint={a} onclick={() => consolidate(a, 'parallel')}
           >{T.vp.hint(AXIS_NAMES[a], modeHint(a))}</button>
       {/if}
+      {@const axLines = st.lines.filter((l) => l.axis === a)}
+      {#if axLines.length}
+        {@const mid = st.masterId(a)}
+        <div class="mrow" data-master-row={a} data-master-id={mid}>
+          <span class="mlabel" style="color:{AXIS_COLORS[a]}">{T.master.label(AXIS_NAMES[a])}</span>
+          <select data-master-select={a} aria-label={T.master.selectAria(AXIS_NAMES[a])} value={mid ?? ''}
+            onchange={(e) => setMaster(Number(e.currentTarget.value))}>
+            {#each axLines as l (l.id)}
+              <option value={l.id}>{T.master.option(st.lineLabel(l.id))}{resOf(a, l.id)}</option>
+            {/each}
+          </select>
+          <button type="button" class="small" data-master-cycle={a} disabled={axLines.length < 2}
+            aria-label={T.master.cycleAria(AXIS_NAMES[a])} title={T.master.cycleAria(AXIS_NAMES[a])} onclick={() => cycleMaster(a)}>{T.master.cycle}</button>
+          <button type="button" class="small" data-set-master={a} disabled={!selLine || selLine.axis !== a || !!selLine.master}
+            title={T.master.setTitle(AXIS_NAMES[a])} onclick={() => setMaster(st.selectedLine)}>{T.master.set}</button>
+        </div>
+        {#if axLines.length === 1 && !f}<p class="tip mtip" data-master-only={a}>{T.master.onlyMaster(AXIS_NAMES[a])}</p>{/if}
+      {/if}
     {/each}
     <div class="actions">
       <button type="button" data-act="consolidate" disabled={!st.vpFits.some(Boolean)} onclick={() => consolidate()}>{T.vp.consolidateAll}</button>
       <button type="button" class:on={st.lockVp} aria-pressed={st.lockVp} data-lock-vp
         onclick={() => { st.lockVp = !st.lockVp; onChange(); say(T.vp.lockToast(st.lockVp)); }}>{T.vp.lock(st.lockVp)}</button>
     </div>
-    <p class="tip legend">{T.vp.legendColor} <span class="good">● &lt; 0.5°</span> <span class="warn">● ≤ 2°</span> <span class="bad">● &gt; 2°</span> · {T.vp.legendOutlier} · <b>{T.vp.legendConsolidate}</b> {T.vp.legendConsolidateText} · <b>{T.vp.legendLock}</b>{T.vp.legendLockText} · <b>{T.vp.legendParallel}</b>{T.vp.legendParallelText}</p>
+    <p class="tip legend">{T.vp.legendColor} <span class="good">● &lt; 0.5°</span> <span class="warn">● ≤ 2°</span> <span class="bad">● &gt; 2°</span> · {T.vp.legendOutlier} · <b>{T.vp.legendConsolidate}</b> {T.vp.legendConsolidateText} · <b>{T.vp.legendLock}</b>{T.vp.legendLockText} · <b>{T.vp.legendParallel}</b>{T.vp.legendParallelText} · <b>{T.master.legend}</b>{T.master.legendText}</p>
   </div>
   <div class="vpbox" data-edge-panel>
     <div class="vphead">{T.edges.heading} <small>{T.edges.headingNote}</small>
@@ -387,6 +427,10 @@
   .vprow .ax { font-size: 17px; }
   .vprow.vpm { grid-template-columns: 22px auto 1fr auto; }
   .pair { display: inline-flex; gap: 6px; }
+  .mrow { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 2px 0 8px 30px; font-size: 14px; }
+  .mrow .mlabel { font-weight: 700; white-space: nowrap; }
+  .mrow select { flex: 1 1 96px; min-height: 40px; min-width: 96px; padding: 0 6px; background: #1a2836; color: #e6f1fa; border: 1px solid #3a5670; border-radius: 6px; font-size: 14px; }
+  .mtip { margin: -4px 0 8px 30px; }
   .small.mode { min-width: 64px; min-height: 44px; border: 1px solid #3a5670; background: #1a2836; color: #c5d7e6; }
   .small.mode.on { background: #8fd8ff; color: #06202f; border-color: #8fd8ff; }
   .hint { width: 100%; min-height: 44px; text-align: left; font-size: 14px; font-weight: 400; border: 1px dashed #ffd36b; background: rgba(255, 211, 107, 0.08); color: #ffe7a6; border-radius: 8px; padding: 4px 8px; margin: 2px 0 6px; }

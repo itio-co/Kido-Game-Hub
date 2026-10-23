@@ -366,6 +366,7 @@
     let lock: LineDrag['lock'];
     if (st.lockVp) {
       const vp = lockVp(st.lines, id, st.vpFrame, members.map((m) => m.line), st.vpModes);
+      // (null when the dragged line is the master: the master is free, the others follow it)
       if (vp) lock = { fixed: [...line[end === 'a' ? 'b' : 'a']], vp, axis: line.axis };
     }
     startHandle(event, { kind: 'line', id, end, off: [at[0] - p[0], at[1] - p[1]], members, x: event.clientX, y: event.clientY, moved: false, lock });
@@ -389,8 +390,61 @@
       }, LONG_PRESS_MS);
     }
   }
+  // ---------- line context menu (right-click / long-press on a line body) ----------
+  let menu = $state<{ id: number; left: number; top: number } | null>(null);
+  let menuEl = $state<HTMLDivElement>();
+  const menuLine = $derived(menu ? st.lines.find((l) => l.id === menu!.id) : undefined);
+  function openMenu(id: number, clientX: number, clientY: number): void {
+    const r = svg!.getBoundingClientRect();
+    const W = 220;
+    const H = 120;
+    menu = {
+      id,
+      left: Math.max(4, Math.min(clientX - r.left - W / 2, r.width - W - 4)),
+      top: Math.max(4, Math.min(clientY - r.top + 18, r.height - H - 4)),
+    };
+    st.selectedLine = id;
+  }
+  /** Cancel a drag that has not moved yet (the press became a menu / unlink gesture). */
+  function abortDrag(): void {
+    st.dropLastPush();
+    drag = null;
+    dragId = null;
+    loupe = null;
+    lockRay = null;
+    hint = null;
+    st.endLive();
+  }
+  function menuSetMaster(): void {
+    const msg = menu ? st.setMaster(menu.id) : null;
+    menu = null;
+    if (msg === null) return;
+    st.solveLines();
+    onChange();
+    say?.(msg);
+  }
+  function lineContextMenu(event: MouseEvent, id: number): void {
+    event.preventDefault();
+    event.stopPropagation();
+    clearPress();
+    if (drag && !(drag.kind !== 'pair' && drag.moved)) abortDrag();
+    else if (drag) return;
+    openMenu(id, event.clientX, event.clientY);
+  }
+  function windowDown(event: PointerEvent): void {
+    if (menu && !menuEl?.contains(event.target as Node)) menu = null;
+  }
+  function windowKey(event: KeyboardEvent): void {
+    if (menu && event.key === 'Escape') menu = null;
+  }
+
   function segHandle(event: PointerEvent, id: number): void {
     const line = st.lines.find((l) => l.id === id)!;
+    // right button: leave it to the context menu
+    if (event.button === 2) {
+      event.stopPropagation();
+      return;
+    }
     startHandle(event, {
       kind: 'seg',
       id,
@@ -403,6 +457,17 @@
       y: event.clientY,
       moved: false,
     });
+    // long-press (touch / pen) on the line body = line menu (★ set as master); a mouse uses right-click
+    clearPress();
+    if (event.pointerType === 'mouse') return;
+    pressTimer = setTimeout(() => {
+      pressTimer = null;
+      if (drag?.kind !== 'seg' || drag.id !== id || drag.moved) return;
+      const { x, y } = drag;
+      abortDrag();
+      navigator.vibrate?.(25);
+      openMenu(id, x, y);
+    }, LONG_PRESS_MS);
   }
   function pairHandle(event: PointerEvent, id: number): void {
     const pair = st.pairs.find((q) => q.id === id)!;
@@ -633,7 +698,7 @@
     {/if}
     {#if info?.ray}
       <line x1={info.ray[0][0]} y1={info.ray[0][1]} x2={info.ray[1][0]} y2={info.ray[1][1]} stroke={c} class="vray" class:full={st.rays}
-        data-vp-ray={line.id} data-ray={st.rays ? line.id : null} />
+        class:master={line.master} data-vp-ray={line.id} data-ray={st.rays ? line.id : null} data-master-ray={line.master ? line.axis : null} />
     {/if}
     {#if highlighted.has(line.id)}
       <line x1={line.a[0]} y1={line.a[1]} x2={line.b[0]} y2={line.b[1]} class="hl" data-hl={line.id} />
@@ -647,7 +712,8 @@
       <line x1={line.a[0]} y1={line.a[1]} x2={line.b[0]} y2={line.b[1]} class="halo {info.band}" class:outlier={info.outlier}
         data-res={line.id} data-band={info.band} data-deg={info.deg.toFixed(4)} data-outlier={info.outlier || null} />
     {/if}
-    <line x1={line.a[0]} y1={line.a[1]} x2={line.b[0]} y2={line.b[1]} stroke={c} class="seg" class:sel />
+    <line x1={line.a[0]} y1={line.a[1]} x2={line.b[0]} y2={line.b[1]} stroke={c} class="seg" class:sel class:master={line.master}
+      data-line={line.id} data-master={line.master ? line.axis : null} />
     {#if ea && tickIds.has(line.id)}
       <g class="ticks" data-edge-ticks={line.id}>
         {#each ea.samples as sm, i (i)}
@@ -670,6 +736,14 @@
       <text x={(line.a[0] + line.b[0]) / 2 + 8 * s} y={(line.a[1] + line.b[1]) / 2 - 8 * s} font-size={12 * s} stroke-width={3 * s} class="rlabel {info.band}"
         data-res-label={line.id}>{info.outlier ? '⚠ ' : ''}{fmtDeg(info.deg)}</text>
     {/if}
+    {#if line.master}
+      {@const mx = (line.a[0] + line.b[0]) / 2}
+      {@const my = (line.a[1] + line.b[1]) / 2}
+      <g class="mbadge" data-master-badge={line.id} data-axis={line.axis} transform="translate({mx} {my})">
+        <circle r={11 * s} stroke={c} stroke-width={2} />
+        <text y={5.5 * s} font-size={16 * s} text-anchor="middle" fill={c}>★</text>
+      </g>
+    {/if}
     <line
       x1={line.a[0]}
       y1={line.a[1]}
@@ -681,6 +755,7 @@
       aria-label={T.snap.dragLineAria}
       data-seg={line.id}
       onpointerdown={(e) => segHandle(e, line.id)}
+      oncontextmenu={(e) => lineContextMenu(e, line.id)}
     />
   {/each}
   {#if lockRay?.ray}
@@ -797,7 +872,8 @@
         {/if}
         {@const ext = extend(line.a, line.b)}
         {#if ext}<line x1={ext[0][0]} y1={ext[0][1]} x2={ext[1][0]} y2={ext[1][1]} stroke={AXIS_COLORS[line.axis]} class="ext" />{/if}
-        <line x1={line.a[0]} y1={line.a[1]} x2={line.b[0]} y2={line.b[1]} stroke={AXIS_COLORS[line.axis]} class="lseg" />
+        {#if line.master}<line x1={line.a[0]} y1={line.a[1]} x2={line.b[0]} y2={line.b[1]} stroke={AXIS_COLORS[line.axis]} class="lmaster" data-loupe-master={line.id} />{/if}
+        <line x1={line.a[0]} y1={line.a[1]} x2={line.b[0]} y2={line.b[1]} stroke={AXIS_COLORS[line.axis]} class="lseg" class:master={line.master} />
         {#each ['a', 'b'] as const as end (end)}
           <circle cx={line[end][0]} cy={line[end][1]} r={7 * ls} fill="none" stroke={AXIS_COLORS[line.axis]} class="lend" />
         {/each}
@@ -822,6 +898,22 @@
   </div>
 {/if}
 
+{#if menu && menuLine}
+  {@const ax = AXIS_NAMES[menuLine.axis]}
+  <div class="lmenu" bind:this={menuEl} role="menu" aria-label={T.master.menuAria} style="left:{menu.left}px;top:{menu.top}px;border-color:{AXIS_COLORS[menuLine.axis]}"
+    data-line-menu={menuLine.id}>
+    <div class="mtitle" style="color:{AXIS_COLORS[menuLine.axis]}">{T.master.option(st.lineLabel(menuLine.id))}</div>
+    {#if menuLine.master}
+      <div class="mitem done" data-menu-is-master>{T.master.isMaster(ax)}</div>
+    {:else}
+      <button type="button" role="menuitem" class="mitem" data-menu-set-master onclick={menuSetMaster}>{T.master.set}</button>
+    {/if}
+    <button type="button" role="menuitem" class="mitem close" data-menu-close onclick={() => (menu = null)}>{T.master.menuClose}</button>
+  </div>
+{/if}
+
+<svelte:window onpointerdown={windowDown} onkeydown={windowKey} />
+
 <style>
   .guides { position: absolute; inset: 0; width: 100%; height: 100%; touch-action: none; cursor: grab; z-index: 3; }
   .guides.picking { cursor: crosshair; }
@@ -829,6 +921,21 @@
   line, circle, path, rect { vector-effect: non-scaling-stroke; }
   .ext { stroke-width: 1.5; stroke-dasharray: 7 6; opacity: 0.85; }
   .seg { stroke-width: 3.5; }
+  .seg.master { stroke-width: 6.5; }
+  .seg.master.sel { stroke-width: 8; }
+  .vray.master { stroke-width: 2; opacity: 0.85; }
+  .vray.full.master { stroke-width: 2.2; opacity: 0.9; }
+  .mbadge { pointer-events: none; }
+  .mbadge circle { fill: rgba(6, 16, 24, 0.85); }
+  .mbadge text { font-weight: 700; }
+  .lmaster { stroke-width: 9; opacity: 0.35; stroke-linecap: round; }
+  .lseg.master { stroke-width: 4; }
+  .lmenu { position: absolute; z-index: 6; width: 220px; display: grid; gap: 4px; padding: 8px; border: 2px solid; border-radius: 10px; background: rgba(10, 20, 30, 0.96); box-shadow: 0 6px 24px rgba(0, 0, 0, 0.5); }
+  .lmenu .mtitle { font-weight: 700; font-size: 14px; padding: 0 4px 2px; }
+  .lmenu .mitem { min-height: 44px; font-size: 16px; text-align: left; padding: 0 12px; border-radius: 8px; border: 1px solid #3a5670; background: #1a2836; color: #e6f1fa; display: flex; align-items: center; }
+  .lmenu button.mitem { cursor: pointer; }
+  .lmenu .mitem.done { border-style: dashed; color: #ffe14d; }
+  .lmenu .mitem.close { color: #9fb3c4; }
   .vray { stroke-width: 1; opacity: 0.4; pointer-events: none; }
   .vray.full { stroke-width: 1.2; opacity: 0.5; }
   .ghost { pointer-events: none; }

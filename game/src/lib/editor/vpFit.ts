@@ -12,11 +12,15 @@
  * a linked corner so shared corners never move), and `lockedPoint` keeps a dragged endpoint on the ray from the
  * line's fixed end to the VP of the OTHER lines of its axis.
  * Image (ref) px throughout; homogeneous VPs are in px too (third component 0 = at infinity).
+ *
+ * Master line: a segment flagged `master` is authoritative for its axis. The VP is constrained to lie on the master's
+ * infinite extension (a 1-D fit along it from the other lines; master alone = no VP yet), parallel mode uses the
+ * master's direction, the master's residual is 0 by definition, it is never an outlier and `consolidate` never moves it.
  */
 import type { Axis, GuideLine, M3, V2, V3 } from './camMath';
 import { T } from './strings.ts';
 
-export type Seg = { a: V2; b: V2 };
+export type Seg = { a: V2; b: V2; master?: boolean };
 export type Frame = { cx: number; cy: number; s: number };
 export type VpFit = {
   /** Homogeneous VP in px (w ≈ 0 → at infinity). */
@@ -134,7 +138,40 @@ function homLine(l: Seg, f: Frame): V3 | null {
   return n < 1e-12 ? null : [L[0] / n, L[1] / n, L[2] / n];
 }
 
-function solveWeighted(hl: (V3 | null)[], w: number[], f: Frame): V3 {
+/** Index of the (first) segment flagged `master`, or -1. */
+export function masterIndex(lines: readonly Seg[]): number {
+  return lines.findIndex((l) => l.master === true);
+}
+
+/**
+ * Smallest eigenvector of S restricted to the plane m⊥ (points v with m·v = 0, i.e. ON the line m):
+ * v = P e with P an orthonormal basis of m⊥ and e the smallest eigenvector of the 2×2 matrix PᵀSP.
+ */
+function constrainedEigenvector(S: M3, m: V3): V3 {
+  const n = Math.hypot(m[0], m[1], m[2]);
+  const u: V3 = [m[0] / n, m[1] / n, m[2] / n];
+  // start from the coordinate axis least aligned with u
+  const k = [0, 1, 2].reduce((b, i) => (Math.abs(u[i]!) < Math.abs(u[b]!) ? i : b), 0);
+  const e: V3 = [0, 0, 0];
+  e[k] = 1;
+  const d = dot3(e, u);
+  let p1: V3 = [e[0] - d * u[0], e[1] - d * u[1], e[2] - d * u[2]];
+  const n1 = Math.hypot(p1[0], p1[1], p1[2]);
+  p1 = [p1[0] / n1, p1[1] / n1, p1[2] / n1];
+  const p2 = cross3(u, p1);
+  const Sv = (v: V3): V3 => [dot3(S[0] as V3, v), dot3(S[1] as V3, v), dot3(S[2] as V3, v)];
+  const a = dot3(p1, Sv(p1));
+  const b = dot3(p1, Sv(p2));
+  const c = dot3(p2, Sv(p2));
+  const lam = (a + c) / 2 - Math.sqrt(((a - c) / 2) ** 2 + b * b);
+  const e1: [number, number] = [b, lam - a];
+  const e2: [number, number] = [lam - c, b];
+  let ev = Math.hypot(...e1) >= Math.hypot(...e2) ? e1 : e2;
+  if (Math.hypot(...ev) < 1e-300) ev = a <= c ? [1, 0] : [0, 1];
+  return [ev[0] * p1[0] + ev[1] * p2[0], ev[0] * p1[1] + ev[1] * p2[1], ev[0] * p1[2] + ev[1] * p2[2]];
+}
+
+function solveWeighted(hl: (V3 | null)[], w: number[], f: Frame, master: V3 | null = null): V3 {
   const S: M3 = [
     [0, 0, 0],
     [0, 0, 0],
@@ -144,7 +181,7 @@ function solveWeighted(hl: (V3 | null)[], w: number[], f: Frame): V3 {
     if (!l || !(w[i]! > 0)) return;
     for (let r = 0; r < 3; r++) for (let c = 0; c < 3; c++) S[r]![c]! += w[i]! * l[r]! * l[c]!;
   });
-  const v = smallestEigenvector(S);
+  const v = master ? constrainedEigenvector(S, master) : smallestEigenvector(S);
   // back to px: x = s·x' + c·w
   return [f.s * v[0] + f.cx * v[2], f.s * v[1] + f.cy * v[2], v[2]];
 }
@@ -159,17 +196,22 @@ const median = (xs: number[]): number => {
 /**
  * Best-fit vanishing point of ≥ 2 segments. `robust` (default) = Huber IRLS + outlier rejection.
  * Returns null with fewer than 2 usable (non-degenerate) segments.
+ * With a master (`opts.master` index, default: the segment flagged `master`) the VP is constrained to the master's
+ * line and fitted from the others (≥ 1 other usable segment needed); a degenerate master is ignored.
  */
-export function fitVP(lines: readonly Seg[], frame: Frame = frameOf(lines), opts: { robust?: boolean; huberDeg?: number } = {}): VpFit | null {
+export function fitVP(lines: readonly Seg[], frame: Frame = frameOf(lines), opts: { robust?: boolean; huberDeg?: number; master?: number } = {}): VpFit | null {
   const robust = opts.robust ?? true;
   const huber = opts.huberDeg ?? 1;
   const hl = lines.map((l) => homLine(l, frame));
   const usable = hl.filter(Boolean).length;
   if (usable < 2) return null;
+  let mi = opts.master ?? masterIndex(lines);
+  if (mi < 0 || !hl[mi]) mi = -1;
+  const mLine = mi >= 0 ? hl[mi]! : null;
   const outlier = lines.map(() => false);
-  const w: number[] = hl.map((l) => (l ? 1 : 0));
-  let vp = solveWeighted(hl, w, frame);
-  const res = (): number[] => lines.map((l) => angleToVp(l, vp));
+  const w: number[] = hl.map((l, i) => (l && i !== mi ? 1 : 0));
+  let vp = solveWeighted(hl, w, frame, mLine);
+  const res = (): number[] => lines.map((l, i) => (i === mi ? 0 : angleToVp(l, vp)));
   if (robust && usable >= 3) {
     for (let round = 0; round < usable; round++) {
       // Huber IRLS on the current inliers
@@ -177,26 +219,27 @@ export function fitVP(lines: readonly Seg[], frame: Frame = frameOf(lines), opts
         const r = res();
         let change = 0;
         hl.forEach((l, i) => {
-          if (!l || outlier[i]) return;
+          if (!l || outlier[i] || i === mi) return;
           const nw = r[i]! <= huber ? 1 : huber / r[i]!;
           change = Math.max(change, Math.abs(nw - w[i]!));
           w[i] = nw;
         });
-        vp = solveWeighted(hl, w, frame);
+        vp = solveWeighted(hl, w, frame, mLine);
         if (change < 1e-6) break;
       }
       // reject the worst line when it is clearly off (keep at least 3 inliers in the fit)
       const inl = lines.map((_, i) => i).filter((i) => hl[i] && !outlier[i]);
       if (inl.length <= 3) break;
       const r = res();
-      const med = Math.max(median(inl.map((i) => r[i]!)), 0.25);
+      const cand = inl.filter((i) => i !== mi); // the master is never an outlier
+      const med = Math.max(median(cand.map((i) => r[i]!)), 0.25);
       let worst = -1;
-      for (const i of inl) if (worst < 0 || r[i]! > r[worst]!) worst = i;
+      for (const i of cand) if (worst < 0 || r[i]! > r[worst]!) worst = i;
       if (worst < 0 || r[worst]! <= Math.max(RES_BAD_DEG, 3 * med)) break;
       outlier[worst] = true;
       w[worst] = 0;
-      hl.forEach((l, i) => { if (l && !outlier[i]) w[i] = 1; });
-      vp = solveWeighted(hl, w, frame);
+      hl.forEach((l, i) => { if (l && !outlier[i] && i !== mi) w[i] = 1; });
+      vp = solveWeighted(hl, w, frame, mLine);
     }
   }
   // fix the overall sign so the VP is stable (w ≥ 0, else x ≥ 0)
@@ -235,14 +278,17 @@ const dAng = (th: number, th0: number): number => {
  * Parallel fit: weighted (by length) mean direction of ≥ 2 segments, by doubled-angle averaging (sign-free),
  * with the same outlier rejection as fitVP (the worst line is dropped while it is > max(2°, 3 × median) and more
  * than 3 inliers remain). The VP is [cos θ, sin θ, 0]; residuals are the angular deviations from θ.
+ * With a master (`master` index, default: the segment flagged `master`) θ is the master's direction.
  */
-export function fitParallel(lines: readonly Seg[]): VpFit | null {
+export function fitParallel(lines: readonly Seg[], master: number = masterIndex(lines)): VpFit | null {
   const th = lines.map((l) => Math.atan2(l.b[1] - l.a[1], l.b[0] - l.a[0]) * D);
   const len = lines.map((l) => Math.hypot(l.b[0] - l.a[0], l.b[1] - l.a[1]));
   const ok = len.map((n) => n > 1e-9);
   if (ok.filter(Boolean).length < 2) return null;
+  const mi = master >= 0 && ok[master] ? master : -1;
   const outlier = lines.map(() => false);
   const mean = (): number => {
+    if (mi >= 0) return th[mi]!;
     let sx = 0;
     let sy = 0;
     th.forEach((t, i) => {
@@ -256,17 +302,18 @@ export function fitParallel(lines: readonly Seg[]): VpFit | null {
   for (;;) {
     const inl = lines.map((_, i) => i).filter((i) => ok[i] && !outlier[i]);
     if (inl.length <= 3) break;
-    const r = inl.map((i) => Math.abs(dAng(th[i]!, t0)));
+    const cand = inl.filter((i) => i !== mi); // the master is never an outlier
+    const r = cand.map((i) => Math.abs(dAng(th[i]!, t0)));
     const med = Math.max(median(r), 0.25);
     let wi = 0;
     for (let k = 1; k < r.length; k++) if (r[k]! > r[wi]!) wi = k;
-    if (r[wi]! <= Math.max(RES_BAD_DEG, 3 * med)) break;
-    outlier[inl[wi]!] = true;
+    if (!r.length || r[wi]! <= Math.max(RES_BAD_DEG, 3 * med)) break;
+    outlier[cand[wi]!] = true;
     t0 = mean();
   }
   let vp: V3 = [Math.cos(t0 / D), Math.sin(t0 / D), 0];
   if (vp[0] < 0 || (vp[0] === 0 && vp[1] < 0)) vp = [-vp[0], -vp[1], 0];
-  const resDeg = th.map((t, i) => (ok[i] ? Math.abs(dAng(t, t0)) : 0));
+  const resDeg = th.map((t, i) => (ok[i] && i !== mi ? Math.abs(dAng(t, t0)) : 0));
   const inl = lines.map((_, i) => i).filter((i) => ok[i] && !outlier[i]);
   const rmsDeg = Math.sqrt(inl.reduce((s, i) => s + resDeg[i]! ** 2, 0) / Math.max(1, inl.length));
   // px: distance of endpoint a from the line through the midpoint along θ
@@ -279,7 +326,7 @@ export function fitParallel(lines: readonly Seg[]): VpFit | null {
   return { vp, point: null, resDeg, outlier, rmsDeg, rms: Math.sqrt(px / Math.max(1, inl.length)) };
 }
 
-/** fitVP or fitParallel, by mode. */
+/** fitVP or fitParallel, by mode (both honour a segment flagged `master`). */
 export function fitVPMode(lines: readonly Seg[], frame: Frame = frameOf(lines), mode: VpMode = 'auto'): VpFit | null {
   return mode === 'parallel' ? fitParallel(lines) : fitVP(lines, frame);
 }
@@ -330,12 +377,13 @@ export type ConsolidateResult = {
   lines: GuideLine[];
   /** Lines that were turned. */
   moved: number[];
-  /** Lines left alone, with the reason (Thai, for the UI). */
+  /** Lines left alone, with the reason (localised UI text). */
   skipped: { id: number; reason: string }[];
 };
 
 /**
- * Make every line of the given axes pass exactly through its axis' best-fit VP.
+ * Make every line of the given axes pass exactly through its axis' best-fit VP (master-constrained when the axis has a
+ * master; the master itself never moves).
  * Unlinked lines turn about their midpoint (length + centre kept). A line with ONE linked corner turns about that
  * corner instead, so the shared corner (and every other line on it) stays put. A line with both ends linked is
  * skipped and reported (turning it would tear a corner apart). Returns new line objects; the input is not changed.
@@ -350,7 +398,7 @@ export function consolidate(lines: readonly GuideLine[], axes: readonly Axis[], 
     const fit = fitVPMode(ls, f, modes[axis] ?? 'auto');
     if (!fit) continue;
     ls.forEach((l, i) => {
-      if (fit.resDeg[i]! <= tolDeg) return;
+      if (l.master || fit.resDeg[i]! <= tolDeg) return; // the master is never moved
       const la = l.links?.a !== undefined;
       const lb = l.links?.b !== undefined;
       if (la && lb) {
@@ -374,10 +422,12 @@ export function consolidate(lines: readonly GuideLine[], axes: readonly Axis[], 
 /**
  * "Lock to VP": the VP fitted from the OTHER lines of `line`'s axis (needs ≥ 2 of them), or null.
  * `exclude` = further lines that move with the drag (they are left out of the fit too).
+ * The fit is master-constrained when the master is among the others. Dragging the master itself is never locked
+ * (null): the master is the reference the other lines follow.
  */
 export function lockVp(lines: readonly GuideLine[], line: number, frame?: Frame, exclude: readonly number[] = [], modes: readonly VpMode[] = AUTO_MODES): V3 | null {
   const me = lines.find((l) => l.id === line);
-  if (!me) return null;
+  if (!me || me.master) return null;
   const others = lines.filter((l) => l.axis === me.axis && l.id !== line && !exclude.includes(l.id));
   const mode = modes[me.axis] ?? 'auto';
   // parallel: one other line already fixes the direction

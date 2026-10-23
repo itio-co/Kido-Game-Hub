@@ -16,6 +16,7 @@
   import { partLabel } from '../lib/editor/partLabels';
   import { SourceFiles, editsStorageKey, type FileChange } from '../lib/editor/sourceFiles.svelte';
   import { glbFileName, stableStringify } from '../lib/editor/editorFilesCore.mjs';
+  import { withDefaultMasters } from '../lib/editor/masterLine';
   import { T } from '../lib/editor/strings';
 
   const options = SHOWCASE_ASSETS.flatMap((asset) =>
@@ -63,7 +64,7 @@
     void sf.ready.then(() => {
       if (files !== sf) return;
       const disk = sf.matchFile;
-      if (m && m.origin !== 'draft' && disk && stableStringify(disk) !== stableStringify(m.fileData()) && m.loadFile(disk)) {
+      if (m && m.origin !== 'draft' && disk && stableStringify(withDefaultMasters(disk)) !== stableStringify(m.fileData()) && m.loadFile(disk)) {
         m.origin = 'file';
         m.save();
       }

@@ -43,6 +43,7 @@ import {
 } from './camMath.ts';
 import { AUTO_MODES, angleToVp, fitParallel, fitVPMode, type Frame, type VpMode } from './vpFit.ts';
 import { T } from './strings.ts';
+import { roomAuthoritative } from './masterLine.ts';
 
 export type LineGroup = 'object' | 'room';
 export type GroupedLine = GuideLine & { group: LineGroup };
@@ -185,12 +186,15 @@ export type JointOpts = {
 export type JointResult = { ok: boolean; message?: string; cam?: Cam; yaw: number; yawSolved: boolean };
 
 /** Line residuals (px) of both groups against one camera (object frame) and yaw. */
+/** Weight of a master line's residual in the joint refinement (≈ a hard constraint: the camera follows the master). */
+export const MASTER_WEIGHT = 10;
+
 export function jointResiduals(cam: Cam, object: readonly GuideLine[], room: readonly GuideLine[], yawDeg: number): number[] {
   const vp = (g: LineGroup, a: Axis) => vpOfDir(cam, axisDir(g, a, yawDeg));
   const vps = { object: [0, 1, 2].map((a) => vp('object', a as Axis)), room: [0, 1, 2].map((a) => vp('room', a as Axis)) };
   const r: number[] = [];
   for (const [g, ls] of [['object', object], ['room', room]] as const) {
-    for (const l of ls) r.push(lineResidual([(l.a[0] + l.b[0]) / 2, (l.a[1] + l.b[1]) / 2], vps[g][l.axis]!, l.a));
+    for (const l of ls) r.push((l.master ? MASTER_WEIGHT : 1) * lineResidual([(l.a[0] + l.b[0]) / 2, (l.a[1] + l.b[1]) / 2], vps[g][l.axis]!, l.a));
   }
   return r;
 }
@@ -259,8 +263,11 @@ const hasHorizontal = (ls: readonly GuideLine[]) => ls.some((l) => l.axis !== 2)
  * One camera (focal + rotation, object frame, FULL px) from both groups. Position is untouched (prior.C).
  * Lines and prior must already be in full px.
  */
-export function solveJoint(object: readonly GuideLine[], room: readonly GuideLine[], prior: Cam, opts: JointOpts): JointResult {
+export function solveJoint(objectIn: readonly GuideLine[], room: readonly GuideLine[], prior: Cam, opts: JointOpts): JointResult {
   const modes = opts.modes ?? AUTO_MODES;
+  // master rule: on every axis both groups share (all axes when aligned, the vertical Z when yawed) the ROOM master is
+  // authoritative; the object master is an ordinary line there (see masterLine.ts)
+  const object = roomAuthoritative(objectIn, opts.aligned ? room : room.filter((l) => l.axis === 2));
   const base = { frame: opts.frame, fixedF: opts.fixedF, principal: opts.principal, modes };
   const yaw0 = opts.yaw0 ?? 0;
   if (opts.aligned) {

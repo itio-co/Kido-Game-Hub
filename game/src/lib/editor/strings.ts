@@ -24,6 +24,38 @@ export const MESSAGES = {
   'editor.common.redoAria': { en: 'Redo', th: 'ทำซ้ำ (Redo)' },
   'editor.common.mm': { en: '{v} mm', th: '{v} มม.' },
 
+  // --- master guide line (one per axis per group) ----------------------------------------------------------------
+  'cameraMatch.master.set': { en: '★ Set as master', th: '★ ตั้งเป็นเส้นหลัก' },
+  'cameraMatch.master.setTitle': {
+    en: 'Make the selected {axis} line the master of its axis',
+    th: 'ให้เส้น {axis} ที่เลือกเป็นเส้นหลักของแกนนี้',
+  },
+  'cameraMatch.master.label': { en: '★ Master {axis}', th: '★ เส้นหลัก {axis}' },
+  'cameraMatch.master.selectAria': { en: 'Master line of axis {axis}', th: 'เส้นหลักของแกน {axis}' },
+  'cameraMatch.master.option': { en: 'Line {name}', th: 'เส้น {name}' },
+  'cameraMatch.master.cycle': { en: '⟳ Next', th: '⟳ ถัดไป' },
+  'cameraMatch.master.cycleAria': { en: 'Make the next {axis} line the master', th: 'เลื่อนเส้นหลักแกน {axis} ไปเส้นถัดไป' },
+  'cameraMatch.master.isMaster': { en: '★ Master of axis {axis}', th: '★ เส้นหลักของแกน {axis}' },
+  'cameraMatch.master.setToast': {
+    en: '★ Line {name} is now the master of axis {axis}',
+    th: '★ เส้น {name} เป็นเส้นหลักของแกน {axis} แล้ว',
+  },
+  'cameraMatch.master.promoted': {
+    en: 'Deleted the master of axis {axis} — line {name} (lowest residual) is the new master',
+    th: 'ลบเส้นหลักแกน {axis} แล้ว — เส้น {name} (คลาดเคลื่อนน้อยสุด) เป็นเส้นหลักแทน',
+  },
+  'cameraMatch.master.onlyMaster': {
+    en: 'Only the master so far — add another {axis} line',
+    th: 'มีแต่เส้นหลัก — เพิ่มเส้น {axis} อีกเส้น',
+  },
+  'cameraMatch.master.menuAria': { en: 'Line actions', th: 'คำสั่งของเส้น' },
+  'cameraMatch.master.menuClose': { en: 'Close', th: 'ปิด' },
+  'cameraMatch.master.legend': { en: '★ Master', th: '★ เส้นหลัก' },
+  'cameraMatch.master.legendText': {
+    en: ': the reference line of its axis — the vanishing point lies on it (parallel: its direction), Merge / Parallel align the other lines to it and never move it · set it here, or long-press / right-click a line',
+    th: ': เส้นอ้างอิงของแกน — จุดลับตาอยู่บนแนวเส้นนี้ (ขนาน: ใช้ทิศของมัน) ปุ่มรวม/ขนานจัดเส้นอื่นตามมันและไม่ขยับมัน · ตั้งได้ที่นี่ หรือกดค้าง/คลิกขวาที่เส้น',
+  },
+
   // --- overlay show modes ---------------------------------------------------------------------------------------
   'cameraMatch.showModes.drag': { en: 'While dragging', th: 'ขณะลาก' },
   'cameraMatch.showModes.always': { en: 'Always', th: 'เปิดตลอด' },
@@ -423,6 +455,25 @@ export const T = {
     tipHold: t('cameraMatch.snap.tipHold'),
     tipHoldRest: t('cameraMatch.snap.tipHoldRest'),
     tipLinkedEnds: (n: number) => t('cameraMatch.snap.tipLinkedEnds', { n }),
+  },
+
+  /** Master guide line per axis. `name` = a line label such as "X2". */
+  master: {
+    set: t('cameraMatch.master.set'),
+    setTitle: (axis: string) => t('cameraMatch.master.setTitle', { axis }),
+    label: (axis: string) => t('cameraMatch.master.label', { axis }),
+    selectAria: (axis: string) => t('cameraMatch.master.selectAria', { axis }),
+    option: (name: string) => t('cameraMatch.master.option', { name }),
+    cycle: t('cameraMatch.master.cycle'),
+    cycleAria: (axis: string) => t('cameraMatch.master.cycleAria', { axis }),
+    isMaster: (axis: string) => t('cameraMatch.master.isMaster', { axis }),
+    setToast: (name: string, axis: string) => t('cameraMatch.master.setToast', { name, axis }),
+    promoted: (name: string, axis: string) => t('cameraMatch.master.promoted', { name, axis }),
+    onlyMaster: (axis: string) => t('cameraMatch.master.onlyMaster', { axis }),
+    menuAria: t('cameraMatch.master.menuAria'),
+    menuClose: t('cameraMatch.master.menuClose'),
+    legend: t('cameraMatch.master.legend'),
+    legendText: t('cameraMatch.master.legendText'),
   },
 
   vp: {
