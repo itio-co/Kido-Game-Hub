@@ -9,6 +9,10 @@
  *   are mapped into ref px with their crop offset, so lines and intrinsics never depend on what is shown.
  * - u = f · x/z + cx, v = f · y/z + cy.
  */
+import { fitVP, type Frame } from './vpFit';
+export { smallestEigenvector } from './vpFit';
+export type { Frame } from './vpFit';
+
 export type V2 = [number, number];
 export type V3 = [number, number, number];
 export type M3 = [V3, V3, V3];
@@ -86,51 +90,6 @@ export function solveLinear(A: number[][], b: number[]): number[] | null {
     }
   }
   return M.map((row, i) => row[n]! / row[i]!);
-}
-
-/** Eigenvector of the smallest eigenvalue of a symmetric 3×3 matrix (Jacobi). */
-export function smallestEigenvector(S: M3): V3 {
-  const a = S.map((r) => [...r]);
-  const v = [
-    [1, 0, 0],
-    [0, 1, 0],
-    [0, 0, 1],
-  ];
-  for (let sweep = 0; sweep < 50; sweep++) {
-    let off = 0;
-    for (let p = 0; p < 3; p++) for (let q = p + 1; q < 3; q++) off += a[p]![q]! ** 2;
-    if (off < 1e-24) break;
-    for (let p = 0; p < 3; p++) {
-      for (let q = p + 1; q < 3; q++) {
-        if (Math.abs(a[p]![q]!) < 1e-30) continue;
-        const theta = (a[q]![q]! - a[p]![p]!) / (2 * a[p]![q]!);
-        const t = Math.sign(theta || 1) / (Math.abs(theta) + Math.sqrt(theta * theta + 1));
-        const c = 1 / Math.sqrt(t * t + 1);
-        const s = t * c;
-        for (let k = 0; k < 3; k++) {
-          const akp = a[k]![p]!;
-          const akq = a[k]![q]!;
-          a[k]![p] = c * akp - s * akq;
-          a[k]![q] = s * akp + c * akq;
-        }
-        for (let k = 0; k < 3; k++) {
-          const apk = a[p]![k]!;
-          const aqk = a[q]![k]!;
-          a[p]![k] = c * apk - s * aqk;
-          a[q]![k] = s * apk + c * aqk;
-        }
-        for (let k = 0; k < 3; k++) {
-          const vkp = v[k]![p]!;
-          const vkq = v[k]![q]!;
-          v[k]![p] = c * vkp - s * vkq;
-          v[k]![q] = s * vkp + c * vkq;
-        }
-      }
-    }
-  }
-  let best = 0;
-  for (let i = 1; i < 3; i++) if (a[i]![i]! < a[best]![best]!) best = i;
-  return [v[0]![best]!, v[1]![best]!, v[2]![best]!];
 }
 
 // ---------- rotations ----------
@@ -247,33 +206,14 @@ function lineResidual(m: V2, vp: V3, q: V2): number {
 }
 
 // ---------- vanishing points from lines ----------
-export type Frame = { cx: number; cy: number; s: number };
 
-/** Least-squares vanishing point of ≥2 lines (homogeneous, ref px). */
+/**
+ * Consolidated vanishing point of ≥2 lines (homogeneous, ref px): robust total-least-squares fit over ALL lines
+ * of the axis (Huber IRLS + outlier rejection, see vpFit.ts). `rms` = px residual of the inlier lines.
+ */
 export function fitVanishingPoint(lines: GuideLine[], frame: Frame): { vp: V3; rms: number } | null {
-  if (lines.length < 2) return null;
-  const S: M3 = [
-    [0, 0, 0],
-    [0, 0, 0],
-    [0, 0, 0],
-  ];
-  const nrm = (p: V2): V3 => [(p[0] - frame.cx) / frame.s, (p[1] - frame.cy) / frame.s, 1];
-  for (const line of lines) {
-    let l = cross(nrm(line.a), nrm(line.b));
-    const n = Math.hypot(l[0], l[1]);
-    if (n < 1e-12) continue;
-    l = scale(l, 1 / n);
-    for (let i = 0; i < 3; i++) for (let j = 0; j < 3; j++) S[i]![j]! += l[i]! * l[j]!;
-  }
-  const v = smallestEigenvector(S);
-  // back to pixels: x = s·x' + c·w
-  const vp: V3 = [frame.s * v[0] + frame.cx * v[2], frame.s * v[1] + frame.cy * v[2], v[2]];
-  let sum = 0;
-  for (const line of lines) {
-    const m: V2 = [(line.a[0] + line.b[0]) / 2, (line.a[1] + line.b[1]) / 2];
-    sum += lineResidual(m, vp, line.a) ** 2;
-  }
-  return { vp, rms: Math.sqrt(sum / lines.length) };
+  const fit = fitVP(lines, frame);
+  return fit ? { vp: fit.vp, rms: fit.rms } : null;
 }
 
 /** Principal point from three finite vanishing points (orthocentre of their triangle). */

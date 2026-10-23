@@ -30,6 +30,13 @@
     { id: 'free', label: 'ปรับเอง/จากคู่จุด' },
   ];
 
+  const band = (deg: number): string => (deg < 0.5 ? 'good' : deg <= 2 ? 'warn' : 'bad');
+  const fmtDeg = (deg: number): string => `${deg < 0.1 ? deg.toFixed(2) : deg.toFixed(1)}°`;
+  function consolidate(axis?: Axis): void {
+    const r = st.consolidate(axis);
+    onChange();
+    say(r.message);
+  }
   function run(fn: () => boolean): void {
     fn();
     onChange();
@@ -124,6 +131,29 @@
       onclick={() => { st.undoLines(); onChange(); }}>↶ ย้อน</button>
     <button type="button" class="small" aria-label="ทำซ้ำการแก้เส้น" disabled={st.lineRedoCount === 0} data-act="redo-lines"
       onclick={() => { st.redoLines(); onChange(); }}>↷ ทำซ้ำ</button>
+  </div>
+  <div class="vpbox" data-vp-panel>
+    <div class="vphead">จุดลับตารวม <small>(หาจุดที่ดีที่สุดจากทุกเส้นของแกน)</small></div>
+    {#each [0, 1, 2] as const as a (a)}
+      {@const f = st.vpFits[a]}
+      <div class="vprow" data-vp-row={a}>
+        <b class="ax" style="color:{AXIS_COLORS[a]}">{AXIS_NAMES[a]}</b>
+        {#if f}
+          {@const nOut = f.fit.outlier.filter(Boolean).length}
+          <span class="rms {band(f.fit.rmsDeg)}" data-vp-rms={a} data-rms={f.fit.rmsDeg.toFixed(4)}>RMS {fmtDeg(f.fit.rmsDeg)}</span>
+          <span class="n">{f.ids.length} เส้น{nOut ? ` · ⚠ ${nOut} เส้นเพี้ยน` : ''}</span>
+          <button type="button" class="small" data-consolidate={a} onclick={() => consolidate(a)}>รวม {AXIS_NAMES[a]}</button>
+        {:else}
+          <span class="n">ต้องมีอย่างน้อย 2 เส้น</span>
+        {/if}
+      </div>
+    {/each}
+    <div class="actions">
+      <button type="button" data-act="consolidate" disabled={!st.vpFits.some(Boolean)} onclick={() => consolidate()}>🎯 รวมจุดลับตา</button>
+      <button type="button" class:on={st.lockVp} aria-pressed={st.lockVp} data-lock-vp
+        onclick={() => { st.lockVp = !st.lockVp; onChange(); say(st.lockVp ? 'ล็อกเข้าจุดลับตา: เปิด (แกนที่มี 3 เส้นขึ้นไป)' : 'ล็อกเข้าจุดลับตา: ปิด'); }}>🔒 ล็อกเข้าจุดลับตา {st.lockVp ? 'เปิด' : 'ปิด'}</button>
+    </div>
+    <p class="tip legend">สีขอบเส้น = มุมเพี้ยนจากจุดลับตา: <span class="good">● &lt; 0.5°</span> <span class="warn">● ≤ 2°</span> <span class="bad">● &gt; 2°</span> · ⚠ = เส้นเพี้ยนมาก (ไม่นำมาคิด) · <b>รวมจุดลับตา</b> หมุนทุกเส้นรอบจุดกึ่งกลาง (หรือรอบมุมที่เชื่อม) ให้ผ่านจุดเดียวกัน · <b>ล็อก</b>: ลากปลายเส้นแล้วเส้นยังชี้ไปจุดลับตาของเส้นอื่น</p>
   </div>
   <div class="field" role="radiogroup" aria-label="โหมดเทียบความต่าง">
     <span>โหมดเทียบความต่าง (โมเดล ⊖ ภาพ: ตรงกัน = มืด, เพี้ยน = เรืองแสง)</span>
@@ -238,6 +268,16 @@
   button.primary { background: #ffcf4d; border-color: #ffcf4d; color: #2a1a00; }
   button.danger { border-color: #a5484a; color: #ffb3b3; }
   .small { min-height: 40px; font-size: 15px; padding: 0 10px; }
+  .vpbox { border: 1px solid #2c4256; border-radius: 10px; padding: 8px 10px; margin: 10px 0; background: rgba(255, 255, 255, 0.03); }
+  .vphead { font-size: 15px; color: #e6f0f8; font-weight: 700; margin-bottom: 4px; }
+  .vphead small { font-weight: 400; color: #9fb4c6; }
+  .vprow { display: grid; grid-template-columns: 22px auto 1fr auto; align-items: center; gap: 8px; min-height: 40px; font-size: 15px; color: #c5d7e6; }
+  .vprow .ax { font-size: 17px; }
+  .rms { font-weight: 700; font-variant-numeric: tabular-nums; }
+  .good { color: #3ddc6a; }
+  .warn { color: #ffb020; }
+  .bad { color: #ff4d4d; }
+  .legend span { white-space: nowrap; font-weight: 700; }
   .actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
   .actions button { flex: 1 1 auto; }
   .actions.col { flex-direction: column; }

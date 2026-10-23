@@ -169,6 +169,16 @@ fSpy-style camera matching inside the editor: line the model up with the mock-up
 11. **โหมดเทียบความต่าง**: ขณะลากเส้น/จุด กล้องจะคำนวณใหม่ทุกเฟรม และโมเดลแสดงแบบ difference กับภาพ
     (ตรงกัน = มืด, เพี้ยน = เรืองแสง) เลือก **ขณะลาก** (ค่าเริ่ม) / **เปิดตลอด** / **ปิด**;
     ถ้าคำนวณไม่ได้จะใช้กล้องล่าสุดและขึ้นป้ายเล็ก ๆ ที่มุมภาพ
+12. **จุดลับตารวม** (v0.2.9): วาดเส้นแกนละกี่เส้นก็ได้ ระบบหา **จุดลับตาจุดเดียวต่อแกน** จากทุกเส้น
+    (least-squares แบบทนเส้นเพี้ยน) และใช้จุดนั้นคำนวณกล้อง
+    - วงกลมสีแกน = จุดลับตา (ถ้าอยู่นอกภาพเป็นลูกศรที่ขอบภาพ + ระยะ px, ∞ = เส้นขนานกัน) เส้นจาง ๆ จากทุกเส้นวิ่งไปที่จุดนั้น
+    - ขอบเส้นบอกว่าเส้นเพี้ยนจากจุดลับตากี่องศา: **เขียว < 0.5°**, **เหลือง 0.5–2°**, **แดง > 2°**
+      (ตัวเลของศาข้างเส้น, ⚠ + ขอบประ = เส้นเพี้ยนมากจนไม่นำมาคิด) แผงแสดง RMS (องศา) ของแต่ละแกนและจำนวนเส้นเพี้ยน
+    - **🎯 รวมจุดลับตา** (หรือ **รวม X / Y / Z** ทีละแกน) = หมุนทุกเส้นให้ผ่านจุดลับตาเดียวกัน โดยคงความยาวและจุดกึ่งกลาง;
+      เส้นที่ปลายข้างหนึ่งเชื่อมมุมอยู่จะหมุนรอบมุมนั้นแทน (มุมไม่ขยับ); เส้นที่ปลายทั้งสองเชื่อมมุมจะข้ามและแจ้ง
+      ให้แยกมุมก่อน; ย้อนได้ด้วย ↶
+    - **🔒 ล็อกเข้าจุดลับตา**: เมื่อเปิด ลากปลายเส้นของแกนที่มี 3 เส้นขึ้นไป เส้นจะชี้ไปจุดลับตาของเส้น**อื่น**เสมอ
+      (ปลายที่ลากเลื่อนไปตามเส้นประ) แม่เหล็กยังดูดมุม/จุดตัดที่อยู่บนเส้นนั้นได้
 
 ### Notes (English)
 
@@ -191,7 +201,17 @@ fSpy-style camera matching inside the editor: line the model up with the mock-up
   CSS `mix-blend-mode: difference` of the WebGL canvas over the mock-up `<img>`; the loupe copies the same patch of
   the (preserveDrawingBuffer) canvas into a small 2D canvas with the same blend. Line undo restores lines only, not
   the camera — press **คำนวณจากเส้น** again after an undo.
-- Solver: VPs from the guide lines (least squares over normalised homogeneous lines), focal length from two
+- VP consolidation (v0.2.9, `src/lib/editor/vpFit.ts`, pure, tested in `tests/vpFit.test.ts`): each axis gets one
+  VP from all its lines — homogeneous lines `l = a × b` in a normalised frame (centre = principal point, scale =
+  max(W, H)), smallest eigenvector of `Σ wᵢ lᵢ lᵢᵀ` (works for VPs at infinity: w → 0), then IRLS with Huber
+  weights on the angular residual (δ = 1°) and rejection of one gross outlier per pass (> max(2°, 3 × median),
+  keeping ≥ 3 lines). The residual of a line is the angle between it and the direction from its midpoint to the VP.
+  Line colours: green < 0.5°, amber 0.5–2°, red > 2°. **รวมจุดลับตา** rotates each line about its midpoint (same
+  length) onto the VP; a line with one linked corner pivots about that corner so joints never move; a line with
+  both ends linked is skipped and reported. It is one undo step. **ล็อกเข้าจุดลับตา** (saved with the lines as
+  `lockVp`) constrains an endpoint drag to the ray from the fixed end to the VP fitted from the *other* lines of
+  that axis (needs ≥ 2 others); endpoint/intersection snaps that lie on that ray still win, on-segment snaps are off.
+- Solver: VPs from the guide lines (the consolidated per-axis VPs above), focal length from two
   orthogonal VPs, rotation from the VP directions (signs from the current camera), then Levenberg–Marquardt on
   line-to-VP and point reprojection error. Position comes from point pairs (linear + LM); with no pairs the
   model origin stays where the previous camera put it.

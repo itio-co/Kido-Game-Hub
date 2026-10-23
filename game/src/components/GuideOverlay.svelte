@@ -2,6 +2,8 @@
   import type { V2 } from '../lib/editor/camMath';
   import { AXIS_COLORS, AXIS_NAMES, type MatchState } from '../lib/editor/matchState.svelte';
   import { joints, snapEndpoint, snapLine, SNAP_PX, type End, type EndRef, type SnapTarget } from '../lib/editor/guideSnap';
+  import { distToRay, lockedPoint, lockVp, residualBand, vpPoint } from '../lib/editor/vpFit';
+  import type { V3 } from '../lib/editor/camMath';
 
   type Props = {
     st: MatchState;
@@ -56,6 +58,69 @@
     ];
   }
 
+  /** Segment p→q clipped to the view (with a small margin); null when it misses the view. */
+  function clip(p: V2, q: V2): [V2, V2] | null {
+    const m = Math.max(vr.w, vr.h) * 0.02;
+    const lo = [vr.x0 - m, vr.y0 - m];
+    const hi = [vr.x0 + vr.w + m, vr.y0 + vr.h + m];
+    const d = [q[0] - p[0], q[1] - p[1]];
+    let t0 = 0;
+    let t1 = 1;
+    for (let i = 0; i < 2; i++) {
+      if (Math.abs(d[i]!) < 1e-12) {
+        if (p[i]! < lo[i]! || p[i]! > hi[i]!) return null;
+        continue;
+      }
+      const ta = (lo[i]! - p[i]!) / d[i]!;
+      const tb = (hi[i]! - p[i]!) / d[i]!;
+      t0 = Math.max(t0, Math.min(ta, tb));
+      t1 = Math.min(t1, Math.max(ta, tb));
+    }
+    if (t0 > t1) return null;
+    return [
+      [p[0] + d[0]! * t0, p[1] + d[1]! * t0],
+      [p[0] + d[0]! * t1, p[1] + d[1]! * t1],
+    ];
+  }
+  /** Ray from `from` towards a homogeneous VP (to the VP itself, or far away when it is at infinity), clipped. */
+  function rayTo(from: V2, vp: V3): [V2, V2] | null {
+    const p = vpPoint(vp);
+    if (p) return clip(from, p);
+    const n = Math.hypot(vp[0], vp[1]) || 1;
+    const sg = Math.sign(vp[2] || 1);
+    const far = Math.max(vr.w, vr.h) * 10;
+    return clip(from, [from[0] + (vp[0] * sg * far) / n, from[1] + (vp[1] * sg * far) / n]);
+  }
+
+  /** Per line: residual to its axis VP (degrees), colour band, outlier flag and the faint ray to the VP. */
+  const lineInfo = $derived.by(() => {
+    const out = new Map<number, { deg: number; band: 'good' | 'warn' | 'bad'; outlier: boolean; ray: [V2, V2] | null }>();
+    st.vpFits.forEach((f) => {
+      if (!f) return;
+      f.ids.forEach((id, i) => {
+        const l = st.lines.find((x) => x.id === id);
+        if (!l) return;
+        const deg = f.fit.resDeg[i]!;
+        // start the ray at the end of the line nearer to the VP
+        const vpP = vpPoint(f.fit.vp);
+        const da = vpP ? Math.hypot(l.a[0] - vpP[0], l.a[1] - vpP[1]) : 0;
+        const db = vpP ? Math.hypot(l.b[0] - vpP[0], l.b[1] - vpP[1]) : 0;
+        let start: V2 = da < db ? l.a : l.b;
+        if (!vpP) {
+          const mx = (l.a[0] + l.b[0]) / 2;
+          const my = (l.a[1] + l.b[1]) / 2;
+          const sg = Math.sign(f.fit.vp[2] || 1);
+          start = (l.a[0] - mx) * f.fit.vp[0] * sg + (l.a[1] - my) * f.fit.vp[1] * sg > 0 ? l.a : l.b;
+        }
+        out.set(id, { deg, band: residualBand(deg), outlier: f.fit.outlier[i]!, ray: rayTo(start, f.fit.vp) });
+      });
+    });
+    return out;
+  });
+  /** While "ล็อกเข้าจุดลับตา" holds a drag: the ray the endpoint slides along. */
+  let lockRay = $state<{ axis: number; ray: [V2, V2] | null } | null>(null);
+  const fmtDeg = (deg: number): string => `${deg < 10 ? deg.toFixed(1) : Math.round(deg)}°`;
+
   /** Measured vanishing points: on-screen marker, or an arrow at the edge pointing to it. */
   const vpMarks = $derived.by(() => {
     const out: { axis: 0 | 1 | 2; inside: boolean; at: V2; angle: number; dist: number }[] = [];
@@ -102,7 +167,11 @@
   );
 
   // ---------- pointer handling ----------
-  type LineDrag = { kind: 'line'; id: number; end: End; off: V2; members: EndRef[]; x: number; y: number; moved: boolean };
+  type LineDrag = {
+    kind: 'line'; id: number; end: End; off: V2; members: EndRef[]; x: number; y: number; moved: boolean;
+    /** "ล็อกเข้าจุดลับตา": the line's fixed end and the VP of the other lines of its axis. */
+    lock?: { fixed: V2; vp: V3; axis: number };
+  };
   type SegDrag = { kind: 'seg'; id: number; p0: V2; a0: V2; b0: V2; ma: EndRef[]; mb: EndRef[]; x: number; y: number; moved: boolean };
   type Drag = LineDrag | SegDrag | { kind: 'pair'; id: number; off: V2 };
   let drag: Drag | null = null;
@@ -226,7 +295,12 @@
     const p = toRef(event.clientX, event.clientY);
     const at = line[end];
     const members = st.members({ line: id, end });
-    startHandle(event, { kind: 'line', id, end, off: [at[0] - p[0], at[1] - p[1]], members, x: event.clientX, y: event.clientY, moved: false });
+    let lock: LineDrag['lock'];
+    if (st.lockVp) {
+      const vp = lockVp(st.lines, id, st.vpFrame, members.map((m) => m.line));
+      if (vp) lock = { fixed: [...line[end === 'a' ? 'b' : 'a']], vp, axis: line.axis };
+    }
+    startHandle(event, { kind: 'line', id, end, off: [at[0] - p[0], at[1] - p[1]], members, x: event.clientX, y: event.clientY, moved: false, lock });
     // long-press on a shared corner = unlink this end
     clearPress();
     if (members.length > 1) {
@@ -236,6 +310,7 @@
         st.dropLastPush();
         drag = null;
         loupe = null;
+        lockRay = null;
         st.endLive();
         if (st.unlink({ line: id, end })) {
           navigator.vibrate?.(25);
@@ -291,8 +366,14 @@
     }
     if (d.kind === 'line') {
       let q: V2 = [p[0] + d.off[0], p[1] + d.off[1]];
-      const t = snapOn(event) ? snapEndpoint(st.lines, { line: d.id, end: d.end }, q, threshold(event), d.members) : null;
+      // locked: slide along the ray from the fixed end to the VP of the other lines of this axis
+      const lock = d.lock;
+      if (lock) q = lockedPoint(lock.fixed, lock.vp, q) ?? q;
+      let t = snapOn(event) ? snapEndpoint(st.lines, { line: d.id, end: d.end }, q, threshold(event), d.members) : null;
+      // with the lock, a corner still wins when it (nearly) lies on the ray; an intersection is on the ray by construction
+      if (t && lock && (t.kind === 'segment' || distToRay(lock.fixed, lock.vp, t.point) > threshold(event))) t = null;
       if (t) q = t.point;
+      lockRay = lock ? { axis: lock.axis, ray: rayTo(lock.fixed, lock.vp) } : null;
       hint = t ? { ...t, from: d.end } : null;
       setEnds(d.members, q);
       showLoupe(event, q);
@@ -326,6 +407,7 @@
     const t = hint;
     hint = null;
     loupe = null;
+    lockRay = null;
     finishLive(d);
     if (d.kind === 'pair') return onChange();
     // endpoints that land on another axis's endpoint become one shared corner
@@ -423,13 +505,25 @@
     <line x1={horizon[0][0]} y1={horizon[0][1]} x2={horizon[1][0]} y2={horizon[1][1]} class="horizon" />
   {/if}
   {#each st.lines as line (line.id)}
-    {@const ext = extend(line.a, line.b)}
+    {@const info = lineInfo.get(line.id)}
+    {@const ext = info ? null : extend(line.a, line.b)}
     {@const c = AXIS_COLORS[line.axis]}
     {@const sel = st.selectedLine === line.id}
     {#if ext}
       <line x1={ext[0][0]} y1={ext[0][1]} x2={ext[1][0]} y2={ext[1][1]} stroke={c} class="ext" />
     {/if}
+    {#if info?.ray}
+      <line x1={info.ray[0][0]} y1={info.ray[0][1]} x2={info.ray[1][0]} y2={info.ray[1][1]} stroke={c} class="vray" data-vp-ray={line.id} />
+    {/if}
+    {#if info}
+      <line x1={line.a[0]} y1={line.a[1]} x2={line.b[0]} y2={line.b[1]} class="halo {info.band}" class:outlier={info.outlier}
+        data-res={line.id} data-band={info.band} data-deg={info.deg.toFixed(4)} data-outlier={info.outlier || null} />
+    {/if}
     <line x1={line.a[0]} y1={line.a[1]} x2={line.b[0]} y2={line.b[1]} stroke={c} class="seg" class:sel />
+    {#if info && info.band !== 'good'}
+      <text x={(line.a[0] + line.b[0]) / 2 + 8 * s} y={(line.a[1] + line.b[1]) / 2 - 8 * s} font-size={12 * s} stroke-width={3 * s} class="rlabel {info.band}"
+        data-res-label={line.id}>{info.outlier ? '⚠ ' : ''}{fmtDeg(info.deg)}</text>
+    {/if}
     <line
       x1={line.a[0]}
       y1={line.a[1]}
@@ -443,6 +537,9 @@
       onpointerdown={(e) => segHandle(e, line.id)}
     />
   {/each}
+  {#if lockRay?.ray}
+    <line x1={lockRay.ray[0][0]} y1={lockRay.ray[0][1]} x2={lockRay.ray[1][0]} y2={lockRay.ray[1][1]} stroke={AXIS_COLORS[lockRay.axis]} class="lockray" data-vp-lock />
+  {/if}
   {#each cornerList as j (j.id)}
     <g class="joint" data-joint={j.id} data-members={j.members.length}>
       <rect x={j.point[0] - 17 * s} y={j.point[1] - 17 * s} width={34 * s} height={34 * s} rx={6 * s} />
@@ -560,6 +657,16 @@
   line, circle, path, rect { vector-effect: non-scaling-stroke; }
   .ext { stroke-width: 1.5; stroke-dasharray: 7 6; opacity: 0.85; }
   .seg { stroke-width: 3; }
+  .vray { stroke-width: 1; opacity: 0.4; }
+  .halo { stroke-width: 9; stroke-linecap: round; opacity: 0.55; pointer-events: none; }
+  .halo.good { stroke: #3ddc6a; }
+  .halo.warn { stroke: #ffb020; }
+  .halo.bad { stroke: #ff3030; }
+  .halo.outlier { stroke-dasharray: 6 4; opacity: 0.85; }
+  .rlabel { font-weight: 700; paint-order: stroke; stroke: rgba(0, 0, 0, 0.8); pointer-events: none; }
+  .rlabel.warn { fill: #ffb020; }
+  .rlabel.bad { fill: #ff6b6b; }
+  .lockray { stroke-width: 2; stroke-dasharray: 10 4 2 4; opacity: 0.95; pointer-events: none; }
   .seg.sel { stroke-width: 5; }
   .horizon { stroke: #ffe14d; stroke-width: 1.5; stroke-dasharray: 2 5; opacity: 0.9; }
   .handle { cursor: move; }

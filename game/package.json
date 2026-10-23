@@ -9,7 +9,7 @@
     "preview": "vite preview --host",
     "validate": "node --experimental-strip-types scripts/validate-room.ts",
     "check": "svelte-check --tsconfig ./tsconfig.json && npm run validate",
-    "test": "tsc -p tsconfig.test.json && node .test-out/tests/guideSnap.test.js"
+    "test": "tsc -p tsconfig.test.json && node .test-out/tests/guideSnap.test.js && node .test-out/tests/vpFit.test.js"
   },
   "dependencies": {
     "three": "^0.186.1"

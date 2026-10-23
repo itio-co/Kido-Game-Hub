@@ -1,7 +1,6 @@
 import type { ShowcaseAsset } from '../showcaseAssets';
 import {
   dehom,
-  fitVanishingPoint,
   fromBlenderEulerDeg,
   blenderEulerDeg,
   mulMV,
@@ -24,6 +23,7 @@ import {
 import { camFromMatched, camJson, focalFromLens, fullExport, hfovDeg, lensMm, type ViewRect } from './cameraMatch';
 import type { DisplayMode } from './modelEditor';
 import { jointMembers, linkEnds, removeLineLinks, unlinkEnd, type EndRef } from './guideSnap';
+import { consolidate as consolidateLines, fitAxes, type Frame, type VpFit } from './vpFit';
 
 export type ImageChoice = 'crop' | 'wide';
 export type PrincipalMode = 'center' | 'vp3' | 'free';
@@ -41,6 +41,8 @@ type Saved = {
   snap?: boolean;
   /** Difference view of model vs mock-up (optional; default 'drag'). */
   diff?: DiffMode;
+  /** "ล็อกเข้าจุดลับตา" (optional; default off). */
+  lockVp?: boolean;
 };
 /** 'drag' = difference view only while a guide/point is dragged, 'always' = left on, 'off' = normal overlay. */
 export type DiffMode = 'drag' | 'always' | 'off';
@@ -66,6 +68,8 @@ export class MatchState {
   /** "แม่เหล็กเส้น": snap dragged guide lines to lines of other axes. */
   snap = $state(true);
   diff = $state<DiffMode>('drag');
+  /** "ล็อกเข้าจุดลับตา": a dragged endpoint keeps its line aimed at the VP of the other lines of its axis. */
+  lockVp = $state(false);
   /** A guide line / point is being dragged (live solve + diff view). */
   dragging = $state(false);
   /** The last live solve failed; the camera stays at the last good solve. */
@@ -151,9 +155,43 @@ export class MatchState {
   }
 
   // ---------- guide lines ----------
+  /** Normalisation frame of the VP fits (same as the camera solve). */
+  get vpFrame(): Frame {
+    return { cx: this.cam.cx, cy: this.cam.cy, s: Math.max(this.width, this.height) };
+  }
+  /** Consolidated (robust least-squares) VP per axis, with per-line residuals; null with < 2 lines. */
+  readonly vpFits = $derived.by((): ({ fit: VpFit; ids: number[] } | null)[] => fitAxes(this.lines, this.vpFrame));
   get vps(): ({ vp: V3; rms: number } | null)[] {
-    const frame = { cx: this.cam.cx, cy: this.cam.cy, s: Math.max(this.width, this.height) };
-    return ([0, 1, 2] as Axis[]).map((a) => fitVanishingPoint(this.lines.filter((l) => l.axis === a), frame));
+    return this.vpFits.map((f) => (f ? { vp: f.fit.vp, rms: f.fit.rms } : null));
+  }
+  /** Residual (degrees) + outlier flag of one line against its axis VP; null when the axis has < 2 lines. */
+  lineResidual(id: number): { deg: number; outlier: boolean } | null {
+    for (const f of this.vpFits) {
+      const i = f ? f.ids.indexOf(id) : -1;
+      if (f && i >= 0) return { deg: f.fit.resDeg[i]!, outlier: f.fit.outlier[i]! };
+    }
+    return null;
+  }
+  /**
+   * "รวมจุดลับตา": turn every line of `axis` (or of all axes) so it passes exactly through the consolidated VP.
+   * Undoable; lines with both ends linked are skipped and reported.
+   */
+  consolidate(axis?: Axis): { moved: number; skipped: number; message: string } {
+    const axes = axis === undefined ? ([0, 1, 2] as Axis[]) : [axis];
+    const ready = axes.filter((a) => this.vpFits[a]);
+    const name = axis === undefined ? '' : ` แกน ${['X', 'Y', 'Z'][axis]}`;
+    if (!ready.length) {
+      return { moved: 0, skipped: 0, message: `ต้องมีอย่างน้อย 2 เส้น${name || 'ในแกนเดียวกัน'} ก่อนรวมจุดลับตา` };
+    }
+    this.pushLines();
+    const r = consolidateLines($state.snapshot(this.lines) as GuideLine[], ready, this.vpFrame);
+    if (!r.moved.length) this.dropLastPush();
+    else this.lines = r.lines;
+    let message = r.moved.length
+      ? `รวมจุดลับตา${name}แล้ว · ปรับ ${r.moved.length} เส้นให้ผ่านจุดลับตาเดียวกัน`
+      : `เส้น${name}ผ่านจุดลับตาเดียวกันอยู่แล้ว`;
+    if (r.skipped.length) message += ` · ข้าม ${r.skipped.length} เส้น (ปลายทั้งสองเชื่อมมุมอยู่ — แยกมุมก่อน)`;
+    return { moved: r.moved.length, skipped: r.skipped.length, message };
   }
   /** Remember the current lines before an edit (for undo). */
   pushLines(): void {
@@ -497,6 +535,7 @@ export class MatchState {
       lockLens: this.lockLens,
       snap: this.snap,
       diff: this.diff,
+      lockVp: this.lockVp,
     };
     try {
       localStorage.setItem(this.storageKey, JSON.stringify(data));
@@ -518,6 +557,7 @@ export class MatchState {
       this.lockLens = !!d.lockLens;
       this.snap = d.snap !== false;
       this.diff = d.diff === 'always' || d.diff === 'off' ? d.diff : 'drag';
+      this.lockVp = d.lockVp === true;
       this.nextId = 1 + Math.max(0, ...this.lines.map((l) => l.id), ...this.pairs.map((p) => p.id));
       return true;
     } catch {
