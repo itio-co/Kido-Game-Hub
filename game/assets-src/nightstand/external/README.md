@@ -44,4 +44,4 @@ This:
 
 `compare/` folders are git-ignored; commit only the model files you want to keep.
 Tested on the master GLB turned 90°, scaled ×2.3 and moved: it recovered the pose and size exactly.
-For reference, the Blender master scores IoU ≈ 0.92 (refined mask) / 0.75 (rembg mask).
+For reference, the Blender master scores IoU ≈ 0.925 (refined mask) / 0.743 (rembg mask).

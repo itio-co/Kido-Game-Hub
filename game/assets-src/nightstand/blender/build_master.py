@@ -64,7 +64,6 @@ box('Rail_Top',x0+O+L,x1-O-L,fy,fy+at,zdt+g,zt,mat=WOOD)
 box('Rail_Bot',x0+O+L,x1-O-L,fy,fy+at,zdb-0.02,zdb-g,mat=WOOD)
 box('Drawer_Cavity',x0+O+L,x1-O-L,fy+0.004,fy+0.03,zdb-g,zdt+g,mat=DARK)
 dr=box('Drawer_Face',x0+O+L+g,x1-O-L-g,fy-0.004,fy+0.016,zdb,zdt,bevel=0.003,seg=2,mat=WOOD)
-box('Drawer_Box_Bottom',x0+O+L,x1-O-L,fy+at,y1-O-L,zdb-0.02,zdb-0.01,mat=WOOD)
 kw,kh,kd=P['knob_w']*cm,P['knob_h']*cm,P['knob_d']*cm; kz=(zdb+zdt)/2+P['knob_dz']*cm
 box('Knob',-kw/2,kw/2,fy-0.004-kd,fy-0.004,kz-kh/2,kz+kh/2,bevel=0.003,seg=2,mat=WOOD)
 # stretchers

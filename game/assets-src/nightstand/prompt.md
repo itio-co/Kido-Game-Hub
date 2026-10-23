@@ -12,7 +12,7 @@ detail; the prompt below says what is really there.
 ```
 A stylized low-poly cartoon wooden bedside table (nightstand) for a cozy mobile game, single object, centered.
 Rectangular box-shaped top cabinet with one shallow drawer on the front and a small horizontal rectangular wooden knob in the middle of the drawer.
-Four straight square legs, one at each corner. Thin horizontal stretcher bars low between the front and back legs on the left side and on the right side only; there is NO front stretcher and NO back stretcher, the space under the cabinet is open.
+Four straight square legs, one at each corner. Sturdy horizontal stretcher bars (about 4.5 x 7 cm) low between the front and back legs on the left side and on the right side only; there is NO front stretcher and NO back stretcher, the space under the cabinet is open (no shelf or board under the drawer).
 Proportions: 61 cm wide, 40.5 cm deep, 55 cm tall; the cabinet is about the top 28 % of the height, the legs are long.
 Warm orange-honey wood, flat colours, soft hand-painted look, very little wood grain, no varnish shine.
 Clean simple geometry with slightly bevelled edges, game-ready, low polygon count.
