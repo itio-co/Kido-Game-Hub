@@ -3,11 +3,25 @@
   import CompareSlider from './CompareSlider.svelte';
   import NightstandView from './NightstandView.svelte';
   import type { NightstandVariant } from '../lib/nightstandStage';
-  import { findAsset } from '../lib/showcaseAssets';
+  import CharacterView from './CharacterView.svelte';
+  import { SHOWCASE_ASSETS, findAsset } from '../lib/showcaseAssets';
   import { t } from '../lib/i18n/core';
   import { tx } from '../lib/i18n/content';
 
   let { room }: { room: PlayerRoom } = $props();
+
+  // `#/showcase?asset=<slug>` picks the asset; the nightstand is the default.
+  const wantedSlug = new URLSearchParams(location.hash.split('?')[1] ?? '').get('asset');
+  let slug = $state(findAsset(wantedSlug ?? '')?.slug ?? SHOWCASE_ASSETS[0]!.slug);
+  const selected = $derived(findAsset(slug) ?? SHOWCASE_ASSETS[0]!);
+
+  function pick(next: string): void {
+    slug = next;
+    const params = new URLSearchParams(location.hash.split('?')[1] ?? '');
+    params.set('asset', next);
+    params.delete('model');
+    history.replaceState(history.state, '', `#/showcase?${params.toString().replaceAll('%2F', '/')}`);
+  }
 
   const nightstand = $derived.by((): NightstandEntity | null => {
     const found = room.objects.find((obj) => obj.kind === 'nightstand');
@@ -29,10 +43,47 @@
 <div class="showcase">
   <header>
     <p class="kicker">{t('game.showcase.kicker')}</p>
-    <h1>{nightstand ? tx(nightstand, 'title') : t('asset.nightstand.title')}</h1>
+    <h1>
+      {#if selected.kind === 'character'}
+        {selected.title}
+      {:else}
+        {nightstand ? tx(nightstand, 'title') : t('asset.nightstand.title')}
+      {/if}
+    </h1>
   </header>
 
-  {#if nightstand}
+  <nav class="toggle assets" aria-label={t('game.showcase.assets')}>
+    {#each SHOWCASE_ASSETS as asset (asset.slug)}
+      <button
+        type="button"
+        aria-pressed={asset.slug === slug}
+        class:on={asset.slug === slug}
+        data-asset={asset.slug}
+        onclick={() => pick(asset.slug)}>{asset.title}</button
+      >
+    {/each}
+  </nav>
+
+  {#if selected.kind === 'character'}
+    <dl>
+      <div><dt>id</dt><dd>{selected.id}</dd></div>
+      <div><dt>kind</dt><dd>{selected.kind}</dd></div>
+      <div><dt>title</dt><dd>{selected.title}</dd></div>
+      <div><dt>slug</dt><dd>{selected.slug}</dd></div>
+    </dl>
+    <section>
+      <h2>{t('game.showcase.orbit')}</h2>
+      {#key selected.slug}
+        <CharacterView asset={selected} />
+      {/key}
+    </section>
+    {#if selected.editable === false}
+      <p class="note" data-not-editable>{t('game.showcase.notEditable')}</p>
+    {/if}
+    {#if selected.notes}
+      <p class="note">{selected.notes}</p>
+    {/if}
+  {:else if nightstand}
     <dl>
       <div><dt>id</dt><dd>{nightstand.id}</dd></div>
       <div><dt>kind</dt><dd>{nightstand.kind}</dd></div>
@@ -158,4 +209,7 @@
     text-decoration: none;
   }
   .hint { margin: 0 0 8px; font-size: 14px; color: #c5d7e6; }
+  .assets { flex-wrap: wrap; }
+  .assets button { flex: 1 1 140px; }
+  .note { margin: 0 0 10px; font-size: 14px; color: #c5d7e6; }
 </style>

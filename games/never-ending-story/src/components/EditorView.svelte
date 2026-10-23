@@ -5,7 +5,7 @@
   import { projectedBox } from '../lib/editor/viewFrame';
   import GuideOverlay from './GuideOverlay.svelte';
   import CameraPanel from './CameraPanel.svelte';
-  import { SHOWCASE_ASSETS } from '../lib/showcaseAssets';
+  import { EDITABLE_ASSETS } from '../lib/showcaseAssets';
   import {
     createModelEditor,
     type EditorSnapshot,
@@ -24,7 +24,7 @@
   import { t, LOCALES } from '../lib/i18n/core';
   import { locale } from '../lib/i18n/locale.svelte';
 
-  const options = SHOWCASE_ASSETS.flatMap((asset) =>
+  const options = EDITABLE_ASSETS.flatMap((asset) =>
     asset.variants.map((variant) => ({ key: `${asset.slug}|${variant.id}`, asset, variant })),
   );
   const fromHash = new URLSearchParams(location.hash.split('?')[1] ?? '');

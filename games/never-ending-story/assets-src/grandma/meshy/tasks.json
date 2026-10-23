@@ -1,0 +1,49 @@
+{
+  "api": "https://api.meshy.ai/openapi/v1",
+  "plan": "Meshy Pro",
+  "creditsTotal": 50,
+  "tasks": [
+    {
+      "step": "image-to-3d",
+      "endpoint": "POST /openapi/v1/image-to-3d",
+      "taskId": "01a169e7-74d3-7656-b0c0-81b6e7ddbc85",
+      "request": "request-image-to-3d.json (+ image_url = data URI of ../ref/grandma-cutout.png)",
+      "credits": 30,
+      "createdAt": "2026-10-24T00:55:39+07:00",
+      "result": "model.glb, 20k triangles, 2048 base-colour texture"
+    },
+    {
+      "step": "rigging",
+      "endpoint": "POST /openapi/v1/rigging",
+      "taskId": "01a169f1-22ab-738e-bdf2-21e01c7e017d",
+      "request": "request-rigging.json",
+      "credits": 5,
+      "createdAt": "2026-10-24T01:06:15+07:00",
+      "result": "Character_output.glb (24 joints, no fingers) + basic walking / running clips"
+    },
+    {
+      "step": "animations",
+      "endpoint": "POST /openapi/v1/animations",
+      "taskId": "01a169f1-770f-743a-abc0-a9e881d6e44a",
+      "request": "request-animations-1.json",
+      "actions": { "243": "Idle_3", "32": "Chair_Sit_Idle_F", "290": "Wave_One_Hand" },
+      "credits": 9,
+      "createdAt": "2026-10-24T01:06:34+07:00"
+    },
+    {
+      "step": "animations",
+      "endpoint": "POST /openapi/v1/animations",
+      "taskId": "01a169f5-b46e-76d3-97b9-1bf9d67a3938",
+      "request": "request-animations-2.json",
+      "actions": { "58": "Step_to_Sit_Transition", "307": "Sitting_Answering_Questions" },
+      "credits": 6,
+      "createdAt": "2026-10-24T01:11:12+07:00"
+    }
+  ],
+  "balances": {
+    "imageTo3d": { "before": 1340, "after": 1360, "note": "monthly 1100 -> 1070 (-30); permanent credits rose by 50 from an unrelated top-up at the same time" },
+    "rigAndAnimations1": { "before": 1360, "after": 1346 },
+    "animations2": { "before": 1346, "after": 1340 }
+  },
+  "notes": "Meshy keeps task results for 3 days. The API key is read from the MESHY_API_KEY environment variable and is never stored here."
+}

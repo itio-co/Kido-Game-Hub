@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { t, type MessageKey } from './i18n/core.ts';
 
 /**
- * Models shown in the showcase (#/showcase) and editable in the model editor (#/editor).
+ * Models shown in the showcase (#/showcase) and, unless `editable` is false, in the model editor (#/editor).
  * Add an entry here when a new asset from games/never-ending-story/assets-src/<slug>/ is exported to public/models/;
  * both pages pick it up automatically.
  */
@@ -21,12 +21,56 @@ export type MatchedCamera = {
   quaternion: THREE.Quaternion;
 };
 
+/** One animation clip of a rigged character, by its name in the GLB. */
+export type CharacterClip = {
+  id: string;
+  /** Animation name in the GLB. */
+  clip: string;
+  label: string;
+  /** Sitting clips need the seat; picking one turns the seat on. */
+  seated: boolean;
+  /** One-shot transition: plays once, then cross-fades into `next`. */
+  next?: string;
+};
+
+/**
+ * Rigged character data (model space, metres, +Y up). The seat numbers come from the pelvis offset measured in
+ * assets-src/<slug>/asset.json (`exports.seat`).
+ */
+export type CharacterInfo = {
+  clips: CharacterClip[];
+  /** Clip played on load and when leaving the seat. */
+  idle: string;
+  /** Transition played when the seat is turned on. */
+  sitDown: string;
+  seat: {
+    /** Direction the seated character faces (unit vector in the XZ plane). */
+    facing: [number, number];
+    /** Hips position at the end of the sit-down clip. */
+    hips: [number, number, number];
+    /** Height of the seat surface. */
+    top: number;
+    /** Seat front edge, measured from the hips along `facing` (m). */
+    front: number;
+    depth: number;
+    width: number;
+  };
+};
+
 export type ShowcaseAsset = {
   /** Entity id from the room data / asset.json. */
   id: string;
+  /** `prop` (default) or a rigged `character`. */
+  kind?: 'prop' | 'character';
   slug: string;
   title: string;
+  /** false = not listed in #/editor (skinned characters cannot be edited there). Default true. */
+  editable?: boolean;
   variants: ShowcaseVariant[];
+  /** Short known-issues note shown under the viewer. */
+  notes?: string;
+  /** Present for rigged characters. */
+  character?: CharacterInfo;
   /** Mock-up crop and the camera matched to it (Blender cam.json converted to Y-up). */
   ref?: {
     src: string;
@@ -126,7 +170,91 @@ export const SHOWCASE_ASSETS: ShowcaseAsset[] = [
     },
     orbit: { target: 0.26, distance: 1.7, height: 0.9 },
   },
+  {
+    // Meshy image-to-3D + rig + animations; see assets-src/grandma/README.md.
+    id: '7b6006ee-456a-45c5-9012-f35d26fd71a8',
+    kind: 'character',
+    slug: 'characters/grandma',
+    get title() {
+      return t('asset.grandma.title');
+    },
+    editable: false,
+    get notes() {
+      return t('asset.grandma.knownIssues');
+    },
+    variants: [
+      {
+        id: 'rigged',
+        get label() {
+          return t('asset.grandma.variant.rigged');
+        },
+        url: `${BASE}models/grandma-mali.glb`,
+      },
+    ],
+    character: {
+      clips: [
+        {
+          id: 'idle',
+          clip: 'Idle',
+          seated: false,
+          get label() {
+            return t('asset.grandma.clip.idle');
+          },
+        },
+        {
+          id: 'wave',
+          clip: 'Wave',
+          seated: false,
+          get label() {
+            return t('asset.grandma.clip.wave');
+          },
+        },
+        {
+          id: 'sitDown',
+          clip: 'SitDown',
+          seated: true,
+          next: 'SitIdle',
+          get label() {
+            return t('asset.grandma.clip.sitDown');
+          },
+        },
+        {
+          id: 'sitIdle',
+          clip: 'SitIdle',
+          seated: true,
+          get label() {
+            return t('asset.grandma.clip.sitIdle');
+          },
+        },
+        {
+          id: 'sitTalk',
+          clip: 'SitTalk',
+          seated: true,
+          get label() {
+            return t('asset.grandma.clip.sitTalk');
+          },
+        },
+        {
+          id: 'walk',
+          clip: 'Walk',
+          seated: false,
+          get label() {
+            return t('asset.grandma.clip.walk');
+          },
+        },
+      ],
+      idle: 'Idle',
+      sitDown: 'SitDown',
+      // SitDown turns 90 degrees, so she sits facing +X with the hips at (-0.35, 0.48, 0.903).
+      // Seat top = hips - ~0.05 m (pelvis offset); front edge 0.2 m in front of the hips.
+      seat: { facing: [1, 0], hips: [-0.35, 0.481, 0.903], top: 0.44, front: 0.2, depth: 0.55, width: 1.0 },
+    },
+    orbit: { target: 0.85, distance: 3.1, height: 1.35 },
+  },
 ];
+
+/** Assets listed in the model editor (#/editor). */
+export const EDITABLE_ASSETS: ShowcaseAsset[] = SHOWCASE_ASSETS.filter((asset) => asset.editable !== false);
 
 export function findAsset(slug: string): ShowcaseAsset | undefined {
   return SHOWCASE_ASSETS.find((asset) => asset.slug === slug);

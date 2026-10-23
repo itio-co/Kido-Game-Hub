@@ -1,0 +1,74 @@
+{
+  "id": "7b6006ee-456a-45c5-9012-f35d26fd71a8",
+  "kind": "character",
+  "title": "ย่ามะลิ",
+  "titleEn": "Grandma Mali",
+  "slug": "characters/grandma",
+  "status": "modelled",
+  "statusNotes": "Rigged and animated GLB, shown in #/showcase only. Not placed in any scene yet and not editable in #/editor (skinned mesh). No entity in the room data yet; the id is new.",
+  "dimensionsCm": {
+    "width": 78.6,
+    "depth": 39.9,
+    "height": 155.0
+  },
+  "dimensionsNotes": "Bind pose (A-pose), so the width is the arm span. Origin at the floor between the feet, facing +Z (glTF / Three.js), metres in the GLB.",
+  "source": {
+    "mockup": "games/never-ending-story/public/img/living-grandma.jpg",
+    "mockupSize": { "width": 720, "height": 1280 },
+    "notes": "Cut out with rembg (ref/cut.py), cropped to the figure and padded to a 1224 x 1224 transparent square."
+  },
+  "ref": {
+    "isolatedSquare": "ref/grandma-cutout.png"
+  },
+  "generator": {
+    "tool": "Meshy API (image-to-3d, rigging, animations)",
+    "license": "Generated on a Meshy Pro plan: the output may be used commercially (Meshy terms for paid plans).",
+    "tasks": "meshy/tasks.json",
+    "creditsUsed": 50
+  },
+  "exports": {
+    "runtime": ["games/never-ending-story/public/models/grandma-mali.glb"],
+    "build": "build/build.mjs",
+    "bytes": 1255116,
+    "triangles": 19416,
+    "vertices": 20929,
+    "joints": 24,
+    "texture": { "size": 1024, "format": "image/jpeg", "quality": 85 },
+    "compression": "KHR_mesh_quantization (no Draco/meshopt decoder needed)",
+    "nodes": {
+      "scene": "GrandmaMali_Scene",
+      "armature": "GrandmaMali_Armature",
+      "body": "GrandmaMali_Body",
+      "hips": "Hips",
+      "material": "GrandmaMali"
+    },
+    "clips": {
+      "Idle": { "seconds": 9.97, "loop": true, "meshyAction": 243, "meshyName": "Idle_3" },
+      "Wave": { "seconds": 4.1, "loop": true, "meshyAction": 290, "meshyName": "Wave_One_Hand" },
+      "SitDown": { "seconds": 5.67, "loop": false, "meshyAction": 58, "meshyName": "Step_to_Sit_Transition", "notes": "Walks ~0.9 m forward, turns 90 degrees and sits facing +X; ends at the seat anchor." },
+      "SitIdle": { "seconds": 3.7, "loop": true, "meshyAction": 32, "meshyName": "Chair_Sit_Idle_F", "notes": "Trimmed to 0-3.7 s (upright part; the original slumps from ~4 s), last 0.6 s blended back to frame 0, rotated +90 degrees and moved onto the seat anchor." },
+      "SitTalk": { "seconds": 9.67, "loop": true, "meshyAction": 307, "meshyName": "Sitting_Answering_Questions", "notes": "Rotated +90 degrees and moved onto the seat anchor. Knees are wide, so the skirt spreads." },
+      "Walk": { "seconds": 1.07, "loop": true, "meshyName": "walking (free with rigging)", "notes": "In place. The skirt splits into two legs (the skin follows the thigh bones)." }
+    },
+    "droppedClips": {
+      "Run": "Free running clip from rigging: does not suit an elderly character and would add ~100 KB."
+    },
+    "seat": {
+      "notes": "Model space, metres. Where a seat must be for SitDown / SitIdle / SitTalk.",
+      "facing": "+X",
+      "hipsAnchor": [-0.35, 0.49, 0.903],
+      "hipsHeight": { "SitDown_end": 0.481, "SitIdle": 0.495, "SitTalk": 0.503 },
+      "seatTop": 0.44,
+      "seatFrontX": -0.15,
+      "seatDepth": 0.55,
+      "seatWidth": 1.0,
+      "seatHeightFromHips": "seatTop = hips height - ~0.05 (pelvis offset)"
+    }
+  },
+  "notes": [
+    "The skirt is part of the single skinned mesh, so in Walk it splits like trousers. A cloth bone or a skirt-specific rig would be needed to fix it.",
+    "Hands are mittens: the Meshy rig has no finger bones (24 joints).",
+    "Facial expression is baked into the texture; there are no blend shapes.",
+    "Large raw Meshy downloads (~4.5 MB each) are not in git: meshy/raw/ is git-ignored and Meshy only keeps task results for 3 days."
+  ]
+}
