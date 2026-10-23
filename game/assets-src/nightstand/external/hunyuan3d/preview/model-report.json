@@ -1,0 +1,57 @@
+{
+  "model": "/home/user/Kido-Game-Hub/game/assets-src/nightstand/external/hunyuan3d/model.glb",
+  "asset": "player-room/nightstand",
+  "triangles": 8100,
+  "rotDeg": "0,0,0",
+  "yawDeg": 0,
+  "yawScores": {
+    "0": {
+      "iou": 0.9364,
+      "grayNcc": 0.7943,
+      "edgeNcc": 0.3123
+    },
+    "180": {
+      "iou": 0.9177,
+      "grayNcc": 0.7235,
+      "edgeNcc": 0.2873
+    }
+  },
+  "yawCandidates": [
+    0,
+    180
+  ],
+  "yawAmbiguous": false,
+  "fit": "box",
+  "scale": [
+    0.9999999765489928,
+    0.999999983366146,
+    1.000188256064668
+  ],
+  "bboxInput": [
+    0.6100000143051147,
+    0.4300000071525574,
+    0.5498964786529541
+  ],
+  "bboxOutputM": [
+    0.6100000143051147,
+    0.4300000071525574,
+    0.550000011920929
+  ],
+  "targetM": [
+    0.61,
+    0.43000000000000005,
+    0.55
+  ],
+  "iou": {
+    "mask": 0.9366,
+    "maskRembg": 0.7666
+  },
+  "outputs": [
+    "model-normalised.glb",
+    "model-overlay.png",
+    "model-render.png",
+    "model-side-by-side.png",
+    "model-turntable.png",
+    "model-yaw-candidates.png"
+  ]
+}
