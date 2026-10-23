@@ -20,12 +20,83 @@ function use<T extends Buildable>(entity: Buildable, kind: T['kind']): T {
   return entity as T;
 }
 
+function shadeRgb(hex: string, scale: number): [number, number, number] {
+  const n = Number.parseInt(hex.replace('#', ''), 16);
+  const clamp = (channel: number) => Math.min(1, Math.max(0, channel * scale));
+  return [clamp(((n >> 16) & 255) / 255), clamp(((n >> 8) & 255) / 255), clamp((n & 255) / 255)];
+}
+
+/** Large soft planes on the room-facing side so flat shading reads as low-poly wall facets. */
+function addWallFacets(
+  build: Build,
+  parent: THREE.Object3D,
+  w: number,
+  h: number,
+  d: number,
+  color: string,
+  inward: 1 | -1,
+  axis: 'x' | 'z',
+): void {
+  const cols = 3;
+  const rows = 4;
+  const positions: number[] = [];
+  const colors: number[] = [];
+  const spanU = axis === 'x' ? d : w;
+  const bumpAt = (i: number, j: number) => {
+    const n = Math.sin(i * 12.9898 + j * 78.233) * 43758.5453;
+    return (n - Math.floor(n) - 0.25) * 0.06;
+  };
+  const push = (u: number, v: number, bump: number, shade: number) => {
+    const inset = 0.014 + Math.max(0, bump);
+    const x = axis === 'x' ? inward * (w / 2 + inset) : u;
+    const z = axis === 'z' ? inward * (d / 2 + inset) : u;
+    positions.push(x, v, z);
+    colors.push(...shadeRgb(color, shade));
+  };
+  for (let j = 0; j < rows; j += 1) {
+    for (let i = 0; i < cols; i += 1) {
+      const u0 = -spanU / 2 + (spanU * i) / cols;
+      const u1 = -spanU / 2 + (spanU * (i + 1)) / cols;
+      const v0 = (h * j) / rows;
+      const v1 = (h * (j + 1)) / rows;
+      const shade = 0.92 + ((i + j) % 3) * 0.05;
+      const corners: [number, number, number][] = [
+        [u0, v0, bumpAt(i, j)],
+        [u1, v0, bumpAt(i + 1, j)],
+        [u1, v1, bumpAt(i + 1, j + 1)],
+        [u0, v1, bumpAt(i, j + 1)],
+      ];
+      const order = axis === 'z' ? (inward > 0 ? [0, 1, 2, 0, 2, 3] : [0, 2, 1, 0, 3, 2]) : inward > 0 ? [0, 2, 1, 0, 3, 2] : [0, 1, 2, 0, 2, 3];
+      for (const index of order) {
+        const corner = corners[index];
+        if (!corner) continue;
+        push(corner[0], corner[1], corner[2], shade);
+      }
+    }
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+  build.geos.push(geo);
+  const mat = new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true, side: THREE.DoubleSide });
+  build.mats.push(mat);
+  const mesh = new THREE.Mesh(geo, mat);
+  mesh.receiveShadow = true;
+  parent.add(mesh);
+}
+
 export function buildBox(build: Build, parent: THREE.Object3D, entity: Buildable): THREE.Object3D {
   const box = use<BoxEntity>(entity, 'box');
   const group = new THREE.Group();
   tag(group, box);
   place(group, box.position, box.rotation);
   addBox(build, group, box.size[0], box.size[1], box.size[2], 0, box.size[1] / 2, 0, box.color, { shadow: box.shadow });
+  if (box.slug.includes('/wall-')) {
+    const [w, h, d] = box.size;
+    const axis = w <= d ? 'x' : 'z';
+    const inward: 1 | -1 = axis === 'x' ? (box.position[0] < 0 ? 1 : -1) : box.position[2] < 0 ? 1 : -1;
+    addWallFacets(build, group, w, h, d, box.color, inward, axis);
+  }
   parent.add(group);
   return group;
 }
@@ -36,15 +107,25 @@ export function buildFloor(build: Build, parent: THREE.Object3D, entity: Buildab
   tag(group, floor);
   place(group, floor.position);
   const [w, thick, d] = floor.size;
-  const base = floor.colors[floor.colors.length - 1] ?? '#a86b3c';
-  addBox(build, group, w, thick, d, 0, -thick / 2, 0, base, { shadow: 'receive' });
-  const n = 14;
-  const gap = 0.012;
-  const plankW = (w - gap * (n + 1)) / n;
-  for (let i = 0; i < n; i += 1) {
-    const x = -w / 2 + gap + plankW / 2 + i * (plankW + gap);
-    const color = floor.colors[i % floor.colors.length] ?? base;
-    addBox(build, group, plankW, 0.018, d - 0.04, x, 0.01, 0, color, { shadow: 'receive' });
+  const grout = floor.colors[floor.colors.length - 1] ?? '#4a301c';
+  const tones = floor.colors.slice(0, -1);
+  const lights = tones.filter((_, index) => index % 2 === 0);
+  const darks = tones.filter((_, index) => index % 2 === 1);
+  addBox(build, group, w, thick, d, 0, -thick / 2, 0, grout, { shadow: 'receive' });
+  const cols = 8;
+  const rows = 14;
+  const gap = 0.014;
+  const tileW = (w - 0.08) / cols;
+  const tileD = (d - 0.08) / rows;
+  for (let j = 0; j < rows; j += 1) {
+    for (let i = 0; i < cols; i += 1) {
+      const family = (i + j) % 2 === 0 ? lights : darks;
+      const palette = family.length > 0 ? family : tones;
+      const color = palette[(i * 3 + j) % palette.length] ?? grout;
+      const x = -w / 2 + 0.04 + tileW * (i + 0.5);
+      const z = -d / 2 + 0.04 + tileD * (j + 0.5);
+      addBox(build, group, tileW - gap, 0.02, tileD - gap, x, 0.012, z, color, { shadow: 'receive' });
+    }
   }
   parent.add(group);
   return group;
@@ -57,35 +138,48 @@ function outdoorCanvas(sky: string, tree: string, sun: string): HTMLCanvasElemen
   const ctx = canvas.getContext('2d');
   if (!ctx) return canvas;
   const skyGrad = ctx.createLinearGradient(0, 0, 0, 256);
-  skyGrad.addColorStop(0, '#d7f0ff');
-  skyGrad.addColorStop(0.45, sky);
-  skyGrad.addColorStop(1, '#b7d98a');
+  skyGrad.addColorStop(0, '#c5ebff');
+  skyGrad.addColorStop(0.42, sky);
+  skyGrad.addColorStop(0.62, '#9dcf6a');
+  skyGrad.addColorStop(1, '#5f8f3a');
   ctx.fillStyle = skyGrad;
   ctx.fillRect(0, 0, 256, 256);
+  ctx.fillStyle = '#6fa844';
+  ctx.fillRect(0, 150, 256, 106);
+  ctx.fillStyle = tree;
+  ctx.beginPath();
+  ctx.moveTo(0, 168);
+  ctx.lineTo(70, 132);
+  ctx.lineTo(140, 176);
+  ctx.lineTo(210, 128);
+  ctx.lineTo(256, 170);
+  ctx.lineTo(256, 256);
+  ctx.lineTo(0, 256);
+  ctx.closePath();
+  ctx.fill();
   ctx.fillStyle = sun;
   ctx.beginPath();
-  ctx.arc(168, 78, 28, 0, Math.PI * 2);
+  ctx.arc(176, 64, 26, 0, Math.PI * 2);
   ctx.fill();
   const trees: [number, number, number][] = [
-    [40, 150, 70],
-    [78, 168, 86],
-    [118, 156, 64],
-    [200, 170, 78],
-    [230, 150, 60],
+    [48, 118, 92],
+    [104, 128, 100],
+    [168, 122, 86],
+    [214, 136, 96],
   ];
   for (const [x, y, h] of trees) {
-    ctx.fillStyle = tree;
-    ctx.beginPath();
-    ctx.moveTo(x, y + 20);
-    ctx.lineTo(x + 28, y + h);
-    ctx.lineTo(x - 28, y + h);
-    ctx.closePath();
-    ctx.fill();
-    ctx.fillStyle = '#5f8a3e';
+    ctx.fillStyle = '#3f7a32';
     ctx.beginPath();
     ctx.moveTo(x, y);
-    ctx.lineTo(x + 22, y + h * 0.62);
-    ctx.lineTo(x - 22, y + h * 0.62);
+    ctx.lineTo(x + 34, y + h);
+    ctx.lineTo(x - 34, y + h);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = tree;
+    ctx.beginPath();
+    ctx.moveTo(x, y + 28);
+    ctx.lineTo(x + 26, y + h * 0.85);
+    ctx.lineTo(x - 26, y + h * 0.85);
     ctx.closePath();
     ctx.fill();
   }
@@ -111,7 +205,7 @@ export function buildWindow(build: Build, parent: THREE.Object3D, entity: Builda
   addBox(build, group, 0.028, h * 0.9, 0.02, 0, 0, 0.062, c.frame, { shadow: 'none' });
   addBox(build, group, w * 0.9, 0.028, 0.02, 0, 0, 0.062, c.frame, { shadow: 'none' });
 
-  const cw = w * 0.2;
+  const cw = w * 0.3;
   addBox(build, group, cw, h * 0.46, 0.035, -w / 2 + cw / 2 + 0.02, h * 0.24, 0.09, c.curtain, { shadow: 'none' });
   addBox(build, group, cw * 0.72, 0.05, 0.05, -w / 2 + cw / 2 + 0.02, 0.02, 0.1, c.curtain, { shadow: 'none' });
   addBox(build, group, cw * 1.05, h * 0.42, 0.04, -w / 2 + cw * 0.42, -h * 0.24, 0.1, c.curtain, { shadow: 'none' });
@@ -414,29 +508,25 @@ export function buildRug(build: Build, parent: THREE.Object3D, entity: Buildable
   tag(group, rug);
   place(group, rug.position);
   const [w, d] = rug.size;
-  const layout = [
-    [70, 80, 54, 48, -12],
-    [150, 60, 40, 36, 8],
-    [40, 150, 46, 40, 6],
-    [130, 150, 58, 44, -8],
-    [210, 110, 42, 38, 14],
-    [230, 190, 50, 42, -6],
-    [80, 230, 48, 36, 4],
-    [170, 240, 56, 40, -10],
-    [250, 250, 38, 34, 7],
-    [60, 300, 44, 36, -5],
-    [140, 320, 50, 40, 9],
-    [230, 330, 42, 36, -3],
-  ];
-  const patches = layout.map(([x, y, pw, ph, rot], index) => ({
-    x: x ?? 0,
-    y: y ?? 0,
-    w: pw ?? 40,
-    h: ph ?? 36,
-    rot: rot ?? 0,
-    color: rug.colors.patches[index % rug.colors.patches.length] ?? '#f0c9a4',
-  }));
+  const cols = 5;
+  const rows = 6;
+  const patches = [];
+  for (let row = 0; row < rows; row += 1) {
+    for (let col = 0; col < cols; col += 1) {
+      patches.push({
+        x: ((col + 0.5) / cols) * 320,
+        y: ((row + 0.5) / rows) * 400,
+        w: 320 / cols - 14,
+        h: 400 / rows - 14,
+        rot: 0,
+        color: rug.colors.patches[(col + row * 2) % rug.colors.patches.length] ?? '#e25d6a',
+      });
+    }
+  }
   const tex = patternTexture(build, 320, 400, rug.colors.fill, patches, rug.colors.edge);
+  tex.magFilter = THREE.NearestFilter;
+  tex.minFilter = THREE.NearestFilter;
+  tex.generateMipmaps = false;
   addBox(build, group, w, 0.02, d, 0, 0.012, 0, '#ffffff', { map: tex, shadow: 'receive' });
   parent.add(group);
   return group;
