@@ -132,7 +132,7 @@ Rotations and recolours are not in `dims.json`; port them by hand.
 4. Optional, for camera match: `ref.mockup` (full mock-up + crop offset) and `ref.keyPoints` (named model
    corners in Blender cm) and `ref.camParams` (the first five `p` values of `cam.json`).
 
-## Camera match (`#/editor` → **จับมุมกล้อง**, v0.2.8)
+## Camera match (`#/editor` → **จับมุมกล้อง**, v0.2.8–0.2.9)
 
 fSpy-style camera matching inside the editor: line the model up with the mock-up and export a camera that
 `add_cam.py` / `render.py` / `import_external.py` and Three.js can use.
@@ -158,6 +158,17 @@ fSpy-style camera matching inside the editor: line the model up with the mock-up
 7. **การแสดงผล**: ทึบ / โครงลวด / เส้นขอบ, แถบความทึบโมเดล, แถบ **เลื่อนเทียบ ก่อน|หลัง**
 8. บันทึกอัตโนมัติในเครื่อง (`kido-cam:<slug>`) และ **มุม Mock-up** จะใช้กล้องที่จับไว้
 9. **ดาวน์โหลด cam.json** (รูปแบบเดียวกับ `blender/cam.json`) หรือ **ดาวน์โหลดค่าทั้งหมด** (Blender + Three.js)
+10. **แม่เหล็กเส้น** (v0.2.9, ปุ่ม 🧲 ที่มุมภาพหรือในแผง): ลากปลายเส้น (หรือจับกลางเส้นลากทั้งเส้น) ไปใกล้เส้น
+    **แกนอื่น** จะดูดติด ตามลำดับ: ปลายเส้นนั้น → จุดที่เส้นที่ลากต่อออกไปตัดเส้นนั้น → จุดใกล้สุดบนเส้น
+    (ระยะดูด ~12 px เมาส์ / ~22 px นิ้ว ตามจอ ไม่ขึ้นกับการซูม) มีวงเหลือง + กากบาทบอกจุดที่ดูด
+    - ปลายที่ดูดติดปลายอีกเส้น = **เชื่อมเป็นมุมเดียว** (กรอบเหลืองประ) ลากไปด้วยกัน; **กดค้าง** ที่มุม = แยก,
+      หรือปุ่ม **แยกมุมที่เชื่อม** (เส้นที่เลือก); กด **Alt** ค้างขณะลาก = ปิดแม่เหล็กชั่วคราว
+    - **วางเส้นตามกล้องปัจจุบัน** จะเชื่อมมุมกล่องที่ใช้ร่วมกันให้เลย; **↶ ย้อน / ↷ ทำซ้ำ** (ในแผงหรือหัวจอ,
+      Ctrl+Z / Ctrl+Y) ย้อนการแก้เส้นได้
+    - ขณะลากมี **แว่นขยาย** (~3.5×) แสดงภาพ + โมเดล + เส้นรอบจุด พร้อมกากบาทตรงจุดที่ลาก (บนมือถืออยู่เหนือนิ้ว)
+11. **โหมดเทียบความต่าง**: ขณะลากเส้น/จุด กล้องจะคำนวณใหม่ทุกเฟรม และโมเดลแสดงแบบ difference กับภาพ
+    (ตรงกัน = มืด, เพี้ยน = เรืองแสง) เลือก **ขณะลาก** (ค่าเริ่ม) / **เปิดตลอด** / **ปิด**;
+    ถ้าคำนวณไม่ได้จะใช้กล้องล่าสุดและขึ้นป้ายเล็ก ๆ ที่มุมภาพ
 
 ### Notes (English)
 
@@ -172,6 +183,14 @@ fSpy-style camera matching inside the editor: line the model up with the mock-up
 - `<slug>-camera-match.json` (`kido-camera-match/1`) also has `blender` (location m, XYZ Euler, lens, shift),
   `three` (hFOV, position, quaternion in the game's Y-up metres + a snippet), `mockup` (lens / hFOV / shift
   for the full mock-up), residuals, and the lines and point pairs.
+- Snapping (v0.2.9): `src/lib/editor/guideSnap.ts` (pure; `npm test` in `game/` runs `tests/guideSnap.test.ts`
+  through `tsc` + node, no test framework needed). Lines may carry optional `links: {a?, b?}` joint ids — endpoints
+  with the same id are one shared corner. Older saved/exported line data without `links` loads unchanged.
+- Live solve while dragging: guide-line drags re-run the line solve, point drags re-run PnP (≥4 pairs) or position
+  (≥2), at most once per animation frame, always starting from the camera at drag start. The difference view is
+  CSS `mix-blend-mode: difference` of the WebGL canvas over the mock-up `<img>`; the loupe copies the same patch of
+  the (preserveDrawingBuffer) canvas into a small 2D canvas with the same blend. Line undo restores lines only, not
+  the camera — press **คำนวณจากเส้น** again after an undo.
 - Solver: VPs from the guide lines (least squares over normalised homogeneous lines), focal length from two
   orthogonal VPs, rotation from the VP directions (signs from the current camera), then Levenberg–Marquardt on
   line-to-VP and point reprojection error. Position comes from point pairs (linear + LM); with no pairs the

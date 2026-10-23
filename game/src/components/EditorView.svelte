@@ -56,9 +56,10 @@
     match.stageW = Math.max(1, vw);
     match.stageH = Math.max(1, vh);
   });
-  // In the plain mock-up view the image always fits the viewport.
+  // In the plain mock-up view the image always fits the viewport; camera-match fits on entry / resize
+  // (fit keeps a strip under the image for the zoom buttons).
   $effect(() => {
-    if (match && view === 'mock') {
+    if (match && (view === 'mock' || view === 'match')) {
       void match.stageW;
       void match.stageH;
       void match.image;
@@ -98,8 +99,12 @@
     const k = match.k;
     return `left:${(r.x - v.x0) * k}px;top:${(r.y - v.y0) * k}px;width:${r.w * k}px;height:${r.h * k}px;`;
   });
+  // Difference view: model render ⊖ mock-up (aligned areas go dark, misalignment glows).
+  const diffOn = $derived(view === 'match' && !!match?.showDiff);
   const canvasStyle = $derived(
-    staged && match ? `opacity:${match.opacity / 100};clip-path:inset(0 0 0 ${match.split}%);` : '',
+    staged && match
+      ? `${diffOn ? 'mix-blend-mode:difference;opacity:1' : `opacity:${match.opacity / 100}`};clip-path:inset(0 0 0 ${match.split}%);`
+      : '',
   );
   function modelTap(clientX: number, clientY: number): boolean {
     if (!editor || !match?.pick) return false;
@@ -121,6 +126,18 @@
   const posStep = $derived(snapOn ? 0.5 : 0.1);
   const rotStep = $derived(snapOn ? 15 : 1);
 
+  /** In camera-match view, undo/redo act on the guide lines; otherwise on the model. */
+  const lineHistory = $derived(view === 'match' ? match : null);
+  function undo(): void {
+    if (lineHistory) {
+      if (lineHistory.undoLines()) lineHistory.save();
+    } else editor?.undo();
+  }
+  function redo(): void {
+    if (lineHistory) {
+      if (lineHistory.redoLines()) lineHistory.save();
+    } else editor?.redo();
+  }
   function say(message: string): void {
     toast = message;
     window.clearTimeout(toastTimer);
@@ -152,11 +169,11 @@
       const mod = event.ctrlKey || event.metaKey;
       if (mod && event.key.toLowerCase() === 'z') {
         event.preventDefault();
-        if (event.shiftKey) editor?.redo();
-        else editor?.undo();
+        if (event.shiftKey) redo();
+        else undo();
       } else if (mod && event.key.toLowerCase() === 'y') {
         event.preventDefault();
-        editor?.redo();
+        redo();
       } else if (event.key === 'Delete' || event.key === 'Backspace') {
         if (snap.selected) editor?.remove(snap.selected.name);
       } else if (event.key === 'Escape') editor?.select(null);
@@ -255,8 +272,8 @@
     <a class="e-back" href="#/showcase" aria-label="กลับไปมุมออกแบบ">‹ กลับ</a>
     <h1>แก้โมเดล 3D</h1>
     <div class="hist">
-      <button type="button" class="e-hist" onclick={() => editor?.undo()} disabled={!snap.canUndo} aria-label="ย้อน (Undo)">↶ ย้อน</button>
-      <button type="button" class="e-hist" onclick={() => editor?.redo()} disabled={!snap.canRedo} aria-label="ทำซ้ำ (Redo)">↷ ทำต่อ</button>
+      <button type="button" class="e-hist" onclick={undo} disabled={lineHistory ? lineHistory.lineUndoCount === 0 : !snap.canUndo} aria-label="ย้อน (Undo)">↶ ย้อน</button>
+      <button type="button" class="e-hist" onclick={redo} disabled={lineHistory ? lineHistory.lineRedoCount === 0 : !snap.canRedo} aria-label="ทำซ้ำ (Redo)">↷ ทำต่อ</button>
     </div>
   </header>
 
@@ -270,12 +287,20 @@
         <div class="divider" style="left:{match.split}%"><span>ภาพ | โมเดล</span></div>
       {/if}
       {#if view === 'match' && match}
-        <GuideOverlay st={match} onModelTap={modelTap} onChange={() => match?.save()} />
+        <GuideOverlay st={match} onModelTap={modelTap} onChange={() => match?.save()} {say} modelCanvas={canvas} />
         <div class="stage-tools">
           <button type="button" aria-label="ซูมเข้า" onclick={() => match?.zoomAt(1.4)}>＋</button>
           <button type="button" aria-label="ซูมออก" onclick={() => match?.zoomAt(1 / 1.4)}>－</button>
           <button type="button" aria-label="พอดีจอ" onclick={() => match?.fit()}>⤢</button>
+          <button type="button" aria-label="แม่เหล็กเส้น" title="แม่เหล็กเส้น (Alt ค้าง = ปิดชั่วคราว)" class="snap" class:on={match.snap} aria-pressed={match.snap} data-stage-snap
+            onclick={() => { if (match) { match.snap = !match.snap; match.save(); say(match.snap ? 'แม่เหล็กเส้น: เปิด' : 'แม่เหล็กเส้น: ปิด'); } }}>🧲</button>
         </div>
+        {#if diffOn || (match.dragging && match.liveFail)}
+          <div class="live-badges">
+            {#if diffOn}<span class="badge diff" data-diff-badge>เทียบความต่าง</span>{/if}
+            {#if match.dragging && match.liveFail}<span class="badge fail" data-solve-fail>คำนวณกล้องไม่สำเร็จ · ใช้ค่าล่าสุด</span>{/if}
+          </div>
+        {/if}
         {#if match.pick}
           <p class="pick-hint">{match.pick.want === 'model' ? 'แตะจุดบนโมเดล' : 'แตะจุดเดียวกันบนภาพ'}</p>
         {/if}
@@ -480,7 +505,11 @@
   .viewport { position: relative; flex: 0 0 48%; min-height: 240px; background: #22303d; overflow: hidden; }
   canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
   .ref { position: absolute; display: block; pointer-events: none; object-fit: fill; max-width: none; }
-  .viewport.matching { flex-basis: 60%; }
+  .viewport.matching { flex-basis: 60%; isolation: isolate; }
+  .live-badges { position: absolute; left: 8px; top: 8px; display: flex; flex-direction: column; gap: 4px; z-index: 4; pointer-events: none; }
+  .badge { font-size: 12px; font-weight: 700; padding: 2px 8px; border-radius: 8px; background: rgba(0, 0, 0, 0.6); width: max-content; }
+  .badge.diff { color: #8fdfff; }
+  .badge.fail { color: #ffb3b3; opacity: 0.9; }
   .divider {
     position: absolute; top: 0; bottom: 0; width: 0; border-left: 2px solid #ffe14d; pointer-events: none; z-index: 2;
   }
@@ -488,8 +517,11 @@
     position: absolute; top: 6px; left: 0; transform: translateX(-50%); background: rgba(0, 0, 0, 0.65);
     color: #ffe14d; font-size: 13px; padding: 2px 8px; border-radius: 8px; white-space: nowrap;
   }
-  .stage-tools { position: absolute; right: 8px; bottom: 8px; display: flex; flex-direction: column; gap: 6px; z-index: 4; }
-  .stage-tools button { width: 48px; min-height: 48px; padding: 0; font-size: 22px; background: rgba(16, 32, 46, 0.88); }
+  /* a row along the bottom strip that MatchState.fit() keeps free under the image */
+  .stage-tools { position: absolute; right: 8px; bottom: 6px; display: flex; flex-direction: row; gap: 6px; z-index: 4; }
+  .stage-tools button { width: 46px; min-height: 46px; padding: 0; font-size: 21px; background: rgba(16, 32, 46, 0.88); }
+  .stage-tools button.snap { opacity: 0.55; }
+  .stage-tools button.snap.on { opacity: 1; border-color: #ffe14d; box-shadow: 0 0 0 2px rgba(255, 225, 77, 0.35) inset; }
   .pick-hint {
     position: absolute; left: 50%; top: 8px; transform: translateX(-50%); margin: 0; z-index: 4; pointer-events: none;
     background: rgba(58, 29, 58, 0.92); border: 2px solid #ff4dd8; border-radius: 10px; padding: 6px 12px; font-weight: 700;

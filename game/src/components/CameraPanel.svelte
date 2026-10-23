@@ -115,6 +115,26 @@
     <button type="button" data-act="seed-lines" onclick={() => { st.seedLines(); onChange(); }}>วางเส้นตามกล้องปัจจุบัน</button>
     <button type="button" data-act="clear-lines" onclick={() => { st.clearLines(); onChange(); }}>ล้างเส้น</button>
   </div>
+  <div class="actions snaprow">
+    <button type="button" class:on={st.snap} aria-pressed={st.snap} data-line-snap
+      onclick={() => { st.snap = !st.snap; onChange(); say(st.snap ? 'แม่เหล็กเส้น: เปิด' : 'แม่เหล็กเส้น: ปิด'); }}>🧲 แม่เหล็กเส้น {st.snap ? 'เปิด' : 'ปิด'}</button>
+    <button type="button" disabled={!st.lines.find((l) => l.id === st.selectedLine)?.links} data-act="unlink-line"
+      onclick={() => { const n = st.unlinkLine(st.selectedLine); onChange(); if (n) say('แยกมุมของเส้นที่เลือกแล้ว'); }}>แยกมุมที่เชื่อม</button>
+    <button type="button" class="small" aria-label="ย้อนการแก้เส้น" disabled={st.lineUndoCount === 0} data-act="undo-lines"
+      onclick={() => { st.undoLines(); onChange(); }}>↶ ย้อน</button>
+    <button type="button" class="small" aria-label="ทำซ้ำการแก้เส้น" disabled={st.lineRedoCount === 0} data-act="redo-lines"
+      onclick={() => { st.redoLines(); onChange(); }}>↷ ทำซ้ำ</button>
+  </div>
+  <div class="field" role="radiogroup" aria-label="โหมดเทียบความต่าง">
+    <span>โหมดเทียบความต่าง (โมเดล ⊖ ภาพ: ตรงกัน = มืด, เพี้ยน = เรืองแสง)</span>
+    <div class="seg3">
+      {#each [['drag', 'ขณะลาก'], ['always', 'เปิดตลอด'], ['off', 'ปิด']] as const as [id, label] (id)}
+        <button type="button" role="radio" aria-checked={st.diff === id} class:on={st.diff === id} data-diff-mode={id}
+          onclick={() => { st.diff = id; onChange(); }}>{label}</button>
+      {/each}
+    </div>
+  </div>
+  <p class="tip">ลากปลายเส้น (หรือลากทั้งเส้น) ไปใกล้เส้นแกนอื่น จะดูดติดปลายเส้น จุดตัด หรือบนเส้น · ปลายที่ดูดติดกันจะ<b>เชื่อมเป็นมุมเดียว</b> (กรอบเหลือง) ลากไปด้วยกัน · <b>กดค้าง</b>ที่มุมเพื่อแยก · กด Alt ค้างขณะลากเพื่อปิดแม่เหล็กชั่วคราว{st.linkedEnds ? ` · เชื่อมอยู่ ${st.linkedEnds} ปลาย` : ''}</p>
   <div class="zoom">
     <button type="button" aria-label="ซูมเข้า" data-zoom="in" onclick={() => st.zoomAt(1.4)}>＋</button>
     <button type="button" aria-label="ซูมออก" data-zoom="out" onclick={() => st.zoomAt(1 / 1.4)}>－</button>

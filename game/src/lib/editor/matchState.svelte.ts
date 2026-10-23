@@ -23,6 +23,7 @@ import {
 } from './camMath';
 import { camFromMatched, camJson, focalFromLens, fullExport, hfovDeg, lensMm, type ViewRect } from './cameraMatch';
 import type { DisplayMode } from './modelEditor';
+import { jointMembers, linkEnds, removeLineLinks, unlinkEnd, type EndRef } from './guideSnap';
 
 export type ImageChoice = 'crop' | 'wide';
 export type PrincipalMode = 'center' | 'vp3' | 'free';
@@ -36,7 +37,13 @@ type Saved = {
   image: ImageChoice;
   principal: PrincipalMode;
   lockLens: boolean;
+  /** Guide-line snapping on/off (optional; default on). */
+  snap?: boolean;
+  /** Difference view of model vs mock-up (optional; default 'drag'). */
+  diff?: DiffMode;
 };
+/** 'drag' = difference view only while a guide/point is dragged, 'always' = left on, 'off' = normal overlay. */
+export type DiffMode = 'drag' | 'always' | 'off';
 
 export const AXIS_COLORS = ['#ff4d4d', '#3ddc6a', '#4d8dff'] as const;
 export const AXIS_NAMES = ['X', 'Y', 'Z'] as const;
@@ -56,6 +63,19 @@ export class MatchState {
   image = $state<ImageChoice>('crop');
   principal = $state<PrincipalMode>('center');
   lockLens = $state(false);
+  /** "แม่เหล็กเส้น": snap dragged guide lines to lines of other axes. */
+  snap = $state(true);
+  diff = $state<DiffMode>('drag');
+  /** A guide line / point is being dragged (live solve + diff view). */
+  dragging = $state(false);
+  /** The last live solve failed; the camera stays at the last good solve. */
+  liveFail = $state(false);
+  private liveBase: Cam | null = null;
+  /** Undo/redo stacks for guide-line edits (snapshots of `lines`). */
+  private lineUndo: GuideLine[][] = [];
+  private lineRedo: GuideLine[][] = [];
+  lineUndoCount = $state(0);
+  lineRedoCount = $state(0);
   display = $state<DisplayMode>('solid');
   opacity = $state(70);
   split = $state(0);
@@ -91,9 +111,11 @@ export class MatchState {
     }
     return { x: 0, y: 0, w: ref.width, h: ref.height, src: ref.src };
   }
+  /** Strip kept free under the image at fit, so the zoom buttons never cover it (phones). */
+  static readonly PAD_BOTTOM = 60;
   get fitScale(): number {
     const r = this.imageRect;
-    return Math.min(this.stageW / r.w, this.stageH / r.h);
+    return Math.min(this.stageW / r.w, Math.max(this.stageH * 0.5, this.stageH - MatchState.PAD_BOTTOM) / r.h);
   }
   /** Screen px per ref px. */
   get k(): number {
@@ -107,7 +129,8 @@ export class MatchState {
   fit(): void {
     const r = this.imageRect;
     this.zoom = 1;
-    this.center = [r.x + r.w / 2, r.y + r.h / 2];
+    const pad = Math.min(MatchState.PAD_BOTTOM, this.stageH * 0.5);
+    this.center = [r.x + r.w / 2, r.y + r.h / 2 + pad / 2 / this.fitScale];
   }
   zoomAt(factor: number, at?: V2): void {
     const z = Math.min(40, Math.max(0.5, this.zoom * factor));
@@ -132,7 +155,72 @@ export class MatchState {
     const frame = { cx: this.cam.cx, cy: this.cam.cy, s: Math.max(this.width, this.height) };
     return ([0, 1, 2] as Axis[]).map((a) => fitVanishingPoint(this.lines.filter((l) => l.axis === a), frame));
   }
+  /** Remember the current lines before an edit (for undo). */
+  pushLines(): void {
+    this.lineUndo.push($state.snapshot(this.lines) as GuideLine[]);
+    if (this.lineUndo.length > 100) this.lineUndo.shift();
+    this.lineRedo = [];
+    this.lineUndoCount = this.lineUndo.length;
+    this.lineRedoCount = 0;
+  }
+  /** Drop the last snapshot when an edit turned out to change nothing (e.g. a tap on a handle). */
+  dropLastPush(): void {
+    const last = this.lineUndo.at(-1);
+    if (last && JSON.stringify(last) === JSON.stringify($state.snapshot(this.lines))) {
+      this.lineUndo.pop();
+      this.lineUndoCount = this.lineUndo.length;
+    }
+  }
+  undoLines(): boolean {
+    const prev = this.lineUndo.pop();
+    if (!prev) return false;
+    this.lineRedo.push($state.snapshot(this.lines) as GuideLine[]);
+    this.lines = prev;
+    this.afterHistory();
+    return true;
+  }
+  redoLines(): boolean {
+    const next = this.lineRedo.pop();
+    if (!next) return false;
+    this.lineUndo.push($state.snapshot(this.lines) as GuideLine[]);
+    this.lines = next;
+    this.afterHistory();
+    return true;
+  }
+  private afterHistory(): void {
+    this.lineUndoCount = this.lineUndo.length;
+    this.lineRedoCount = this.lineRedo.length;
+    if (this.selectedLine !== null && !this.lines.some((l) => l.id === this.selectedLine)) this.selectedLine = null;
+    this.nextId = Math.max(this.nextId, 1 + Math.max(0, ...this.lines.map((l) => l.id)));
+  }
+  /** Endpoints that move with `ref` (its shared corner). */
+  members(ref: EndRef): EndRef[] {
+    return jointMembers(this.lines, ref);
+  }
+  link(p: EndRef, q: EndRef): void {
+    linkEnds(this.lines, p, q);
+  }
+  /** Unlink one endpoint from its corner. */
+  unlink(ref: EndRef): boolean {
+    if (this.members(ref).length < 2) return false;
+    this.pushLines();
+    unlinkEnd(this.lines, ref);
+    return true;
+  }
+  /** Unlink both ends of a line; returns how many ends were linked. */
+  unlinkLine(id: number | null): number {
+    const line = this.lines.find((l) => l.id === id);
+    if (!line?.links) return 0;
+    this.pushLines();
+    const n = Object.keys(line.links).length;
+    removeLineLinks(this.lines, line.id);
+    return n;
+  }
+  get linkedEnds(): number {
+    return this.lines.reduce((n, l) => n + (l.links ? Object.keys(l.links).length : 0), 0);
+  }
   addLine(axis: Axis): void {
+    this.pushLines();
     const r = this.viewRect;
     const n = this.lines.filter((l) => l.axis === axis).length;
     const cx = r.x0 + r.w * (0.3 + 0.12 * axis + 0.05 * n);
@@ -145,10 +233,13 @@ export class MatchState {
   }
   removeLine(id: number | null): void {
     if (id === null) return;
+    this.pushLines();
+    removeLineLinks(this.lines, id);
     this.lines = this.lines.filter((l) => l.id !== id);
     if (this.selectedLine === id) this.selectedLine = null;
   }
   clearLines(): void {
+    this.pushLines();
     this.lines = [];
     this.selectedLine = null;
   }
@@ -164,14 +255,22 @@ export class MatchState {
       [2, 'FLlegTL', 'FLfoot'],
       [2, 'FRlegTR', 'FRfoot'],
     ];
+    if (this.lines.length) this.pushLines();
     const lines: GuideLine[] = [];
+    const at = new Map<string, EndRef[]>();
     for (const [axis, a, b] of edges) {
       const A = by(a);
       const Bp = by(b);
       const pa = A && project(this.cam, A);
       const pb = Bp && project(this.cam, Bp);
-      if (pa && pb) lines.push({ id: this.nextId++, axis, a: pa, b: pb });
+      if (!pa || !pb) continue;
+      const id = this.nextId++;
+      lines.push({ id, axis, a: pa, b: pb });
+      at.set(a, [...(at.get(a) ?? []), { line: id, end: 'a' }]);
+      at.set(b, [...(at.get(b) ?? []), { line: id, end: 'b' }]);
     }
+    // box corners shared by lines of different axes start as linked corners
+    for (const ends of at.values()) for (let i = 1; i < ends.length; i++) linkEnds(lines, ends[0]!, ends[i]!);
     this.lines = lines;
     this.selectedLine = null;
   }
@@ -236,6 +335,45 @@ export class MatchState {
     this.cam = cam;
     this.say(`คำนวณจากเส้นแล้ว · เลนส์ ${lensMm(cam.f, this.width).toFixed(1)} มม.`);
     return true;
+  }
+  get showDiff(): boolean {
+    return this.diff === 'always' || (this.diff === 'drag' && this.dragging);
+  }
+  beginLive(): void {
+    this.dragging = true;
+    this.liveFail = false;
+    this.liveBase = this.cam;
+  }
+  endLive(): void {
+    this.dragging = false;
+    this.liveBase = null;
+  }
+  /**
+   * Re-solve while dragging (called at most once per frame). Starts from the camera at drag start so the
+   * result doesn't drift; on failure keeps the last good camera and flags `liveFail`.
+   */
+  solveLive(what: 'lines' | 'pairs'): boolean {
+    const base = this.liveBase ?? this.cam;
+    const pairs = this.completePairs;
+    let cam: Cam | null = null;
+    try {
+      if (what === 'lines') {
+        const frame = { cx: base.cx, cy: base.cy, s: Math.max(this.width, this.height) };
+        const res = solveFromLines(this.lines, base, { frame, fixedF: this.lockLens, principal: this.principal === 'vp3' ? 'vp3' : 'fixed' });
+        if (res.ok && res.cam) cam = pairs.length >= 2 ? (solvePosition(res.cam, pairs) ?? res.cam) : this.keepAnchor(base, res.cam);
+      } else if (pairs.length >= 4) {
+        const start = solvePosition(base, pairs) ?? base;
+        cam = solveFull(start, this.lines, pairs, { fixedF: this.lockLens, principal: this.principal === 'free' && pairs.length >= 6 });
+      } else if (pairs.length >= 2) {
+        cam = solvePosition(base, pairs);
+      } else return true; // nothing to solve from yet
+    } catch {
+      cam = null;
+    }
+    const finite = !!cam && [cam.f, cam.cx, cam.cy, ...cam.C, ...cam.R.flat()].every(Number.isFinite) && cam.f > 0;
+    this.liveFail = !finite;
+    if (finite) this.cam = cam!;
+    return finite;
   }
   /** Keep the model origin at the same pixel and depth as in `prior`. */
   private keepAnchor(prior: Cam, cam: Cam): Cam {
@@ -357,6 +495,8 @@ export class MatchState {
       image: this.image,
       principal: this.principal,
       lockLens: this.lockLens,
+      snap: this.snap,
+      diff: this.diff,
     };
     try {
       localStorage.setItem(this.storageKey, JSON.stringify(data));
@@ -376,6 +516,8 @@ export class MatchState {
       this.image = d.image === 'wide' && this.asset.ref?.mockup ? 'wide' : 'crop';
       this.principal = d.principal ?? 'center';
       this.lockLens = !!d.lockLens;
+      this.snap = d.snap !== false;
+      this.diff = d.diff === 'always' || d.diff === 'off' ? d.diff : 'drag';
       this.nextId = 1 + Math.max(0, ...this.lines.map((l) => l.id), ...this.pairs.map((p) => p.id));
       return true;
     } catch {
