@@ -12,7 +12,7 @@
 	import { lifeOf } from '$lib/sim/lifecycle';
 	import { PRIORITIES, powerOf, type Priority } from '$lib/sim/power';
 	import type { ModuleDef } from '$lib/game/types';
-	import { centroidOf, meshBounds, selVerts, transformVerts, validateMesh } from '$lib/game/editMesh';
+	import { centroidOf, meshBounds, selVerts, validateMesh } from '$lib/game/editMesh';
 	import { Euler, Matrix4, Quaternion, Vector3 } from 'three';
 
 	interface Props {
@@ -163,13 +163,8 @@
 		return idx.length ? { idx, w: centroidOf(m, idx).applyMatrix4(partMat) } : null;
 	});
 	function moveSel(axis: number, valueCm: number) {
-		const m = equip.workMesh;
-		if (!m || !selC || !partMat || !isFinite(valueCm)) return;
-		const target = selC.w.clone();
-		target.setComponent(axis, Math.round(valueCm / (equip.snap * 100)) * equip.snap);
-		const inv = partMat.clone().invert();
-		const d = target.applyMatrix4(inv).sub(selC.w.clone().applyMatrix4(inv));
-		equip.setMesh(transformVerts(m, selC.idx, new Matrix4().makeTranslation(d.x, d.y, d.z)));
+		if (!selC || !isFinite(valueCm)) return;
+		equip.viewport?.applyTyped({ kind: 'position', axis: axis as 0 | 1 | 2, value: valueCm / 100, space: 'world' });
 	}
 	function nudgeSel(axis: number, sign: number) {
 		if (selC) moveSel(axis, (selC.w.getComponent(axis) + sign * equip.snap) * 100);

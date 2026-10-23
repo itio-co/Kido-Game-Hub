@@ -2,7 +2,7 @@
 
 A touch-friendly polygon mesh editor for three.js. It is shared by the games in this repo.
 
-> **Status: 0.0.1, skeleton only.** `src/` exports TypeScript types, plus one runtime piece: the snap composition helpers (`composeSnaps`, `splitDelta`, `makeDelta`, `GEOMETRIC_SNAP_KINDS`). The contract is in [API.md](API.md). Implementations land in follow-up PRs from GamesBuilder and Never Ending Game (ownership is in API.md §13).
+> **Status: mesh ops, viewport (picking, gizmo, transform sessions), history, and the Threlte adapter are implemented.** Snap *providers*, camera match, the GLB import pipeline, and the Svelte panels (`./svelte`) are still stubs. The contract is in [API.md](API.md). Ownership is in API.md §13.
 
 ## Entry points
 
@@ -13,7 +13,7 @@ A touch-friendly polygon mesh editor for three.js. It is shared by the games in 
 | `@itio/mesh-editor/threlte` | Adapter for Threlte apps |
 | `@itio/mesh-editor/camera-match` | Match a camera to a reference image and export it to Blender `cam.json` or three.js |
 
-`three` (^0.186) is a peer dependency. `svelte` (^5) is an optional peer, needed only for `./svelte`.
+`three` (^0.186) is a peer dependency. `svelte` (^5) and `@threlte/core` (^8) are optional peers, needed only for `./svelte` and `./threlte`.
 
 ## Develop
 
@@ -36,7 +36,7 @@ Add `"@itio/mesh-editor": "*"` to the game's `dependencies`, then run `npm insta
 
 ตัวแก้ไขโมเดล 3 มิติแบบโพลิกอนสำหรับ three.js ใช้นิ้วแตะบนมือถือได้ เกมทุกเกมใน repo นี้ใช้ร่วมกัน
 
-> **สถานะ: 0.0.1 มีแค่โครง** ไฟล์ใน `src/` ส่งออก type ของ TypeScript เป็นหลัก ส่วนที่เป็นโค้ดรันจริงมีแค่ตัวช่วยรวม snap (`composeSnaps`, `splitDelta`, `makeDelta`, `GEOMETRIC_SNAP_KINDS`) สัญญา API ทั้งหมดอยู่ใน [API.md](API.md) โค้ดจริงจะตามมาใน PR ถัดไปจาก GamesBuilder และ Never Ending Game (ดูตารางผู้รับผิดชอบใน API.md ข้อ 13)
+> **สถานะ: แกนแก้ไขเมช, viewport (การเลือก, gizmo, transform), history และตัวเชื่อม Threlte ใช้งานได้แล้ว** ส่วน snap provider, จับกล้อง, นำเข้า GLB และแผง Svelte (`./svelte`) ยังเป็นโครง สัญญา API อยู่ใน [API.md](API.md) (ข้อ 13)
 
 ## จุด import
 
@@ -47,7 +47,7 @@ Add `"@itio/mesh-editor": "*"` to the game's `dependencies`, then run `npm insta
 | `@itio/mesh-editor/threlte` | ตัวเชื่อมสำหรับแอปที่ใช้ Threlte |
 | `@itio/mesh-editor/camera-match` | จับกล้องให้ตรงกับภาพอ้างอิง แล้วส่งออกเป็น `cam.json` ของ Blender หรือค่ากล้องของ three.js |
 
-ต้องติดตั้ง `three` (^0.186) เอง ส่วน `svelte` (^5) ต้องมีเฉพาะเมื่อใช้ `./svelte`
+ต้องติดตั้ง `three` (^0.186) เอง ส่วน `svelte` (^5) และ `@threlte/core` (^8) ต้องมีเฉพาะเมื่อใช้ `./svelte` หรือ `./threlte`
 
 ## พัฒนา
 

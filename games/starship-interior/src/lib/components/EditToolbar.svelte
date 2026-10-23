@@ -13,8 +13,8 @@
 	] as const;
 	const run = (n: Parameters<typeof equip.op>[0]) => game.flash(equip.op(n));
 	const cm = $derived(equip.editMode !== 'object');
-	const canUndo = $derived((void equip.undoN, equip.undoStack.length > 0));
-	const canRedo = $derived((void equip.undoN, equip.redoStack.length > 0));
+	const canUndo = $derived((void equip.undoN, equip.history.canUndo));
+	const canRedo = $derived((void equip.undoN, equip.history.canRedo));
 </script>
 
 {#if show}

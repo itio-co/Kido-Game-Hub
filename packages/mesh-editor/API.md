@@ -11,7 +11,7 @@ Status: **Agreed v1 (Never Ending Game + GamesBuilder, 2026-10-23).** Package ve
 | `@itio/mesh-editor/threlte` | Threlte adapter | core, `@threlte/core` (optional peer) |
 | `@itio/mesh-editor/camera-match` | camera matching to a reference image, Blender and three.js export | `three` |
 
-Peer dependencies: `three` is required. `svelte` and `@threlte/core` are **optional** (`peerDependenciesMeta`) and needed only for the subpath that uses them. The core never imports Svelte, Threlte, or DOM UI. It touches the DOM only through `EditorViewport` pointer listeners on `domElement`.
+Peer dependencies: `three` is required. `svelte` and `@threlte/core` are **optional** (`peerDependenciesMeta`) and needed only for the subpath that uses them. The core never imports Svelte or Threlte. It touches the DOM through `EditorViewport` pointer listeners on `domElement`, plus the box-select rectangle (`data-testid="box-select"`) appended to `document.body` for the gesture.
 
 ---
 
@@ -144,15 +144,18 @@ const viewport = new EditorViewport({ scene, camera, domElement, host, snap?, hi
 viewport.attach();   // adds listeners + overlay group
 viewport.detach();   // removes them; can attach() again
 viewport.dispose();
+viewport.refresh();  // rebuild highlights after the host changes a mesh outside a drag
 ```
 
-- **Pointer listeners** use the **capture phase** on `domElement` (`{ capture: true }`). They ignore `!event.isPrimary`, so a second finger is left to pinch and orbit. A second finger during a drag cancels the session.
+`@itio/mesh-editor/threlte` exports `useMeshEditor(options)` and `./threlte/MeshEditor.svelte`. Pass `options.host` for a full `EditorHost` (`objects` / `onCommit` are the fallback when `host` is omitted). `getControls()` (or `controls`) is what `setNavigationEnabled` toggles. `requestRender` also calls Threlte `invalidate()`.
+
+- **Pointer listeners** use the **capture phase** on `domElement` (`{ capture: true }`). They ignore `!event.isPrimary`, so a second finger is left to pinch and orbit. A second finger during a drag cancels the session. While a gesture is active the same handlers also listen on `window` in the capture phase: hosts such as Threlte bind OrbitControls to the canvas **parent** and call `setPointerCapture` there, so `pointerup` would otherwise never reach `domElement`. A repeated delivery of the same event is ignored.
 - **Swallowing:** a pointerdown that hits the gizmo, or that starts a box select, calls `stopPropagation()` and `host.setNavigationEnabled(false)`. A tap (movement under `tapSlopPx`) on empty space clears the selection and is not swallowed.
 - **No render loop:** every visible change calls `host.requestRender()`.
-- **Overlays** (gizmo, vertex dots, edge lines, selection box) live in one `Group` that is added on attach and removed on detach. They are never exported, and they are excluded from picking and from `Box3` computations.
+- **Overlays** (gizmo, vertex dots, edge lines, face tint) live in one `Group` that is added on attach and removed on detach. They are never exported, and they are excluded from picking and from `Box3` computations (`userData.meshEditorOverlay`). The selection box is the DOM rectangle described above, hidden when the gesture ends.
 - **Select mode:** `object | vertex | edge | face` (`setSelectMode`).
-- **Picking:** raycast for objects and faces. Vertices use screen-space distance within `pickRadiusPx`. Edges use the distance to the projected segment within **`0.7 × pickRadiusPx`**, which is 15.4 px at the 22 px default. Occlusion is tested against a depth raycast, and `xray` turns it off.
-- **Multi select:** on desktop, Shift adds and Ctrl/Cmd toggles. On touch, the `multiSelect` flag makes taps toggle.
+- **Picking:** raycast for objects and faces. Vertices use screen-space distance within `pickRadiusPx`. Edges use the distance to the projected segment within **`0.7 × pickRadiusPx`**, which is 15.4 px at the 22 px default. Occlusion is a depth raycast of visible `Mesh` objects only (a floor grid or other line helper is not an occluder). `xray` turns it off.
+- **Multi select:** on desktop, Shift adds and Ctrl/Cmd toggles. The `multiSelect` flag makes a tap toggle. It is how touch multi-select works, and it also applies on desktop so a Multi button works without a modifier key.
 - **Box select:** a drag that **starts on empty space** draws a box when any of these is true:
   - **Alt** is held. The op is `replace`.
   - **Shift** is held. The op is `add`.

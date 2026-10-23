@@ -12,5 +12,5 @@ export default defineConfig({
 	// single-page 3D app: the page chunk bundles three.js + Threlte (~1.15 MB min, ~310 kB gzip); the vendored
 	// draco_decoder.js asset is ~0.7 MB and only loaded on demand. Raise the default 500 kB warning threshold accordingly.
 	build: { chunkSizeWarningLimit: 1400 },
-	ssr: { noExternal: ['three', '@threlte/core', '@threlte/extras'] }
+	ssr: { noExternal: ['three', '@threlte/core', '@threlte/extras', '@itio/mesh-editor'] }
 });

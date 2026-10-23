@@ -12,6 +12,7 @@
   "sideEffects": false,
   "files": [
     "dist",
+    "src/threlte/MeshEditor.svelte",
     "API.md",
     "README.md"
   ],
@@ -30,6 +31,10 @@
     "./threlte": {
       "types": "./dist/threlte/index.d.ts",
       "import": "./dist/threlte/index.js"
+    },
+    "./threlte/MeshEditor.svelte": {
+      "svelte": "./src/threlte/MeshEditor.svelte",
+      "import": "./src/threlte/MeshEditor.svelte"
     },
     "./camera-match": {
       "types": "./dist/camera-match/index.d.ts",
