@@ -25,6 +25,7 @@ import {
 import { blenderValues, camFromMatched, camJson, focalFromLens, fullExport, hfovDeg, lensMm, type ViewRect } from './cameraMatch';
 import type { DisplayMode } from './modelEditor';
 import { T } from './strings';
+import { frameWindow, FOCUS_PAD, type Box2 } from './viewFrame';
 import { jointMembers, linkEnds, removeLineLinks, unlinkEnd, type EndRef } from './guideSnap';
 import { applyMasterIds, ensureMasters, masterIds, masterOf, parseMasterMap, promoteMaster, setMasterFlag, type MasterMap } from './masterLine';
 import { alignLine, edgeMapFromRGBA, edgeOverlayRGBA, refineLine, type EdgeAlign, type EdgeMap } from './edgeAlign';
@@ -132,6 +133,9 @@ export const AXIS_NAMES = ['X', 'Y', 'Z'] as const;
 const clone = <T>(v: T): T => JSON.parse(JSON.stringify(v)) as T;
 
 /** Camera-match session for one asset: guide lines, point pairs, the solved camera and the view window. */
+/** Default screen-px strip kept free under the fitted image for the stage's zoom buttons. */
+const PAD_BOTTOM_DEFAULT = 60;
+
 export class MatchState {
   readonly asset: ShowcaseAsset;
   readonly width: number;
@@ -205,6 +209,10 @@ export class MatchState {
   center = $state<V2>([0, 0]);
   stageW = $state(1);
   stageH = $state(1);
+  /** Screen px kept free under the image at fit (the stage's bottom tool row); set by the view. */
+  padBottom = $state(PAD_BOTTOM_DEFAULT);
+  /** True once the user zoomed or panned since the last fit (then resizes keep the window instead of refitting). */
+  userView = false;
   private nextId = 1;
 
   /** Where this session started: a localStorage draft, the committed source file, or fresh seeded lines. */
@@ -310,11 +318,11 @@ export class MatchState {
     }
     return { x: 0, y: 0, w: ref.width, h: ref.height, src: ref.src };
   }
-  /** Strip kept free under the image at fit, so the zoom buttons never cover it (phones). */
-  static readonly PAD_BOTTOM = 60;
+  /** Default strip kept free under the image at fit, so the zoom buttons never cover it (phones). */
+  static readonly PAD_BOTTOM = PAD_BOTTOM_DEFAULT;
   get fitScale(): number {
     const r = this.imageRect;
-    return Math.min(this.stageW / r.w, Math.max(this.stageH * 0.5, this.stageH - MatchState.PAD_BOTTOM) / r.h);
+    return Math.min(this.stageW / r.w, Math.max(this.stageH * 0.5, this.stageH - this.padBottom) / r.h);
   }
   /** Screen px per ref px. */
   get k(): number {
@@ -325,18 +333,87 @@ export class MatchState {
     const h = this.stageH / this.k;
     return { x0: this.center[0] - w / 2, y0: this.center[1] - h / 2, w, h };
   }
+  /** Last framed box (ref px) — test hook / debug (data-focus-box). */
+  focusBox = $state.raw<Box2 | null>(null);
+  private anim = 0;
+  /** Cancel a running framing animation (any direct zoom / pan / fit wins). */
+  private stopAnim(): void {
+    if (this.anim) cancelAnimationFrame(this.anim);
+    this.anim = 0;
+  }
+  /**
+   * Zoom / pan so `box` (ref px) fills the usable stage with `pad` padding (Focus / Object crop).
+   * Animates ~200 ms (geometric zoom), or jumps when `animate` is false or the user prefers reduced motion.
+   */
+  frameBox(box: Box2, pad = FOCUS_PAD, animate = true): void {
+    this.stopAnim();
+    const target = frameWindow(box, { w: this.stageW, h: this.stageH, padBottom: this.padBottom }, this.fitScale, { pad });
+    this.focusBox = box;
+    this.userView = true;
+    const reduce = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (!animate || reduce || typeof requestAnimationFrame !== 'function') {
+      this.zoom = target.zoom;
+      this.center = target.center;
+      return;
+    }
+    const z0 = this.zoom;
+    const c0 = this.center;
+    const t0 = performance.now();
+    const D = 200;
+    const step = (now: number): void => {
+      const t = Math.min(1, (now - t0) / D);
+      const e = t < 0.5 ? 2 * t * t : 1 - (-2 * t + 2) ** 2 / 2;
+      const z = z0 * (target.zoom / z0) ** e;
+      // interpolate the screen position of the target centre so the motion looks straight at a changing zoom
+      const a = (1 / z0 - 1 / z) / (1 / z0 - 1 / target.zoom || 1);
+      const w = Math.abs(target.zoom - z0) < 1e-9 ? e : a;
+      this.zoom = z;
+      this.center = [c0[0] + (target.center[0] - c0[0]) * w, c0[1] + (target.center[1] - c0[1]) * w];
+      this.anim = t < 1 ? requestAnimationFrame(step) : 0;
+      if (t >= 1) {
+        this.zoom = target.zoom;
+        this.center = target.center;
+      }
+    };
+    this.anim = requestAnimationFrame(step);
+  }
+  /** The asset's mock-up crop rect in ref (= crop) px — the object crop, vs the room at Fit when image = 'wide'. */
+  get cropRect(): Box2 {
+    const ref = this.asset.ref!;
+    return { x0: 0, y0: 0, x1: ref.width, y1: ref.height };
+  }
+  cropPreset(animate = true): void {
+    this.frameBox(this.cropRect, 0, animate);
+  }
   fit(): void {
+    this.stopAnim();
+    this.focusBox = null;
     const r = this.imageRect;
     this.zoom = 1;
-    const pad = Math.min(MatchState.PAD_BOTTOM, this.stageH * 0.5);
+    this.userView = false;
+    const pad = Math.min(this.padBottom, this.stageH * 0.5);
     this.center = [r.x + r.w / 2, r.y + r.h / 2 + pad / 2 / this.fitScale];
   }
   zoomAt(factor: number, at?: V2): void {
+    this.stopAnim();
     const z = Math.min(40, Math.max(0.5, this.zoom * factor));
     const p = at ?? this.center;
     const f = this.zoom / z;
     this.center = [p[0] + (this.center[0] - p[0]) * f, p[1] + (this.center[1] - p[1]) * f];
     this.zoom = z;
+    this.userView = true;
+  }
+  /** Pan the view window by a screen-px drag (content follows the pointer). */
+  panScreen(dx: number, dy: number): void {
+    this.stopAnim();
+    const k = this.k;
+    this.center = [this.center[0] - dx / k, this.center[1] - dy / k];
+    this.userView = true;
+  }
+  /** Screen point (relative to the stage's top-left) → ref px. */
+  stageToRef(x: number, y: number): V2 {
+    const v = this.viewRect;
+    return [v.x0 + x / this.k, v.y0 + y / this.k];
   }
   setImage(next: ImageChoice): void {
     const before = this.group;

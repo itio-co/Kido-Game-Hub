@@ -610,7 +610,7 @@
       return;
     }
     if (Math.hypot(event.clientX - gesture.startX, event.clientY - gesture.startY) > 6) gesture.moved = true;
-    if (gesture.moved) st.center = [st.center[0] - (event.clientX - prev.x) * s, st.center[1] - (event.clientY - prev.y) * s];
+    if (gesture.moved) st.panScreen(event.clientX - prev.x, event.clientY - prev.y);
   }
   function up(event: PointerEvent): void {
     if (drag) {

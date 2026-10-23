@@ -22,7 +22,70 @@ export const MESSAGES = {
   'editor.common.redoNext': { en: '↷ Redo', th: '↷ ทำต่อ' },
   'editor.common.undoAria': { en: 'Undo', th: 'ย้อน (Undo)' },
   'editor.common.redoAria': { en: 'Redo', th: 'ทำซ้ำ (Redo)' },
+  // --- stage zoom / pan (mock-up + camera-match views) ---------------------------------------------------------
+  'editor.stage.zoomIn': { en: 'Zoom in', th: 'ซูมเข้า' },
+  'editor.stage.zoomOut': { en: 'Zoom out', th: 'ซูมออก' },
+  'editor.stage.fit': { en: 'Fit to screen', th: 'พอดีจอ' },
+  'editor.stage.zoomLabel': { en: 'Zoom {pct}%', th: 'ซูม {pct}%' },
+  'editor.stage.mockHint': {
+    en: 'Zoom: mouse wheel / pinch · Pan: middle-, right- or Space+drag / two-finger drag · Fit: ⤢ or double-click / double-tap empty space · Focus: ◎, F or double-tap a part · Object crop: ▣. The model stays locked to the mock-up camera.',
+    th: 'ซูม: ลูกกลิ้งเมาส์ / ถ่างสองนิ้ว · เลื่อนภาพ: ลากด้วยปุ่มกลาง ปุ่มขวา หรือกด Space ค้างแล้วลาก / ลากสองนิ้ว · พอดีจอ: ⤢ หรือดับเบิลคลิก / แตะสองครั้งที่พื้นที่ว่าง · โฟกัส: ◎, ปุ่ม F หรือแตะสองครั้งที่ชิ้นส่วน · ครอปวัตถุ: ▣ โมเดลยังล็อกกับกล้องของภาพ Mock-up',
+  },
+  'editor.stage.focus': { en: 'Focus', th: 'โฟกัส' },
+  'editor.stage.focusTitle': {
+    en: 'Frame the selected part (whole model if none) · F · double-tap a part',
+    th: 'ซูมให้ชิ้นส่วนที่เลือกเต็มจอ (ทั้งโมเดลถ้าไม่ได้เลือก) · ปุ่ม F · แตะสองครั้งที่ชิ้นส่วน',
+  },
+  'editor.stage.crop': { en: 'Object crop', th: 'ครอปวัตถุ' },
+  'editor.stage.cropTitle': {
+    en: "Jump to the asset's mock-up crop (the object) — Fit shows the whole image",
+    th: 'ไปที่กรอบครอปของภาพ Mock-up (ตัววัตถุ) — พอดีจอจะแสดงทั้งภาพ',
+  },
+  'editor.stage.follow': { en: 'Follow selection', th: 'ตามชิ้นที่เลือก' },
+  'editor.stage.followTitle': {
+    en: 'Re-frame the view whenever the selected part changes',
+    th: 'ซูมไปที่ชิ้นส่วนใหม่ทุกครั้งที่เปลี่ยนการเลือก',
+  },
   'editor.common.mm': { en: '{v} mm', th: '{v} มม.' },
+
+  // --- part origin (pivot) editing -------------------------------------------------------------------------------
+  'editor.pivot.mode': { en: 'Edit pivot', th: 'แก้จุดหมุน' },
+  'editor.pivot.modeTitle': {
+    en: 'Edit pivot (D): the arrows move only the origin, the part stays put · snaps to vertices, edge midpoints, face centres, box corners/centre and the grid · hold Alt for free movement',
+    th: 'แก้จุดหมุน (ปุ่ม D): ลูกศรย้ายเฉพาะจุดหมุน ชิ้นส่วนอยู่ที่เดิม · ดูดเข้าจุดยอด กึ่งกลางขอบ กลางหน้า มุม/กลางกล่อง และกริด · กด Alt ค้างเพื่อย้ายอิสระ',
+  },
+  'editor.pivot.heading': { en: 'Pivot (origin)', th: 'จุดหมุน (Origin)' },
+  'editor.pivot.center': { en: 'Pivot to center', th: 'จุดหมุนไปกลางชิ้น' },
+  'editor.pivot.bottom': { en: 'Pivot to bottom center', th: 'จุดหมุนไปกลางฐาน' },
+  'editor.pivot.pick': { en: 'Pivot to picked point', th: 'จุดหมุนไปจุดที่แตะ' },
+  'editor.pivot.pickCancel': { en: 'Cancel picking', th: 'ยกเลิกการแตะเลือก' },
+  'editor.pivot.reset': { en: 'Reset pivot', th: 'คืนจุดหมุนเดิม' },
+  'editor.pivot.pickHint': {
+    en: 'Tap / click a point on the selected part to put its pivot there (Esc cancels)',
+    th: 'แตะ / คลิกจุดบนชิ้นที่เลือกเพื่อย้ายจุดหมุนไปที่นั่น (Esc ยกเลิก)',
+  },
+  'editor.pivot.local': { en: 'Local', th: 'ในชิ้น' },
+  'editor.pivot.world': { en: 'World', th: 'ในฉาก' },
+  'editor.pivot.localSub': {
+    en: 'Pivot, cm · local: part axes, from the original GLB origin',
+    th: 'จุดหมุน (ซม.) · ในชิ้น: แกนของชิ้นส่วน วัดจากจุดหมุนเดิมใน GLB',
+  },
+  'editor.pivot.worldSub': {
+    en: 'Pivot, cm · world: scene axes (X right, Y up, Z front)',
+    th: 'จุดหมุน (ซม.) · ในฉาก: แกนของฉาก (X ขวา, Y ขึ้น, Z หน้า)',
+  },
+  'editor.pivot.spaceAria': { en: 'Pivot coordinates', th: 'พิกัดจุดหมุน' },
+  'editor.pivot.modeOnly': {
+    en: 'Edit pivot: drag the arrows to move the origin (rotate / scale are off in this mode)',
+    th: 'แก้จุดหมุน: ลากลูกศรเพื่อย้ายจุดหมุน (หมุน / ย่อขยายใช้ไม่ได้ในโหมดนี้)',
+  },
+  'editor.pivot.toast': { en: 'Edit pivot {state}', th: 'แก้จุดหมุน {state}' },
+  'editor.pivot.snapped': { en: 'Pivot snapped to {what}', th: 'จุดหมุนดูดเข้า{what}' },
+  'editor.pivot.kind.vertex': { en: 'a vertex', th: 'จุดยอด' },
+  'editor.pivot.kind.edge': { en: 'an edge midpoint', th: 'กึ่งกลางขอบ' },
+  'editor.pivot.kind.face': { en: 'a face centre', th: 'กลางหน้า' },
+  'editor.pivot.kind.bbox': { en: 'the box', th: 'มุม/กลางกล่อง' },
+  'editor.pivot.kind.grid': { en: 'the grid', th: 'กริด' },
 
   // --- master guide line (one per axis per group) ----------------------------------------------------------------
   'cameraMatch.master.set': { en: '★ Set as master', th: '★ ตั้งเป็นเส้นหลัก' },
@@ -403,6 +466,42 @@ export const T = {
     undoAria: t('editor.common.undoAria'),
     redoAria: t('editor.common.redoAria'),
     mm: (v: string | number) => t('editor.common.mm', { v }),
+  },
+
+  /** 2D view-window zoom / pan of the mock-up and camera-match stage. */
+  stage: {
+    zoomIn: t('editor.stage.zoomIn'),
+    zoomOut: t('editor.stage.zoomOut'),
+    fit: t('editor.stage.fit'),
+    zoomLabel: (pct: number) => t('editor.stage.zoomLabel', { pct }),
+    mockHint: t('editor.stage.mockHint'),
+    focus: t('editor.stage.focus'),
+    focusTitle: t('editor.stage.focusTitle'),
+    crop: t('editor.stage.crop'),
+    cropTitle: t('editor.stage.cropTitle'),
+    follow: t('editor.stage.follow'),
+    followTitle: t('editor.stage.followTitle'),
+  },
+
+  /** Part origin (pivot) editing. */
+  pivot: {
+    mode: t('editor.pivot.mode'),
+    modeTitle: t('editor.pivot.modeTitle'),
+    heading: t('editor.pivot.heading'),
+    center: t('editor.pivot.center'),
+    bottom: t('editor.pivot.bottom'),
+    pick: t('editor.pivot.pick'),
+    pickCancel: t('editor.pivot.pickCancel'),
+    reset: t('editor.pivot.reset'),
+    pickHint: t('editor.pivot.pickHint'),
+    local: t('editor.pivot.local'),
+    world: t('editor.pivot.world'),
+    localSub: t('editor.pivot.localSub'),
+    worldSub: t('editor.pivot.worldSub'),
+    spaceAria: t('editor.pivot.spaceAria'),
+    modeOnly: t('editor.pivot.modeOnly'),
+    toast: (on: boolean) => t('editor.pivot.toast', st(on)),
+    snapped: (kind: 'vertex' | 'edge' | 'face' | 'bbox' | 'grid') => t('editor.pivot.snapped', { what: t(`editor.pivot.kind.${kind}`) }),
   },
 
   /** Showing an overlay: while dragging / always / never. */

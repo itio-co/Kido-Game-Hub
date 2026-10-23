@@ -95,6 +95,16 @@ mock-up. Open the game at `#/editor` (or the **✎ แก้โมเดลน�
    rotation in degrees. Sizes are the part's real size; the GLB stores them as node scale.
 4. **แม่เหล็ก** (snap) = 0.5 cm / 15° steps. Undo / redo: header buttons, Ctrl+Z, Ctrl+Shift+Z / Ctrl+Y.
    Keys W/G move, E/R rotate, S scale, Delete removes the part, Esc deselects.
+   **Edit pivot** (origin icon in the tool row / camera-match tools / the selected-part panel, key **D** toggles):
+   the move arrows then move only the part's origin (Blender "Set Origin"); the mesh stays where it is. While
+   dragging, the origin snaps to the part's vertices, edge midpoints, face centres and box corners / centre (ring
+   marker: pink vertex, cyan edge, green face, yellow box) and to the 0.5 cm grid when snap is on; hold Alt to
+   move freely. Panel presets: pivot to centre, to bottom centre, to a picked point (the next tap on the part's
+   surface, through the current zoomed view), reset to the GLB origin; plus the pivot in cm (local = part axes
+   from the GLB origin, or world). Rotation of the pivot itself is not editable (translate only); picking Rotate /
+   Scale leaves pivot mode. Pivots are undoable, saved in the draft / `edits.json` (optional `pivot` per part, in
+   metres, part-local; older files load unchanged), copied by Duplicate and baked into the exported GLB (the node
+   origin is the pivot, the geometry is offset).
 5. **มุม Mock-up** uses the matched camera with the reference over the model (opacity slider);
    **หมุนดูอิสระ** is free orbit.
 6. Edits autosave per model in localStorage (`kido-editor:<slug>:<variant>`); **ล้างการแก้ทั้งหมด** resets.
@@ -102,7 +112,7 @@ mock-up. Open the game at `#/editor` (or the **✎ แก้โมเดลน�
    - **GLB**: binary glTF of the edited model, one node per part. Deleted parts are dropped, hidden parts are
      exported (hiding is only for working). A recoloured part gets a flat colour (no texture / vertex colours).
    - **JSON** (`kido-model-edits/1`): per part `changed`, `deleted`, `copyOf`, `positionDeltaCm`, `rotationDeg`,
-     `scale`, `sizeCm.before/after`, `color`, and `blenderBoxCm.before/after` = the part's axis-aligned box in
+     `scale`, `sizeCm.before/after`, `color`, `pivotCm` (only when moved), and `blenderBoxCm.before/after` = the part's axis-aligned box in
      Blender coordinates and cm (X width, Y depth with front = −Y, Z up), the same numbers `box(name, x0, x1, y0,
      y1, z0, z1)` takes in `build_master.py`. `summary` lists deleted / added / changed parts.
 
