@@ -403,7 +403,8 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
     if (!scene || !flow) return '';
     const current = flow.slots.find((item) => item.slot === slot);
     const clock = scene.timed ? `⏳ ${current ? tx(current, 'title') : ''} · ` : '';
-    return `${clock}${tx(scene, 'hud')} · ${t('game.sub.evidence', { count: evidence.length, total: 5 })}`;
+    // Time and evidence lead so a narrow HUD truncates the mission name, not the count.
+    return `${clock}${t('game.sub.evidence', { count: evidence.length, total: 5 })} · ${tx(scene, 'hud')}`;
   });
 
   return {

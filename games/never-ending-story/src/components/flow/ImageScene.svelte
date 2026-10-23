@@ -30,20 +30,30 @@
   const width = $derived(scene.contain ? 864 : 720);
   const height = $derived(scene.contain ? 1152 : 1280);
   const font = 34;
+  let boxW = $state(0);
+  let boxH = $state(0);
+  // 'slice' crops the picture to fill the screen (the sides on a portrait phone), so keep name labels inside the visible part.
+  const view = $derived.by(() => {
+    if (scene.contain || !boxW || !boxH) return { x0: 0, x1: width, y0: 0, y1: height };
+    const scale = Math.max(boxW / width, boxH / height);
+    const vw = boxW / scale;
+    const vh = boxH / scale;
+    return { x0: (width - vw) / 2, x1: (width + vw) / 2, y0: (height - vh) / 2, y1: (height + vh) / 2 };
+  });
 
   function place(spot: FlowSpot) {
     const cx = (spot.x / 100) * width;
     const cy = (spot.y / 100) * height;
     const label = labelFor(spot);
     const tw = Math.max(120, label.length * font * 0.72 + 28);
-    const lx = Math.max(8, Math.min(width - tw - 8, cx - tw / 2));
+    const lx = Math.max(view.x0 + 8, Math.min(view.x1 - tw - 8, cx - tw / 2));
     const above = cy - font - 70;
-    const ly = above < 150 ? cy + 28 : above;
+    const ly = above < view.y0 + 150 ? cy + 28 : above;
     return { cx, cy, label, tw, lx, ly };
   }
 </script>
 
-<div class="photo">
+<div class="photo" bind:clientWidth={boxW} bind:clientHeight={boxH}>
   <img class:contain={scene.contain} src={imageUrl(image)} alt="" />
   <svg
     class="layer"

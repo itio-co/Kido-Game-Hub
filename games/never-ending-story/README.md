@@ -165,7 +165,9 @@ The wall shelf is a Three.js group: `bookshelf` → `shelf-row` → `book`. Each
 - Text size uses the phone setting (`sm` / `md` / `lg`). Sound is remembered but not played yet. Settings also switch the game language (ไทย / English).
 - A 3-step lesson shows on the first launch only.
 
-Every screen other than the player room is a 2D image scene ported from `prototypes/poc-clickthrough`, with the same pictures and tap spots. `public/data/screens.json` is the registry. Each entry has `screen` and `status`: `demo` or `real`. A demo screen shows a static diagonal **DEMO** ribbon in the top corner. The ribbon does not receive taps. Set `status` to `real` and the ribbon for that screen disappears. `return-home` is `real` because the reward is placed in the 3D room. `player-room` is `real`.
+Every screen other than the player room is a 2D image scene ported from `prototypes/poc-clickthrough`, with the same pictures and tap spots. `public/data/screens.json` is the registry. Each entry has `screen` and `status`: `demo` or `real`. A demo screen shows a static diagonal **DEMO** ribbon in the top corner. The ribbon does not receive taps. The settings button steps left of the ribbon while it shows. Set `status` to `real` and the ribbon for that screen disappears. `return-home` is `real` because the reward is placed in the 3D room. `player-room` is `real`.
+
+The HUD is one row at the top: the hint button, a compact two-line pill, and settings. The pill's first line is the screen status (time · evidence · mission). It truncates with an ellipsis on narrow phones. The second, smaller line is the place name. Nothing hangs below the bar over the scene's hotspots.
 
 | Screen | Status |
 |---|---|

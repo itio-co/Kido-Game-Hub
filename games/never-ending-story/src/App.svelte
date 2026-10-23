@@ -229,15 +229,14 @@
 
     <Hud
       title={session.screen === 'player-room' ? tx(room, 'title') : session.title}
+      status={session.screen === 'player-room' ? '' : session.subtitle}
+      demo={session.screen !== 'player-room' && session.status === 'demo'}
       hintLabel={tx(room.hud, 'hintLabel')}
       settingsLabel={tx(room.hud, 'settingsLabel')}
       showHint={!['event-select', 'cutscene', 'difficulty', 'practice', 'level-map', 'crossword', 'jigsaw', 'slide'].includes(session.screen)}
       onHint={onHint}
       onSettings={() => (overlay = overlay === 'settings' ? null : 'settings')}
     />
-    {#if session.screen !== 'player-room' && session.subtitle}
-      <p class="flow-sub">{session.subtitle}</p>
-    {/if}
 
     <button type="button" class="back" aria-label={tx(room.hud, 'backLabel')} onclick={onBack}>
       <svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true">
@@ -294,19 +293,4 @@
   .phone.wide { width: 100vw; }
   .room-layer { position: absolute; inset: 0; }
   .room-layer.hidden { visibility: hidden; pointer-events: none; }
-  .flow-sub {
-    position: absolute;
-    z-index: 5;
-    top: calc(50px + env(safe-area-inset-top));
-    left: 12px;
-    right: 78px;
-    margin: 0;
-    padding: 4px 10px;
-    border-radius: 10px;
-    background: rgba(6, 24, 40, 0.88);
-    border: 1px solid var(--cyan);
-    font-size: var(--fs-sm);
-    line-height: 1.35;
-    pointer-events: none;
-  }
 </style>
