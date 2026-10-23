@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import type { NightstandEntity } from './types';
 import { buildNightstand } from './props/builders';
-import { type Build } from './props/kit';
+import { canvasTexture, type Build } from './props/kit';
 
 export type NightstandStage = { dispose: () => void };
 
@@ -24,14 +24,15 @@ export function mountNightstandStage(
   renderer.setClearColor(WALL);
 
   const scene = new THREE.Scene();
-  const camera = new THREE.PerspectiveCamera(mode === 'fit' ? 32 : 32, 1, 0.05, 30);
-  // Lambert divides by π. Keep the lit top near the wood albedo, with light from the upper left.
-  scene.add(new THREE.AmbientLight('#fff6ee', 1.85));
-  const sun = new THREE.DirectionalLight('#fff1e0', 1.35);
-  sun.position.set(-2.4, 3.6, 2.1);
+  const camera = new THREE.PerspectiveCamera(mode === 'fit' ? 30 : 32, 1, 0.05, 30);
+  // Low ambient and a key from the upper left. Lambert divides by π, so the key is near π
+  // on the lit top and the right face (facing away) stays clearly darker.
+  scene.add(new THREE.AmbientLight('#ffe8d2', 0.42));
+  const sun = new THREE.DirectionalLight('#fff1dc', 2.7);
+  sun.position.set(-1.4, 2.4, 0.7);
   scene.add(sun);
-  const fill = new THREE.DirectionalLight('#ffe6cc', 0.4);
-  fill.position.set(1.4, 1.5, 1.6);
+  const fill = new THREE.DirectionalLight('#ffe0c4', 0.22);
+  fill.position.set(1.6, 0.6, 0.3);
   scene.add(fill);
 
   const build: Build = { geos: [], mats: [], textures: [], matCache: new Map() };
@@ -57,10 +58,10 @@ export function mountNightstandStage(
   floor.rotation.x = -Math.PI / 2;
   floor.position.y = -0.02;
   scene.add(floor);
-  const plankTones = ['#5c3016', '#6e3c1c', '#7a4520', '#4e2812', '#814820', '#643616', '#734222', '#583016'];
-  const plankD = 0.06;
-  const plankGap = 0.007;
-  for (let i = 0; i < 22; i += 1) {
+  const plankTones = ['#6b3a1c', '#7a4522', '#5a3016', '#8a4e28', '#623616', '#734222'];
+  const plankD = 0.072;
+  const plankGap = 0.006;
+  for (let i = 0; i < 24; i += 1) {
     const geo = new THREE.BoxGeometry(3.4, 0.02, plankD);
     const mat = new THREE.MeshBasicMaterial({ color: plankTones[i % plankTones.length] ?? '#5c3016' });
     const plank = new THREE.Mesh(geo, mat);
@@ -72,6 +73,28 @@ export function mountNightstandStage(
 
   const stand: NightstandEntity = { ...entity, position: [0, 0, 0], rotation: [0, 0, 0] };
   const group = buildNightstand(build, scene, stand);
+
+  const shadowCanvas = document.createElement('canvas');
+  shadowCanvas.width = 128;
+  shadowCanvas.height = 128;
+  const shadowCtx = shadowCanvas.getContext('2d');
+  if (shadowCtx) {
+    const shade = shadowCtx.createRadialGradient(64, 64, 10, 64, 64, 62);
+    shade.addColorStop(0, 'rgba(28,14,6,0.62)');
+    shade.addColorStop(0.55, 'rgba(28,14,6,0.28)');
+    shade.addColorStop(1, 'rgba(28,14,6,0)');
+    shadowCtx.fillStyle = shade;
+    shadowCtx.fillRect(0, 0, 128, 128);
+  }
+  const shadowTex = canvasTexture(build, shadowCanvas);
+  const shadowGeo = new THREE.PlaneGeometry(0.78, 0.42);
+  const shadowMat = new THREE.MeshBasicMaterial({ map: shadowTex, transparent: true, depthWrite: false });
+  const shadow = new THREE.Mesh(shadowGeo, shadowMat);
+  shadow.rotation.x = -Math.PI / 2;
+  shadow.position.set(0, 0.003, 0.02);
+  scene.add(shadow);
+  build.geos.push(shadowGeo);
+  build.mats.push(shadowMat);
   build.geos.push(wall.geometry, skirt.geometry, skirtLine.geometry, floor.geometry);
   build.mats.push(wall.material, skirt.material, skirtLine.material, floor.material);
 
@@ -79,69 +102,40 @@ export function mountNightstandStage(
   let dragX = 0;
   let dragging = false;
 
+  // Solved against nightstand-ref-points.json. Mean error 5.99px on the 252×284 crop. FOV 30°.
+  const solvedPosition = new THREE.Vector3(0.415003, 0.881212, 1.392777);
+  const solvedTarget = new THREE.Vector3(0.012042, 0.346358, -0.023403);
+  const solvedRoll = 0.014751;
+
+  function applySolvedCamera(): void {
+    camera.fov = 30;
+    camera.position.copy(solvedPosition);
+    const forward = solvedTarget.clone().sub(solvedPosition).normalize();
+    const worldUp = new THREE.Vector3(0, 1, 0);
+    const right = new THREE.Vector3().crossVectors(forward, worldUp).normalize();
+    const up = new THREE.Vector3().crossVectors(right, forward);
+    const cr = Math.cos(solvedRoll);
+    const sr = Math.sin(solvedRoll);
+    camera.up.copy(right.multiplyScalar(-sr).add(up.multiplyScalar(cr)));
+    camera.lookAt(solvedTarget);
+    camera.updateProjectionMatrix();
+  }
+
   function frame(): void {
     group.rotation.y = yaw;
-    group.updateWorldMatrix(true, true);
-    const box = new THREE.Box3().setFromObject(group);
-    const center = box.getCenter(new THREE.Vector3());
-    const size = box.getSize(new THREE.Vector3());
-    const aspect = camera.aspect || 1;
-    const vFov = (camera.fov * Math.PI) / 180;
-    const distY = size.y / 2 / Math.tan(vFov / 2);
-    const hFov = 2 * Math.atan(Math.tan(vFov / 2) * aspect);
-    const distX = size.x / 2 / Math.tan(hFov / 2);
-    const span = Math.max(distX, distY, size.z / 2 / Math.tan(hFov / 2));
-    const dist0 = span * (mode === 'orbit' ? 1.28 : 1);
     if (mode === 'fit') {
-      // 28° down from the front-right: top reads as a parallelogram, right side shows.
-      const az = 0.4;
-      const elev = (26 * Math.PI) / 180;
-      const targetTop = 0.25;
-      const targetFoot = 1.02;
-      let dist = dist0;
-      let lookY = center.y;
-      const corner = new THREE.Vector3();
-      const ndc = new THREE.Vector3();
-      const place = (): { topY: number; footY: number } => {
-        const look = new THREE.Vector3(center.x, lookY, center.z);
-        camera.position.set(
-          look.x + Math.sin(az) * Math.cos(elev) * dist,
-          look.y + Math.sin(elev) * dist,
-          look.z + Math.cos(az) * Math.cos(elev) * dist,
-        );
-        camera.lookAt(look);
-        camera.updateMatrixWorld(true);
-        let topY = 1;
-        let footY = 0;
-        for (const x of [box.min.x, box.max.x]) {
-          for (const y of [box.min.y, box.max.y]) {
-            for (const z of [box.min.z, box.max.z]) {
-              ndc.copy(corner.set(x, y, z)).project(camera);
-              const sy = (1 - ndc.y) / 2;
-              if (y === box.max.y) topY = Math.min(topY, sy);
-              if (y === box.min.y) footY = Math.max(footY, sy);
-            }
-          }
-        }
-        return { topY, footY };
-      };
-      for (let i = 0; i < 12; i += 1) {
-        const { topY, footY } = place();
-        const mid = (topY + footY) / 2;
-        const targetMid = (targetTop + targetFoot) / 2;
-        lookY += (targetMid - mid) * size.y * 0.65;
-        const spanY = footY - topY;
-        const targetSpan = targetFoot - targetTop;
-        if (spanY > 0.05) dist *= 1 + (spanY - targetSpan) * 0.55;
-      }
-      place();
-    } else {
-      const spin = yaw;
-      camera.position.set(center.x + Math.sin(spin) * dist0, center.y + dist0 * 0.38, center.z + Math.cos(spin) * dist0);
-      camera.lookAt(center.x, center.y, center.z);
       group.rotation.y = 0;
+      applySolvedCamera();
+    } else {
+      camera.fov = 32;
+      camera.up.set(0, 1, 0);
+      const spin = yaw;
+      const dist = 1.45;
+      camera.position.set(Math.sin(spin) * dist, 0.78, Math.cos(spin) * dist);
+      camera.lookAt(0, 0.22, 0);
+      group.rotation.y = 0;
+      camera.updateProjectionMatrix();
     }
-    camera.updateProjectionMatrix();
   }
 
   function render(): void {
