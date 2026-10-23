@@ -3,10 +3,10 @@ import type { Vec3 } from './math.js';
 
 /**
  * edits.json: what the editor exports so a change can be ported back into the Blender
- * build scripts (game/assets-src/<slug>/blender/build_master.py).
+ * build scripts (games/never-ending-story/assets-src/<slug>/blender/build_master.py).
  *
  * `kido-model-edits/1` is the format already written by the Kido model editor
- * (game/src/lib/editor/modelEditor.ts, `exportEdits()`). Every field below that is not marked
+ * (games/never-ending-story/src/lib/editor/modelEditor.ts, `exportEdits()`). Every field below that is not marked
  * "added" exists there today with the same name, unit and meaning. Added fields are optional,
  * so files written by the current editor stay valid and readers of the current format can
  * ignore them.
