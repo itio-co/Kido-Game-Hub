@@ -129,3 +129,56 @@ Rotations and recolours are not in `dims.json`; port them by hand.
 2. Add an entry to `SHOWCASE_ASSETS` in `game/src/lib/showcaseAssets.ts` (slug, title, variant URLs, `ref` image +
    matched camera for the mock-up view, orbit framing). The editor's model menu reads that list.
 3. Optional: Thai part names in `game/src/lib/editor/partLabels.ts`.
+4. Optional, for camera match: `ref.mockup` (full mock-up + crop offset) and `ref.keyPoints` (named model
+   corners in Blender cm) and `ref.camParams` (the first five `p` values of `cam.json`).
+
+## Camera match (`#/editor` → **จับมุมกล้อง**, v0.2.8)
+
+fSpy-style camera matching inside the editor: line the model up with the mock-up and export a camera that
+`add_cam.py` / `render.py` / `import_external.py` and Three.js can use.
+
+### วิธีใช้ (ไทย)
+
+1. เปิด `#/editor` → กด **จับมุมกล้อง** (ต้องเป็นโมเดลที่มีภาพ mock-up)
+2. เลือกภาพ **ภาพครอป** (ref ของโมเดล) หรือ **Mock-up เต็ม** (`player-room-wide.jpg`, ครอปอยู่ที่ x=368, y=540)
+3. **เส้นนำสายตา**: กด **+ เส้น X** (แดง = ด้านกว้าง) **+ เส้น Y** (เขียว = ด้านลึก) **+ เส้น Z** (น้ำเงิน = แนวตั้ง)
+   แล้วลากจุดปลายเส้นให้ทับขอบที่ขนานกันในภาพ แกนละอย่างน้อย 2 เส้น (มากกว่า 2 เส้นจะหาจุดลับตาแบบ least-squares)
+   - เส้นประยาวต่อไปจนสุดภาพ จุดลับตา (VP) แสดงเป็นวงกลม/ลูกศรที่ขอบภาพ เส้นประสีเหลือง = เส้นขอบฟ้า
+   - **วางเส้นตามกล้องปัจจุบัน** = วางเส้นตามขอบโมเดลให้เริ่มง่าย; ซูม ＋ / － / ⤢ ที่มุมภาพ, ลากพื้นหลัง = เลื่อน,
+     สองนิ้ว/ล้อเมาส์ = ซูม
+4. กด **คำนวณจากเส้น** → ได้มุมกล้องและเลนส์ (ติ๊ก **ล็อกเลนส์** ถ้ารู้เลนส์แล้ว)
+   จุดกึ่งกลางภาพ: **กลางภาพ** (ค่าเริ่ม), **จาก 3 จุดลับตา**, หรือ **ปรับเอง/จากคู่จุด**
+5. **คู่จุด**: เลือกมุมที่รู้ขนาดจากรายการ (เช่น มุมหน้าซ้ายบน สูง 55 ซม.) หรือ **+ แตะจุดบนโมเดล**
+   แล้วแตะจุดเดียวกันบนภาพ
+   - 2 คู่ขึ้นไป → **ตั้งระยะจากคู่จุด** (ตำแหน่ง/ขนาด)
+   - 4–6 คู่ขึ้นไป → **คำนวณละเอียด** (PnP: มุม + ตำแหน่ง + เลนส์ พร้อมกัน)
+   - ค่าคลาดเคลื่อนเป็น px แสดงทั้งของเส้นและคู่จุด
+6. **ค่ากล้อง**: เลนส์ (มม., เซ็นเซอร์ 36 มม.), FOV, ตำแหน่ง (ซม.), การหมุน (องศา, XYZ แบบ Blender), cx/cy
+   พิมพ์แก้ได้ทันที; **กลับเป็นกล้องเดิม** = ใช้ cam.json ที่มากับโมเดล; **กลับด้าน 180°** ถ้ากล้องหันผิดด้าน
+7. **การแสดงผล**: ทึบ / โครงลวด / เส้นขอบ, แถบความทึบโมเดล, แถบ **เลื่อนเทียบ ก่อน|หลัง**
+8. บันทึกอัตโนมัติในเครื่อง (`kido-cam:<slug>`) และ **มุม Mock-up** จะใช้กล้องที่จับไว้
+9. **ดาวน์โหลด cam.json** (รูปแบบเดียวกับ `blender/cam.json`) หรือ **ดาวน์โหลดค่าทั้งหมด** (Blender + Three.js)
+
+### Notes (English)
+
+- Coordinates: world = Blender cm (Z up, front = −Y). Image points are crop ("ref") pixels; the full mock-up is
+  the same space shifted by the crop offset, so the principal point of the crop centre (126, 142) is
+  (494, 682) on `player-room-wide.jpg` (−8, +100 px from that image's centre).
+- `<slug>-cam.json` = `{p: [W, D, T, O, L, f, rvec(3), tvec(3)], R, C, IW, IH, H, cx, cy}` — OpenCV
+  `x = K R (X − C)`, `C` in cm, `f` in crop px. Copy it over `assets-src/<item>/blender/cam.json` and run
+  `add_cam.py` / `render.py`. `cx`/`cy` are new and optional: the scripts turn them into Blender lens shift
+  (`shift_x = (IW/2 − cx)/IW`, `shift_y = (cy − IH/2)/IW`; Blender's shift is in units of the fitted sensor
+  side, i.e. the width with `sensor_fit = HORIZONTAL` — checked against `world_to_camera_view` in Blender 4.5).
+- `<slug>-camera-match.json` (`kido-camera-match/1`) also has `blender` (location m, XYZ Euler, lens, shift),
+  `three` (hFOV, position, quaternion in the game's Y-up metres + a snippet), `mockup` (lens / hFOV / shift
+  for the full mock-up), residuals, and the lines and point pairs.
+- Solver: VPs from the guide lines (least squares over normalised homogeneous lines), focal length from two
+  orthogonal VPs, rotation from the VP directions (signs from the current camera), then Levenberg–Marquardt on
+  line-to-VP and point reprojection error. Position comes from point pairs (linear + LM); with no pairs the
+  model origin stays where the previous camera put it.
+- Accuracy on the nightstand (known camera 162.1 mm / 12.7° hFOV, rot 73.6°, 0.5°, 26.9°, pos 151.7, −304.1,
+  136.5 cm): synthetic lines with 0.5 px noise → 160 mm and < 0.1°; on the AI mock-up, 11 hand-placed lines alone
+  are ill-conditioned (the art is not perfectly perspective-consistent and a 162 mm lens puts the VPs ~2000 px
+  away, so the free lens drifts to ~840 mm); with the lens locked the rotation is within ~1.4–1.9°; 12 point
+  pairs + **คำนวณละเอียด** give ≈158 mm, rotation within 0.2° and position within ~7 cm. For long-lens shots,
+  lock the lens or use point pairs.

@@ -3,11 +3,15 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { GLTFExporter } from 'three/addons/exporters/GLTFExporter.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { TransformControls } from 'three/addons/controls/TransformControls.js';
-import { vfovFromHfov, type ShowcaseAsset, type ShowcaseVariant } from '../showcaseAssets';
+import { type ShowcaseAsset, type ShowcaseVariant } from '../showcaseAssets';
+import type { Cam } from './camMath';
+import { applyToCamera, camFromMatched, type ViewRect } from './cameraMatch';
 
 export type Vec3 = [number, number, number];
 export type GizmoMode = 'translate' | 'rotate' | 'scale';
-export type ViewMode = 'orbit' | 'mock';
+export type ViewMode = 'orbit' | 'mock' | 'match';
+/** How the model is drawn over the mock-up: shaded, wireframe, or outline/crease edges. */
+export type DisplayMode = 'solid' | 'wire' | 'edges';
 
 /** One part (top-level node of the GLB). Positions in metres (glTF, Y-up), rotation in degrees. */
 export type PartState = {
@@ -59,7 +63,7 @@ type Base = {
   before: BlenderBox | null;
 };
 
-type BlenderBox = { x: [number, number]; y: [number, number]; z: [number, number] };
+export type BlenderBox = { x: [number, number]; y: [number, number]; z: [number, number] };
 
 const DEG = 180 / Math.PI;
 const r3 = (v: number, d = 4): number => Math.round(v * 10 ** d) / 10 ** d;
@@ -68,7 +72,7 @@ const vec = (v: THREE.Vector3 | THREE.Euler, k = 1, d = 4): Vec3 => [r3(v.x * k,
 export type ModelEditor = ReturnType<typeof createModelEditor>;
 
 export function createModelEditor(canvas: HTMLCanvasElement, onChange: (snap: EditorSnapshot) => void) {
-  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, preserveDrawingBuffer: true });
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, preserveDrawingBuffer: true });
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.NoToneMapping;
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
@@ -97,6 +101,19 @@ export function createModelEditor(canvas: HTMLCanvasElement, onChange: (snap: Ed
   gizmo.setSpace('local');
   const gizmoHelper = gizmo.getHelper();
   scene.add(gizmoHelper);
+
+  // Display modes for camera matching
+  const wireMat = new THREE.MeshBasicMaterial({ color: '#39f3ff', wireframe: true });
+  const depthMat = new THREE.MeshBasicMaterial({ colorWrite: false, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 });
+  const edgeMat = new THREE.LineBasicMaterial({ color: '#39f3ff' });
+  const edgesGroup = new THREE.Group();
+  edgesGroup.visible = false;
+  scene.add(edgesGroup);
+  let edgeLines: { mesh: THREE.Mesh; line: THREE.LineSegments }[] = [];
+  let display: DisplayMode = 'solid';
+  /** Camera used in mock-up / match views (ref px pinhole) and the visible window of the ref image. */
+  let matchCam: Cam | null = null;
+  let viewRect: ViewRect | null = null;
 
   let asset: ShowcaseAsset | null = null;
   let variant: ShowcaseVariant | null = null;
@@ -143,14 +160,82 @@ export function createModelEditor(canvas: HTMLCanvasElement, onChange: (snap: Ed
       const h = canvas.clientHeight || 1;
       renderer.setSize(w, h, false);
       camera.aspect = w / h;
-      if (view === 'mock' && asset?.ref) camera.fov = vfovFromHfov(asset.ref.camera.hfovDeg, camera.aspect);
-      camera.updateProjectionMatrix();
+      const matched = view !== 'orbit' && asset?.ref;
+      if (matched) {
+        const ref = asset!.ref!;
+        const cam = matchCam ?? camFromMatched(ref.camera, ref.width, ref.height);
+        // Fallback window: the whole crop, letterboxed to the canvas aspect.
+        let rect = viewRect;
+        if (!rect) {
+          const a = w / h;
+          const rw = ref.width / ref.height > a ? ref.width : ref.height * a;
+          const rh = rw / a;
+          rect = { x0: (ref.width - rw) / 2, y0: (ref.height - rh) / 2, w: rw, h: rh };
+        }
+        applyToCamera(camera, cam, rect);
+      } else camera.updateProjectionMatrix();
       if (selected && objects.get(selected)?.visible) {
         box.setFromObject(objects.get(selected)!);
         box.visible = true;
       } else box.visible = false;
-      renderer.render(scene, camera);
+      draw();
     });
+  }
+
+  function draw(): void {
+    if (display === 'solid' || view === 'orbit') {
+      edgesGroup.visible = false;
+      renderer.render(scene, camera);
+      return;
+    }
+    const helpers = [box, gizmoHelper, grid];
+    const shown = helpers.map((h) => h.visible);
+    for (const h of helpers) h.visible = false;
+    if (display === 'edges') syncEdges();
+    // pass 1: model (wireframe colour, or depth only for hidden-line edges)
+    scene.overrideMaterial = display === 'wire' ? wireMat : depthMat;
+    edgesGroup.visible = false;
+    renderer.render(scene, camera);
+    scene.overrideMaterial = null;
+    // pass 2: edges + helpers on top
+    renderer.autoClear = false;
+    holder.visible = false;
+    edgesGroup.visible = display === 'edges';
+    helpers.forEach((h, i) => (h.visible = shown[i]!));
+    renderer.render(scene, camera);
+    holder.visible = true;
+    edgesGroup.visible = false;
+    renderer.autoClear = true;
+  }
+
+  function visibleChain(node: THREE.Object3D): boolean {
+    for (let n: THREE.Object3D | null = node; n; n = n.parent) if (!n.visible) return false;
+    return true;
+  }
+  function syncEdges(): void {
+    if (!edgeLines.length && root) {
+      root.traverse((node) => {
+        const mesh = node as THREE.Mesh;
+        if (!mesh.isMesh) return;
+        const line = new THREE.LineSegments(new THREE.EdgesGeometry(mesh.geometry, 25), edgeMat);
+        line.matrixAutoUpdate = false;
+        edgeLines.push({ mesh, line });
+        edgesGroup.add(line);
+      });
+    }
+    root?.updateMatrixWorld(true);
+    for (const { mesh, line } of edgeLines) {
+      line.matrix.copy(mesh.matrixWorld);
+      line.matrixWorld.copy(mesh.matrixWorld);
+      line.visible = !!mesh.parent && visibleChain(mesh);
+    }
+  }
+  function clearEdges(): void {
+    for (const { line } of edgeLines) {
+      line.geometry.dispose();
+      line.removeFromParent();
+    }
+    edgeLines = [];
   }
   orbit.addEventListener('change', render);
   gizmo.addEventListener('change', render);
@@ -176,12 +261,12 @@ export function createModelEditor(canvas: HTMLCanvasElement, onChange: (snap: Ed
   function setView(next: ViewMode): void {
     view = next;
     const ref = asset?.ref;
-    if (next === 'mock' && ref) {
+    if (next !== 'orbit' && ref) {
       orbit.enabled = false;
-      camera.position.copy(ref.camera.position);
-      camera.quaternion.copy(ref.camera.quaternion);
       grid.visible = false;
-      scene.background = new THREE.Color('#f0c9a0');
+      // transparent: the mock-up image sits under the canvas
+      scene.background = null;
+      renderer.setClearColor(0x000000, 0);
     } else {
       view = 'orbit';
       orbit.enabled = true;
@@ -493,6 +578,7 @@ export function createModelEditor(canvas: HTMLCanvasElement, onChange: (snap: Ed
         holder.remove(root);
         disposeTree(root);
       }
+      clearEdges();
       asset = nextAsset;
       variant = nextVariant;
       root = gltf.scene;
@@ -548,6 +634,61 @@ export function createModelEditor(canvas: HTMLCanvasElement, onChange: (snap: Ed
       return snap;
     },
     setView,
+    /** Camera for mock-up / match views (null = the asset's stored camera) and the visible ref-px window. */
+    setMatch(cam: Cam | null, rect: ViewRect | null): void {
+      matchCam = cam;
+      viewRect = rect;
+      render();
+    },
+    setDisplay(next: DisplayMode): void {
+      display = next;
+      render();
+    },
+    /**
+     * Nearest mesh vertex under a screen point, in Blender world cm (X right, Y back, Z up), or null.
+     * Used to tap model points for camera-match point pairs.
+     */
+    pickVertex(clientX: number, clientY: number): [number, number, number] | null {
+      const rect = canvas.getBoundingClientRect();
+      const ndc = new THREE.Vector2(((clientX - rect.left) / rect.width) * 2 - 1, -((clientY - rect.top) / rect.height) * 2 + 1);
+      root?.updateMatrixWorld(true);
+      ray.setFromCamera(ndc, camera);
+      const targets = [...objects.values()].filter((o) => o.visible);
+      const hit = ray.intersectObjects(targets, true)[0];
+      if (!hit || !(hit.object as THREE.Mesh).isMesh) return null;
+      const mesh = hit.object as THREE.Mesh;
+      const pos = mesh.geometry.getAttribute('position');
+      const v = new THREE.Vector3();
+      const sp = new THREE.Vector3();
+      let best: THREE.Vector3 | null = null;
+      let bestD = Infinity;
+      const w = rect.width / 2;
+      const h = rect.height / 2;
+      const want = new THREE.Vector2(clientX - rect.left, clientY - rect.top);
+      for (let i = 0; i < pos.count; i++) {
+        v.fromBufferAttribute(pos, i).applyMatrix4(mesh.matrixWorld);
+        sp.copy(v).project(camera);
+        const d = Math.hypot((sp.x + 1) * w - want.x, (1 - sp.y) * h - want.y);
+        // prefer vertices close to the hit point in 3D (front side) and on screen
+        const depthPenalty = v.distanceTo(hit.point) > 0.12 ? 1e3 : 0;
+        if (d + depthPenalty < bestD) {
+          bestD = d + depthPenalty;
+          best = v.clone();
+        }
+      }
+      if (!best || bestD > 60) best = hit.point.clone();
+      return [r3(best.x * 100, 3), r3(-best.z * 100, 3), r3(best.y * 100, 3)];
+    },
+    /** Model bounding box in Blender cm. */
+    modelBox(): BlenderBox | null {
+      if (!root) return null;
+      const vis = [...objects.values()].filter((o) => o.visible);
+      const b = new THREE.Box3();
+      for (const o of vis) b.expandByObject(o, true);
+      if (b.isEmpty()) return null;
+      const c = (x: number) => r3(x * 100, 2);
+      return { x: [c(b.min.x), c(b.max.x)], y: [c(-b.max.z), c(-b.min.z)], z: [c(b.min.y), c(b.max.y)] };
+    },
 
     /** Set position (cm), rotation (deg) or size (cm) of the selected part. */
     setValue(kind: 'position' | 'rotation' | 'size', axis: 0 | 1 | 2, value: number): void {
@@ -688,6 +829,10 @@ export function createModelEditor(canvas: HTMLCanvasElement, onChange: (snap: Ed
       gizmo.dispose();
       orbit.dispose();
       if (root) disposeTree(root);
+      clearEdges();
+      wireMat.dispose();
+      depthMat.dispose();
+      edgeMat.dispose();
       renderer.dispose();
     },
   };

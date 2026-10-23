@@ -1,5 +1,9 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import { onMount, untrack } from 'svelte';
+  import { MatchState } from '../lib/editor/matchState.svelte';
+  import type { V3 } from '../lib/editor/camMath';
+  import GuideOverlay from './GuideOverlay.svelte';
+  import CameraPanel from './CameraPanel.svelte';
   import { SHOWCASE_ASSETS } from '../lib/showcaseAssets';
   import {
     createModelEditor,
@@ -7,6 +11,7 @@
     type GizmoMode,
     type ModelEditor,
     type ViewMode,
+    type DisplayMode,
   } from '../lib/editor/modelEditor';
   import { partLabel } from '../lib/editor/partLabels';
 
@@ -24,12 +29,11 @@
   const option = $derived(options.find((o) => o.key === modelKey) ?? options[0]!);
 
   let canvas = $state<HTMLCanvasElement>();
-  let editor: ModelEditor | null = null;
+  let editor = $state.raw<ModelEditor | null>(null);
   let snap = $state<EditorSnapshot>({ ready: false, parts: [], selected: null, canUndo: false, canRedo: false, dirty: false });
   let mode = $state<GizmoMode>('translate');
   let view = $state<ViewMode>('orbit');
   let snapOn = $state(true);
-  let overlay = $state(50);
   let toast = $state<string | null>(null);
   let loading = $state(true);
   let vw = $state(0);
@@ -37,14 +41,81 @@
   let toastTimer = 0;
 
   const ref = $derived(option.asset.ref);
-  /** In mock-up view the canvas takes the crop's aspect so the matched camera lines up with the image. */
-  const frame = $derived.by(() => {
-    if (view !== 'mock' || !ref || !vw || !vh) return 'inset:0;width:100%;height:100%;';
-    const a = ref.width / ref.height;
-    const w = vw / vh > a ? vh * a : vw;
-    const h = w / a;
-    return `left:${(vw - w) / 2}px;top:${(vh - h) / 2}px;width:${w}px;height:${h}px;`;
+  /** Camera-match session of the current asset (also drives the mock-up view's camera). */
+  let match = $state.raw<MatchState | null>(null);
+  let matchFor = '';
+  $effect(() => {
+    const asset = option.asset;
+    if (matchFor === asset.slug) return;
+    matchFor = asset.slug;
+    match = asset.ref ? new MatchState(asset) : null;
   });
+  const staged = $derived(view !== 'orbit' && !!match);
+  $effect(() => {
+    if (!match) return;
+    match.stageW = Math.max(1, vw);
+    match.stageH = Math.max(1, vh);
+  });
+  // In the plain mock-up view the image always fits the viewport.
+  $effect(() => {
+    if (match && view === 'mock') {
+      void match.stageW;
+      void match.stageH;
+      void match.image;
+      untrack(() => match!.fit());
+    }
+  });
+  // Push camera + visible window + display mode into the 3D view.
+  $effect(() => {
+    if (!match) return;
+    const cam = match.cam;
+    const rect = match.viewRect;
+    const display: DisplayMode = view === 'orbit' ? 'solid' : match.display;
+    if (!editor) return;
+    untrack(() => {
+      editor!.setMatch(cam, rect);
+      editor!.setDisplay(display);
+    });
+  });
+  // Auto-save the match session.
+  let saveTimer = 0;
+  $effect(() => {
+    if (!match) return;
+    void match.cam;
+    void JSON.stringify(match.lines);
+    void JSON.stringify(match.pairs);
+    void match.image;
+    void match.principal;
+    void match.lockLens;
+    const m = match;
+    window.clearTimeout(saveTimer);
+    saveTimer = window.setTimeout(() => m.save(), 300);
+  });
+  const imgStyle = $derived.by(() => {
+    if (!match) return '';
+    const r = match.imageRect;
+    const v = match.viewRect;
+    const k = match.k;
+    return `left:${(r.x - v.x0) * k}px;top:${(r.y - v.y0) * k}px;width:${r.w * k}px;height:${r.h * k}px;`;
+  });
+  const canvasStyle = $derived(
+    staged && match ? `opacity:${match.opacity / 100};clip-path:inset(0 0 0 ${match.split}%);` : '',
+  );
+  function modelTap(clientX: number, clientY: number): boolean {
+    if (!editor || !match?.pick) return false;
+    const p = editor.pickVertex(clientX, clientY);
+    if (!p) {
+      say('ไม่โดนโมเดล ลองแตะใหม่');
+      return false;
+    }
+    match.setPairWorld(match.pick.pairId, p as V3, `โมเดล (${p.map((v) => v.toFixed(1)).join(', ')})`);
+    say('แตะจุดเดียวกันบนภาพ');
+    return true;
+  }
+  function modelDims(): V3 {
+    const b = editor?.modelBox();
+    return b ? [b.x[1] - b.x[0], b.y[1] - b.y[0], b.z[1]] : [0, 0, 0];
+  }
 
   const sel = $derived(snap.selected);
   const posStep = $derived(snapOn ? 0.5 : 0.1);
@@ -73,6 +144,7 @@
   onMount(() => {
     if (!canvas) return;
     editor = createModelEditor(canvas, (next) => (snap = next));
+    if (match) editor.setMatch(match.cam, match.viewRect);
     void load();
     const onKey = (event: KeyboardEvent) => {
       const target = event.target as HTMLElement;
@@ -96,6 +168,8 @@
     return () => {
       window.removeEventListener('keydown', onKey);
       window.clearTimeout(toastTimer);
+      window.clearTimeout(saveTimer);
+      match?.save();
       editor?.dispose();
       editor = null;
     };
@@ -187,13 +261,27 @@
   </header>
 
   <div class="body">
-    <div class="viewport" bind:clientWidth={vw} bind:clientHeight={vh}>
-      <canvas bind:this={canvas} style={frame} aria-label="พื้นที่แก้โมเดล แตะชิ้นส่วนเพื่อเลือก"></canvas>
-      {#if view === 'mock' && ref}
-        <img class="ref" src={ref.src} alt="Mock-up" style="{frame}opacity:{overlay / 100};" draggable="false" />
+    <div class="viewport" class:matching={view === 'match'} bind:clientWidth={vw} bind:clientHeight={vh}>
+      {#if staged && match}
+        <img class="ref" src={match.imageRect.src} alt="Mock-up" style={imgStyle} draggable="false" data-ref-image={match.image} />
+      {/if}
+      <canvas bind:this={canvas} style={canvasStyle} aria-label="พื้นที่แก้โมเดล แตะชิ้นส่วนเพื่อเลือก"></canvas>
+      {#if staged && match && match.split > 0}
+        <div class="divider" style="left:{match.split}%"><span>ภาพ | โมเดล</span></div>
+      {/if}
+      {#if view === 'match' && match}
+        <GuideOverlay st={match} onModelTap={modelTap} onChange={() => match?.save()} />
+        <div class="stage-tools">
+          <button type="button" aria-label="ซูมเข้า" onclick={() => match?.zoomAt(1.4)}>＋</button>
+          <button type="button" aria-label="ซูมออก" onclick={() => match?.zoomAt(1 / 1.4)}>－</button>
+          <button type="button" aria-label="พอดีจอ" onclick={() => match?.fit()}>⤢</button>
+        </div>
+        {#if match.pick}
+          <p class="pick-hint">{match.pick.want === 'model' ? 'แตะจุดบนโมเดล' : 'แตะจุดเดียวกันบนภาพ'}</p>
+        {/if}
       {/if}
       {#if loading}<p class="loading">กำลังโหลดโมเดล…</p>{/if}
-      <div class="modes" role="radiogroup" aria-label="เครื่องมือ">
+      <div class="modes" role="radiogroup" aria-label="เครื่องมือ" hidden={view === 'match'}>
         {#each modes as m (m.id)}
           <button type="button" role="radio" aria-checked={mode === m.id} class:on={mode === m.id} data-mode={m.id} onclick={() => pickMode(m.id)}
             >{m.label}</button
@@ -228,12 +316,34 @@
           disabled={!ref}
           onclick={() => pickView('mock')}>มุม Mock-up</button
         >
+        <button
+          type="button"
+          role="radio"
+          aria-checked={view === 'match'}
+          class:on={view === 'match'}
+          data-view="match"
+          disabled={!ref}
+          onclick={() => pickView('match')}>จับมุมกล้อง</button
+        >
       </div>
-      {#if view === 'mock'}
+      {#if view === 'mock' && match}
+        <div class="seg" role="radiogroup" aria-label="แบบการแสดงโมเดล">
+          {#each [['solid', 'ทึบ'], ['wire', 'โครงลวด'], ['edges', 'เส้นขอบ']] as const as [id, label] (id)}
+            <button type="button" role="radio" aria-checked={match.display === id} class:on={match.display === id} data-display={id}
+              onclick={() => (match!.display = id)}>{label}</button>
+          {/each}
+        </div>
         <label class="field slider">
-          <span>ความเข้มภาพ Mock-up {overlay}%</span>
-          <input type="range" min="0" max="100" step="5" bind:value={overlay} data-overlay />
+          <span>ความทึบโมเดลบนภาพ Mock-up {match.opacity}%</span>
+          <input type="range" min="0" max="100" step="5" bind:value={match.opacity} data-overlay />
         </label>
+        <label class="field slider">
+          <span>เลื่อนเทียบ ก่อน|หลัง {match.split}%</span>
+          <input type="range" min="0" max="100" step="1" bind:value={match.split} data-split />
+        </label>
+      {/if}
+      {#if view === 'match' && match}
+        <CameraPanel st={match} onChange={() => match?.save()} {say} {download} dims={modelDims} />
       {/if}
 
       {#if sel}
@@ -317,7 +427,7 @@
     </div>
   </div>
 
-  {#if toast}<p class="toast" role="status">{toast}</p>{/if}
+  {#if toast}<p class="e-toast" role="status">{toast}</p>{/if}
 </div>
 
 <style>
@@ -368,8 +478,23 @@
 
   .body { flex: 1; min-height: 0; display: flex; flex-direction: column; }
   .viewport { position: relative; flex: 0 0 48%; min-height: 240px; background: #22303d; overflow: hidden; }
-  canvas, .ref { position: absolute; display: block; touch-action: none; }
-  .ref { pointer-events: none; object-fit: fill; }
+  canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
+  .ref { position: absolute; display: block; pointer-events: none; object-fit: fill; max-width: none; }
+  .viewport.matching { flex-basis: 60%; }
+  .divider {
+    position: absolute; top: 0; bottom: 0; width: 0; border-left: 2px solid #ffe14d; pointer-events: none; z-index: 2;
+  }
+  .divider span {
+    position: absolute; top: 6px; left: 0; transform: translateX(-50%); background: rgba(0, 0, 0, 0.65);
+    color: #ffe14d; font-size: 13px; padding: 2px 8px; border-radius: 8px; white-space: nowrap;
+  }
+  .stage-tools { position: absolute; right: 8px; bottom: 8px; display: flex; flex-direction: column; gap: 6px; z-index: 4; }
+  .stage-tools button { width: 48px; min-height: 48px; padding: 0; font-size: 22px; background: rgba(16, 32, 46, 0.88); }
+  .pick-hint {
+    position: absolute; left: 50%; top: 8px; transform: translateX(-50%); margin: 0; z-index: 4; pointer-events: none;
+    background: rgba(58, 29, 58, 0.92); border: 2px solid #ff4dd8; border-radius: 10px; padding: 6px 12px; font-weight: 700;
+  }
+  .modes[hidden] { display: none; }
   .loading {
     position: absolute; left: 50%; top: 45%; transform: translate(-50%, -50%);
     margin: 0; padding: 8px 14px; border-radius: 10px; background: rgba(0, 0, 0, 0.6);
@@ -414,7 +539,8 @@
   .parts li.gone .pick { text-decoration: line-through; }
   .pick { flex: 1; text-align: left; display: flex; flex-direction: column; justify-content: center; padding: 4px 10px; }
   .pick small { font-size: 12px; color: #8fb3cc; font-weight: 400; }
-  .toast {
+  .e-toast {
+    pointer-events: none;
     position: absolute; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom)); transform: translateX(-50%);
     margin: 0; padding: 10px 16px; border-radius: 12px; background: rgba(6, 24, 40, 0.94);
     border: 1px solid #8fdfff; font-size: 16px; z-index: 30; max-width: 90%; text-align: center;

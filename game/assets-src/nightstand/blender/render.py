@@ -14,6 +14,8 @@ for o in list(sc.objects):
 c=json.load(open(HERE+'cam.json')); cm=0.01
 R=Matrix(c['R']); C=Vector(c['C'])*cm; f=c['p'][5]; IW,IH=c['IW'],c['IH']
 camd=bpy.data.cameras.new('MatchCam'); camd.sensor_fit='HORIZONTAL'; camd.sensor_width=36; camd.lens=f/IW*36
+# principal point from a camera-match export (cx/cy, px); shift is in units of the image width
+camd.shift_x=(IW/2-c.get('cx',IW/2))/IW; camd.shift_y=(c.get('cy',IH/2)-IH/2)/IW
 camd.clip_start=0.1; camd.clip_end=100
 cam=bpy.data.objects.new('MatchCam',camd); sc.collection.objects.link(cam)
 M=R.transposed()@Matrix(((1,0,0),(0,-1,0),(0,0,-1)))
