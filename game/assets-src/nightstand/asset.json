@@ -98,13 +98,13 @@
   "exports": {
     "master": {
       "file": "export/nightstand-master.glb",
-      "triangles": 960,
+      "triangles": 948,
       "texture": "export/nightstand-master_basecolor.png",
       "textureSize": 2048
     },
     "lowpoly": {
       "file": "export/nightstand.glb",
-      "triangles": 224,
+      "triangles": 212,
       "texture": null
     },
     "runtime": [
@@ -117,6 +117,7 @@
     "The white/cream block at the far left is the bed's mattress and pillow, not part of this asset.",
     "Wall, skirting board and plank floor are background, not part of this asset.",
     "The table has one drawer with a small rectangular knob, four square legs, side stretchers on the left and right only (no front or back stretcher).",
+    "v0.2.4: side stretchers enlarged to 4.5 x 7 cm (z 11-18 cm) so they read clearly; the drawer-bottom board that showed below the back apron was removed. The table now has no board between the back legs.",
     "The right side frame is open between the apron and the stretcher (you can see the wall through it).",
     "The lighter band across the top is painted shading in the mock-up, not separate planks; it is not modelled.",
     "The mock-up crop is only 252 x 284 px; the 1024 square images are upscaled and soft."
