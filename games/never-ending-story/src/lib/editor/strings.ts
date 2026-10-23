@@ -22,6 +22,30 @@ export const MESSAGES = {
   'editor.common.redoNext': { en: '↷ Redo', th: '↷ ทำต่อ' },
   'editor.common.undoAria': { en: 'Undo', th: 'ย้อน (Undo)' },
   'editor.common.redoAria': { en: 'Redo', th: 'ทำซ้ำ (Redo)' },
+  // --- stage zoom / pan (mock-up + camera-match views) ---------------------------------------------------------
+  'editor.stage.zoomIn': { en: 'Zoom in', th: 'ซูมเข้า' },
+  'editor.stage.zoomOut': { en: 'Zoom out', th: 'ซูมออก' },
+  'editor.stage.fit': { en: 'Fit to screen', th: 'พอดีจอ' },
+  'editor.stage.zoomLabel': { en: 'Zoom {pct}%', th: 'ซูม {pct}%' },
+  'editor.stage.mockHint': {
+    en: 'Zoom: mouse wheel / pinch · Pan: middle-, right- or Space+drag / two-finger drag · Fit: ⤢ or double-click / double-tap empty space · Focus: ◎, F or double-tap a part · Object crop: ▣. The model stays locked to the mock-up camera.',
+    th: 'ซูม: ลูกกลิ้งเมาส์ / ถ่างสองนิ้ว · เลื่อนภาพ: ลากด้วยปุ่มกลาง ปุ่มขวา หรือกด Space ค้างแล้วลาก / ลากสองนิ้ว · พอดีจอ: ⤢ หรือดับเบิลคลิก / แตะสองครั้งที่พื้นที่ว่าง · โฟกัส: ◎, ปุ่ม F หรือแตะสองครั้งที่ชิ้นส่วน · ครอปวัตถุ: ▣ โมเดลยังล็อกกับกล้องของภาพ Mock-up',
+  },
+  'editor.stage.focus': { en: 'Focus', th: 'โฟกัส' },
+  'editor.stage.focusTitle': {
+    en: 'Frame the selected part (whole model if none) · F · double-tap a part',
+    th: 'ซูมให้ชิ้นส่วนที่เลือกเต็มจอ (ทั้งโมเดลถ้าไม่ได้เลือก) · ปุ่ม F · แตะสองครั้งที่ชิ้นส่วน',
+  },
+  'editor.stage.crop': { en: 'Object crop', th: 'ครอปวัตถุ' },
+  'editor.stage.cropTitle': {
+    en: "Jump to the asset's mock-up crop (the object) — Fit shows the whole image",
+    th: 'ไปที่กรอบครอปของภาพ Mock-up (ตัววัตถุ) — พอดีจอจะแสดงทั้งภาพ',
+  },
+  'editor.stage.follow': { en: 'Follow selection', th: 'ตามชิ้นที่เลือก' },
+  'editor.stage.followTitle': {
+    en: 'Re-frame the view whenever the selected part changes',
+    th: 'ซูมไปที่ชิ้นส่วนใหม่ทุกครั้งที่เปลี่ยนการเลือก',
+  },
   'editor.common.mm': { en: '{v} mm', th: '{v} มม.' },
 
   // --- master guide line (one per axis per group) ----------------------------------------------------------------
@@ -403,6 +427,21 @@ export const T = {
     undoAria: t('editor.common.undoAria'),
     redoAria: t('editor.common.redoAria'),
     mm: (v: string | number) => t('editor.common.mm', { v }),
+  },
+
+  /** 2D view-window zoom / pan of the mock-up and camera-match stage. */
+  stage: {
+    zoomIn: t('editor.stage.zoomIn'),
+    zoomOut: t('editor.stage.zoomOut'),
+    fit: t('editor.stage.fit'),
+    zoomLabel: (pct: number) => t('editor.stage.zoomLabel', { pct }),
+    mockHint: t('editor.stage.mockHint'),
+    focus: t('editor.stage.focus'),
+    focusTitle: t('editor.stage.focusTitle'),
+    crop: t('editor.stage.crop'),
+    cropTitle: t('editor.stage.cropTitle'),
+    follow: t('editor.stage.follow'),
+    followTitle: t('editor.stage.followTitle'),
   },
 
   /** Showing an overlay: while dragging / always / never. */

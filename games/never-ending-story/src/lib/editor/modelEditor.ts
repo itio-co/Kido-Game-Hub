@@ -97,7 +97,8 @@ export function createModelEditor(canvas: HTMLCanvasElement, onChange: (snap: Ed
   const orbit = new OrbitControls(camera, canvas);
   orbit.enableDamping = false;
   const gizmo = new TransformControls(camera, canvas);
-  gizmo.setSize(1.25);
+  const GIZMO_SIZE = 1.25;
+  gizmo.setSize(GIZMO_SIZE);
   gizmo.setSpace('local');
   const gizmoHelper = gizmo.getHelper();
   scene.add(gizmoHelper);
@@ -173,7 +174,13 @@ export function createModelEditor(canvas: HTMLCanvasElement, onChange: (snap: Ed
           rect = { x0: (ref.width - rw) / 2, y0: (ref.height - rh) / 2, w: rw, h: rh };
         }
         applyToCamera(camera, cam, rect);
-      } else camera.updateProjectionMatrix();
+        // TransformControls sizes the gizmo from camera.fov, which the off-axis window ignores: scale it so it keeps
+        // the orbit view's on-screen size at any 2D zoom (otherwise it grows with the zoom and covers the part).
+        gizmo.setSize(GIZMO_SIZE * rect.h / (2 * cam.f * Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2)));
+      } else {
+        camera.updateProjectionMatrix();
+        gizmo.setSize(GIZMO_SIZE);
+      }
       if (selected && objects.get(selected)?.visible) {
         box.setFromObject(objects.get(selected)!);
         box.visible = true;
@@ -710,6 +717,59 @@ export function createModelEditor(canvas: HTMLCanvasElement, onChange: (snap: Ed
       }
       if (!best || bestD > 60) best = hit.point.clone();
       return [r3(best.x * 100, 3), r3(-best.z * 100, 3), r3(best.y * 100, 3)];
+    },
+    /**
+     * Mesh vertices (Blender cm) of one visible part, or of the whole visible model when `name` is null —
+     * projected through the solved camera to frame it in the 2D stage (Focus). Decimated to ~`max` points.
+     */
+    pointsOf(name: string | null, max = 4000): [number, number, number][] {
+      root?.updateMatrixWorld(true);
+      const owners = name ? [objects.get(name)].filter((o): o is THREE.Object3D => !!o && o.visible) : [...objects.values()].filter((o) => o.visible);
+      const meshes: THREE.Mesh[] = [];
+      const shown = (n: THREE.Object3D, owner: THREE.Object3D): boolean => {
+        for (let c: THREE.Object3D | null = n; c && c !== owner; c = c.parent) if (!c.visible) return false;
+        return true;
+      };
+      for (const o of owners)
+        o.traverse((n) => {
+          if ((n as THREE.Mesh).isMesh && shown(n, o)) meshes.push(n as THREE.Mesh);
+        });
+      let total = 0;
+      for (const m of meshes) total += m.geometry.getAttribute('position')?.count ?? 0;
+      const stride = Math.max(1, Math.ceil(total / max));
+      const out: [number, number, number][] = [];
+      const v = new THREE.Vector3();
+      for (const m of meshes) {
+        const pos = m.geometry.getAttribute('position');
+        if (!pos) continue;
+        for (let i = 0; i < pos.count; i += stride) {
+          v.fromBufferAttribute(pos, i).applyMatrix4(m.matrixWorld);
+          out.push([v.x * 100, -v.z * 100, v.y * 100]);
+        }
+      }
+      return out;
+    },
+    /** Name of the visible part under a screen point (same raycast as click-select), or null. */
+    partAt(clientX: number, clientY: number): string | null {
+      const rect = canvas.getBoundingClientRect();
+      const ndc = new THREE.Vector2(((clientX - rect.left) / rect.width) * 2 - 1, -((clientY - rect.top) / rect.height) * 2 + 1);
+      root?.updateMatrixWorld(true);
+      ray.setFromCamera(ndc, camera);
+      const targets = [...objects.values()].filter((o) => o.visible);
+      const hit = ray.intersectObjects(targets, true)[0];
+      if (!hit) return null;
+      let node: THREE.Object3D | null = hit.object;
+      while (node && !targets.includes(node)) node = node.parent;
+      return node ? node.name : null;
+    },
+    /** Screen point (canvas px from its top-left) of the selected part's origin = where the gizmo sits; null if none. */
+    selectedScreen(): [number, number] | null {
+      const o = selected ? objects.get(selected) : undefined;
+      if (!o) return null;
+      root?.updateMatrixWorld(true);
+      const p = new THREE.Vector3().setFromMatrixPosition(o.matrixWorld).project(camera);
+      if (p.z > 1) return null;
+      return [((p.x + 1) / 2) * canvas.clientWidth, ((1 - p.y) / 2) * canvas.clientHeight];
     },
     /** Model bounding box in Blender cm. */
     modelBox(): BlenderBox | null {
