@@ -1,0 +1,1032 @@
+{
+  "id": "b82606a8-84eb-43b6-8b83-f30a1dbb9634",
+  "kind": "room",
+  "title": "ห้องของฉัน",
+  "titleEn": "My room",
+  "slug": "player-room",
+  "_note": "Meters. Wall pieces: local +Z points into the room before rotation. Rotation is degrees. Y=90 faces +X (left wall). Y=-90 faces -X (right wall). Ids are stable UUID v4. References use id.",
+  "camera": {
+    "position": [
+      0,
+      1.21,
+      2.95
+    ],
+    "target": [
+      0,
+      0.51,
+      -0.25
+    ],
+    "fov": 66
+  },
+  "shots": {
+    "shelf": {
+      "position": [
+        0.35,
+        1.42,
+        -0.2
+      ],
+      "target": [
+        0.48,
+        1.36,
+        -1.45
+      ],
+      "fov": 40
+    }
+  },
+  "background": "#f4eadc",
+  "lighting": {
+    "ambient": {
+      "color": "#ffe6cc",
+      "intensity": 0.58
+    },
+    "hemisphere": {
+      "sky": "#fff3e2",
+      "ground": "#c9a27a",
+      "intensity": 0.4
+    },
+    "sun": {
+      "color": "#ffd8aa",
+      "intensity": 1.45,
+      "position": [
+        -2.15,
+        2.05,
+        -0.55
+      ]
+    },
+    "fill": {
+      "color": "#fff0dc",
+      "intensity": 0.48,
+      "position": [
+        0.3,
+        2.1,
+        2.5
+      ]
+    }
+  },
+  "objects": [
+    {
+      "id": "eb26feee-f62b-428a-9f8b-4775fe435867",
+      "kind": "floor",
+      "title": "พื้นไม้",
+      "titleEn": "Wood floor",
+      "slug": "player-room/floor",
+      "position": [
+        0,
+        0,
+        0.7
+      ],
+      "size": [
+        2.95,
+        0.08,
+        5.05
+      ],
+      "colors": [
+        "#d4a36e",
+        "#a56b40",
+        "#e0b07a",
+        "#b07a4a",
+        "#c89260",
+        "#966238",
+        "#6b4428"
+      ]
+    },
+    {
+      "id": "124adbce-5cc5-4a28-9770-ccb722000580",
+      "kind": "box",
+      "title": "ผนังซ้าย",
+      "titleEn": "Left wall",
+      "slug": "player-room/wall-left",
+      "position": [
+        -0.95,
+        0,
+        0.7
+      ],
+      "size": [
+        0.1,
+        2.5,
+        5.05
+      ],
+      "color": "#f6e3c8",
+      "shadow": "receive"
+    },
+    {
+      "id": "4db269e4-f291-43c9-acc6-acb9c1d4b811",
+      "kind": "box",
+      "title": "ผนังขวา",
+      "titleEn": "Right wall",
+      "slug": "player-room/wall-right",
+      "position": [
+        1.02,
+        0,
+        0.7
+      ],
+      "size": [
+        0.1,
+        2.5,
+        5.05
+      ],
+      "color": "#f6e3c8",
+      "shadow": "receive"
+    },
+    {
+      "id": "986db4af-6e8e-4601-8933-42d0ba33e5c0",
+      "kind": "box",
+      "title": "ผนังหลัง",
+      "titleEn": "Back wall",
+      "slug": "player-room/wall-back",
+      "position": [
+        0,
+        0,
+        -1.62
+      ],
+      "size": [
+        2.94,
+        2.5,
+        0.1
+      ],
+      "color": "#f6e3c8",
+      "shadow": "receive"
+    },
+    {
+      "id": "4cfc7fc7-e3c0-4fcd-90da-f614d7094a0c",
+      "kind": "box",
+      "title": "เพดาน",
+      "titleEn": "Ceiling",
+      "slug": "player-room/ceiling",
+      "position": [
+        0,
+        2.5,
+        0.7
+      ],
+      "size": [
+        2.94,
+        0.08,
+        5.05
+      ],
+      "color": "#fbf6ee",
+      "shadow": "none"
+    },
+    {
+      "id": "980c6b5a-9b2b-4d4d-b3d9-1c57abadb761",
+      "kind": "box",
+      "title": "บัวพื้นซ้าย",
+      "titleEn": "Left baseboard",
+      "slug": "player-room/trim-left",
+      "position": [
+        -0.88,
+        0.02,
+        0.7
+      ],
+      "size": [
+        0.035,
+        0.09,
+        4.85
+      ],
+      "color": "#e6d3b4",
+      "shadow": "none"
+    },
+    {
+      "id": "7dcc4fdc-492e-478f-9e41-f58a059d198d",
+      "kind": "box",
+      "title": "บัวพื้นขวา",
+      "titleEn": "Right baseboard",
+      "slug": "player-room/trim-right",
+      "position": [
+        0.95,
+        0.02,
+        0.7
+      ],
+      "size": [
+        0.035,
+        0.09,
+        4.85
+      ],
+      "color": "#e6d3b4",
+      "shadow": "none"
+    },
+    {
+      "id": "e0354811-22cb-4675-a445-4ac73aeed482",
+      "kind": "box",
+      "title": "บัวพื้นหลัง",
+      "titleEn": "Back baseboard",
+      "slug": "player-room/trim-back",
+      "position": [
+        0,
+        0.02,
+        -1.55
+      ],
+      "size": [
+        2.7,
+        0.09,
+        0.035
+      ],
+      "color": "#e6d3b4",
+      "shadow": "none"
+    },
+    {
+      "id": "ef0b42f2-94c2-45af-8135-c2349fbc7061",
+      "kind": "box",
+      "title": "บัวเพดานซ้าย",
+      "titleEn": "Left ceiling moulding",
+      "slug": "player-room/crown-left",
+      "position": [
+        -0.86,
+        2.45,
+        0.7
+      ],
+      "size": [
+        0.045,
+        0.05,
+        4.6
+      ],
+      "color": "#ead9bc",
+      "shadow": "none"
+    },
+    {
+      "id": "c3475ab6-bc7c-4e21-93b1-f3ff37da0fd3",
+      "kind": "box",
+      "title": "บัวเพดานขวา",
+      "titleEn": "Right ceiling moulding",
+      "slug": "player-room/crown-right",
+      "position": [
+        0.93,
+        2.45,
+        0.7
+      ],
+      "size": [
+        0.045,
+        0.05,
+        4.6
+      ],
+      "color": "#ead9bc",
+      "shadow": "none"
+    },
+    {
+      "id": "c03adcde-d884-475d-9f39-da7543144545",
+      "kind": "box",
+      "title": "บัวเพดานหลัง",
+      "titleEn": "Back ceiling moulding",
+      "slug": "player-room/crown-back",
+      "position": [
+        0,
+        2.45,
+        -1.52
+      ],
+      "size": [
+        2.55,
+        0.05,
+        0.045
+      ],
+      "color": "#ead9bc",
+      "shadow": "none"
+    },
+    {
+      "id": "00f5de2f-1490-478e-8fc6-a581f8481f04",
+      "kind": "window",
+      "title": "หน้าต่าง",
+      "titleEn": "Window",
+      "slug": "player-room/window",
+      "position": [
+        -0.82,
+        1.54,
+        -0.89
+      ],
+      "rotation": [
+        0,
+        90,
+        0
+      ],
+      "size": [
+        1.15,
+        1.32
+      ],
+      "colors": {
+        "frame": "#f4efe6",
+        "glass": "#d7f1fb",
+        "curtain": "#7eb6ea",
+        "rod": "#c4925c",
+        "sky": "#79c4ef",
+        "tree": "#4f8a38",
+        "sun": "#ffe08a"
+      }
+    },
+    {
+      "id": "89fbcc73-f41c-4e4b-b0b4-0e306ece3d04",
+      "kind": "box",
+      "title": "ชั้นกระถาง",
+      "titleEn": "Plant shelf",
+      "slug": "player-room/plant-shelf",
+      "position": [
+        -0.7,
+        0.95,
+        -0.89
+      ],
+      "rotation": [
+        0,
+        90,
+        0
+      ],
+      "size": [
+        0.46,
+        0.045,
+        0.28
+      ],
+      "color": "#d09a62",
+      "shadow": "both"
+    },
+    {
+      "id": "0f36bb2d-d80e-4b9c-aac5-91b5358589d7",
+      "kind": "plant",
+      "title": "ต้นไม้",
+      "titleEn": "Plant",
+      "slug": "player-room/plant",
+      "position": [
+        -0.66,
+        1.01,
+        -0.89
+      ],
+      "colors": {
+        "pot": "#f4f1ea",
+        "soil": "#6b4a32",
+        "leaf": "#7daa45"
+      }
+    },
+    {
+      "id": "6f44d481-04a3-43b9-83f0-094e8eaf6cc1",
+      "kind": "bed",
+      "title": "เตียง",
+      "titleEn": "Bed",
+      "slug": "player-room/bed",
+      "position": [
+        -0.36,
+        0,
+        -0.32
+      ],
+      "size": [
+        0.9,
+        0.5,
+        1.58
+      ],
+      "colors": {
+        "wood": "#c9844a",
+        "sheet": "#f7f1e8",
+        "pillow": "#fbf7f2",
+        "quilt": [
+          "#f0b0a0",
+          "#f6d56b",
+          "#b7d4c8",
+          "#a9cbe4",
+          "#f0c49a",
+          "#e8b4c8",
+          "#d5d0a4"
+        ]
+      }
+    },
+    {
+      "id": "3a07eebc-03c1-421c-87a7-7e6d0037ceae",
+      "kind": "nightstand",
+      "title": "ตู้ข้างเตียง",
+      "titleEn": "Nightstand",
+      "slug": "player-room/nightstand",
+      "position": [
+        0.42,
+        0,
+        -0.52
+      ],
+      "size": [
+        0.5,
+        0.52,
+        0.42
+      ],
+      "colors": {
+        "wood": "#e0995a",
+        "top": "#e0995a",
+        "knob": "#e0995a"
+      }
+    },
+    {
+      "id": "33e17ada-afab-47eb-b72b-7c3be79d7ca7",
+      "kind": "calendar",
+      "title": "ปฏิทินของฉัน",
+      "titleEn": "My calendar",
+      "slug": "player-room/calendar",
+      "position": [
+        -0.2,
+        1.52,
+        -1.5
+      ],
+      "size": [
+        0.4,
+        0.48
+      ],
+      "colors": {
+        "paper": "#fffaf3",
+        "head": "#c17a42",
+        "ink": "#5c463c"
+      },
+      "purpose": "upcoming",
+      "theme": "cb8d64cc-6760-41a0-8595-837d6403af3b",
+      "themeSwitch": true,
+      "month": "2026-10",
+      "monthLabel": "ตุลาคม 2569",
+      "today": "2026-10-22",
+      "entries": [
+        {
+          "id": "565bc189-287c-413b-8117-97837d3a5103",
+          "kind": "calendar-entry",
+          "title": "ฝึกเล่นประจำวัน: เล่น 1 ด่าน",
+          "titleEn": "Daily practice",
+          "slug": "player-room/calendar/entry/daily-practice",
+          "date": "2026-10-22",
+          "icon": "🎯",
+          "type": "daily-practice"
+        },
+        {
+          "id": "cd88fd0a-dd7c-4f98-8458-758124ca4d6a",
+          "kind": "calendar-entry",
+          "title": "เยี่ยมบ้านคุณย่า (คดี 01)",
+          "titleEn": "Visit grandma",
+          "slug": "player-room/calendar/entry/grandma",
+          "date": "2026-10-24",
+          "icon": "🏡",
+          "eventRef": "case-01"
+        },
+        {
+          "id": "17e12e36-6d4f-4fda-b36c-2fe23f831736",
+          "kind": "calendar-entry",
+          "title": "ห้องสมุดวันวาน — ปลดล็อกเมื่อจบคดี 01",
+          "titleEn": "Library of yesterday",
+          "slug": "player-room/calendar/entry/library",
+          "date": "2026-10-31",
+          "icon": "🔒",
+          "eventRef": "case-02"
+        }
+      ],
+      "themes": [
+        {
+          "id": "cb8d64cc-6760-41a0-8595-837d6403af3b",
+          "kind": "calendar-theme",
+          "title": "ห้องเด็ก",
+          "titleEn": "Kid room",
+          "slug": "player-room/calendar/theme/kid-room",
+          "paper": "#fff7e8",
+          "ink": "#3a3550",
+          "head": "#ff9a62",
+          "frame": "#7ec8e3",
+          "art": "🎈",
+          "unlock": null
+        },
+        {
+          "id": "cfe3efe9-05a8-4528-a0f0-7319e32ddf0f",
+          "kind": "calendar-theme",
+          "title": "บ้านไม้",
+          "titleEn": "Wooden home",
+          "slug": "player-room/calendar/theme/wooden-home",
+          "paper": "#f3e3c3",
+          "ink": "#4a2e18",
+          "head": "#6b3f22",
+          "frame": "#8a5a34",
+          "art": "🌺",
+          "unlock": null
+        },
+        {
+          "id": "5abeab1b-cd53-46ec-a629-a1213a7524c8",
+          "kind": "calendar-theme",
+          "title": "ท้องฟ้ายามค่ำ",
+          "titleEn": "Night sky",
+          "slug": "player-room/calendar/theme/night-sky",
+          "paper": "#e7ecff",
+          "ink": "#1f2a5c",
+          "head": "#1f2a5c",
+          "frame": "#4b3f8f",
+          "art": "🌙",
+          "unlock": {
+            "afterCase": "case-01"
+          },
+          "lockedHint": "ปลดล็อกเมื่อจบคดี 01"
+        }
+      ]
+    },
+    {
+      "id": "b19e90a9-3012-4364-b01c-6b35c4212ea5",
+      "kind": "lamp",
+      "title": "โคมไฟติดผนัง",
+      "titleEn": "Wall sconce",
+      "slug": "player-room/sconce",
+      "position": [
+        0.05,
+        1.95,
+        -1.48
+      ],
+      "colors": {
+        "wood": "#c9844a",
+        "shade": "#e8c49a"
+      }
+    },
+    {
+      "id": "581b099c-be90-4bd9-b754-a7dff282dbbc",
+      "kind": "bookshelf",
+      "title": "ชั้นหนังสือ",
+      "titleEn": "Bookshelf",
+      "slug": "player-room/bookshelf",
+      "position": [
+        0.4,
+        1.22,
+        -1.48
+      ],
+      "size": [
+        0.72,
+        0.48,
+        0.18
+      ],
+      "color": "#d09a62",
+      "rows": [
+        {
+          "id": "b84bb587-2f33-4389-8152-cebd4c7f60d2",
+          "kind": "shelf-row",
+          "title": "ชั้นบน",
+          "titleEn": "Top shelf",
+          "slug": "player-room/bookshelf/row-1",
+          "y": 0.3,
+          "books": [
+            {
+              "id": "cf3c082f-765d-45a8-9e3f-d87ed4bc191c",
+              "kind": "book",
+              "title": "ปกแดง",
+              "titleEn": "Red cover",
+              "slug": "player-room/bookshelf/row-1/book-01",
+              "color": "#d4655d",
+              "width": 0.038,
+              "height": 0.15,
+              "depth": 0.11,
+              "tilt": -4
+            },
+            {
+              "id": "6f09426a-0719-444b-9a11-930dd869e74d",
+              "kind": "book",
+              "title": "ปกเหลือง",
+              "titleEn": "Yellow cover",
+              "slug": "player-room/bookshelf/row-1/book-02",
+              "color": "#e2b15a",
+              "width": 0.046,
+              "height": 0.13,
+              "depth": 0.11,
+              "tilt": 3
+            },
+            {
+              "id": "d686dd37-bf43-4d9f-b989-16e91d49abcf",
+              "kind": "book",
+              "title": "ปกเขียว",
+              "titleEn": "Green cover",
+              "slug": "player-room/bookshelf/row-1/book-03",
+              "color": "#6fbf8a",
+              "width": 0.034,
+              "height": 0.16,
+              "depth": 0.12
+            }
+          ]
+        },
+        {
+          "id": "b4f54f90-2533-411b-b7e6-ca456a68ada4",
+          "kind": "shelf-row",
+          "title": "ชั้นล่าง",
+          "titleEn": "Bottom shelf",
+          "slug": "player-room/bookshelf/row-2",
+          "y": 0.06,
+          "gapEnd": 0.28,
+          "books": [
+            {
+              "id": "16b9cc07-041d-4193-a018-009b2fff9e26",
+              "kind": "book",
+              "title": "ปกฟ้า",
+              "titleEn": "Blue cover",
+              "slug": "player-room/bookshelf/row-2/book-01",
+              "color": "#7eb0d4",
+              "width": 0.04,
+              "height": 0.14,
+              "depth": 0.11,
+              "tilt": 5
+            },
+            {
+              "id": "765eefa3-9b7f-4453-a6d8-9a6df98e72a1",
+              "kind": "book",
+              "title": "ปกม่วง",
+              "titleEn": "Purple cover",
+              "slug": "player-room/bookshelf/row-2/book-02",
+              "color": "#b98cc4",
+              "width": 0.032,
+              "height": 0.12,
+              "depth": 0.1,
+              "tilt": -3
+            },
+            {
+              "id": "31c86f87-f9fc-4660-893f-bb86494f132f",
+              "kind": "book",
+              "title": "ปกส้ม",
+              "titleEn": "Orange cover",
+              "slug": "player-room/bookshelf/row-2/book-03",
+              "color": "#e0945a",
+              "width": 0.044,
+              "height": 0.15,
+              "depth": 0.11,
+              "tilt": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "b7a74557-9c6e-45bf-bc8c-28bdb507012d",
+      "kind": "door",
+      "title": "ประตู",
+      "titleEn": "Door",
+      "slug": "player-room/door",
+      "position": [
+        0.9,
+        1.04,
+        -1.01
+      ],
+      "rotation": [
+        0,
+        -90,
+        0
+      ],
+      "size": [
+        0.84,
+        2.08
+      ],
+      "colors": {
+        "frame": "#f0e2cc",
+        "slab": "#c17d42",
+        "panel": "#b56e38",
+        "knob": "#d5d8dc"
+      }
+    },
+    {
+      "id": "464ce4ea-51d4-46c8-9b70-93f53ab317f9",
+      "kind": "rug",
+      "title": "พรม",
+      "titleEn": "Rug",
+      "slug": "player-room/rug",
+      "position": [
+        0.02,
+        0,
+        0.35
+      ],
+      "size": [
+        1.7,
+        1.32
+      ],
+      "colors": {
+        "edge": "#e7d4b6",
+        "fill": "#f7f1e6",
+        "patches": [
+          "#e25d6a",
+          "#f0c043",
+          "#6aaf62",
+          "#6eb0e0",
+          "#f08a55",
+          "#d48bb8"
+        ]
+      }
+    }
+  ],
+  "hotspots": [
+    {
+      "id": "164142d3-913a-4534-b8f3-d7bea8dbd23d",
+      "kind": "hotspot",
+      "title": "ประตู",
+      "titleEn": "Door",
+      "slug": "player-room/hotspot/door",
+      "action": "event-select",
+      "targetId": "b7a74557-9c6e-45bf-bc8c-28bdb507012d",
+      "anchor": [
+        0.72,
+        1.2,
+        -1.01
+      ],
+      "hit": {
+        "position": [
+          0.82,
+          1.04,
+          -1.01
+        ],
+        "size": [
+          0.3,
+          1.9,
+          0.9
+        ]
+      }
+    },
+    {
+      "id": "ab98647e-a4d3-4eb0-9019-ceb10149b6fe",
+      "kind": "hotspot",
+      "title": "มุมฝึกเล่น",
+      "titleEn": "Practice corner",
+      "slug": "player-room/hotspot/practice",
+      "action": "practice",
+      "targetId": "3a07eebc-03c1-421c-87a7-7e6d0037ceae",
+      "anchor": [
+        0.42,
+        0.74,
+        -0.32
+      ],
+      "hit": {
+        "position": [
+          0.42,
+          0.5,
+          -0.42
+        ],
+        "size": [
+          0.46,
+          0.36,
+          0.36
+        ]
+      }
+    },
+    {
+      "id": "c7027d6d-2c46-43c2-a2a7-3d2f15d7f873",
+      "kind": "hotspot",
+      "title": "ปฏิทิน",
+      "titleEn": "Calendar",
+      "slug": "player-room/hotspot/calendar",
+      "action": "calendar",
+      "targetId": "33e17ada-afab-47eb-b72b-7c3be79d7ca7",
+      "anchor": [
+        -0.2,
+        1.52,
+        -1.36
+      ],
+      "hit": {
+        "position": [
+          -0.2,
+          1.52,
+          -1.44
+        ],
+        "size": [
+          0.46,
+          0.64,
+          0.16
+        ]
+      }
+    },
+    {
+      "id": "436a75a0-35fa-462b-a220-a436a38f9bfb",
+      "kind": "decor-slot",
+      "title": "ผนัง",
+      "titleEn": "Wall slot",
+      "slug": "player-room/decor/wall",
+      "action": "decor",
+      "targetId": "986db4af-6e8e-4601-8933-42d0ba33e5c0",
+      "emptyHint": "ช่องบนผนังว่างอยู่ ไขคดีแล้วค่อยมาวางของ",
+      "anchor": [
+        -0.5,
+        1.8,
+        -1.42
+      ],
+      "hit": {
+        "position": [
+          -0.5,
+          1.8,
+          -1.5
+        ],
+        "size": [
+          0.24,
+          0.24,
+          0.14
+        ]
+      }
+    },
+    {
+      "id": "6bb33448-6b61-4564-91e1-125bae9cf57c",
+      "kind": "decor-slot",
+      "title": "ชั้นของที่ระลึก",
+      "titleEn": "Keepsake shelf",
+      "slug": "player-room/decor/keepsake-shelf",
+      "action": "decor",
+      "targetId": "581b099c-be90-4bd9-b754-a7dff282dbbc",
+      "emptyHint": "ชั้นนี้ยังว่าง ไว้โชว์ของจากคดี",
+      "anchor": [
+        0.58,
+        1.4,
+        -1.32
+      ],
+      "hit": {
+        "position": [
+          0.58,
+          1.36,
+          -1.4
+        ],
+        "size": [
+          0.16,
+          0.14,
+          0.14
+        ]
+      }
+    },
+    {
+      "id": "f1f0eef0-7e7c-4156-818c-21acbcd970e3",
+      "kind": "decor-slot",
+      "title": "ชั้นกระถาง",
+      "titleEn": "Plant shelf slot",
+      "slug": "player-room/decor/plant-shelf",
+      "action": "decor",
+      "targetId": "89fbcc73-f41c-4e4b-b0b4-0e306ece3d04",
+      "emptyHint": "ขอบชั้นกระถางว่างอยู่",
+      "anchor": [
+        -0.52,
+        1.05,
+        -0.72
+      ],
+      "hit": {
+        "position": [
+          -0.56,
+          1.02,
+          -0.75
+        ],
+        "size": [
+          0.14,
+          0.1,
+          0.18
+        ]
+      }
+    },
+    {
+      "id": "1eb87d09-d24f-4620-8067-9c25cb1b3a4f",
+      "kind": "decor-slot",
+      "title": "ตู้ข้างเตียง",
+      "titleEn": "Nightstand slot",
+      "slug": "player-room/decor/nightstand",
+      "action": "decor",
+      "targetId": "3a07eebc-03c1-421c-87a7-7e6d0037ceae",
+      "emptyHint": "มุมตู้ว่างอยู่ ยังไม่มีของมาวาง",
+      "anchor": [
+        0.55,
+        0.66,
+        -0.38
+      ],
+      "hit": {
+        "position": [
+          0.52,
+          0.58,
+          -0.42
+        ],
+        "size": [
+          0.14,
+          0.1,
+          0.12
+        ]
+      }
+    },
+    {
+      "id": "517cf056-55dc-4981-80d0-3e34a326dd3f",
+      "kind": "decor-slot",
+      "title": "เตียง",
+      "titleEn": "Bed slot",
+      "slug": "player-room/decor/bed",
+      "action": "decor",
+      "targetId": "6f44d481-04a3-43b9-83f0-094e8eaf6cc1",
+      "emptyHint": "บนเตียงยังว่าง",
+      "anchor": [
+        -0.3,
+        0.48,
+        0.12
+      ],
+      "hit": {
+        "position": [
+          -0.3,
+          0.44,
+          0.12
+        ],
+        "size": [
+          0.28,
+          0.12,
+          0.24
+        ]
+      }
+    },
+    {
+      "id": "d49d729b-1f63-42c2-8e9b-bee5e4d5e896",
+      "kind": "decor-slot",
+      "title": "พรมซ้าย",
+      "titleEn": "Left rug slot",
+      "slug": "player-room/decor/rug-left",
+      "action": "decor",
+      "targetId": "464ce4ea-51d4-46c8-9b70-93f53ab317f9",
+      "emptyHint": "ช่องบนพรมว่างอยู่",
+      "anchor": [
+        -0.4,
+        0.06,
+        0.25
+      ],
+      "hit": {
+        "position": [
+          -0.4,
+          0.06,
+          0.25
+        ],
+        "size": [
+          0.22,
+          0.1,
+          0.22
+        ]
+      }
+    },
+    {
+      "id": "b08a7569-2fb4-4c7f-9e88-e5ac54ac0121",
+      "kind": "decor-slot",
+      "title": "พรมกลาง",
+      "titleEn": "Center rug slot",
+      "slug": "player-room/decor/rug-center",
+      "action": "decor",
+      "targetId": "464ce4ea-51d4-46c8-9b70-93f53ab317f9",
+      "emptyHint": "ช่องบนพรมว่างอยู่",
+      "anchor": [
+        0.02,
+        0.06,
+        0.45
+      ],
+      "hit": {
+        "position": [
+          0.02,
+          0.06,
+          0.45
+        ],
+        "size": [
+          0.22,
+          0.1,
+          0.22
+        ]
+      }
+    },
+    {
+      "id": "0de1a9dc-d478-4a1c-aa6d-66ed14c6f852",
+      "kind": "decor-slot",
+      "title": "พรมขวา",
+      "titleEn": "Right rug slot",
+      "slug": "player-room/decor/rug-right",
+      "action": "decor",
+      "targetId": "464ce4ea-51d4-46c8-9b70-93f53ab317f9",
+      "emptyHint": "ช่องบนพรมว่างอยู่",
+      "anchor": [
+        0.42,
+        0.06,
+        0.25
+      ],
+      "hit": {
+        "position": [
+          0.42,
+          0.06,
+          0.25
+        ],
+        "size": [
+          0.22,
+          0.1,
+          0.22
+        ]
+      }
+    }
+  ],
+  "hud": {
+    "backLabel": "ย้อนกลับ",
+    "caseLabel": "สมุดคดี",
+    "hintLabel": "คำใบ้",
+    "settingsLabel": "ตั้งค่า",
+    "hereToast": "อยู่ห้องนี้แล้ว",
+    "hintTarget": "164142d3-913a-4534-b8f3-d7bea8dbd23d",
+    "hintLines": [
+      "ลองออกทางประตู เพื่อไปเลือกเหตุการณ์",
+      "แตะจุดที่ประตู"
+    ]
+  },
+  "onboarding": [
+    {
+      "title": "ขั้นที่ 1 จาก 3",
+      "body": "แตะจุดเล็ก ๆ บนวัตถุ\nแล้วแตะอีกครั้งเพื่อใช้"
+    },
+    {
+      "title": "ขั้นที่ 2 จาก 3",
+      "body": "ปุ่มลูกศร มุมล่างซ้าย\nใช้ย้อนกลับเสมอ"
+    },
+    {
+      "title": "ขั้นที่ 3 จาก 3",
+      "body": "ปุ่มสมุดคดี มุมล่างขวา\nเปิดกระดานคดี"
+    }
+  ],
+  "screens": {
+    "eventSelect": {
+      "title": "เลือกเหตุการณ์",
+      "body": "รายการเหตุการณ์จะมาจากชุดเรื่อง หน้านี้ยังเป็นที่ว่าง",
+      "cardTitle": "เร็ว ๆ นี้",
+      "cardBody": "ยังไม่มีเหตุการณ์ให้เลือก"
+    },
+    "practice": {
+      "title": "มุมฝึกเล่น",
+      "body": "ยังไม่มีเกมที่ปลดล็อก เล่นในคดีก่อน แล้วกลับมาฝึกที่นี่"
+    },
+    "caseBoard": {
+      "title": "สมุดคดี",
+      "body": "ยังไม่ได้เริ่มเหตุการณ์ ไม่มีหลักฐานให้ดู"
+    }
+  }
+}
