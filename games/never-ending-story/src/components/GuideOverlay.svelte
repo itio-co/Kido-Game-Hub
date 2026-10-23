@@ -19,6 +19,7 @@
   let { st, onModelTap, onChange, say, modelCanvas = null }: Props = $props();
 
   let svg = $state<SVGSVGElement>();
+  let candMenuEl = $state<HTMLDivElement>();
   const vr = $derived(st.viewRect);
   const s = $derived(1 / st.k);
 
@@ -441,9 +442,49 @@
   }
   function windowDown(event: PointerEvent): void {
     if (menu && !menuEl?.contains(event.target as Node)) menu = null;
+    if (candMenu && !candMenuEl?.contains(event.target as Node)) candMenu = null;
   }
   function windowKey(event: KeyboardEvent): void {
     if (menu && event.key === 'Escape') menu = null;
+    else if (candMenu && event.key === 'Escape') candMenu = null;
+    else if (event.key === 'Escape' && st.candidates.length && !st.pick) {
+      st.clearCandidates();
+      say?.(T.detect.cleared);
+    } else if (hoverCand !== null && !event.ctrlKey && !event.metaKey && !event.altKey && /^[123]$/.test(event.key)) {
+      // hover a candidate + 1/2/3 = its axis (X/Y/Z)
+      event.preventDefault();
+      const a = (Number(event.key) - 1) as 0 | 1 | 2;
+      st.setCandidateAxis(hoverCand, a);
+      say?.(T.detect.axisSet(AXIS_NAMES[a]));
+    }
+  }
+
+  // ---------- detected line candidates ----------
+  let hoverCand = $state<number | null>(null);
+  let candMenu = $state<{ id: number; left: number; top: number } | null>(null);
+  function acceptCand(id: number, axis?: 0 | 1 | 2): void {
+    candMenu = null;
+    const msg = st.acceptCandidate(id, axis);
+    if (msg === null) return;
+    if (st.lines.length > 0 && msg !== T.detect.needAxis) {
+      st.solveLines();
+      onChange();
+    }
+    say?.(msg);
+  }
+  function candDown(event: PointerEvent, id: number): void {
+    event.stopPropagation();
+    if (event.button === 2) return; // context menu → axis chooser
+    if (event.button !== 0 || st.pick) return;
+    // no axis yet: ask (chooser at the pointer)
+    if (st.candidates.find((c) => c.id === id)?.axis === null) candContext(event, id);
+    else acceptCand(id);
+  }
+  function candContext(event: MouseEvent, id: number): void {
+    event.preventDefault();
+    event.stopPropagation();
+    const r = svg!.getBoundingClientRect();
+    candMenu = { id, left: event.clientX - r.left + 6, top: event.clientY - r.top + 6 };
   }
 
   function segHandle(event: PointerEvent, id: number): void {
@@ -697,6 +738,16 @@
       {/each}
     </g>
   {/each}
+  {#each st.candidates as c (c.id)}
+    {@const col = c.axis === null ? '#b9c3cc' : AXIS_COLORS[c.axis]}
+    <g class="cand" class:hover={hoverCand === c.id} data-cand={c.id} data-cand-axis={c.axis ?? 'none'}
+      data-cand-a="{c.a[0].toFixed(2)},{c.a[1].toFixed(2)}" data-cand-b="{c.b[0].toFixed(2)},{c.b[1].toFixed(2)}">
+      <line x1={c.a[0]} y1={c.a[1]} x2={c.b[0]} y2={c.b[1]} stroke={col} class="cseg" />
+      <line x1={c.a[0]} y1={c.a[1]} x2={c.b[0]} y2={c.b[1]} class="chit" role="button" tabindex="-1" aria-label={T.detect.heading}
+        onpointerdown={(e) => candDown(e, c.id)} oncontextmenu={(e) => candContext(e, c.id)}
+        onpointerenter={() => (hoverCand = c.id)} onpointerleave={() => { if (hoverCand === c.id) hoverCand = null; }} />
+    </g>
+  {/each}
   {#each st.lines as line (line.id)}
     {@const info = lineInfo.get(line.id)}
     {@const ext = info ? null : extend(line.a, line.b)}
@@ -931,6 +982,17 @@
   </div>
 {/if}
 
+{#if candMenu}
+  {@const cm = candMenu}
+  <div class="lmenu cmenu" bind:this={candMenuEl} role="menu" aria-label={T.detect.chooserAria} style="left:{cm.left}px;top:{cm.top}px" data-cand-menu={cm.id}>
+    <div class="mtitle">{T.detect.chooserAria}</div>
+    {#each [0, 1, 2] as const as a (a)}
+      <button type="button" role="menuitem" class="mitem" style="color:{AXIS_COLORS[a]}" data-cand-accept={a} onclick={() => acceptCand(cm.id, a)}>{T.detect.chooserAccept(AXIS_NAMES[a])} <small>&nbsp;({a + 1})</small></button>
+    {/each}
+    <button type="button" role="menuitem" class="mitem close" onclick={() => (candMenu = null)}>{T.master.menuClose}</button>
+  </div>
+{/if}
+
 <svelte:window onpointerdown={windowDown} onkeydown={windowKey} />
 
 <style>
@@ -959,6 +1021,11 @@
   .vray { stroke-width: 1; opacity: 0.4; pointer-events: none; }
   .vray.full { stroke-width: 1.2; opacity: 0.5; }
   .ghost { pointer-events: none; }
+  .cseg { stroke-width: 1.6; stroke-dasharray: 6 4; opacity: 0.9; pointer-events: none; }
+  .cand.hover .cseg { stroke-width: 3; opacity: 1; }
+  .chit { stroke: transparent; stroke-width: 12; stroke-linecap: round; pointer-events: stroke; cursor: copy; }
+  .chit:focus { outline: none; }
+  .cmenu { border-color: #b9c3cc; }
   .gray { stroke-width: 1; opacity: 0.22; }
   .gseg { stroke-width: 2; opacity: 0.45; stroke-dasharray: 8 4; }
   .gdot { opacity: 0.45; }

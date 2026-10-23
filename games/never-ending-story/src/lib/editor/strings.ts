@@ -426,6 +426,38 @@ export const MESSAGES = {
     th: 'หาจุดกึ่งกลางภาพต้องใช้จุดลับตาจริงครบ 3 แกน (มีแกนขนานอยู่)',
   },
 
+  // --- line detection (edge view → guide-line candidates) -------------------------------------------------------
+  'cameraMatch.detect.heading': { en: 'Detect lines', th: 'ตรวจหาเส้น' },
+  'cameraMatch.detect.headingNote': { en: '(straight edges → candidate guide lines)', th: '(ขอบตรงในภาพ → เส้นนำสายตาที่เสนอ)' },
+  'cameraMatch.detect.run': { en: '🔍 Detect lines', th: '🔍 ตรวจหาเส้น' },
+  'cameraMatch.detect.runTitle': {
+    en: 'Find straight edges in this view and propose them as guide lines (also runs when image edges are set to Always)',
+    th: 'หาขอบตรงในภาพนี้แล้วเสนอเป็นเส้นนำสายตา (ทำงานเองด้วยเมื่อเลือกแสดงขอบภาพ “ตลอด”)',
+  },
+  'cameraMatch.detect.running': { en: 'Detecting lines… {pct}%', th: 'กำลังตรวจหาเส้น… {pct}%' },
+  'cameraMatch.detect.found': {
+    en: '{n} candidates (X {x} · Y {y} · Z {z} · no axis {u}) — click one to accept · 1/2/3 sets its axis · Esc clears',
+    th: 'พบ {n} เส้น (X {x} · Y {y} · Z {z} · ยังไม่มีแกน {u}) — คลิกเพื่อรับ · 1/2/3 เปลี่ยนแกน · Esc ล้าง',
+  },
+  'cameraMatch.detect.none': { en: 'No straight edges found — try a shorter minimum length', th: 'ไม่พบขอบตรง — ลองลดความยาวขั้นต่ำ' },
+  'cameraMatch.detect.minLen': { en: 'Min length {px} px', th: 'ยาวอย่างน้อย {px} px' },
+  'cameraMatch.detect.acceptAll': { en: 'Accept all {axis}', th: 'รับทั้งหมดแกน {axis}' },
+  'cameraMatch.detect.acceptedAll': { en: '{n} lines added on {axis}', th: 'เพิ่ม {n} เส้นบนแกน {axis}' },
+  'cameraMatch.detect.accepted': { en: 'Added {name} from a detected edge', th: 'เพิ่ม {name} จากขอบที่ตรวจพบ' },
+  'cameraMatch.detect.needAxis': {
+    en: 'This candidate has no axis yet: hover it and press 1/2/3, or right-click it',
+    th: 'เส้นนี้ยังไม่มีแกน: ชี้เมาส์แล้วกด 1/2/3 หรือคลิกขวา',
+  },
+  'cameraMatch.detect.clear': { en: 'Clear candidates', th: 'ล้างเส้นที่เสนอ' },
+  'cameraMatch.detect.cleared': { en: 'Candidates cleared', th: 'ล้างเส้นที่เสนอแล้ว' },
+  'cameraMatch.detect.axisSet': { en: 'Candidate → {axis}', th: 'เส้นที่เสนอ → แกน {axis}' },
+  'cameraMatch.detect.chooserAria': { en: 'Axis of the candidate line', th: 'แกนของเส้นที่เสนอ' },
+  'cameraMatch.detect.chooserAccept': { en: 'Accept as {axis}', th: 'รับเป็นแกน {axis}' },
+  'cameraMatch.detect.legend': {
+    en: 'Dashed thin lines = detected candidates in the axis colour (grey = no axis yet). They are not saved until you accept them.',
+    th: 'เส้นประบาง = เส้นที่ตรวจพบ สีตามแกน (สีเทา = ยังไม่มีแกน) จะยังไม่ถูกบันทึกจนกว่าจะกดรับ',
+  },
+
   // --- edge alignment -------------------------------------------------------------------------------------------
   'cameraMatch.edges.heading': { en: 'Line vs image edges', th: 'เทียบเส้นกับขอบภาพ' },
   'cameraMatch.edges.headingNote': { en: '(guide line ↔ real edges in the mock-up)', th: '(เส้นนำสายตา ↔ ขอบจริงใน Mock-up)' },
@@ -865,6 +897,28 @@ export const T = {
     onePointNoLens: t('cameraMatch.vp.onePointNoLens'),
     oneRealVpNoLens: t('cameraMatch.vp.oneRealVpNoLens'),
     principalNeedsThree: t('cameraMatch.vp.principalNeedsThree'),
+  },
+
+  /** Line detection on the edge view (candidates → guide lines). */
+  detect: {
+    heading: t('cameraMatch.detect.heading'),
+    headingNote: t('cameraMatch.detect.headingNote'),
+    run: t('cameraMatch.detect.run'),
+    runTitle: t('cameraMatch.detect.runTitle'),
+    running: (pct: number) => t('cameraMatch.detect.running', { pct }),
+    found: (n: number, x: number, y: number, z: number, u: number) => t('cameraMatch.detect.found', { n, x, y, z, u }),
+    none: t('cameraMatch.detect.none'),
+    minLen: (px: number) => t('cameraMatch.detect.minLen', { px }),
+    acceptAll: (axis: string) => t('cameraMatch.detect.acceptAll', { axis }),
+    acceptedAll: (n: number, axis: string) => t('cameraMatch.detect.acceptedAll', { n, axis }),
+    accepted: (name: string) => t('cameraMatch.detect.accepted', { name }),
+    needAxis: t('cameraMatch.detect.needAxis'),
+    clear: t('cameraMatch.detect.clear'),
+    cleared: t('cameraMatch.detect.cleared'),
+    axisSet: (axis: string) => t('cameraMatch.detect.axisSet', { axis }),
+    chooserAria: t('cameraMatch.detect.chooserAria'),
+    chooserAccept: (axis: string) => t('cameraMatch.detect.chooserAccept', { axis }),
+    legend: t('cameraMatch.detect.legend'),
   },
 
   edges: {

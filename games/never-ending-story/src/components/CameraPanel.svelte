@@ -94,6 +94,17 @@
     onChange();
     say(r.message);
   }
+  async function detect(): Promise<void> {
+    const n = await st.detectLines();
+    if (n !== null && st.message) say(st.message);
+  }
+  function acceptAll(a: Axis): void {
+    const msg = st.acceptAll(a);
+    if (msg === null) return;
+    st.solveLines();
+    onChange();
+    say(msg);
+  }
   function run(fn: () => boolean): void {
     fn();
     onChange();
@@ -280,7 +291,7 @@
     <div class="seg3" role="radiogroup" aria-label={T.edges.showAria}>
       {#each (['drag', 'always', 'off'] as const).map((id) => [id, T.showModes[id]] as const) as [id, label] (id)}
         <button type="button" role="radio" aria-checked={st.edgeMode === id} class:on={st.edgeMode === id} data-edge-mode={id}
-          onclick={() => { st.edgeMode = id; onChange(); }}>{label}</button>
+          onclick={() => { st.edgeMode = id; onChange(); if (id === 'always' && !st.candidates.length && st.detecting === null) void detect(); }}>{label}</button>
       {/each}
     </div>
     {#if selEdge}
@@ -298,6 +309,28 @@
         onclick={() => { st.edgeSnap = !st.edgeSnap; onChange(); say(T.edges.snapWhileDragToast(st.edgeSnap)); }}>{T.edges.snapWhileDrag(st.edgeSnap)}</button>
     </div>
     <p class="tip legend">{T.edges.legendLead} <span class="good">● &lt; 1 px</span> <span class="warn">● ≤ 2.5 px</span> <span class="bad">● &gt; 2.5 px</span> · <b>{T.edges.legendRefine}</b> {T.edges.legendRefineText}</p>
+  </div>
+  <div class="vpbox" data-detect-panel>
+    <div class="vphead">{T.detect.heading} <small>{T.detect.headingNote}</small>
+      {#if st.detecting !== null}<span class="n" data-detect-running>{T.detect.running(Math.round(st.detecting * 100))}</span>
+      {:else if st.candidates.length}<span class="n" data-detect-count={st.candidates.length}>{st.candidates.length}</span>{/if}
+    </div>
+    <div class="actions">
+      <button type="button" data-act="detect-lines" title={T.detect.runTitle} disabled={st.detecting !== null} onclick={() => void detect()}>{T.detect.run}</button>
+      <label class="n" data-detect-minlen>{T.detect.minLen(st.detectMinLen)}
+        <input type="range" min="15" max="200" step="5" value={st.detectMinLen} onchange={(e) => { st.detectMinLen = e.currentTarget.valueAsNumber; if (st.candidates.length) void detect(); }} /></label>
+    </div>
+    {#if st.candidates.length}
+      <div class="actions">
+        {#each [0, 1, 2] as const as a (a)}
+          {@const n = st.candidates.filter((c) => c.axis === a).length}
+          <button type="button" data-act="accept-all" data-axis={a} disabled={!n} style="border-color:{AXIS_COLORS[a]}"
+            onclick={() => acceptAll(a)}>{T.detect.acceptAll(AXIS_NAMES[a])} ({n})</button>
+        {/each}
+        <button type="button" data-act="clear-candidates" onclick={() => { st.clearCandidates(); say(T.detect.cleared); }}>{T.detect.clear}</button>
+      </div>
+    {/if}
+    <p class="tip legend">{T.detect.legend}</p>
   </div>
   <div class="field" role="radiogroup" aria-label={T.diff.aria}>
     <span>{T.diff.label}</span>

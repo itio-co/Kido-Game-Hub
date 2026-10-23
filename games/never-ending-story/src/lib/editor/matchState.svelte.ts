@@ -29,6 +29,7 @@ import { camToObject, camToWorld, type Placement } from './placement';
 import { frameWindow, FOCUS_PAD, type Box2 } from './viewFrame';
 import { jointMembers, linkEnds, removeLineLinks, unlinkEnd, type EndRef } from './guideSnap';
 import { addMasterFlag, applyMasterIds, ensureMasters, master2Of, masterIds, masterOf, masterPairAngle, mastersNearlyParallel, parseMasterMap, promoteMaster, removeMasterFlag, setMaster2Flag, setMasterFlag, type MasterMap } from './masterLine';
+import { classifySegments, detectLinesChunked, type AxisPredictor } from './lineDetect';
 import { alignLine, edgeMapFromRGBA, edgeOverlayRGBA, refineLine, type EdgeAlign, type EdgeMap } from './edgeAlign';
 import { consolidate as consolidateLines, fitAxes, parallelSuggestion, type Frame, type VpFit, type VpMode, type VpModes } from './vpFit';
 import {
@@ -87,6 +88,8 @@ type Saved = {
   vpModes?: VpModes;
 };
 export type EdgeMode = 'drag' | 'always' | 'off';
+/** A detected straight edge proposed as a guide line (ref px); never saved until accepted. */
+export type Candidate = { id: number; a: V2; b: V2; axis: Axis | null; len: number; score: number };
 
 /** Load an image, build its edge map in an idle callback and paint the overlay (null when it can't be read). */
 async function computeEdges(src: string): Promise<{ map: EdgeMap; url: string; w: number; h: number } | null> {
@@ -196,6 +199,14 @@ export class MatchState {
   edgeMap = $state.raw<EdgeMap | null>(null);
   /** Blob URL of the painted edge overlay of the current view image. */
   edgeUrl = $state<string | null>(null);
+  /** Detected line candidates of the current view (T.detect); transient, never persisted. */
+  candidates = $state<Candidate[]>([]);
+  /** Detection progress 0..1 while running, else null. */
+  detecting = $state<number | null>(null);
+  /** Minimum candidate length (image px of the view image). */
+  detectMinLen = $state(40);
+  private detectRun = 0;
+  private candId = 1;
   /** Natural size of the current view image (edge map / image px space). */
   private edgeNat = { w: 1, h: 1 };
   private static edgeCache = new Map<string, Promise<{ map: EdgeMap; url: string; w: number; h: number } | null>>();
@@ -436,6 +447,7 @@ export class MatchState {
   }
   setImage(next: ImageChoice): void {
     const before = this.group;
+    if (next !== this.image) this.clearCandidates();
     this.image = next;
     if (this.group !== before) this.swapGroups();
     // the principal point no longer depends on the view (full-image centre), so nothing to move here
@@ -917,6 +929,101 @@ export class MatchState {
     this.say(T.room.solvedFromLines(both, lensMm(cam.f, this.width).toFixed(1), yaw, res.message ?? null));
     return true;
   }
+  // ---------- line detection (edge view → candidates) ----------
+  /** Axis predictors in IMAGE px of the view image: a finite VP, or a direction (parallel / VP at infinity). */
+  private axisPredictors(): AxisPredictor[] {
+    return ([0, 1, 2] as Axis[]).map((a): AxisPredictor => {
+      const v = this.vps[a]?.vp;
+      if (!v) {
+        // one line on a parallel axis already fixes the direction
+        const l = this.vpModes[a] === 'parallel' ? this.lines.find((x) => x.axis === a) : undefined;
+        if (!l) return null;
+        const p = this.refToImg(l.a), q = this.refToImg(l.b);
+        return { kind: 'dir', d: [q[0] - p[0], q[1] - p[1]] };
+      }
+      const big = Math.max(this.width, this.height) * 1e3;
+      if (Math.abs(v[2]) * big < Math.hypot(v[0], v[1])) {
+        const o = this.refToImg([0, 0]), q = this.refToImg([v[0], v[1]]);
+        return { kind: 'dir', d: [q[0] - o[0], q[1] - o[1]] };
+      }
+      return { kind: 'vp', p: this.refToImg([v[0] / v[2], v[1] / v[2]]) };
+    });
+  }
+  /**
+   * Detect straight edges on the current view's edge map (chunked, never freezes the UI) and propose them as
+   * candidates (ref px), each classified onto an axis. Returns the number of candidates, or null when superseded.
+   */
+  async detectLines(): Promise<number | null> {
+    const run = ++this.detectRun;
+    this.detecting = 0;
+    if (!this.edgeMap) await this.loadEdges();
+    const map = this.edgeMap;
+    if (run !== this.detectRun) return null;
+    if (!map) {
+      this.detecting = null;
+      this.say(T.edges.preparing);
+      return 0;
+    }
+    const segs = await detectLinesChunked(map, { minLen: this.detectMinLen, max: 40 }, (f) => {
+      if (run === this.detectRun) this.detecting = f;
+    }, 12, () => run !== this.detectRun);
+    if (!segs || run !== this.detectRun) return null;
+    const axes = classifySegments(segs, this.axisPredictors());
+    // drop candidates that duplicate an existing line (same place)
+    const k = this.refPerImg;
+    const dup = (a: V2, b: V2) => this.lines.some((l) => {
+      const d = (p: V2) => {
+        const u: V2 = [l.b[0] - l.a[0], l.b[1] - l.a[1]];
+        const n = Math.hypot(u[0], u[1]) || 1;
+        return Math.abs(u[0] * (p[1] - l.a[1]) - u[1] * (p[0] - l.a[0])) / n;
+      };
+      return d(a) < 6 * k && d(b) < 6 * k;
+    });
+    this.candidates = segs
+      .map((sg, i): Candidate => ({ id: this.candId++, a: this.imgToRef(sg.a), b: this.imgToRef(sg.b), axis: axes[i] ?? null, len: sg.len * k, score: sg.score }))
+      .filter((c) => !dup(c.a, c.b));
+    this.detecting = null;
+    const n = (a: Axis | null) => this.candidates.filter((c) => c.axis === a).length;
+    this.say(this.candidates.length ? T.detect.found(this.candidates.length, n(0), n(1), n(2), n(null)) : T.detect.none);
+    return this.candidates.length;
+  }
+  clearCandidates(): void {
+    this.detectRun++;
+    this.detecting = null;
+    this.candidates = [];
+  }
+  setCandidateAxis(id: number, axis: Axis | null): void {
+    const c = this.candidates.find((x) => x.id === id);
+    if (c) c.axis = axis;
+  }
+  private pushCandidate(c: Candidate, axis: Axis): number {
+    const first = !this.lines.some((l) => l.axis === axis);
+    const id = this.nextId++;
+    this.lines.push({ id, axis, a: [...c.a], b: [...c.b], ...(first ? { master: true } : {}) });
+    return id;
+  }
+  /** Accept a candidate as a guide line on `axis` (default: its classified axis). Undoable. Toast text, or null. */
+  acceptCandidate(id: number, axis?: Axis): string | null {
+    const c = this.candidates.find((x) => x.id === id);
+    if (!c) return null;
+    const ax = axis ?? c.axis;
+    if (ax === null) return T.detect.needAxis;
+    this.pushLines();
+    const lid = this.pushCandidate(c, ax);
+    this.candidates = this.candidates.filter((x) => x.id !== id);
+    this.selectedLine = lid;
+    return T.detect.accepted(this.lineLabel(lid));
+  }
+  /** Accept every candidate classified on `axis` (one undo step). */
+  acceptAll(axis: Axis): string | null {
+    const cs = this.candidates.filter((c) => c.axis === axis);
+    if (!cs.length) return null;
+    this.pushLines();
+    for (const c of cs) this.pushCandidate(c, axis);
+    this.candidates = this.candidates.filter((c) => c.axis !== axis);
+    return T.detect.acceptedAll(cs.length, AXIS_NAMES[axis]);
+  }
+
   // ---------- guide line ↔ mock-up edges ----------
   /** Build (once per image, cached) the edge map of the current view image, in an idle callback. */
   async loadEdges(): Promise<void> {
