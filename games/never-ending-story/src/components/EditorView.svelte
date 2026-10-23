@@ -13,7 +13,9 @@
     type ModelEditor,
     type ViewMode,
     type DisplayMode,
+    type OriginOp,
   } from '../lib/editor/modelEditor';
+  import { AXIS_COLORS } from '../lib/editor/modal';
   import { partLabel } from '../lib/editor/partLabels';
   import { SourceFiles, editsStorageKey, type FileChange } from '../lib/editor/sourceFiles.svelte';
   import { glbFileName, stableStringify } from '../lib/editor/editorFilesCore.mjs';
@@ -43,7 +45,9 @@
     canRedo: false,
     dirty: false,
     pivotMode: false,
-    pivotPicking: false,
+    cursorTool: false,
+    cursorCm: [0, 0, 0],
+    modal: null,
     pivotSnap: null,
   });
   let mode = $state<GizmoMode>('translate');
@@ -128,7 +132,7 @@
 
   // ---------- mock-up view: 2D zoom / pan of the view window ----------
   // One-finger / left-button drags stay with the model editor (tap to select, gizmo drags), so panning uses
-  // middle-, right- or Space+drag on desktop and two fingers on touch; wheel / pinch zoom; double-click /
+  // middle- (or Shift+middle-, like Blender's view pan) or Space+drag on desktop and two fingers on touch; wheel / pinch zoom; double-click /
   // double-tap fits. The 3D camera stays the solved camera; only the window into it moves (pixel-locked).
   let stageEl = $state<HTMLDivElement>();
   let spaceHeld = $state(false);
@@ -153,9 +157,17 @@
     };
   }
   function stageDown(event: PointerEvent): void {
-    if (!mockOn() || onStageControl(event)) return;
+    if (onStageControl(event)) return;
+    // Blender: Shift+right-click places the 3D cursor (every view, before the guide lines see the click)
+    if (event.pointerType === 'mouse' && event.button === 2 && event.shiftKey && editor && !editor.modalActive) {
+      editor.placeCursorAt(event.clientX, event.clientY);
+      event.preventDefault();
+      event.stopPropagation();
+      return;
+    }
+    if (!mockOn()) return;
     if (event.pointerType === 'mouse') {
-      if (event.button === 1 || event.button === 2 || (event.button === 0 && spaceHeld)) {
+      if (event.button === 1 || (event.button === 0 && spaceHeld)) {
         mousePan = { id: event.pointerId, x: event.clientX, y: event.clientY };
         stageEl!.setPointerCapture(event.pointerId);
         event.preventDefault();
@@ -229,7 +241,7 @@
     focusAt(event.clientX, event.clientY);
   }
   function stageContextMenu(event: MouseEvent): void {
-    if (mockOn()) event.preventDefault(); // right-drag pans
+    event.preventDefault(); // right button = cancel / Shift+right-click = 3D cursor (Blender), never the browser menu
   }
   function typing(target: EventTarget | null): boolean {
     const el = target as HTMLElement | null;
@@ -284,6 +296,8 @@
   let selAnchor = $state<string | null>(null);
   /** Screen points of the selected part's box centre / nearest box corner while editing its pivot — test hook. */
   let pivotHints = $state<string | null>(null);
+  /** Client points of the gizmo's X / Y / Z handles (move / scale) — test hook for touch drags. */
+  let gizmoHandles = $state<string | null>(null);
   // Push camera + visible window + display mode into the 3D view.
   $effect(() => {
     if (!match) return;
@@ -297,8 +311,10 @@
       editor!.setDisplay(display);
       const a = editor!.selectedScreen();
       selAnchor = a ? `${a[0].toFixed(1)},${a[1].toFixed(1)}` : null;
-      const h = snap.pivotMode || snap.pivotPicking ? editor!.pivotHints() : null;
+      const h = snap.pivotMode ? editor!.pivotHints() : null;
       pivotHints = h ? JSON.stringify(h) : null;
+      const gh = (['X', 'Y', 'Z'] as const).map((a) => editor!.gizmoHandle(a));
+      gizmoHandles = gh.every(Boolean) ? JSON.stringify(gh) : null;
     });
   });
   // Auto-save the match session.
@@ -391,30 +407,67 @@
     editor = createModelEditor(canvas, (next) => (snap = next));
     if (match) editor.setMatch(match.cam, match.viewRect);
     void load();
+    // Blender keymap (3D editor); the camera-match guide tools keep their own controls.
     const onKey = (event: KeyboardEvent) => {
-      const target = event.target as HTMLElement;
-      if (target.tagName === 'INPUT' || target.tagName === 'SELECT') return;
+      if (typing(event.target)) return;
+      if (editor?.modalActive) {
+        editor.modalKey(event); // G / R / S running: it owns the keyboard
+        return;
+      }
       const mod = event.ctrlKey || event.metaKey;
-      if (mod && event.key.toLowerCase() === 's') {
+      const k = event.key.length === 1 ? event.key.toLowerCase() : event.key;
+      if (delAsk) {
+        if (event.key === 'Enter') confirmDelete();
+        else if (event.key === 'Escape') delAsk = null;
+        return;
+      }
+      if (mod && k === 's') {
         event.preventDefault();
         void saveFiles();
-      } else if (mod && event.key.toLowerCase() === 'z') {
+      } else if (mod && k === 'z') {
         event.preventDefault();
         if (event.shiftKey) redo();
         else undo();
-      } else if (mod && event.key.toLowerCase() === 'y') {
+      } else if (mod && k === 'y') {
         event.preventDefault();
         redo();
-      } else if (event.key === 'Delete' || event.key === 'Backspace') {
-        if (snap.selected) editor?.remove(snap.selected.name);
-      } else if (event.key === 'Escape') {
-        if (snap.pivotPicking) editor?.pickPivot(false);
-        else editor?.select(null);
-      } else if ((event.key === 'd' || event.key === 'D') && !mod) togglePivot();
-      else if ((event.key === 'f' || event.key === 'F') && !mod && (view === 'mock' || view === 'match')) focus();
-      else if (event.key === 'w' || event.key === 'g') pickMode('translate');
-      else if (event.key === 'e' || event.key === 'r') pickMode('rotate');
-      else if (event.key === 's') pickMode('scale');
+      } else if (mod) return;
+      else if (event.key === 'Escape') {
+        if (originMenu || optionsOpen) closeMenus();
+        else if (snap.cursorTool) editor?.setCursorTool(false);
+      } else if (event.code === 'NumpadDecimal' || (k === 'f' && !event.shiftKey && !event.altKey)) {
+        event.preventDefault();
+        frameSelected();
+      } else if (event.key === 'Home') {
+        event.preventDefault();
+        frameAll();
+      } else if (event.altKey) {
+        if (k === 'a' || event.code === 'KeyA') {
+          event.preventDefault();
+          editor?.select(null);
+        }
+      } else if (event.shiftKey) {
+        if (k === 'd' && snap.selected && editor) {
+          event.preventDefault();
+          editor.duplicate(snap.selected.name, false);
+          startModal('grab');
+        } else if (k === 'c' && editor) {
+          event.preventDefault();
+          editor.resetCursor();
+          frameAll();
+          say(T.cursor.reset);
+        }
+      } else if (k === 'g') startModal('grab');
+      else if (k === 'r') startModal('rotate');
+      else if (k === 's') startModal('scale');
+      else if ((k === 'x' || event.key === 'Delete') && snap.selected) {
+        event.preventDefault();
+        delAsk = snap.selected.name;
+      } else if (k === 'a') say(T.noSelectAll);
+      else if (k === 'n') {
+        sidebar = !sidebar;
+        say(T.sidebarToast(sidebar));
+      }
     };
     window.addEventListener('keydown', onKey);
     return () => {
@@ -433,19 +486,88 @@
   }
 
   function pickMode(next: GizmoMode): void {
+    // rotating / scaling origins is not supported (Affect Only Origins keeps the move tool)
+    if (next !== 'translate' && snap.pivotMode) {
+      say(T.origin.noRotate);
+      return;
+    }
     mode = next;
-    // rotate / scale are not part of pivot editing: picking one leaves pivot mode
-    if (next !== 'translate' && snap.pivotMode) editor?.setPivotMode(false);
     editor?.setMode(next);
   }
+  // ---------- Blender-style keymap helpers ----------
+  let sidebar = $state(true);
+  let originMenu = $state(false);
+  let optionsOpen = $state(false);
+  /** Part waiting for the X / Delete confirmation. */
+  let delAsk = $state<string | null>(null);
+  function closeMenus(): void {
+    originMenu = false;
+    optionsOpen = false;
+  }
+  function startModal(kind: 'grab' | 'rotate' | 'scale'): void {
+    if (!editor || !snap.selected) return;
+    if (kind !== 'grab' && snap.pivotMode) {
+      say(T.origin.noRotate);
+      return;
+    }
+    closeMenus();
+    editor.startModal(kind);
+  }
+  function confirmDelete(): void {
+    const name = delAsk;
+    delAsk = null;
+    if (name) editor?.remove(name);
+  }
+  /** Numpad . / F: Frame Selected (the 2D window in the staged views, the orbit camera otherwise). */
+  function frameSelected(): void {
+    if (view === 'mock' || view === 'match') focus();
+    else editor?.frameOrbit(sel?.name ?? null);
+  }
+  /** Home: Frame All. */
+  function frameAll(): void {
+    if (view === 'mock' || view === 'match') focus(null);
+    else editor?.frameOrbit(null);
+  }
+  function setOrigin(op: OriginOp): void {
+    originMenu = false;
+    editor?.setOrigin(op);
+  }
+  const originOps: { op: OriginOp; label: string }[] = [
+    { op: 'geometry', label: T.origin.toGeometry },
+    { op: 'cursor', label: T.origin.toCursor },
+    { op: 'geometryToOrigin', label: T.origin.geometryToOrigin },
+    { op: 'bottom', label: T.origin.toBottom },
+    { op: 'reset', label: T.origin.reset },
+  ];
+  function toggleCursorTool(): void {
+    closeMenus();
+    editor?.setCursorTool(!snap.cursorTool);
+  }
+  /** Blender-like header / status bar text of the running G / R / S. */
+  const modalText = $derived.by(() => {
+    const m = snap.modal;
+    if (!m) return null;
+    const v = m.values;
+    const fmtM = (x: number) => `${x.toFixed(4)} m`;
+    let value: string;
+    if (m.kind === 'grab') value = v.length === 1 ? T.modal.dist(m.typed ?? fmtM(v[0]!)) : T.modal.free(fmtM(v[0]!), fmtM(v[1]!), fmtM(v[2]!));
+    else if (m.kind === 'rotate') value = T.modal.rot(m.typed ?? `${v[0]!.toFixed(2)}°`);
+    else value = T.modal.factor(m.typed ?? v[0]!.toFixed(4));
+    const along = m.axis && m.space ? ` ${T.modal.along(m.space, m.axis)}` : '';
+    return `${T.modal.name(m.kind)}${m.origins ? ` (${T.modal.originOnly})` : ''} · ${value}${along}`;
+  });
+  const axisColor = (axis: string | null): string => (axis ? AXIS_COLORS['XYZ'.indexOf(axis)]! : '#eaf6ff');
   // ---------- pivot (origin) editing ----------
   let pivotSpace = $state<'local' | 'world'>('local');
   function togglePivot(): void {
     if (!editor) return;
     const on = !editor.pivotMode;
-    if (on) mode = 'translate';
+    if (on) {
+      mode = 'translate';
+      editor.setMode('translate');
+    }
     editor.setPivotMode(on);
-    say(T.pivot.toast(on));
+    say(T.origin.toast(on));
   }
   function setPivotValue(axis: 0 | 1 | 2, value: number): void {
     editor?.setPivotValue(pivotSpace, axis, value);
@@ -585,10 +707,10 @@
   const posLabels = ['X ซ้าย–ขวา', 'Y สูง–ต่ำ', 'Z หน้า–หลัง'];
   const sizeLabels = ['กว้าง (X)', 'สูง (Y)', 'ลึก (Z)'];
   const rotLabels = ['X', 'Y', 'Z'];
-  const modes: { id: GizmoMode; label: string }[] = [
-    { id: 'translate', label: 'ย้าย' },
-    { id: 'rotate', label: 'หมุน' },
-    { id: 'scale', label: 'ขนาด' },
+  const modes: { id: GizmoMode; label: string; title: string }[] = [
+    { id: 'translate', label: T.tool.move, title: T.tool.moveTitle },
+    { id: 'rotate', label: T.tool.rotate, title: T.tool.rotateTitle },
+    { id: 'scale', label: T.tool.scale, title: T.tool.scaleTitle },
   ];
 </script>
 
@@ -601,7 +723,21 @@
   </svg>
 {/snippet}
 
-<svelte:window onkeydown={spaceKey} onkeyup={spaceKey} onblur={() => (spaceHeld = false)} />
+{#snippet cursorIcon()}
+  <!-- Blender's 3D cursor: a red / white ring with cross-hair ticks -->
+  <svg class="pivot-ico" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+    <circle cx="12" cy="12" r="6.5" fill="none" stroke="#ffffff" stroke-width="2.6" />
+    <circle cx="12" cy="12" r="6.5" fill="none" stroke="#ff3352" stroke-width="2.6" stroke-dasharray="5.1 5.1" />
+    <path d="M12 1.5v5M12 17.5v5M1.5 12h5M17.5 12h5" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+  </svg>
+{/snippet}
+
+<svelte:window
+  onkeydown={spaceKey}
+  onkeyup={spaceKey}
+  onblur={() => (spaceHeld = false)}
+  onpointerdown={(e) => { if ((originMenu || optionsOpen) && !(e.target as Element | null)?.closest?.('.pop')) closeMenus(); }}
+/>
 
 <div class="editor">
   <header>
@@ -617,7 +753,8 @@
     <div
       class="viewport"
       class:matching={view === 'match'}
-      class:pivoting={view === 'match' && (snap.pivotMode || snap.pivotPicking)}
+      class:pivoting={view === 'match' && (snap.pivotMode || snap.cursorTool)}
+      class:cursortool={snap.cursorTool}
       class:mockzoom={view === 'mock' && !!match}
       class:spacepan={spaceHeld && view === 'mock'}
       bind:this={stageEl}
@@ -636,9 +773,13 @@
       data-focus-box={match?.focusBox ? [match.focusBox.x0, match.focusBox.y0, match.focusBox.x1, match.focusBox.y1].map((v) => v.toFixed(2)).join(',') : null}
       data-sel-anchor={selAnchor}
       data-pivot={sel ? JSON.stringify({ local: sel.pivotLocalCm, world: sel.pivotWorldCm, center: sel.centerWorldCm }) : null}
-      data-pivot-mode={snap.pivotMode ? (snap.pivotPicking ? 'pick' : 'on') : snap.pivotPicking ? 'pick' : null}
+      data-pivot-mode={snap.pivotMode ? 'on' : null}
+      data-cursor={snap.cursorCm.join(',')}
+      data-cursor-tool={snap.cursorTool ? 'on' : null}
+      data-modal={snap.modal ? JSON.stringify(snap.modal) : null}
       data-pivot-snap={snap.pivotSnap}
       data-pivot-hints={pivotHints}
+      data-gizmo-handles={gizmoHandles}
       role="presentation"
     >
       {#if staged && match}
@@ -656,8 +797,10 @@
           <button type="button" aria-label={T.stage.fit} title={T.stage.fit} onclick={() => match?.fit()}>⤢</button>
           <button type="button" aria-label={T.stage.focus} title={T.stage.focusTitle} data-zoom-focus onclick={() => focus()}>◎</button>
           <button type="button" aria-label={T.stage.crop} title={T.stage.cropTitle} data-zoom-crop onclick={() => match?.cropPreset()}>▣</button>
-          <button type="button" aria-label={T.pivot.mode} title={T.pivot.modeTitle} class="snap" class:on={snap.pivotMode} aria-pressed={snap.pivotMode}
-            data-act="pivot-mode" onclick={togglePivot}>{@render pivotIcon()}</button>
+          <button type="button" aria-label={T.origin.affect} title={T.origin.affectTitle} class="snap" class:on={snap.pivotMode} aria-pressed={snap.pivotMode}
+            data-act="affect-origins-stage" onclick={togglePivot}>{@render pivotIcon()}</button>
+          <button type="button" aria-label={T.cursor.place} title={T.cursor.placeTitle} class="snap" class:on={snap.cursorTool} aria-pressed={snap.cursorTool}
+            data-act="cursor-tool-stage" onclick={toggleCursorTool}>{@render cursorIcon()}</button>
           <button type="button" aria-label={T.snap.label} title={T.snap.title} class="snap" class:on={match.snap} aria-pressed={match.snap} data-stage-snap
             onclick={() => { if (match) { match.snap = !match.snap; match.save(); say(T.snap.toast(match.snap)); } }}>🧲</button>
         </div>
@@ -671,22 +814,63 @@
           <p class="pick-hint">{match.pick.want === 'model' ? 'แตะจุดบนโมเดล' : 'แตะจุดเดียวกันบนภาพ'}</p>
         {/if}
       {/if}
-      {#if snap.pivotPicking}
-        <p class="pick-hint" data-pivot-pick-hint>{T.pivot.pickHint}</p>
+      {#if snap.cursorTool && !snap.modal}
+        <p class="pick-hint cursor-hint" data-cursor-hint>{T.cursor.hint}</p>
+      {/if}
+      {#if snap.modal && modalText}
+        <div class="modal-status" role="status" data-modal-status>
+          <b style="color:{axisColor(snap.modal.axis)}">{modalText}</b>
+          <span>{T.modal.keys(snap.modal.snapping)}</span>
+        </div>
+      {/if}
+      {#if delAsk}
+        <div class="del-ask" role="alertdialog" aria-label={T.del.confirm} data-del-confirm>
+          <b>{T.del.confirm}</b> <small>{partLabel(delAsk)}</small>
+          <div class="actions">
+            <button type="button" class="danger" onclick={confirmDelete} data-act="delete-ok">{T.del.ok}</button>
+            <button type="button" onclick={() => (delAsk = null)} data-act="delete-cancel">{T.del.cancel}</button>
+          </div>
+        </div>
       {/if}
       {#if loading}<p class="loading">กำลังโหลดโมเดล…</p>{/if}
       <div class="modes" class:withzoom={view === 'mock' && !!match} hidden={view === 'match'} bind:clientHeight={modesH}>
-        <div class="mode-group" role="radiogroup" aria-label="เครื่องมือ">
+        <div class="mode-group" role="radiogroup" aria-label={T.tool.aria}>
           {#each modes as m (m.id)}
-            <button type="button" role="radio" aria-checked={mode === m.id} class:on={mode === m.id} data-mode={m.id} onclick={() => pickMode(m.id)}
-              >{m.label}</button
+            <button type="button" role="radio" aria-checked={mode === m.id} class:on={mode === m.id} data-mode={m.id} title={m.title}
+              disabled={m.id !== 'translate' && snap.pivotMode} onclick={() => pickMode(m.id)}>{m.label}</button
             >
           {/each}
-          <button type="button" class:on={snapOn} aria-pressed={snapOn} onclick={toggleSnap} data-snap
+          <button type="button" class:on={snapOn} aria-pressed={snapOn} onclick={toggleSnap} data-snap title={T.snap.title}
             >แม่เหล็ก {snapOn ? 'เปิด' : 'ปิด'}</button
           >
-          <button type="button" class="pivot" class:on={snap.pivotMode} aria-pressed={snap.pivotMode} aria-label={T.pivot.mode} title={T.pivot.modeTitle}
-            onclick={togglePivot} data-act="pivot-mode">{@render pivotIcon()}</button>
+        </div>
+        <div class="mode-group origin-group">
+          <div class="pop">
+            <button type="button" class="pivot" class:on={snap.pivotMode} aria-expanded={optionsOpen} aria-haspopup="true" title={T.origin.options}
+              onclick={() => { originMenu = false; optionsOpen = !optionsOpen; }} data-act="options">{@render pivotIcon()} ▾</button>
+            {#if optionsOpen}
+              <div class="menu" data-options-menu>
+                <b>{T.origin.transform}</b>
+                <label class="check" title={T.origin.affectTitle}>
+                  <input type="checkbox" checked={snap.pivotMode} onchange={togglePivot} data-act="affect-origins" />
+                  <span>{T.origin.affectOnly}: {T.origin.origins}</span>
+                </label>
+              </div>
+            {/if}
+          </div>
+          <div class="pop">
+            <button type="button" aria-expanded={originMenu} aria-haspopup="menu" disabled={!sel} onclick={() => { optionsOpen = false; originMenu = !originMenu; }}
+              data-act="set-origin">{T.origin.setOrigin} ▾</button>
+            {#if originMenu && sel}
+              <div class="menu" role="menu" data-origin-menu>
+                {#each originOps as o (o.op)}
+                  <button type="button" role="menuitem" data-origin={o.op} disabled={o.op === 'reset' && !sel.pivotSet} onclick={() => setOrigin(o.op)}>{o.label}</button>
+                {/each}
+              </div>
+            {/if}
+          </div>
+          <button type="button" class="pivot" class:on={snap.cursorTool} aria-pressed={snap.cursorTool} aria-label={T.cursor.place} title={T.cursor.placeTitle}
+            onclick={toggleCursorTool} data-act="cursor-tool">{@render cursorIcon()}</button>
         </div>
         {#if view === 'mock' && match}
           <div class="zoom-group" data-mock-zoom>
@@ -701,7 +885,7 @@
       </div>
     </div>
 
-    <div class="panel">
+    <div class="panel" hidden={!sidebar} data-sidebar>
       {#if files?.showBadge}
         <div class="unsaved" role="status" data-unsaved>
           <b>{T.files.unsaved}</b>
@@ -813,30 +997,34 @@
           {/each}
           <div class="pivot-box" data-pivot-panel>
             <div class="pivot-head">
-              <b>{T.pivot.heading}</b>
-              <button type="button" class="small" class:on={snap.pivotMode} aria-pressed={snap.pivotMode} title={T.pivot.modeTitle} onclick={togglePivot}
-                data-act="pivot-mode-panel">{@render pivotIcon()} {T.pivot.mode}</button>
+              <b>{T.origin.heading}</b>
+              <label class="check small" title={T.origin.affectTitle}>
+                <input type="checkbox" checked={snap.pivotMode} onchange={togglePivot} data-act="affect-origins-panel" />
+                <span>{T.origin.affect}</span>
+              </label>
             </div>
-            {#if snap.pivotMode}<p class="tip small">{T.pivot.modeOnly}</p>{/if}
-            {#if snap.pivotSnap}<p class="tip small" data-pivot-snapped>{T.pivot.snapped(snap.pivotSnap)}</p>{/if}
+            {#if snap.pivotMode}<p class="tip small">{T.origin.affectOnHint}</p>{/if}
+            {#if snap.pivotSnap}<p class="tip small" data-pivot-snapped>{T.origin.snapped(snap.pivotSnap)}</p>{/if}
+            <p class="sub">{T.origin.setOrigin}</p>
             <div class="actions pivot-presets">
-              <button type="button" class="small" onclick={() => editor?.pivotPreset('center')} data-act="pivot-center">{T.pivot.center}</button>
-              <button type="button" class="small" onclick={() => editor?.pivotPreset('bottom')} data-act="pivot-bottom">{T.pivot.bottom}</button>
-              <button type="button" class="small" class:on={snap.pivotPicking} onclick={() => editor?.pickPivot(!snap.pivotPicking)} data-act="pivot-pick"
-                >{snap.pivotPicking ? T.pivot.pickCancel : T.pivot.pick}</button
-              >
-              <button type="button" class="small" onclick={() => editor?.pivotPreset('reset')} disabled={!sel.pivotSet} data-act="pivot-reset">{T.pivot.reset}</button>
+              {#each originOps as o (o.op)}
+                <button type="button" class="small" data-origin-panel={o.op} disabled={o.op === 'reset' && !sel.pivotSet} onclick={() => setOrigin(o.op)}>{o.label}</button>
+              {/each}
             </div>
-            <div class="seg" role="radiogroup" aria-label={T.pivot.spaceAria}>
-              {#each [['local', T.pivot.local], ['world', T.pivot.world]] as const as [id, label] (id)}
+            <p class="tip small cursor-row" data-cursor-row>
+              {@render cursorIcon()} {snap.cursorCm.map((v) => `${v}`).join(', ')} cm
+              <button type="button" class="small" onclick={toggleCursorTool} class:on={snap.cursorTool} aria-pressed={snap.cursorTool} data-act="cursor-tool-panel">{T.cursor.place}</button>
+            </p>
+            <div class="seg" role="radiogroup" aria-label={T.origin.spaceAria}>
+              {#each [['local', T.origin.local], ['world', T.origin.world]] as const as [id, label] (id)}
                 <button type="button" role="radio" aria-checked={pivotSpace === id} class:on={pivotSpace === id} data-pivot-space={id}
                   onclick={() => (pivotSpace = id)}>{label}</button>
               {/each}
             </div>
-            <p class="sub" data-pivot-sub={pivotSpace}>{pivotSpace === 'local' ? T.pivot.localSub : T.pivot.worldSub}</p>
+            <p class="sub" data-pivot-sub={pivotSpace}>{pivotSpace === 'local' ? T.origin.localSub : T.origin.worldSub}</p>
             {#each axes as i (i)}
               <div class="row pivot-row">
-                <span>{rotLabels[i]}</span>
+                <span style="color:{AXIS_COLORS[i]}">{rotLabels[i]}</span>
                 <input type="number" inputmode="decimal" step={posStep} value={pivotShown?.[i] ?? 0} data-field="pivot-{i}"
                   onchange={(e) => setPivotValue(i, e.currentTarget.valueAsNumber)} />
               </div>
@@ -854,6 +1042,7 @@
           </div>
         </section>
       {:else}
+        <p class="tip small" data-keys-tip>{T.keysTip}</p>
         <p class="tip">แตะชิ้นส่วนในภาพ หรือเลือกจากรายการด้านล่าง แล้วลากลูกศรหรือพิมพ์ตัวเลข</p>
       {/if}
 
@@ -1035,6 +1224,39 @@
   .viewport.mockzoom { touch-action: none; overscroll-behavior: contain; }
   .viewport.spacepan, .viewport.spacepan canvas { cursor: grab; }
   .modes button.on { background: #8fdfff; }
+  .modes button:disabled { opacity: 0.45; }
+  .pop { position: relative; display: flex; }
+  .menu {
+    position: absolute; bottom: calc(100% + 6px); left: 0; z-index: 12; pointer-events: auto;
+    display: flex; flex-direction: column; gap: 4px; padding: 8px; min-width: 230px;
+    background: rgba(12, 24, 36, 0.97); border: 1px solid #5a7d99; border-radius: 10px;
+  }
+  .menu b { font-size: 13px; color: #8fb3cc; }
+  .modes .menu button { text-align: left; min-height: 40px; }
+  .menu .check { display: flex; gap: 8px; align-items: center; font-size: 15px; }
+  .modal-status {
+    position: absolute; left: 8px; right: 8px; top: 8px; z-index: 6; pointer-events: none;
+    display: flex; flex-direction: column; gap: 2px; padding: 6px 10px; border-radius: 8px;
+    background: rgba(20, 20, 20, 0.88); font-size: 14px; color: #ddd;
+  }
+  .modal-status b { font-size: 15px; font-variant-numeric: tabular-nums; }
+  .modal-status span { font-size: 12px; opacity: 0.85; }
+  .del-ask {
+    position: absolute; left: 50%; top: 40%; transform: translate(-50%, -50%); z-index: 20;
+    padding: 10px 14px; border-radius: 12px; background: rgba(12, 24, 36, 0.97); border: 2px solid #ff6b6b;
+  }
+  .del-ask .actions { margin-top: 8px; }
+  .viewport.cursortool canvas { cursor: crosshair; }
+  .cursor-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .check.small { font-size: 14px; display: flex; gap: 6px; align-items: center; }
+  .panel[hidden] { display: none !important; }
+  @media (max-width: 899px) {
+    /* phones: the stage is short (overflow hidden), so menus open as a sheet along the bottom of the screen */
+    .menu {
+      position: fixed; left: 8px; right: 8px; bottom: calc(8px + env(safe-area-inset-bottom)); min-width: 0;
+      max-height: 70vh; overflow: auto; z-index: 40; box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.5);
+    }
+  }
 
   .panel { flex: 1; min-height: 0; overflow: auto; padding: 12px 12px 40px; user-select: text; }
   .field { display: grid; gap: 4px; margin: 0 0 10px; font-size: 15px; color: #c5d7e6; }

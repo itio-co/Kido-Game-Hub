@@ -24,12 +24,42 @@ import {
   type SnapKind,
   type SnapTargets,
 } from './pivot';
+import {
+  AXIS_COLORS,
+  AXIS_NAMES,
+  NumInput,
+  closestOnLine,
+  cycleConstraint,
+  rotationFromScreen,
+  screenAngle,
+  screenScale,
+  snapTo,
+  type Constraint,
+  type ModalKind,
+  type Space,
+} from './modal';
 
 export type Vec3 = [number, number, number];
 export type GizmoMode = 'translate' | 'rotate' | 'scale';
 export type ViewMode = 'orbit' | 'mock' | 'match';
 /** How the model is drawn over the mock-up: shaded, wireframe, or outline/crease edges. */
 export type DisplayMode = 'solid' | 'wire' | 'edges';
+/** Blender "Set Origin" operations (+ Origin to Bottom and Reset Origin). */
+export type OriginOp = 'geometry' | 'cursor' | 'geometryToOrigin' | 'bottom' | 'reset';
+/** A running G / R / S modal transform, for the header / status bar. */
+export type ModalInfo = {
+  kind: ModalKind;
+  /** Affect Only Origins: the grab moves the origin, not the part. */
+  origins: boolean;
+  axis: 'X' | 'Y' | 'Z' | null;
+  space: Space | null;
+  /** Typed numeric input as shown ("0.05|"), null when the mouse drives the value. */
+  typed: string | null;
+  /** grab: metres (1 value along the axis, or world dx/dy/dz) · rotate: degrees · scale: factor. */
+  values: number[];
+  snapping: boolean;
+  precision: boolean;
+};
 
 /** One part (top-level node of the GLB). Positions in metres (glTF, Y-up), rotation in degrees. */
 export type PartState = {
@@ -80,10 +110,14 @@ export type EditorSnapshot = {
   canUndo: boolean;
   canRedo: boolean;
   dirty: boolean;
-  /** Edit-pivot mode: translate drags move only the selected part's origin. */
+  /** Blender's Options > Transform > Affect Only Origins: transforms move only the selected part's origin. */
   pivotMode: boolean;
-  /** Waiting for a tap / click on the selected part's surface to set the pivot there. */
-  pivotPicking: boolean;
+  /** "Place 3D Cursor" tool: the next taps / clicks place the 3D cursor. */
+  cursorTool: boolean;
+  /** 3D cursor, world (glTF axes), cm. */
+  cursorCm: Vec3;
+  /** Running G / R / S modal transform. */
+  modal: ModalInfo | null;
   /** What the last pivot drag snapped to (null = free). */
   pivotSnap: SnapKind | null;
 };
@@ -140,12 +174,27 @@ export function createModelEditor(canvas: HTMLCanvasElement, onChange: (snap: Ed
 
   const orbit = new OrbitControls(camera, canvas);
   orbit.enableDamping = false;
+  // Blender navigation: middle-drag orbits, Shift+middle-drag pans (OrbitControls pans when Shift / Ctrl is held),
+  // the wheel zooms; the left button selects / uses tools and the right button is for menus / cancel.
+  orbit.mouseButtons = { LEFT: -1 as THREE.MOUSE, MIDDLE: THREE.MOUSE.ROTATE, RIGHT: -1 as THREE.MOUSE };
   const gizmo = new TransformControls(camera, canvas);
   const GIZMO_SIZE = 1.25;
   gizmo.setSize(GIZMO_SIZE);
   gizmo.setSpace('local');
   const gizmoHelper = gizmo.getHelper();
   scene.add(gizmoHelper);
+  // Blender axis colours on the gizmo (three.js uses pure red / green / blue).
+  {
+    const swap = new Map<number, string>([[0xff0000, AXIS_COLORS[0]], [0x00ff00, AXIS_COLORS[1]], [0x0000ff, AXIS_COLORS[2]]]);
+    const done = new Set<THREE.Material>();
+    gizmoHelper.traverse((node) => {
+      const mat = (node as THREE.Mesh).material as THREE.MeshBasicMaterial | undefined;
+      if (!mat || Array.isArray(mat) || !mat.color || done.has(mat)) return;
+      done.add(mat);
+      const to = swap.get(mat.color.getHex());
+      if (to) mat.color.set(to);
+    });
+  }
 
   // Display modes for camera matching
   const wireMat = new THREE.MeshBasicMaterial({ color: '#39f3ff', wireframe: true });
@@ -241,7 +290,7 @@ export function createModelEditor(canvas: HTMLCanvasElement, onChange: (snap: Ed
       renderer.render(scene, camera);
       return;
     }
-    const helpers = [box, gizmoHelper, grid, marker];
+    const helpers = [box, gizmoHelper, grid, marker, cursorMark, axisLine];
     const shown = helpers.map((h) => h.visible);
     for (const h of helpers) h.visible = false;
     if (display === 'edges') syncEdges();
@@ -474,7 +523,7 @@ export function createModelEditor(canvas: HTMLCanvasElement, onChange: (snap: Ed
 
   function attach(): void {
     const obj = selected ? objects.get(selected) : undefined;
-    if (!obj || !obj.visible || pivotPicking) gizmo.detach();
+    if (!obj || !obj.visible || modal) gizmo.detach();
     else if (pivotMode) {
       placeHandle(obj);
       gizmo.attach(handle);
@@ -482,12 +531,11 @@ export function createModelEditor(canvas: HTMLCanvasElement, onChange: (snap: Ed
   }
 
   // ---------- pivot (origin) editing ----------
-  // In pivot mode the gizmo drives a stand-in at the part's origin (same orientation as the part); on release the
+  // With Affect Only Origins the gizmo drives a stand-in at the part's origin (same orientation as the part); on release the
   // part's pivot moves there and the node position shifts so the mesh stays where it was.
   const handle = new THREE.Object3D();
   scene.add(handle);
   let pivotMode = false;
-  let pivotPicking = false;
   let pivotSnapKind: SnapKind | null = null;
   let altDown = false;
   let lastPointer = 'mouse';
@@ -629,6 +677,11 @@ export function createModelEditor(canvas: HTMLCanvasElement, onChange: (snap: Ed
     setPivotLocal([local.x + pv[0], local.y + pv[1], local.z + pv[2]]);
   }
   const onKeyAlt = (event: KeyboardEvent) => {
+    if (modal && (event.key === 'Control' || event.key === 'Shift')) {
+      modal.ctrl = event.ctrlKey;
+      modal.shift = event.shiftKey;
+      modalUpdate();
+    }
     if (event.key !== 'Alt' || altDown === (event.type === 'keydown')) return;
     altDown = event.type === 'keydown';
     syncGridSnap();
@@ -655,6 +708,338 @@ export function createModelEditor(canvas: HTMLCanvasElement, onChange: (snap: Ed
   };
   canvas.addEventListener('pointerdown', onPointerAlt, { capture: true });
   canvas.addEventListener('pointermove', onPointerAlt, { capture: true });
+
+
+  // ---------- 3D cursor (Blender) ----------
+  // A world point used by "Origin to 3D Cursor"; Shift+right-click (or the Place 3D Cursor tool + tap) places it on
+  // the surface under the pointer, Shift+C puts it back at the world origin.
+  const cursor = new THREE.Vector3();
+  let cursorTool = false;
+  const cursorMark = new THREE.Points(
+    new THREE.BufferGeometry().setAttribute('position', new THREE.Float32BufferAttribute([0, 0, 0], 3)),
+    new THREE.PointsMaterial({ size: 34, sizeAttenuation: false, depthTest: false, transparent: true, map: cursorTexture() }),
+  );
+  cursorMark.renderOrder = 13;
+  cursorMark.frustumCulled = false;
+  scene.add(cursorMark);
+  function cursorTexture(): THREE.Texture | null {
+    if (typeof document === 'undefined') return null;
+    const c = document.createElement('canvas');
+    c.width = c.height = 64;
+    const g = c.getContext('2d');
+    if (!g) return null;
+    // Blender's cursor: a red / white dashed ring with black cross-hair ticks
+    g.lineWidth = 5;
+    for (let i = 0; i < 8; i++) {
+      g.strokeStyle = i % 2 ? '#ffffff' : '#ff2a2a';
+      g.beginPath();
+      g.arc(32, 32, 17, (i * Math.PI) / 4, ((i + 1) * Math.PI) / 4);
+      g.stroke();
+    }
+    g.strokeStyle = '#000';
+    g.lineWidth = 3;
+    g.beginPath();
+    for (const [x0, y0, x1, y1] of [[2, 32, 12, 32], [52, 32, 62, 32], [32, 2, 32, 12], [32, 52, 32, 62]]) {
+      g.moveTo(x0!, y0!);
+      g.lineTo(x1!, y1!);
+    }
+    g.stroke();
+    return new THREE.CanvasTexture(c);
+  }
+  function setCursor(v: THREE.Vector3): void {
+    cursor.copy(v);
+    cursorMark.position.copy(v);
+    cursorMark.updateMatrixWorld(true);
+    emit();
+    render();
+  }
+  /** Ray through a client point, with the view's camera (mock-up / match windows included). */
+  function rayAt(clientX: number, clientY: number): THREE.Ray {
+    const rect = canvas.getBoundingClientRect();
+    camera.updateMatrixWorld();
+    ray.setFromCamera(
+      new THREE.Vector2(((clientX - rect.left) / rect.width) * 2 - 1, -((clientY - rect.top) / rect.height) * 2 + 1),
+      camera,
+    );
+    return ray.ray.clone();
+  }
+  /** Place the 3D cursor on the visible surface under a client point (else on the view plane through the cursor). */
+  function placeCursorAt(clientX: number, clientY: number): boolean {
+    const r = rayAt(clientX, clientY);
+    root?.updateMatrixWorld(true);
+    const hit = ray.intersectObjects([...objects.values()].filter((o) => o.visible), true)[0];
+    if (hit) {
+      setCursor(hit.point.clone());
+      return true;
+    }
+    const plane = new THREE.Plane().setFromNormalAndCoplanarPoint(camera.getWorldDirection(new THREE.Vector3()), cursor);
+    const p = r.intersectPlane(plane, new THREE.Vector3());
+    if (p) setCursor(p);
+    return !!p;
+  }
+
+  // ---------- Blender-style modal transforms: G / R / S ----------
+  // The mouse drives the value, X / Y / Z constrain it (twice = local axes), typed numbers override the mouse,
+  // Ctrl toggles snapping, Shift slows the mouse down; click / Enter confirms, right-click / Esc cancels.
+  type Modal = {
+    kind: ModalKind;
+    origins: boolean;
+    name: string;
+    /** State JSON at the start (cancel restores it; confirm adds one undo step). */
+    start: string;
+    part: PartState;
+    pos0: THREE.Vector3;
+    quat0: THREE.Quaternion;
+    parentInv: THREE.Matrix4;
+    parentQuat: THREE.Quaternion;
+    objInv: THREE.Matrix4;
+    /** Origin on screen, client px. */
+    center: [number, number];
+    m0: [number, number];
+    /** Mouse position with precision (Shift) applied, client px. */
+    virt: [number, number];
+    last: [number, number];
+    /** Accumulated screen angle (rotate), radians. */
+    angle: number;
+    constraint: Constraint;
+    num: NumInput;
+    ctrl: boolean;
+    shift: boolean;
+    values: number[];
+  };
+  let modal: Modal | null = null;
+  let lastMouse: [number, number] | null = null;
+  let swallowUp = false;
+  const axisLine = new THREE.Line(
+    new THREE.BufferGeometry().setAttribute('position', new THREE.Float32BufferAttribute([0, 0, 0, 0, 0, 0], 3)),
+    new THREE.LineBasicMaterial({ depthTest: false, transparent: true }),
+  );
+  axisLine.renderOrder = 11;
+  axisLine.visible = false;
+  axisLine.frustumCulled = false;
+  scene.add(axisLine);
+  const onMouseTrack = (event: PointerEvent) => {
+    if (event.pointerType === 'mouse') lastMouse = [event.clientX, event.clientY];
+  };
+  window.addEventListener('pointermove', onMouseTrack, { capture: true, passive: true });
+
+  function axisDir(m: Modal, c: NonNullable<Constraint>): THREE.Vector3 {
+    const d = new THREE.Vector3().setComponent(c.axis, 1);
+    return c.space === 'local' ? d.applyQuaternion(m.quat0) : d;
+  }
+  /** Part-local axis (0..2) closest to a world axis — scaling is always along the part's own axes. */
+  function dominantAxis(q: THREE.Quaternion, axis: 0 | 1 | 2): 0 | 1 | 2 {
+    const w = new THREE.Vector3().setComponent(axis, 1);
+    let best: 0 | 1 | 2 = axis;
+    let bd = -1;
+    for (const i of [0, 1, 2] as const) {
+      const d = Math.abs(new THREE.Vector3().setComponent(i, 1).applyQuaternion(q).dot(w));
+      if (d > bd + 1e-9) {
+        bd = d;
+        best = i;
+      }
+    }
+    return best;
+  }
+  function startModal(kind: ModalKind): boolean {
+    if (modal) endModal(false);
+    const name = selected;
+    const obj = name ? objects.get(name) : undefined;
+    const part = name ? current(name) : undefined;
+    if (!name || !obj?.visible || !part || !obj.parent) return false;
+    const origins = pivotMode;
+    if (origins && kind !== 'grab') return false;
+    obj.updateWorldMatrix(true, false);
+    const pos0 = new THREE.Vector3();
+    const quat0 = new THREE.Quaternion();
+    obj.matrixWorld.decompose(pos0, quat0, new THREE.Vector3());
+    const parentQuat = new THREE.Quaternion();
+    obj.parent.matrixWorld.decompose(new THREE.Vector3(), parentQuat, new THREE.Vector3());
+    const rect = canvas.getBoundingClientRect();
+    camera.updateMatrixWorld();
+    const s = toScreen(pos0);
+    const center: [number, number] = [s[0] + rect.left, s[1] + rect.top];
+    let m0: [number, number] = lastMouse ? [...lastMouse] : [rect.left + rect.width / 2, rect.top + rect.height / 2];
+    // rotate / scale read the mouse around the origin: start a little away from it
+    if (kind !== 'grab' && Math.hypot(m0[0] - center[0], m0[1] - center[1]) < 16) m0 = [center[0] + 80, center[1]];
+    modal = {
+      kind,
+      origins,
+      name,
+      start: JSON.stringify(state),
+      part: structuredClone(part),
+      pos0,
+      quat0,
+      parentInv: obj.parent.matrixWorld.clone().invert(),
+      parentQuat,
+      objInv: obj.matrixWorld.clone().invert(),
+      center,
+      m0,
+      virt: [...m0],
+      last: [...m0],
+      angle: 0,
+      constraint: null,
+      num: new NumInput(),
+      ctrl: false,
+      shift: false,
+      values: kind === 'scale' ? [1] : kind === 'rotate' ? [0] : [0, 0, 0],
+    };
+    gizmo.detach();
+    marker.visible = false;
+    orbit.enabled = false;
+    window.addEventListener('pointermove', modalMove, true);
+    window.addEventListener('pointerdown', modalDown, true);
+    modalUpdate();
+    return true;
+  }
+  /** Finish the modal: true = confirm (one undo step), false = cancel (restore), null = drop (model reload). */
+  function endModal(confirm: boolean | null): void {
+    const m = modal;
+    if (!m) return;
+    modal = null;
+    window.removeEventListener('pointermove', modalMove, true);
+    window.removeEventListener('pointerdown', modalDown, true);
+    axisLine.visible = false;
+    orbit.enabled = view === 'orbit';
+    if (confirm === null) return;
+    if (confirm && JSON.stringify(state) !== m.start) commit();
+    else apply(JSON.parse(m.start) as EditState);
+    attach();
+    emit();
+    render();
+  }
+  function modalUpdate(): void {
+    const m = modal;
+    if (!m) return;
+    const typed = m.num.value();
+    const snapping = snap !== m.ctrl;
+    const draft = JSON.parse(m.start) as EditState;
+    const part = draft.parts.find((q) => q.name === m.name);
+    if (!part) return;
+    const c = m.constraint;
+    if (m.kind === 'grab') {
+      const delta = new THREE.Vector3();
+      if (typed !== null) delta.copy(c ? axisDir(m, c) : new THREE.Vector3(1, 0, 0)).multiplyScalar(typed);
+      else {
+        const r0 = rayAt(m.m0[0], m.m0[1]);
+        const r1 = rayAt(m.virt[0], m.virt[1]);
+        if (c) {
+          const d = axisDir(m, c);
+          const t0 = closestOnLine(r0.origin, r0.direction, m.pos0, d);
+          const t1 = closestOnLine(r1.origin, r1.direction, m.pos0, d);
+          if (t0 !== null && t1 !== null) delta.copy(d).multiplyScalar(snapping ? snapTo(t1 - t0, 0.005) : t1 - t0);
+        } else {
+          const plane = new THREE.Plane().setFromNormalAndCoplanarPoint(camera.getWorldDirection(new THREE.Vector3()), m.pos0);
+          const p0 = r0.intersectPlane(plane, new THREE.Vector3());
+          const p1 = r1.intersectPlane(plane, new THREE.Vector3());
+          if (p0 && p1) delta.subVectors(p1, p0);
+          if (snapping) delta.set(snapTo(delta.x, 0.005), snapTo(delta.y, 0.005), snapTo(delta.z, 0.005));
+        }
+      }
+      m.values = c ? [delta.dot(axisDir(m, c))] : typed !== null ? [typed] : [delta.x, delta.y, delta.z];
+      const w = m.pos0.clone().add(delta);
+      if (m.origins) {
+        const local = w.applyMatrix4(m.objInv);
+        const pv = m.part.pivot ?? ZERO;
+        const next: Vec3 = [r3(local.x + pv[0], 6), r3(local.y + pv[1], 6), r3(local.z + pv[2], 6)];
+        part.position = shiftedPosition(m.part.position, m.part.rotation, m.part.scale, pv, next).map((v) => r3(v, 6)) as Vec3;
+        if (isZero(next)) delete part.pivot;
+        else part.pivot = next;
+      } else part.position = vec(w.applyMatrix4(m.parentInv), 1, 5);
+    } else if (m.kind === 'rotate') {
+      const toCam = camera.position.clone().sub(m.pos0).normalize();
+      const axis = c ? axisDir(m, c) : camera.getWorldDirection(new THREE.Vector3()).negate();
+      let angle = typed !== null ? typed / DEG : rotationFromScreen(m.angle, axis, toCam);
+      if (typed === null && snapping) angle = snapTo(angle, 15 / DEG);
+      m.values = [r3(angle * DEG, 3)];
+      const q = new THREE.Quaternion().setFromAxisAngle(axis, angle).multiply(m.quat0);
+      const local = m.parentQuat.clone().invert().multiply(q);
+      part.rotation = vec(new THREE.Euler().setFromQuaternion(local, 'XYZ'), DEG, 3);
+    } else {
+      let f = typed ?? screenScale(m.center, m.m0, m.virt);
+      if (typed === null && snapping) f = snapTo(f, 0.1);
+      m.values = [r3(f, 4)];
+      const sc = [...m.part.scale] as Vec3;
+      if (c) {
+        const i = c.space === 'local' ? c.axis : dominantAxis(m.quat0, c.axis);
+        sc[i] *= f;
+      } else for (const i of [0, 1, 2] as const) sc[i] *= f;
+      part.scale = sc.map((v) => r3(v, 5)) as Vec3;
+    }
+    if (c) {
+      const d = axisDir(m, c);
+      const pos = axisLine.geometry.getAttribute('position') as THREE.BufferAttribute;
+      const a = m.pos0.clone().addScaledVector(d, -50);
+      const b = m.pos0.clone().addScaledVector(d, 50);
+      pos.setXYZ(0, a.x, a.y, a.z);
+      pos.setXYZ(1, b.x, b.y, b.z);
+      pos.needsUpdate = true;
+      (axisLine.material as THREE.LineBasicMaterial).color.set(AXIS_COLORS[c.axis]);
+      axisLine.visible = true;
+    } else axisLine.visible = false;
+    apply(draft); // live preview, no undo step until confirmed
+  }
+  function modalMove(event: PointerEvent): void {
+    const m = modal;
+    if (!m) return;
+    m.ctrl = event.ctrlKey;
+    m.shift = event.shiftKey;
+    const k = m.shift ? 0.1 : 1;
+    const prev = m.virt;
+    m.virt = [prev[0] + (event.clientX - m.last[0]) * k, prev[1] + (event.clientY - m.last[1]) * k];
+    m.last = [event.clientX, event.clientY];
+    if (m.kind === 'rotate') m.angle += screenAngle(m.center, prev, m.virt);
+    if (!m.num.active) modalUpdate();
+  }
+  function modalDown(event: PointerEvent): void {
+    if (!modal) return;
+    event.preventDefault();
+    event.stopPropagation();
+    swallowUp = true;
+    if (event.button === 0) endModal(true);
+    else if (event.button === 2) endModal(false);
+    else swallowUp = false;
+  }
+  // the confirming / cancelling click's pointerup arrives after the modal ended
+  const onUpAfterModal = (event: PointerEvent) => {
+    if (!swallowUp) return;
+    swallowUp = false;
+    downAt = null;
+    event.stopPropagation();
+  };
+  window.addEventListener('pointerup', onUpAfterModal, true);
+  function modalInfo(): ModalInfo | null {
+    const m = modal;
+    if (!m) return null;
+    return {
+      kind: m.kind,
+      origins: m.origins,
+      axis: m.constraint ? AXIS_NAMES[m.constraint.axis] : null,
+      space: m.constraint?.space ?? null,
+      typed: m.num.active ? m.num.display() : null,
+      values: m.values,
+      snapping: snap !== m.ctrl,
+      precision: m.shift,
+    };
+  }
+  /** Keys while a modal runs (called by the view's key handler first); true = consumed. */
+  function modalKey(event: KeyboardEvent): boolean {
+    const m = modal;
+    if (!m) return false;
+    const key = event.key;
+    const lower = key.length === 1 ? key.toLowerCase() : key;
+    if (key === 'Escape') endModal(false);
+    else if (key === 'Enter') endModal(true);
+    else if ((lower === 'x' || lower === 'y' || lower === 'z') && !event.ctrlKey && !event.metaKey) {
+      m.constraint = cycleConstraint(m.constraint, lower === 'x' ? 0 : lower === 'y' ? 1 : 2);
+      modalUpdate();
+    } else if ((lower === 'g' || lower === 'r' || lower === 's') && !event.ctrlKey && !event.metaKey) {
+      const kind: ModalKind = lower === 'g' ? 'grab' : lower === 'r' ? 'rotate' : 'scale';
+      if (kind !== m.kind && !(m.origins && kind !== 'grab')) startModal(kind);
+    } else if (!event.ctrlKey && !event.metaKey && m.num.key(key === 'Decimal' ? '.' : key)) modalUpdate();
+    event.preventDefault();
+    return true;
+  }
 
   function commit(): void {
     history = history.slice(0, index + 1);
@@ -747,7 +1132,9 @@ export function createModelEditor(canvas: HTMLCanvasElement, onChange: (snap: Ed
       canRedo: index < history.length - 1,
       dirty: index >= 0 && history[index] !== history[0],
       pivotMode,
-      pivotPicking,
+      cursorTool,
+      cursorCm: vec(cursor, 100, 2),
+      modal: modalInfo(),
       pivotSnap: pivotSnapKind,
     });
   }
@@ -775,18 +1162,8 @@ export function createModelEditor(canvas: HTMLCanvasElement, onChange: (snap: Ed
       -((event.clientY - rect.top) / rect.height) * 2 + 1,
     );
     ray.setFromCamera(ndc, camera);
-    if (pivotPicking && selected) {
-      // "Pivot to picked point": the next tap on the selected part's surface (same camera / zoomed window as the view)
-      const own = objects.get(selected);
-      root?.updateMatrixWorld(true);
-      const at = own ? ray.intersectObject(own, true)[0] : undefined;
-      if (at) {
-        pivotPicking = false;
-        pivotSnapKind = null;
-        setPivotWorld(at.point.clone());
-        attach();
-        render();
-      }
+    if (cursorTool) {
+      placeCursorAt(event.clientX, event.clientY);
       return;
     }
     const targets = [...objects.values()].filter((o) => o.visible);
@@ -804,7 +1181,6 @@ export function createModelEditor(canvas: HTMLCanvasElement, onChange: (snap: Ed
 
   function select(name: string | null): void {
     selected = name && objects.has(name) ? name : null;
-    if (!selected) pivotPicking = false;
     attach();
     emit();
     render();
@@ -887,8 +1263,8 @@ export function createModelEditor(canvas: HTMLCanvasElement, onChange: (snap: Ed
         bases.set(object.name, base);
         objects.set(object.name, object);
       }
+      endModal(null);
       selected = null;
-      pivotPicking = false;
       drag = null;
       let start = initialState();
       let from: 'draft' | 'file' | null = null;
@@ -941,13 +1317,13 @@ export function createModelEditor(canvas: HTMLCanvasElement, onChange: (snap: Ed
       render();
     },
     /**
-     * Edit-pivot mode: translate drags move only the selected part's origin (the mesh stays put), snapping to the
-     * part's vertices / edge midpoints / face centres / box corners + centre (and the grid) unless Alt is held.
-     * Rotate / scale are not available in this mode.
+     * Blender's Options > Transform > Affect Only Origins: the move gizmo and G move only the selected part's origin
+     * (the mesh stays put); gizmo drags snap to the part's vertices / edge midpoints / face centres / box corners +
+     * centre (and the grid) unless Alt is held. Rotating / scaling origins is not supported.
      */
     setPivotMode(on: boolean): void {
+      if (modal) endModal(false);
       pivotMode = on;
-      pivotPicking = false;
       drag = null;
       marker.visible = false;
       gizmo.setMode(on ? 'translate' : gizmoMode);
@@ -958,12 +1334,91 @@ export function createModelEditor(canvas: HTMLCanvasElement, onChange: (snap: Ed
     get pivotMode(): boolean {
       return pivotMode;
     },
-    /** "Pivot to picked point": the next tap / click on the selected part's surface sets its pivot (false = cancel). */
-    pickPivot(on = true): void {
-      pivotPicking = on && !!selected;
-      attach();
+    /**
+     * Blender "Set Origin" on the selected part: Origin to Geometry (bounds centre), Origin to 3D Cursor,
+     * Geometry to Origin (moves the mesh so its bounds centre sits on the origin), plus Origin to Bottom (bottom
+     * centre) and Reset Origin (back to the GLB origin). Undoable.
+     */
+    setOrigin(op: OriginOp): void {
+      const part = selected ? current(selected) : undefined;
+      const base = part ? bases.get(part.source) : undefined;
+      if (!part || !base) return;
+      pivotSnapKind = null;
+      if (op === 'cursor') setPivotWorld(cursor.clone());
+      else if (op === 'geometryToOrigin') {
+        const name = part.name;
+        const c = presetPivot('center', base.box);
+        change((draft) => {
+          const q = draft.parts.find((x) => x.name === name);
+          if (!q) return;
+          if (isZero(c)) delete q.pivot;
+          else q.pivot = c;
+        });
+      } else setPivotLocal(presetPivot(op === 'geometry' ? 'center' : op, base.box));
+    },
+    /** 3D cursor (world, metres). */
+    get cursor(): Vec3 {
+      return [cursor.x, cursor.y, cursor.z];
+    },
+    setCursor(p: Vec3): void {
+      setCursor(new THREE.Vector3(...p));
+    },
+    /** Shift+right-click / Place 3D Cursor tap: put the 3D cursor on the surface under a client point. */
+    placeCursorAt,
+    /** Shift+C: 3D cursor back to the world origin. */
+    resetCursor(): void {
+      setCursor(new THREE.Vector3());
+    },
+    /** The "Place 3D Cursor" tool (touch): taps place the cursor instead of selecting. */
+    setCursorTool(on: boolean): void {
+      cursorTool = on;
       emit();
+    },
+    get cursorTool(): boolean {
+      return cursorTool;
+    },
+    /** G / R / S on the selected part (false if nothing to transform, or R / S with Affect Only Origins). */
+    startModal,
+    modalKey,
+    get modalActive(): boolean {
+      return !!modal;
+    },
+    cancelModal(): void {
+      endModal(false);
+    },
+    /** Orbit view: Frame Selected (numpad . / F) or Frame All (Home) — aim the orbit at the part(s) and fit them. */
+    frameOrbit(name: string | null): void {
+      if (view !== 'orbit') return;
+      const list = name ? [objects.get(name)].filter((o): o is THREE.Object3D => !!o?.visible) : [...objects.values()].filter((o) => o.visible);
+      if (!list.length) return;
+      const bb = new THREE.Box3();
+      for (const o of list) bb.union(new THREE.Box3().setFromObject(o, true));
+      if (bb.isEmpty()) return;
+      const sphere = bb.getBoundingSphere(new THREE.Sphere());
+      const dist = Math.max(0.15, (sphere.radius / Math.sin(THREE.MathUtils.degToRad(camera.fov) / 2)) * 1.1);
+      const dir = camera.position.clone().sub(orbit.target).normalize();
+      orbit.target.copy(sphere.center);
+      camera.position.copy(sphere.center).addScaledVector(dir, dist);
+      camera.lookAt(orbit.target);
+      orbit.update();
       render();
+    },
+    /** Orbit camera pose (test hook). */
+    orbitPose(): { target: Vec3; position: Vec3 } {
+      return { target: vec(orbit.target, 1, 4), position: vec(camera.position, 1, 4) };
+    },
+    /** Client point of the positive handle of the gizmo's X / Y / Z axis (move / scale arrows; test hook). */
+    gizmoHandle(axis: 'X' | 'Y' | 'Z'): [number, number] | null {
+      const g = (gizmo as unknown as { _gizmo?: { picker?: Record<string, THREE.Object3D> } })._gizmo;
+      const group = g?.picker?.[gizmo.mode];
+      const mesh = group?.children.find((c) => c.name === axis) as THREE.Mesh | undefined;
+      if (!mesh || !gizmo.object) return null;
+      gizmoHelper.updateMatrixWorld(true);
+      mesh.geometry.computeBoundingBox();
+      const c = mesh.geometry.boundingBox!.getCenter(new THREE.Vector3()).applyMatrix4(mesh.matrixWorld);
+      const rect = canvas.getBoundingClientRect();
+      const s = toScreen(c);
+      return [s[0] + rect.left, s[1] + rect.top];
     },
     /** Pivot presets of the selected part: box centre, bottom centre, or back to the GLB origin. */
     pivotPreset(kind: PivotPreset): void {
@@ -1171,14 +1626,15 @@ export function createModelEditor(canvas: HTMLCanvasElement, onChange: (snap: Ed
         if (part) part.deleted = false;
       });
     },
-    duplicate(name: string): void {
+    /** Copy a part (offset 5 cm on X; Shift+D copies in place and starts a grab). */
+    duplicate(name: string, offset = true): void {
       const part = current(name);
       if (!part) return;
       const copyName = uniqueName(part.source);
       change((draft) => {
         const idx = draft.parts.findIndex((p) => p.name === name);
         const copy: PartState = { ...structuredClone(part), name: copyName, hidden: false, deleted: false };
-        copy.position[0] = r3(copy.position[0] + 0.05, 5);
+        if (offset) copy.position[0] = r3(copy.position[0] + 0.05, 5);
         draft.parts.splice(idx + 1, 0, copy);
       });
       select(copyName);
@@ -1269,6 +1725,14 @@ export function createModelEditor(canvas: HTMLCanvasElement, onChange: (snap: Ed
       window.removeEventListener('keydown', onKeyAlt);
       window.removeEventListener('keyup', onKeyAlt);
       window.removeEventListener('blur', onBlurAlt);
+      endModal(null);
+      window.removeEventListener('pointermove', onMouseTrack, { capture: true });
+      window.removeEventListener('pointerup', onUpAfterModal, true);
+      cursorMark.geometry.dispose();
+      (cursorMark.material as THREE.PointsMaterial).map?.dispose();
+      (cursorMark.material as THREE.PointsMaterial).dispose();
+      axisLine.geometry.dispose();
+      (axisLine.material as THREE.LineBasicMaterial).dispose();
       marker.geometry.dispose();
       (marker.material as THREE.PointsMaterial).map?.dispose();
       (marker.material as THREE.PointsMaterial).dispose();

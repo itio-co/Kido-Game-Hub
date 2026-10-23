@@ -93,18 +93,21 @@ mock-up. Open the game at `#/editor` (or the **✎ แก้โมเดลน�
 2. Tap a part in the viewport or in the part list; the selection gets a yellow box.
 3. Edit with the gizmo (**ย้าย** move / **หมุน** rotate / **ขนาด** scale) or type numbers: position and size in cm,
    rotation in degrees. Sizes are the part's real size; the GLB stores them as node scale.
-4. **แม่เหล็ก** (snap) = 0.5 cm / 15° steps. Undo / redo: header buttons, Ctrl+Z, Ctrl+Shift+Z / Ctrl+Y.
-   Keys W/G move, E/R rotate, S scale, Delete removes the part, Esc deselects.
-   **Edit pivot** (origin icon in the tool row / camera-match tools / the selected-part panel, key **D** toggles):
-   the move arrows then move only the part's origin (Blender "Set Origin"); the mesh stays where it is. While
-   dragging, the origin snaps to the part's vertices, edge midpoints, face centres and box corners / centre (ring
-   marker: pink vertex, cyan edge, green face, yellow box) and to the 0.5 cm grid when snap is on; hold Alt to
-   move freely. Panel presets: pivot to centre, to bottom centre, to a picked point (the next tap on the part's
-   surface, through the current zoomed view), reset to the GLB origin; plus the pivot in cm (local = part axes
-   from the GLB origin, or world). Rotation of the pivot itself is not editable (translate only); picking Rotate /
-   Scale leaves pivot mode. Pivots are undoable, saved in the draft / `edits.json` (optional `pivot` per part, in
-   metres, part-local; older files load unchanged), copied by Duplicate and baked into the exported GLB (the node
-   origin is the pivot, the geometry is offset).
+4. **แม่เหล็ก** (snap) = 0.5 cm / 15° steps. The 3D editor follows Blender's keymap (full list in the game
+   README, "Model editor: Blender conventions"): G / R / S start a modal grab / rotate / scale (mouse drives it,
+   click / Enter confirms, RMB / Esc cancels, X / Y / Z constrain, typed numbers, Ctrl toggles snapping, Shift =
+   precision), Ctrl+Z / Ctrl+Shift+Z undo / redo, X / Delete deletes (with a confirm), Alt+A deselects.
+   **Affect Only Origins** (Options popover in the tool row, the camera-match tools or the selected-part panel):
+   the move tool / G then move only the part's origin; the mesh stays where it is. While dragging, the origin snaps
+   to the part's vertices, edge midpoints, face centres and box corners / centre (ring marker: pink vertex, cyan
+   edge, green face, yellow box) and to the 0.5 cm grid when snap is on; hold Alt to move freely.
+   **Set Origin** menu (same order as Blender): Origin to Geometry, Origin to 3D Cursor, Geometry to Origin,
+   Origin to Bottom (extra), Reset Origin (back to the GLB origin). The **3D cursor** is placed with Shift+RMB on a
+   surface (touch: the Place 3D Cursor tool, then tap) and reset with Shift+C. The panel shows the origin in cm
+   (local = part axes from the GLB origin, or world). Rotating the origin itself is not supported (R / S with
+   Affect Only Origins only show a note). Origins are undoable, saved in the draft / `edits.json` (optional
+   `pivot` per part, in metres, part-local; older files load unchanged), copied by Duplicate and baked into the
+   exported GLB (the node origin is the origin, the geometry is offset).
 5. **มุม Mock-up** uses the matched camera with the reference over the model (opacity slider);
    **หมุนดูอิสระ** is free orbit.
 6. Edits autosave per model in localStorage (`kido-editor:<slug>:<variant>`); **ล้างการแก้ทั้งหมด** resets.

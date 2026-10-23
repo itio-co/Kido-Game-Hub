@@ -46,6 +46,45 @@ npm run validate
 
 `npm run validate` reads `public/data/player-room.json`, `public/data/screens.json`, and `public/data/case-flow.json`. It fails if any id or slug is duplicated, an id is not a UUID v4 stored in the file, a slug is not unique kebab-case, a title is missing, a kind is unknown, or a reference (`targetId`, `stackOn`, `hintTarget`, calendar `theme`) points at a missing id. The game runs the same check when the room and the story flow load.
 
+## Model editor: Blender conventions
+
+The 3D model editor (`#/editor`) uses Blender's keymap and terms. The camera-match guide-line tools keep their
+own controls. Touch devices keep the on-screen buttons (Move / Rotate / Scale tools, Options, Set Origin,
+Place 3D Cursor).
+
+| Keys | Action |
+|---|---|
+| LMB | Select a part / drag a gizmo handle |
+| MMB drag | Orbit (orbit view); pan the 2D window (mock-up view) |
+| Shift+MMB drag | Pan |
+| Wheel | Zoom |
+| Shift+RMB | Place the 3D cursor (touch: Place 3D Cursor tool, then tap) |
+| Shift+C | Reset the 3D cursor and frame all |
+| G / R / S | Modal grab / rotate / scale. Mouse drives the value; click or Enter confirms; RMB or Esc cancels |
+| X / Y / Z (in a modal) | Constrain to the global axis; press twice for the local axis |
+| Digits, `-`, `.`, Backspace (in a modal) | Type an exact value (cm, degrees, or a factor) |
+| Ctrl (in a modal) | Toggle snapping while held |
+| Shift (in a modal) | Precision (slower movement) |
+| Shift+D | Duplicate, then grab |
+| X / Delete | Delete (asks for a confirm) |
+| A / Alt+A | Select all (shows a note: one part at a time) / deselect |
+| Numpad . (F alias) | Frame selected |
+| Home | Frame all |
+| N | Toggle the sidebar |
+| Ctrl+Z / Ctrl+Shift+Z (Ctrl+Y) | Undo / redo |
+| Ctrl+S | Save the edit files (dev server) |
+
+Options > Transform > **Affect Only Origins** moves only the part's origin. **Set Origin** offers Origin to
+Geometry, Origin to 3D Cursor, Geometry to Origin, Origin to Bottom and Reset Origin. Axes use Blender's colours
+(X red, Y green, Z blue). A status bar at the top of the viewport (Blender: bottom of the window) shows the running modal's value and keys. Thai labels keep
+the Blender term in parentheses.
+
+Known differences from Blender: one part is selected at a time (no multi-select) and there are no edit modes;
+Space+drag also pans the mock-up; Esc does not deselect; the Place 3D Cursor tool stays on until toggled; the
+cursor is not saved; rotate snap is 15°; scale along a global axis uses the part's local axes; R / S do not
+affect origins; Ctrl+MMB pans instead of zooming; Delete asks for a confirm; Origin to Bottom and the F alias are
+extras; menus are popovers, not pie menus.
+
 ## Scene objects
 
 Every authored object — the room, walls, bed, wall shelf, shelf rows, books, door, hotspots, decor slots, calendar, themes, and entries — stores:
