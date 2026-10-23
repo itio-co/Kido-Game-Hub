@@ -1,0 +1,40 @@
+{
+  "_note": "ตัวอย่างรายการเหตุการณ์ที่เกมสร้างจาก event ของแต่ละ Story Pack (ในเกมจริงประกอบอัตโนมัติ ไม่ต้องเขียนเอง)",
+  "events": [
+    {
+      "id": "case-01",
+      "pack": "case-01/case.json",
+      "title": "เยี่ยมบ้านคุณย่า",
+      "subtitle": "อัลบั้มครอบครัวหายไป",
+      "cover": "../concepts/v2/cutscene-01-p2.jpg",
+      "order": 1,
+      "unlock": null
+    },
+    {
+      "id": "case-02",
+      "pack": null,
+      "title": "ห้องสมุดวันวาน",
+      "subtitle": "ลิ้นชักหมายเลข 7",
+      "cover": "../concepts/v2/study-wide.jpg",
+      "order": 2,
+      "unlock": {
+        "afterCase": "case-01"
+      },
+      "lockedHint": "ปลดล็อกเมื่อจบคดี 01",
+      "status": "upcoming"
+    },
+    {
+      "id": "case-03",
+      "pack": null,
+      "title": "ตลาดน้ำยามเช้า",
+      "subtitle": "(ตัวอย่าง)",
+      "cover": "../concepts/v2/kitchen-wide.jpg",
+      "order": 3,
+      "unlock": {
+        "afterCase": "case-02"
+      },
+      "lockedHint": "ปลดล็อกเมื่อจบคดี 02",
+      "status": "upcoming"
+    }
+  ]
+}

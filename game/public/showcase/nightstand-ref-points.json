@@ -1,0 +1,42 @@
+{
+  "image": "nightstand-ref.png",
+  "width": 252,
+  "height": 284,
+  "origin": "top-left",
+  "notes": "Hand-measured on the crop. Top points are the four corners of the top face. Leg points are the centres of the visible feet. Drawer points are the front face. The knob is its centre. Stretcher points are the ends of the right side rail.",
+  "points": {
+    "topBackLeft": [46, 80],
+    "topBackRight": [224, 78],
+    "topFrontRight": [200, 111],
+    "topFrontLeft": [38, 94],
+    "legFrontLeft": [33, 251],
+    "legFrontRight": [184, 273],
+    "legBackRight": [196, 246],
+    "drawerTopLeft": [50, 117],
+    "drawerTopRight": [168, 129],
+    "drawerBottomRight": [168, 160],
+    "drawerBottomLeft": [50, 146],
+    "knobCenter": [108, 137],
+    "stretcherFront": [184, 238],
+    "stretcherBack": [196, 220]
+  },
+  "fit": {
+    "meanPixelError": 5.99,
+    "fovDeg": 30,
+    "rollRad": 0.014751,
+    "positionCm": [41.5, 88.121, 139.278],
+    "targetCm": [1.204, 34.636, -2.34],
+    "dimensionsCm": {
+      "topWidth": 49.66,
+      "topDepth": 21.61,
+      "height": 50.0,
+      "leg": 5,
+      "slab": 4,
+      "overhang": 0.2,
+      "drawerHeight": 10.28,
+      "drawerWidthFraction": 0.7,
+      "knob": [8, 3],
+      "stretcherCenterHeight": 10.89
+    }
+  }
+}
