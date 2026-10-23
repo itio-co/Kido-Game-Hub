@@ -49,6 +49,11 @@
     cursorCm: [0, 0, 0],
     modal: null,
     pivotSnap: null,
+    scope: 'part',
+    root: null,
+    placement: null,
+    scaleLocked: true,
+    floorSnap: true,
   });
   let mode = $state<GizmoMode>('translate');
   let view = $state<ViewMode>('orbit');
@@ -278,6 +283,11 @@
       match?.fit();
       return;
     }
+    if (snap.scope === 'object') {
+      editor!.selectRoot();
+      focus(null);
+      return;
+    }
     if (sel?.name !== name) editor!.select(name);
     focus(name);
   }
@@ -316,6 +326,11 @@
       const gh = (['X', 'Y', 'Z'] as const).map((a) => editor!.gizmoHandle(a));
       gizmoHandles = gh.every(Boolean) ? JSON.stringify(gh) : null;
     });
+  });
+  // Whole-object placement: the camera stays in world space, the solver works in the object's frame.
+  $effect(() => {
+    const p = snap.placement;
+    if (match) untrack(() => match!.setPlacement(p));
   });
   // Auto-save the match session.
   let saveTimer = 0;
@@ -442,9 +457,16 @@
         event.preventDefault();
         frameAll();
       } else if (event.altKey) {
-        if (k === 'a' || event.code === 'KeyA') {
+        const code = event.code;
+        if (k === 'a' || code === 'KeyA') {
           event.preventDefault();
           editor?.select(null);
+        } else if (snap.root && (code === 'KeyG' || code === 'KeyR' || code === 'KeyS')) {
+          // Alt+G / Alt+R / Alt+S: Clear Location / Rotation / Scale of the whole object
+          event.preventDefault();
+          const kind = code === 'KeyG' ? 'position' : code === 'KeyR' ? 'rotation' : 'scale';
+          editor?.clearPlacement(kind);
+          say(T.place.cleared(T.place.clearOf(kind)));
         }
       } else if (event.shiftKey) {
         if (k === 'd' && snap.selected && editor) {
@@ -463,7 +485,11 @@
       else if ((k === 'x' || event.key === 'Delete') && snap.selected) {
         event.preventDefault();
         delAsk = snap.selected.name;
-      } else if (k === 'a') say(T.noSelectAll);
+      } else if (k === 'a') {
+        event.preventDefault();
+        editor?.selectRoot();
+        say(T.selectAll);
+      }
       else if (k === 'n') {
         sidebar = !sidebar;
         say(T.sidebarToast(sidebar));
@@ -485,6 +511,33 @@
     void load();
   }
 
+  // ---------- whole object (Object mode on the root) ----------
+  const rootInfo = $derived(snap.root);
+  let bakePlacement = $state(false);
+  function pickScope(next: 'part' | 'object'): void {
+    editor?.setScope(next);
+  }
+  function setPlace(kind: 'position' | 'rotation' | 'scale', axis: 0 | 1 | 2, value: number): void {
+    if (!editor) return;
+    if (kind === 'scale' && snap.scaleLocked) {
+      say(T.place.scaleBlocked);
+      return;
+    }
+    editor.setPlacementValue(kind, axis, value);
+  }
+  function nudgePlace(kind: 'position' | 'rotation', axis: 0 | 1 | 2, dir: 1 | -1): void {
+    if (!rootInfo) return;
+    const now = kind === 'position' ? rootInfo.positionCm[axis] : rootInfo.rotationDeg[axis];
+    const step = kind === 'rotation' ? rotStep : snapOn ? 1 : 0.1;
+    setPlace(kind, axis, Math.round((now + dir * step) / step) * step);
+  }
+  function toggleScaleLock(): void {
+    if (!editor) return;
+    if (snap.scaleLocked && !confirm(T.place.scaleWarn)) return;
+    editor.setScaleLocked(!snap.scaleLocked);
+  }
+  const fmtCm = (v: number) => (Math.round(v * 10) / 10).toFixed(1);
+
   function pickMode(next: GizmoMode): void {
     // rotating / scaling origins is not supported (Affect Only Origins keeps the move tool)
     if (next !== 'translate' && snap.pivotMode) {
@@ -505,9 +558,13 @@
     optionsOpen = false;
   }
   function startModal(kind: 'grab' | 'rotate' | 'scale'): void {
-    if (!editor || !snap.selected) return;
+    if (!editor || (!snap.selected && !snap.root)) return;
     if (kind !== 'grab' && snap.pivotMode) {
       say(T.origin.noRotate);
+      return;
+    }
+    if (kind === 'scale' && snap.root && snap.scaleLocked) {
+      say(T.place.scaleBlocked);
       return;
     }
     closeMenus();
@@ -554,7 +611,8 @@
     else if (m.kind === 'rotate') value = T.modal.rot(m.typed ?? `${v[0]!.toFixed(2)}°`);
     else value = T.modal.factor(m.typed ?? v[0]!.toFixed(4));
     const along = m.axis && m.space ? ` ${T.modal.along(m.space, m.axis)}` : '';
-    return `${T.modal.name(m.kind)}${m.origins ? ` (${T.modal.originOnly})` : ''} · ${value}${along}`;
+    const who = m.root ? `${T.place.rootRow} · ` : '';
+    return `${who}${T.modal.name(m.kind)}${m.origins ? ` (${T.modal.originOnly})` : ''} · ${value}${along}`;
   });
   const axisColor = (axis: string | null): string => (axis ? AXIS_COLORS['XYZ'.indexOf(axis)]! : '#eaf6ff');
   // ---------- pivot (origin) editing ----------
@@ -607,7 +665,7 @@
   async function exportGlb(): Promise<void> {
     if (!editor) return;
     try {
-      const blob = await editor.exportGlb();
+      const blob = await editor.exportGlb({ bake: bakePlacement });
       download(blob, `${fileBase}.glb`);
       say(`ดาวน์โหลด ${fileBase}.glb แล้ว`);
     } catch (err) {
@@ -644,7 +702,7 @@
     let glb: { name: string; blob: Blob } | null = null;
     if (withGlb && editor && snap.ready) {
       try {
-        glb = { name: glbFileName(option.variant.id), blob: await editor.exportGlb() };
+        glb = { name: glbFileName(option.variant.id), blob: await editor.exportGlb({ bake: bakePlacement }) };
       } catch (err) {
         console.warn('export failed', err);
         say(T.files.glbFailed);
@@ -704,9 +762,11 @@
   }
 
   const axes = [0, 1, 2] as const;
-  const posLabels = ['X ซ้าย–ขวา', 'Y สูง–ต่ำ', 'Z หน้า–หลัง'];
-  const sizeLabels = ['กว้าง (X)', 'สูง (Y)', 'ลึก (Z)'];
-  const rotLabels = ['X', 'Y', 'Z'];
+  // part fields stay in glTF order (x, y = up, z = front); labels use Blender axis names
+  const posLabels = T.part.posLabels;
+  const sizeLabels = T.part.sizeLabels;
+  const rotLabels = T.part.rotLabels;
+  const pivotLabels = ['X', 'Y', 'Z'];
   const modes: { id: GizmoMode; label: string; title: string }[] = [
     { id: 'translate', label: T.tool.move, title: T.tool.moveTitle },
     { id: 'rotate', label: T.tool.rotate, title: T.tool.rotateTitle },
@@ -777,6 +837,11 @@
       data-cursor={snap.cursorCm.join(',')}
       data-cursor-tool={snap.cursorTool ? 'on' : null}
       data-modal={snap.modal ? JSON.stringify(snap.modal) : null}
+      data-scope-now={snap.scope}
+      data-root-sel={snap.root ? 'on' : null}
+      data-placement={snap.placement ? JSON.stringify(snap.placement) : null}
+      data-root={rootInfo ? JSON.stringify(rootInfo) : null}
+      data-match-cam={match && staged && match.cam ? JSON.stringify({ C: match.cam.C.map((v) => +v.toFixed(3)), R: match.cam.R.map((r) => r.map((v) => +v.toFixed(5))) }) : null}
       data-pivot-snap={snap.pivotSnap}
       data-pivot-hints={pivotHints}
       data-gizmo-handles={gizmoHandles}
@@ -844,6 +909,12 @@
             >แม่เหล็ก {snapOn ? 'เปิด' : 'ปิด'}</button
           >
         </div>
+        <div class="mode-group scope-group" role="radiogroup" aria-label={T.place.scope}>
+          <button type="button" role="radio" aria-checked={snap.scope === 'part'} class:on={snap.scope === 'part'} data-scope="part" title={T.place.scopePartTitle}
+            onclick={() => pickScope('part')}>{T.place.scopePart}</button>
+          <button type="button" role="radio" aria-checked={snap.scope === 'object'} class:on={snap.scope === 'object'} data-scope="object" title={T.place.scopeObjectTitle}
+            onclick={() => pickScope('object')}>{T.place.scopeObject}</button>
+        </div>
         <div class="mode-group origin-group">
           <div class="pop">
             <button type="button" class="pivot" class:on={snap.pivotMode} aria-expanded={optionsOpen} aria-haspopup="true" title={T.origin.options}
@@ -859,12 +930,13 @@
             {/if}
           </div>
           <div class="pop">
-            <button type="button" aria-expanded={originMenu} aria-haspopup="menu" disabled={!sel} onclick={() => { optionsOpen = false; originMenu = !originMenu; }}
+            <button type="button" aria-expanded={originMenu} aria-haspopup="menu" disabled={!sel && !rootInfo} onclick={() => { optionsOpen = false; originMenu = !originMenu; }}
               data-act="set-origin">{T.origin.setOrigin} ▾</button>
-            {#if originMenu && sel}
+            {#if originMenu && (sel || rootInfo)}
               <div class="menu" role="menu" data-origin-menu>
                 {#each originOps as o (o.op)}
-                  <button type="button" role="menuitem" data-origin={o.op} disabled={o.op === 'reset' && !sel.pivotSet} onclick={() => setOrigin(o.op)}>{o.label}</button>
+                  <button type="button" role="menuitem" data-origin={o.op} disabled={o.op === 'reset' && !(sel ? sel.pivotSet : rootInfo?.originSet)}
+                    onclick={() => setOrigin(o.op)}>{o.label}</button>
                 {/each}
               </div>
             {/if}
@@ -965,7 +1037,7 @@
       {#if sel}
         <section class="selected" data-selected={sel.name}>
           <h2>{partLabel(sel.name)} <small>{sel.name}</small></h2>
-          <p class="sub">ตำแหน่ง (ซม.)</p>
+          <p class="sub">{T.part.position}</p>
           {#each axes as i (i)}
             <div class="row">
               <span>{posLabels[i]}</span>
@@ -975,7 +1047,7 @@
               <button type="button" class="step" onclick={() => nudge('position', i, 1)} aria-label="เพิ่ม">+</button>
             </div>
           {/each}
-          <p class="sub">ขนาด (ซม.)</p>
+          <p class="sub">{T.part.size}</p>
           {#each axes as i (i)}
             <div class="row">
               <span>{sizeLabels[i]}</span>
@@ -985,7 +1057,7 @@
               <button type="button" class="step" onclick={() => nudge('size', i, 1)} aria-label="เพิ่ม">+</button>
             </div>
           {/each}
-          <p class="sub">หมุน (องศา)</p>
+          <p class="sub">{T.part.rotation}</p>
           {#each axes as i (i)}
             <div class="row">
               <span>{rotLabels[i]}</span>
@@ -1024,7 +1096,7 @@
             <p class="sub" data-pivot-sub={pivotSpace}>{pivotSpace === 'local' ? T.origin.localSub : T.origin.worldSub}</p>
             {#each axes as i (i)}
               <div class="row pivot-row">
-                <span style="color:{AXIS_COLORS[i]}">{rotLabels[i]}</span>
+                <span style="color:{AXIS_COLORS[i]}">{pivotLabels[i]}</span>
                 <input type="number" inputmode="decimal" step={posStep} value={pivotShown?.[i] ?? 0} data-field="pivot-{i}"
                   onchange={(e) => setPivotValue(i, e.currentTarget.valueAsNumber)} />
               </div>
@@ -1041,6 +1113,62 @@
             <button type="button" class="danger" onclick={() => editor?.remove(sel.name)} data-act="delete">ลบชิ้นนี้</button>
           </div>
         </section>
+      {:else if rootInfo}
+        <section class="selected root-panel" data-root-panel>
+          <h2>{T.place.heading} <small>{rootInfo.name}</small></h2>
+          <p class="tip small" data-root-dims>
+            {T.place.dims(fmtCm(rootInfo.dimsCm[0]), fmtCm(rootInfo.dimsCm[1]), fmtCm(rootInfo.dimsCm[2]), fmtCm(rootInfo.baseCm))}
+          </p>
+          <p class="sub">{T.place.location}</p>
+          {#each axes as i (i)}
+            <div class="row">
+              <span style="color:{AXIS_COLORS[i]}">{T.place.axes[i]}</span>
+              <button type="button" class="step" onclick={() => nudgePlace('position', i, -1)} aria-label="−">−</button>
+              <input type="number" inputmode="decimal" step={snapOn ? 1 : 0.1} value={rootInfo.positionCm[i]} data-field="place-position-{i}"
+                onchange={(e) => setPlace('position', i, e.currentTarget.valueAsNumber)} />
+              <button type="button" class="step" onclick={() => nudgePlace('position', i, 1)} aria-label="+">+</button>
+            </div>
+          {/each}
+          <p class="sub">{T.place.rotation}</p>
+          {#each axes as i (i)}
+            <div class="row">
+              <span style="color:{AXIS_COLORS[i]}">{T.place.axes[i]}</span>
+              <button type="button" class="step" onclick={() => nudgePlace('rotation', i, -1)} aria-label="−">−</button>
+              <input type="number" inputmode="decimal" step={rotStep} value={rootInfo.rotationDeg[i]} data-field="place-rotation-{i}"
+                onchange={(e) => setPlace('rotation', i, e.currentTarget.valueAsNumber)} />
+              <button type="button" class="step" onclick={() => nudgePlace('rotation', i, 1)} aria-label="+">+</button>
+            </div>
+          {/each}
+          <p class="sub">{T.place.scale}</p>
+          <div class="row">
+            <button type="button" class="step lock" class:on={snap.scaleLocked} aria-pressed={snap.scaleLocked}
+              aria-label={snap.scaleLocked ? T.place.scaleUnlock : T.place.scaleLocked} title={snap.scaleLocked ? T.place.scaleUnlock : T.place.scaleLocked}
+              onclick={toggleScaleLock} data-act="scale-lock">{snap.scaleLocked ? '🔒' : '🔓'}</button>
+            <input type="number" inputmode="decimal" min="0.01" step="0.01" value={rootInfo.scale} disabled={snap.scaleLocked} data-field="place-scale"
+              onchange={(e) => setPlace('scale', 0, e.currentTarget.valueAsNumber)} />
+          </div>
+          {#if !snap.scaleLocked || rootInfo.scale !== 1}<p class="tip small warn" data-scale-warn>{T.place.scaleWarn}</p>{/if}
+          <label class="check" title={T.place.floorSnapTitle}>
+            <input type="checkbox" checked={snap.floorSnap} onchange={(e) => editor?.setFloorSnap(e.currentTarget.checked)} data-act="floor-snap" />
+            <span>{T.place.floorSnap}</span>
+          </label>
+          <div class="actions">
+            <button type="button" class="small" onclick={() => editor?.snapToFloor()} data-act="drop-floor">{T.place.dropToFloor}</button>
+          </div>
+          <p class="sub">{T.origin.setOrigin}</p>
+          <div class="actions pivot-presets">
+            {#each originOps as o (o.op)}
+              <button type="button" class="small" data-origin-panel={o.op} disabled={o.op === 'reset' && !rootInfo.originSet} onclick={() => setOrigin(o.op)}>{o.label}</button>
+            {/each}
+          </div>
+          <p class="tip small">{T.place.clear}</p>
+          <div class="actions">
+            {#each ['position', 'rotation', 'scale'] as const as kind (kind)}
+              <button type="button" class="small" onclick={() => editor?.clearPlacement(kind)} data-clear={kind} disabled={kind === 'scale' && snap.scaleLocked}>{T.place.clearOf(kind)}</button>
+            {/each}
+          </div>
+          {#if staged}<p class="tip small" data-camera-note>{T.place.cameraNote}</p>{/if}
+        </section>
       {:else}
         <p class="tip small" data-keys-tip>{T.keysTip}</p>
         <p class="tip">แตะชิ้นส่วนในภาพ หรือเลือกจากรายการด้านล่าง แล้วลากลูกศรหรือพิมพ์ตัวเลข</p>
@@ -1049,9 +1177,15 @@
       <section>
         <h2>ชิ้นส่วน ({snap.parts.filter((p) => !p.deleted).length})</h2>
         <ul class="parts">
+          <li class:sel={!!rootInfo} class="root-row">
+            <button type="button" class="pick" disabled={!snap.ready} onclick={() => editor?.selectRoot()} data-part-root>
+              <b>▣ {T.place.rootRow}</b>
+              <small>{T.place.rootRowSub(option.asset.slug.split('/').pop() ?? '')}</small>
+            </button>
+          </li>
           {#each snap.parts as p (p.name)}
             <li class:sel={sel?.name === p.name} class:gone={p.deleted}>
-              <button type="button" class="pick" disabled={p.deleted || p.hidden} onclick={() => editor?.select(p.name)} data-part={p.name}>
+              <button type="button" class="pick" disabled={p.deleted || p.hidden} onclick={() => editor?.selectPart(p.name)} data-part={p.name}>
                 <b>{partLabel(p.name)}</b>
                 <small>{p.name}{p.hidden ? ' · ซ่อนอยู่' : ''}{p.deleted ? ' · ลบแล้ว' : ''}</small>
               </button>
@@ -1073,6 +1207,10 @@
         <div class="actions col">
           <button type="button" class="primary" onclick={exportGlb} disabled={!snap.ready} data-act="export-glb">ดาวน์โหลด GLB ที่แก้แล้ว</button>
           <button type="button" onclick={exportEdits} disabled={!snap.ready} data-act="export-json">ดาวน์โหลดรายการแก้ (JSON)</button>
+          <label class="check" title={T.place.bakeTitle}>
+            <input type="checkbox" bind:checked={bakePlacement} data-act="bake-placement" />
+            <span>{T.place.bake}</span>
+          </label>
           <button type="button" class="danger" onclick={reset} disabled={!snap.dirty}>ล้างการแก้ทั้งหมด</button>
         </div>
       </section>
@@ -1320,6 +1458,10 @@
   .parts li { display: flex; gap: 6px; align-items: stretch; }
   .parts li.sel .pick { border-color: #ffe14d; background: #2b3a22; }
   .parts li.gone .pick { text-decoration: line-through; }
+  .parts li.root-row .pick { border-style: dashed; }
+  .tip.warn { color: #ffcf70; }
+  .step.lock.on { background: #3a3320; }
+  .root-panel input:disabled { opacity: 0.6; }
   .pick { flex: 1; text-align: left; display: flex; flex-direction: column; justify-content: center; padding: 4px 10px; }
   .pick small { font-size: 12px; color: #8fb3cc; font-weight: 400; }
   .e-toast {

@@ -25,6 +25,7 @@ import {
 import { blenderValues, camFromMatched, camJson, focalFromLens, fullExport, hfovDeg, lensMm, type ViewRect } from './cameraMatch';
 import type { DisplayMode } from './modelEditor';
 import { T } from './strings';
+import { camToObject, camToWorld, type Placement } from './placement';
 import { frameWindow, FOCUS_PAD, type Box2 } from './viewFrame';
 import { jointMembers, linkEnds, removeLineLinks, unlinkEnd, type EndRef } from './guideSnap';
 import { applyMasterIds, ensureMasters, masterIds, masterOf, parseMasterMap, promoteMaster, setMasterFlag, type MasterMap } from './masterLine';
@@ -146,7 +147,25 @@ export class MatchState {
   /** Full image size in its own px. */
   readonly full: { w: number; h: number };
 
+  /**
+   * The camera in WORLD space (Blender cm): what the 3D view renders and what camera.json stores. Moving the whole
+   * object (its placement) never moves it; the solvers work in the object's frame (`camObj`) — guide lines and point
+   * pairs belong to the object — and write back through `toWorld`.
+   */
   cam = $state.raw<Cam>(null as unknown as Cam);
+  /** The whole object's placement (from the model editor); undefined = identity. */
+  placement = $state.raw<Placement | undefined>(undefined);
+  setPlacement(p: Placement | null | undefined): void {
+    const next = p ?? undefined;
+    if (JSON.stringify(next ?? null) !== JSON.stringify(this.placement ?? null)) this.placement = next ? (JSON.parse(JSON.stringify(next)) as Placement) : undefined;
+  }
+  /** The camera in the object's own frame (object at the origin, as the solver and point pairs see it). */
+  get camObj(): Cam {
+    return camToObject(this.cam, this.placement);
+  }
+  private toWorld(cam: Cam): Cam {
+    return camToWorld(cam, this.placement);
+  }
   /** Guide lines of the ACTIVE group (the one drawn on the current view); crop px. */
   lines = $state<GuideLine[]>([]);
   /** Lines of the other group (crop px), shown as a faint ghost. */
@@ -483,7 +502,7 @@ export class MatchState {
     const r = this.roomLines;
     if (!o.length || !r.length) return null;
     try {
-      return agreementOf(this.fullLines(o), this.fullLines(r), camToFull(this.cam, this.crop), this.yaw, this.fullFrame(this.cam), 3, this.vpModes);
+      return agreementOf(this.fullLines(o), this.fullLines(r), camToFull(this.camObj, this.crop), this.yaw, this.fullFrame(this.camObj), 3, this.vpModes);
     } catch {
       return null;
     }
@@ -727,8 +746,8 @@ export class MatchState {
     for (const [axis, a, b] of edges) {
       const A = by(a);
       const Bp = by(b);
-      const pa = A && project(this.cam, A);
-      const pb = Bp && project(this.cam, Bp);
+      const pa = A && project(this.camObj, A);
+      const pb = Bp && project(this.camObj, Bp);
       if (!pa || !pb) continue;
       const id = this.nextId++;
       lines.push({ id, axis, a: pa, b: pb });
@@ -779,7 +798,7 @@ export class MatchState {
 
   // ---------- solving ----------
   get residual(): { lines: number | null; points: number | null } {
-    return rmsErrors(this.cam, this.lines, this.completePairs);
+    return rmsErrors(this.camObj, this.lines, this.completePairs);
   }
   private say(msg: string): void {
     this.message = msg;
@@ -806,7 +825,7 @@ export class MatchState {
     return { cam: res.ok && res.cam ? camToCrop(res.cam, this.crop) : null, message: res.message, yaw: res.yaw, yawSolved: res.yawSolved };
   }
   solveLines(): boolean {
-    const prior = this.cam;
+    const prior = this.camObj;
     const res = this.jointSolve(prior);
     if (!res.cam) {
       this.say(res.message ?? 'คำนวณไม่สำเร็จ');
@@ -815,7 +834,7 @@ export class MatchState {
     let cam = res.cam;
     if (this.completePairs.length >= 2) cam = solvePosition(cam, this.completePairs) ?? cam;
     else cam = this.keepAnchor(prior, cam);
-    this.cam = cam;
+    this.cam = this.toWorld(cam);
     if (!this.roomAligned && res.yawSolved) this.roomYaw = res.yaw;
     const both = !!(this.objectLines.length && this.roomLines.length);
     const yaw = this.roomAligned ? null : this.roomYaw.toFixed(1);
@@ -917,7 +936,7 @@ export class MatchState {
   beginLive(): void {
     this.dragging = true;
     this.liveFail = false;
-    this.liveBase = this.cam;
+    this.liveBase = this.camObj;
   }
   endLive(): void {
     this.dragging = false;
@@ -928,7 +947,7 @@ export class MatchState {
    * result doesn't drift; on failure keeps the last good camera and flags `liveFail`.
    */
   solveLive(what: 'lines' | 'pairs'): boolean {
-    const base = this.liveBase ?? this.cam;
+    const base = this.liveBase ?? this.camObj;
     const pairs = this.completePairs;
     let cam: Cam | null = null;
     try {
@@ -947,7 +966,7 @@ export class MatchState {
     }
     const finite = !!cam && [cam.f, cam.cx, cam.cy, ...cam.C, ...cam.R.flat()].every(Number.isFinite) && cam.f > 0;
     this.liveFail = !finite;
-    if (finite) this.cam = cam!;
+    if (finite) this.cam = this.toWorld(cam!);
     return finite;
   }
   /** Keep the model origin at the same pixel and depth as in `prior`. */
@@ -973,12 +992,12 @@ export class MatchState {
       this.say('ต้องมีคู่จุดครบอย่างน้อย 2 คู่');
       return false;
     }
-    const cam = solvePosition(this.cam, this.completePairs);
+    const cam = solvePosition(this.camObj, this.completePairs);
     if (!cam) {
       this.say('คำนวณตำแหน่งไม่ได้ ลองเลือกจุดที่ห่างกันมากขึ้น');
       return false;
     }
-    this.cam = cam;
+    this.cam = this.toWorld(cam);
     this.say('ตั้งตำแหน่ง/ระยะกล้องจากคู่จุดแล้ว');
     return true;
   }
@@ -989,25 +1008,26 @@ export class MatchState {
       return false;
     }
     const usePrincipal = this.principal === 'free' && n >= 6;
-    let start = this.cam;
+    let start = this.camObj;
     // start from a sane position if the camera is far off
     start = solvePosition(start, this.completePairs) ?? start;
     const cam = solveFull(start, this.refineLines(), this.completePairs, { fixedF: this.lockLens, principal: usePrincipal, parallel: this.parallelAxes });
-    this.cam = cam;
+    this.cam = this.toWorld(cam);
     this.say(`ปรับละเอียดแล้ว (${n} คู่${usePrincipal ? ' + จุดกึ่งกลางภาพ' : ''})`);
     return true;
   }
   /** Only the selected parameters, keeping the rest (used after numeric edits). */
   refineRotation(): void {
-    this.cam = refine(this.cam, this.refineLines(), this.completePairs, { f: false, rotation: true, position: false, principal: false, parallel: this.parallelAxes }).cam;
+    this.cam = this.toWorld(refine(this.camObj, this.refineLines(), this.completePairs, { f: false, rotation: true, position: false, principal: false, parallel: this.parallelAxes }).cam);
   }
   flip(): void {
-    this.cam = turnAround(this.cam);
+    this.cam = this.toWorld(turnAround(this.camObj));
   }
   resetCamera(): void {
     // the stored Blender camera is crop-centred (its own fit); the next line solve moves cx/cy to the
     // full-image centre when the principal mode is 'center'
-    this.cam = clone(this.stored);
+    // the stored camera belongs to the model at the origin: keep that view of the (placed) object
+    this.cam = this.toWorld(clone(this.stored));
     this.say('กลับเป็นกล้องที่บันทึกไว้กับโมเดล');
   }
 
@@ -1056,10 +1076,11 @@ export class MatchState {
 
   // ---------- overlay geometry ----------
   vpOf(axis: Axis): V2 | null {
-    return dehom(vanishingPoint(this.cam, axis));
+    return dehom(vanishingPoint(this.camObj, axis));
   }
+  /** Project a model point (object frame, Blender cm), e.g. a point pair's model end. */
   projectPoint(p: V3): V2 | null {
-    return project(this.cam, p);
+    return project(this.camObj, p);
   }
 
   // ---------- persistence / export ----------
@@ -1172,7 +1193,8 @@ export class MatchState {
   /** Room block of the export: crop transform, yaw, and the room-frame camera / model placement. */
   private roomExport(): object {
     const yaw = this.yaw;
-    const camRoom = { ...this.cam, R: mulMM(this.cam.R, transpose(rotZ(yaw))), C: mulMV(rotZ(yaw), this.cam.C) };
+    const co = this.camObj;
+    const camRoom = { ...co, R: mulMM(co.R, transpose(rotZ(yaw))), C: mulMV(rotZ(yaw), co.C) };
     const ag = this.agreement;
     const r = (v: number | null | undefined, k = 3) => (v === null || v === undefined ? null : Math.round(v * 10 ** k) / 10 ** k);
     const full = camToFull(this.cam, this.crop);
@@ -1188,6 +1210,9 @@ export class MatchState {
         blenderRotationEulerDeg: [0, 0, r(yaw, 4)],
         threeRotationYDeg: r(yaw, 4),
       },
+      objectPlacement: this.placement
+        ? { ...$state.snapshot(this.placement), note: 'whole-object placement in the scene (Blender cm / deg); camera = world, roomCamera = object frame' }
+        : null,
       roomCamera: { R: camRoom.R, C: camRoom.C, blenderEulerDeg: blenderEulerDeg(camRoom.R).map((v) => r(v, 4)) },
       agreement: ag
         ? {

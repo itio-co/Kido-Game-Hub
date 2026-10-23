@@ -38,6 +38,18 @@ import {
   type ModalKind,
   type Space,
 } from './modal';
+import {
+  applyPlacementForExport,
+  blenderRotationDeg,
+  cleanPlacement,
+  fromThree,
+  normalizePlacement,
+  placeToLocal,
+  threeQuaternion,
+  toThree,
+  withOrigin,
+  type Placement,
+} from './placement';
 
 export type Vec3 = [number, number, number];
 export type GizmoMode = 'translate' | 'rotate' | 'scale';
@@ -55,6 +67,8 @@ export type ModalInfo = {
   space: Space | null;
   /** Typed numeric input as shown ("0.05|"), null when the mouse drives the value. */
   typed: string | null;
+  /** The whole object (root) is being transformed. */
+  root: boolean;
   /** grab: metres (1 value along the axis, or world dx/dy/dz) · rotate: degrees · scale: factor. */
   values: number[];
   snapping: boolean;
@@ -80,7 +94,29 @@ export type PartState = {
   pivot?: Vec3;
 };
 
-export type EditState = { parts: PartState[] };
+/**
+ * Edits file / draft state. `placement` (optional, Blender cm / deg) is the whole object's placement — Object mode on
+ * the asset's root — kept apart from the part edits; absent = where the GLB puts it.
+ */
+export type EditState = { parts: PartState[]; placement?: Placement };
+/** Selection scope: parts (Edit-like) or the whole object (Blender Object mode on the root). */
+export type SelectScope = 'part' | 'object';
+
+/** The whole object (root) when it is selected. Blender units: cm, X right, Y back, Z up, degrees. */
+export type RootInfo = {
+  name: string;
+  /** Location = where the object's origin sits. */
+  positionCm: Vec3;
+  rotationDeg: Vec3;
+  scale: number;
+  /** Object origin in the model's own frame (cm); [0,0,0] = the GLB origin. */
+  originCm: Vec3;
+  originSet: boolean;
+  /** World size of the visible model (X, Y, Z), cm. */
+  dimsCm: Vec3;
+  /** Lowest point of the visible model above the floor (Z = 0), cm. */
+  baseCm: number;
+};
 
 export type PartInfo = { name: string; source: string; hidden: boolean; deleted: boolean; copy: boolean };
 
@@ -118,6 +154,16 @@ export type EditorSnapshot = {
   cursorCm: Vec3;
   /** Running G / R / S modal transform. */
   modal: ModalInfo | null;
+  /** Selection scope toggle (Part / Whole object). */
+  scope: SelectScope;
+  /** The whole object is selected (Object mode on the root). */
+  root: RootInfo | null;
+  /** Current placement (null = identity). */
+  placement: Placement | null;
+  /** Scale of the whole object is locked (it changes the real-world size). */
+  scaleLocked: boolean;
+  /** Snap the base to the floor (Z = 0) while moving / rotating the whole object with snapping on. */
+  floorSnap: boolean;
   /** What the last pivot drag snapped to (null = free). */
   pivotSnap: SnapKind | null;
 };
@@ -166,6 +212,14 @@ export function createModelEditor(canvas: HTMLCanvasElement, onChange: (snap: Ed
 
   const holder = new THREE.Group();
   scene.add(holder);
+  // holder → place (the whole object's placement: location at its origin, rotation, uniform scale)
+  //        → offset (−origin, model frame) → the glTF scene
+  const place = new THREE.Group();
+  place.name = '__placement';
+  holder.add(place);
+  const offset = new THREE.Group();
+  offset.name = '__origin';
+  place.add(offset);
   const box = new THREE.BoxHelper(new THREE.Object3D(), '#ffe14d');
   (box.material as THREE.LineBasicMaterial).depthTest = false;
   box.renderOrder = 10;
@@ -183,9 +237,10 @@ export function createModelEditor(canvas: HTMLCanvasElement, onChange: (snap: Ed
   gizmo.setSpace('local');
   const gizmoHelper = gizmo.getHelper();
   scene.add(gizmoHelper);
-  // Blender axis colours on the gizmo (three.js uses pure red / green / blue).
+  // Blender axis colours on the gizmo (three.js uses pure red / green / blue). glTF Y is Blender's Z (up, blue) and
+  // glTF Z is Blender's −Y (front, green).
   {
-    const swap = new Map<number, string>([[0xff0000, AXIS_COLORS[0]], [0x00ff00, AXIS_COLORS[1]], [0x0000ff, AXIS_COLORS[2]]]);
+    const swap = new Map<number, string>([[0xff0000, AXIS_COLORS[0]], [0x00ff00, AXIS_COLORS[2]], [0x0000ff, AXIS_COLORS[1]]]);
     const done = new Set<THREE.Material>();
     gizmoHelper.traverse((node) => {
       const mat = (node as THREE.Mesh).material as THREE.MeshBasicMaterial | undefined;
@@ -218,6 +273,11 @@ export function createModelEditor(canvas: HTMLCanvasElement, onChange: (snap: Ed
   let history: string[] = [];
   let index = -1;
   let selected: string | null = null;
+  /** The whole object (root) is selected. */
+  let rootSel = false;
+  let scope: SelectScope = 'part';
+  let scaleLocked = true;
+  let floorSnap = true;
   let view: ViewMode = 'orbit';
   let snap = true;
   let gizmoMode: GizmoMode = 'translate';
@@ -276,7 +336,10 @@ export function createModelEditor(canvas: HTMLCanvasElement, onChange: (snap: Ed
         camera.updateProjectionMatrix();
         gizmo.setSize(GIZMO_SIZE);
       }
-      if (selected && objects.get(selected)?.visible) {
+      if (rootSel && root) {
+        box.setFromObject(place);
+        box.visible = true;
+      } else if (selected && objects.get(selected)?.visible) {
         box.setFromObject(objects.get(selected)!);
         box.visible = true;
       } else box.visible = false;
@@ -471,6 +534,49 @@ export function createModelEditor(canvas: HTMLCanvasElement, onChange: (snap: Ed
     });
   }
 
+  /** Put the state's placement on the place / offset groups. */
+  function applyPlacement(p: Placement | undefined = state.placement): void {
+    const pl = p ?? { position: [0, 0, 0], rotation: [0, 0, 0], scale: 1 };
+    place.position.copy(toThree(pl.position));
+    place.quaternion.copy(threeQuaternion(pl.rotation));
+    place.scale.setScalar(pl.scale);
+    offset.position.copy(toThree(pl.origin ?? [0, 0, 0])).negate();
+    place.updateMatrixWorld(true);
+  }
+  function placementOf(s: EditState): Placement {
+    return structuredClone(s.placement) ?? { position: [0, 0, 0], rotation: [0, 0, 0], scale: 1 };
+  }
+  /** World box of the visible model (metres, glTF axes) with placement `p` (default: current). */
+  function worldBox(p?: Placement): THREE.Box3 {
+    if (p) applyPlacement(p);
+    root?.updateMatrixWorld(true);
+    const b = new THREE.Box3();
+    for (const o of objects.values()) if (o.visible) b.expandByObject(o, true);
+    if (p) applyPlacement();
+    return b;
+  }
+  /** Box of the visible model in its own frame (Blender cm), i.e. without the placement. */
+  function modelLocalBox(): { min: Vec3; max: Vec3 } | null {
+    place.position.set(0, 0, 0);
+    place.quaternion.identity();
+    place.scale.set(1, 1, 1);
+    offset.position.set(0, 0, 0);
+    place.updateMatrixWorld(true);
+    const b = worldBox();
+    applyPlacement();
+    if (b.isEmpty()) return null;
+    return { min: [b.min.x * 100, -b.max.z * 100, b.min.y * 100], max: [b.max.x * 100, -b.min.z * 100, b.max.y * 100] };
+  }
+  /** Floor magnet: when the base is within a few cm of Z = 0 (either side), put it exactly on the floor. */
+  const FLOOR_SNAP_CM = 3;
+  function floorAdjust(p: Placement): Placement {
+    const b = worldBox(p);
+    if (b.isEmpty()) return p;
+    const base = b.min.y * 100;
+    if (Math.abs(base) < FLOOR_SNAP_CM) p.position[2] -= base;
+    return p;
+  }
+
   function apply(next: EditState): void {
     state = next;
     if (!root) return;
@@ -514,6 +620,7 @@ export function createModelEditor(canvas: HTMLCanvasElement, onChange: (snap: Ed
       if (applyPivot(obj, part.pivot)) swapped = true;
     }
     if (swapped) clearEdges();
+    applyPlacement();
     if (selected && !objects.get(selected)?.visible) selected = null;
     attach();
     save();
@@ -522,6 +629,14 @@ export function createModelEditor(canvas: HTMLCanvasElement, onChange: (snap: Ed
   }
 
   function attach(): void {
+    if (rootSel) {
+      if (!root || modal || (gizmo.mode === 'scale' && !pivotMode && scaleLocked)) gizmo.detach();
+      else if (pivotMode) {
+        placeHandle(place);
+        gizmo.attach(handle);
+      } else gizmo.attach(place);
+      return;
+    }
     const obj = selected ? objects.get(selected) : undefined;
     if (!obj || !obj.visible || modal) gizmo.detach();
     else if (pivotMode) {
@@ -580,9 +695,14 @@ export function createModelEditor(canvas: HTMLCanvasElement, onChange: (snap: Ed
     return [((p.x + 1) / 2) * canvas.clientWidth, ((1 - p.y) / 2) * canvas.clientHeight];
   }
   function syncGridSnap(): void {
-    gizmo.setTranslationSnap(snap && !altDown ? 0.005 : null);
+    gizmo.setTranslationSnap(snap && !altDown ? (rootSel ? 0.01 : 0.005) : null);
   }
   function beginPivotDrag(): void {
+    if (rootSel) {
+      drag = null;
+      pivotSnapKind = null;
+      return;
+    }
     const part = selected ? current(selected) : undefined;
     const obj = selected ? objects.get(selected) : undefined;
     const base = part ? bases.get(part.source) : undefined;
@@ -643,6 +763,12 @@ export function createModelEditor(canvas: HTMLCanvasElement, onChange: (snap: Ed
   function endPivotDrag(): void {
     drag = null;
     marker.visible = false;
+    if (rootSel) {
+      place.updateMatrixWorld(true);
+      if (place.position.distanceTo(handle.position) < 1e-7) emit();
+      else setRootOriginWorld(handle.position.clone());
+      return;
+    }
     const moved = selected ? objects.get(selected) : undefined;
     if (!moved) return;
     moved.updateWorldMatrix(true, false);
@@ -675,6 +801,17 @@ export function createModelEditor(canvas: HTMLCanvasElement, onChange: (snap: Ed
     const local = obj.worldToLocal(world.clone());
     const pv = part.pivot ?? ZERO;
     setPivotLocal([local.x + pv[0], local.y + pv[1], local.z + pv[2]]);
+  }
+  /** Whole object: move its origin to a world point (geometry stays). Undoable. */
+  function setRootOriginWorld(world: THREE.Vector3): void {
+    const p = placementOf(state);
+    const o = placeToLocal(p, fromThree(world));
+    change((draft) => setDraftPlacement(draft, withOrigin(p, o)));
+  }
+  function setDraftPlacement(draft: EditState, p: Placement | undefined): void {
+    const n = normalizePlacement(p);
+    if (n) draft.placement = n;
+    else delete draft.placement;
   }
   const onKeyAlt = (event: KeyboardEvent) => {
     if (modal && (event.key === 'Control' || event.key === 'Shift')) {
@@ -785,9 +922,13 @@ export function createModelEditor(canvas: HTMLCanvasElement, onChange: (snap: Ed
     kind: ModalKind;
     origins: boolean;
     name: string;
+    /** Whole object (root) modal. */
+    root: boolean;
+    /** R on the whole object without an axis key: Blender Z (yaw) — pressing Z makes it explicit. */
+    implicit: boolean;
     /** State JSON at the start (cancel restores it; confirm adds one undo step). */
     start: string;
-    part: PartState;
+    part: PartState | null;
     pos0: THREE.Vector3;
     quat0: THREE.Quaternion;
     parentInv: THREE.Matrix4;
@@ -823,8 +964,15 @@ export function createModelEditor(canvas: HTMLCanvasElement, onChange: (snap: Ed
   };
   window.addEventListener('pointermove', onMouseTrack, { capture: true, passive: true });
 
+  /**
+   * Blender axis → glTF direction: X → +x, Y (back) → −z, Z (up) → +y. Constraint keys use Blender's axes, so
+   * "G Z" moves up and "R Z" turns about the vertical.
+   */
+  const BL_DIRS = [new THREE.Vector3(1, 0, 0), new THREE.Vector3(0, 0, -1), new THREE.Vector3(0, 1, 0)] as const;
+  /** glTF component index of a Blender axis. */
+  const BL_INDEX = [0, 2, 1] as const;
   function axisDir(m: Modal, c: NonNullable<Constraint>): THREE.Vector3 {
-    const d = new THREE.Vector3().setComponent(c.axis, 1);
+    const d = BL_DIRS[c.axis].clone();
     return c.space === 'local' ? d.applyQuaternion(m.quat0) : d;
   }
   /** Part-local axis (0..2) closest to a world axis — scaling is always along the part's own axes. */
@@ -843,6 +991,7 @@ export function createModelEditor(canvas: HTMLCanvasElement, onChange: (snap: Ed
   }
   function startModal(kind: ModalKind): boolean {
     if (modal) endModal(false);
+    if (rootSel) return startRootModal(kind);
     const name = selected;
     const obj = name ? objects.get(name) : undefined;
     const part = name ? current(name) : undefined;
@@ -866,6 +1015,8 @@ export function createModelEditor(canvas: HTMLCanvasElement, onChange: (snap: Ed
       kind,
       origins,
       name,
+      root: false,
+      implicit: false,
       start: JSON.stringify(state),
       part: structuredClone(part),
       pos0,
@@ -879,6 +1030,54 @@ export function createModelEditor(canvas: HTMLCanvasElement, onChange: (snap: Ed
       last: [...m0],
       angle: 0,
       constraint: null,
+      num: new NumInput(),
+      ctrl: false,
+      shift: false,
+      values: kind === 'scale' ? [1] : kind === 'rotate' ? [0] : [0, 0, 0],
+    };
+    gizmo.detach();
+    marker.visible = false;
+    orbit.enabled = false;
+    window.addEventListener('pointermove', modalMove, true);
+    window.addEventListener('pointerdown', modalDown, true);
+    modalUpdate();
+    return true;
+  }
+  /** G / R / S on the whole object. Scale is refused while locked. */
+  function startRootModal(kind: ModalKind): boolean {
+    if (!root) return false;
+    const origins = pivotMode;
+    if (origins && kind !== 'grab') return false;
+    if (kind === 'scale' && scaleLocked) return false;
+    place.updateMatrixWorld(true);
+    const pos0 = place.position.clone();
+    const quat0 = place.quaternion.clone();
+    const rect = canvas.getBoundingClientRect();
+    camera.updateMatrixWorld();
+    const sc = toScreen(pos0);
+    const center: [number, number] = [sc[0] + rect.left, sc[1] + rect.top];
+    let m0: [number, number] = lastMouse ? [...lastMouse] : [rect.left + rect.width / 2, rect.top + rect.height / 2];
+    if (kind !== 'grab' && Math.hypot(m0[0] - center[0], m0[1] - center[1]) < 16) m0 = [center[0] + 80, center[1]];
+    const rotate = kind === 'rotate';
+    modal = {
+      kind,
+      origins,
+      name: '',
+      root: true,
+      implicit: rotate,
+      start: JSON.stringify(state),
+      part: null,
+      pos0,
+      quat0,
+      parentInv: new THREE.Matrix4(),
+      parentQuat: new THREE.Quaternion(),
+      objInv: place.matrixWorld.clone().invert(),
+      center,
+      m0,
+      virt: [...m0],
+      last: [...m0],
+      angle: 0,
+      constraint: rotate ? { axis: 2, space: 'global' } : null,
       num: new NumInput(),
       ctrl: false,
       shift: false,
@@ -914,9 +1113,13 @@ export function createModelEditor(canvas: HTMLCanvasElement, onChange: (snap: Ed
     const typed = m.num.value();
     const snapping = snap !== m.ctrl;
     const draft = JSON.parse(m.start) as EditState;
-    const part = draft.parts.find((q) => q.name === m.name);
-    if (!part) return;
     const c = m.constraint;
+    if (m.root) {
+      rootModalUpdate(m, draft, typed, snapping);
+      return;
+    }
+    const part = draft.parts.find((q) => q.name === m.name);
+    if (!part || !m.part) return;
     if (m.kind === 'grab') {
       const delta = new THREE.Vector3();
       if (typed !== null) delta.copy(c ? axisDir(m, c) : new THREE.Vector3(1, 0, 0)).multiplyScalar(typed);
@@ -936,7 +1139,7 @@ export function createModelEditor(canvas: HTMLCanvasElement, onChange: (snap: Ed
           if (snapping) delta.set(snapTo(delta.x, 0.005), snapTo(delta.y, 0.005), snapTo(delta.z, 0.005));
         }
       }
-      m.values = c ? [delta.dot(axisDir(m, c))] : typed !== null ? [typed] : [delta.x, delta.y, delta.z];
+      m.values = c ? [delta.dot(axisDir(m, c))] : typed !== null ? [typed] : [delta.x, -delta.z, delta.y];
       const w = m.pos0.clone().add(delta);
       if (m.origins) {
         const local = w.applyMatrix4(m.objInv);
@@ -961,12 +1164,65 @@ export function createModelEditor(canvas: HTMLCanvasElement, onChange: (snap: Ed
       m.values = [r3(f, 4)];
       const sc = [...m.part.scale] as Vec3;
       if (c) {
-        const i = c.space === 'local' ? c.axis : dominantAxis(m.quat0, c.axis);
+        const i = c.space === 'local' ? BL_INDEX[c.axis] : dominantAxis(m.quat0, BL_INDEX[c.axis]);
         sc[i] *= f;
       } else for (const i of [0, 1, 2] as const) sc[i] *= f;
       part.scale = sc.map((v) => r3(v, 5)) as Vec3;
     }
+    showAxisLine(m, c);
+    apply(draft); // live preview, no undo step until confirmed
+  }
+  /** Grab / rotate / scale of the whole object: edits the placement, never the parts (nor the camera). */
+  function rootModalUpdate(m: Modal, draft: EditState, typed: number | null, snapping: boolean): void {
+    const c = m.constraint;
+    const p0 = placementOf(JSON.parse(m.start) as EditState);
+    let next = structuredClone(p0);
+    if (m.kind === 'grab') {
+      const delta = grabDelta(m, c, typed, snapping, 0.01);
+      m.values = c ? [delta.dot(axisDir(m, c))] : typed !== null ? [typed] : [delta.x, -delta.z, delta.y];
+      const w = m.pos0.clone().add(delta);
+      if (m.origins) next = withOrigin(p0, placeToLocal(p0, fromThree(w)));
+      else next.position = fromThree(w);
+    } else if (m.kind === 'rotate') {
+      const toCam = camera.position.clone().sub(m.pos0).normalize();
+      const axis = c ? axisDir(m, c) : camera.getWorldDirection(new THREE.Vector3()).negate();
+      let angle = typed !== null ? typed / DEG : rotationFromScreen(m.angle, axis, toCam);
+      if (typed === null && snapping) angle = snapTo(angle, 15 / DEG);
+      m.values = [r3(angle * DEG, 3)];
+      next.rotation = blenderRotationDeg(new THREE.Quaternion().setFromAxisAngle(axis, angle).multiply(m.quat0));
+    } else {
+      let f = typed ?? screenScale(m.center, m.m0, m.virt);
+      if (typed === null && snapping) f = snapTo(f, 0.1);
+      f = Math.max(f, 0.01);
+      m.values = [r3(f, 4)];
+      next.scale = p0.scale * f;
+    }
+    if (snapping && floorSnap && typed === null && !m.origins) next = floorAdjust(next);
+    setDraftPlacement(draft, next);
+    showAxisLine(m, c);
+    apply(draft);
+  }
+  function grabDelta(m: Modal, c: Constraint, typed: number | null, snapping: boolean, step: number): THREE.Vector3 {
+    const delta = new THREE.Vector3();
+    if (typed !== null) return delta.copy(c ? axisDir(m, c) : new THREE.Vector3(1, 0, 0)).multiplyScalar(typed);
+    const r0 = rayAt(m.m0[0], m.m0[1]);
+    const r1 = rayAt(m.virt[0], m.virt[1]);
     if (c) {
+      const d = axisDir(m, c);
+      const t0 = closestOnLine(r0.origin, r0.direction, m.pos0, d);
+      const t1 = closestOnLine(r1.origin, r1.direction, m.pos0, d);
+      if (t0 !== null && t1 !== null) delta.copy(d).multiplyScalar(snapping ? snapTo(t1 - t0, step) : t1 - t0);
+    } else {
+      const plane = new THREE.Plane().setFromNormalAndCoplanarPoint(camera.getWorldDirection(new THREE.Vector3()), m.pos0);
+      const p0 = r0.intersectPlane(plane, new THREE.Vector3());
+      const p1 = r1.intersectPlane(plane, new THREE.Vector3());
+      if (p0 && p1) delta.subVectors(p1, p0);
+      if (snapping) delta.set(snapTo(delta.x, step), snapTo(delta.y, step), snapTo(delta.z, step));
+    }
+    return delta;
+  }
+  function showAxisLine(m: Modal, c: Constraint): void {
+    if (c && !m.implicit) {
       const d = axisDir(m, c);
       const pos = axisLine.geometry.getAttribute('position') as THREE.BufferAttribute;
       const a = m.pos0.clone().addScaledVector(d, -50);
@@ -977,7 +1233,6 @@ export function createModelEditor(canvas: HTMLCanvasElement, onChange: (snap: Ed
       (axisLine.material as THREE.LineBasicMaterial).color.set(AXIS_COLORS[c.axis]);
       axisLine.visible = true;
     } else axisLine.visible = false;
-    apply(draft); // live preview, no undo step until confirmed
   }
   function modalMove(event: PointerEvent): void {
     const m = modal;
@@ -1014,8 +1269,9 @@ export function createModelEditor(canvas: HTMLCanvasElement, onChange: (snap: Ed
     return {
       kind: m.kind,
       origins: m.origins,
+      root: m.root,
       axis: m.constraint ? AXIS_NAMES[m.constraint.axis] : null,
-      space: m.constraint?.space ?? null,
+      space: m.constraint ? m.constraint.space : null,
       typed: m.num.active ? m.num.display() : null,
       values: m.values,
       snapping: snap !== m.ctrl,
@@ -1031,7 +1287,10 @@ export function createModelEditor(canvas: HTMLCanvasElement, onChange: (snap: Ed
     if (key === 'Escape') endModal(false);
     else if (key === 'Enter') endModal(true);
     else if ((lower === 'x' || lower === 'y' || lower === 'z') && !event.ctrlKey && !event.metaKey) {
-      m.constraint = cycleConstraint(m.constraint, lower === 'x' ? 0 : lower === 'y' ? 1 : 2);
+      const axis = lower === 'x' ? 0 : lower === 'y' ? 1 : 2;
+      // the implicit Z of a whole-object R: the first Z makes it explicit (global), like a fresh key press
+      m.constraint = m.implicit ? { axis, space: 'global' } : cycleConstraint(m.constraint, axis);
+      m.implicit = false;
       modalUpdate();
     } else if ((lower === 'g' || lower === 'r' || lower === 's') && !event.ctrlKey && !event.metaKey) {
       const kind: ModalKind = lower === 'g' ? 'grab' : lower === 'r' ? 'rotate' : 'scale';
@@ -1058,6 +1317,19 @@ export function createModelEditor(canvas: HTMLCanvasElement, onChange: (snap: Ed
   }
 
   function readGizmo(): void {
+    if (rootSel) {
+      place.updateMatrixWorld(true);
+      const p0 = placementOf(state);
+      let next: Placement = {
+        position: fromThree(place.position),
+        rotation: blenderRotationDeg(place.quaternion),
+        scale: scaleLocked ? p0.scale : uniformOf(place.scale, p0.scale),
+        ...(p0.origin ? { origin: p0.origin } : {}),
+      };
+      if (snap && floorSnap && !altDown) next = floorAdjust(next);
+      change((draft) => setDraftPlacement(draft, next));
+      return;
+    }
     if (!selected) return;
     const obj = objects.get(selected);
     if (!obj) return;
@@ -1071,10 +1343,22 @@ export function createModelEditor(canvas: HTMLCanvasElement, onChange: (snap: Ed
     });
   }
 
+  /** Uniform scale from a gizmo scale (the axis that moved the most). */
+  function uniformOf(v: THREE.Vector3, s0: number): number {
+    let best = s0;
+    for (const x of [v.x, v.y, v.z]) if (Math.abs(x - s0) > Math.abs(best - s0)) best = x;
+    return Math.max(best, 0.01);
+  }
+
   // ---------- persistence ----------
   /** Old drafts / files: drop malformed pivots (parts without one keep the GLB origin). */
   function migrate(s: EditState | null | undefined): EditState | null | undefined {
-    return s && Array.isArray(s.parts) ? { ...s, parts: migrateParts(s.parts) } : s;
+    if (!s || !Array.isArray(s.parts)) return s;
+    const out: EditState = { ...s, parts: migrateParts(s.parts) };
+    const placement = cleanPlacement(s.placement);
+    if (placement) out.placement = placement;
+    else delete out.placement;
+    return out;
   }
   function fitsModel(s: EditState | null | undefined): s is EditState {
     return !!s && Array.isArray(s.parts) && s.parts.length > 0 && s.parts.every((p) => p && typeof p.name === 'string' && bases.has(p.source));
@@ -1124,10 +1408,31 @@ export function createModelEditor(canvas: HTMLCanvasElement, onChange: (snap: Ed
         pivotSet: !!part.pivot,
       };
     }
+    let rootInfo: RootInfo | null = null;
+    if (rootSel && root) {
+      const p = placementOf(state);
+      const b = worldBox();
+      const sz = b.isEmpty() ? new THREE.Vector3() : b.getSize(new THREE.Vector3());
+      rootInfo = {
+        name: objectName(),
+        positionCm: p.position.map((v) => r3(v, 2)) as Vec3,
+        rotationDeg: p.rotation.map((v) => r3(v, 2)) as Vec3,
+        scale: r3(p.scale, 4),
+        originCm: (p.origin ?? [0, 0, 0]).map((v) => r3(v, 2)) as Vec3,
+        originSet: !!p.origin,
+        dimsCm: [r3(sz.x * 100, 2), r3(sz.z * 100, 2), r3(sz.y * 100, 2)],
+        baseCm: b.isEmpty() ? 0 : r3(b.min.y * 100, 2),
+      };
+    }
     onChange({
       ready: !!root,
       parts,
       selected: info,
+      scope,
+      root: rootInfo,
+      placement: state.placement ? structuredClone(state.placement) : null,
+      scaleLocked,
+      floorSnap,
       canUndo: index > 0,
       canRedo: index < history.length - 1,
       dirty: index >= 0 && history[index] !== history[0],
@@ -1179,11 +1484,33 @@ export function createModelEditor(canvas: HTMLCanvasElement, onChange: (snap: Ed
   canvas.addEventListener('pointerdown', pointerDown);
   canvas.addEventListener('pointerup', pointerUp);
 
+  /** Click / tap selection: in Whole object scope any part selects the root. */
   function select(name: string | null): void {
+    if (scope === 'object' && name && objects.has(name)) {
+      selectRoot();
+      return;
+    }
     selected = name && objects.has(name) ? name : null;
+    rootSel = false;
+    syncGridSnap();
     attach();
     emit();
     render();
+  }
+
+  /** Select the whole object (A, the root row, or a click in Whole object scope). */
+  function selectRoot(): void {
+    if (!root) return;
+    if (modal) endModal(false);
+    rootSel = true;
+    selected = null;
+    syncGridSnap();
+    attach();
+    emit();
+    render();
+  }
+  function objectName(): string {
+    return asset?.slug ?? 'Object';
   }
 
   function setSnap(on: boolean): void {
@@ -1237,7 +1564,7 @@ export function createModelEditor(canvas: HTMLCanvasElement, onChange: (snap: Ed
       if (disposed || token !== loadToken) return { restored: false, from: null };
       if (root) {
         gizmo.detach();
-        holder.remove(root);
+        offset.remove(root);
         disposeTree(root);
       }
       clearEdges();
@@ -1252,7 +1579,9 @@ export function createModelEditor(canvas: HTMLCanvasElement, onChange: (snap: Ed
           mat.needsUpdate = true;
         }
       });
-      holder.add(root);
+      offset.add(root);
+      rootSel = false;
+      applyPlacement({ position: [0, 0, 0], rotation: [0, 0, 0], scale: 1 });
       root.updateMatrixWorld(true);
       bases.clear();
       objects.clear();
@@ -1314,6 +1643,7 @@ export function createModelEditor(canvas: HTMLCanvasElement, onChange: (snap: Ed
     setMode(mode: GizmoMode): void {
       gizmoMode = mode;
       if (!pivotMode) gizmo.setMode(mode);
+      attach();
       render();
     },
     /**
@@ -1340,6 +1670,26 @@ export function createModelEditor(canvas: HTMLCanvasElement, onChange: (snap: Ed
      * centre) and Reset Origin (back to the GLB origin). Undoable.
      */
     setOrigin(op: OriginOp): void {
+      if (rootSel) {
+        const p = placementOf(state);
+        const box = modelLocalBox();
+        if (!box) return;
+        const c: Vec3 = [(box.min[0] + box.max[0]) / 2, (box.min[1] + box.max[1]) / 2, (box.min[2] + box.max[2]) / 2];
+        let next: Placement;
+        if (op === 'geometryToOrigin') {
+          // the origin stays where it is in the world; the model moves so its centre sits on it
+          next = { ...p, origin: c };
+        } else {
+          const o: Vec3 =
+            op === 'geometry' ? c
+            : op === 'bottom' ? [c[0], c[1], box.min[2]]
+            : op === 'cursor' ? placeToLocal(p, fromThree(cursor))
+            : [0, 0, 0];
+          next = withOrigin(p, o);
+        }
+        change((draft) => setDraftPlacement(draft, next));
+        return;
+      }
       const part = selected ? current(selected) : undefined;
       const base = part ? bases.get(part.source) : undefined;
       if (!part || !base) return;
@@ -1389,6 +1739,7 @@ export function createModelEditor(canvas: HTMLCanvasElement, onChange: (snap: Ed
     /** Orbit view: Frame Selected (numpad . / F) or Frame All (Home) — aim the orbit at the part(s) and fit them. */
     frameOrbit(name: string | null): void {
       if (view !== 'orbit') return;
+      if (rootSel) name = null;
       const list = name ? [objects.get(name)].filter((o): o is THREE.Object3D => !!o?.visible) : [...objects.values()].filter((o) => o.visible);
       if (!list.length) return;
       const bb = new THREE.Box3();
@@ -1515,6 +1866,9 @@ export function createModelEditor(canvas: HTMLCanvasElement, onChange: (snap: Ed
         }
       }
       if (!best || bestD > 60) best = hit.point.clone();
+      // camera-match points live in the model's own frame (the solver works there; the placement maps it to the world)
+      offset.updateMatrixWorld(true);
+      best.applyMatrix4(offset.matrixWorld.clone().invert());
       return [r3(best.x * 100, 3), r3(-best.z * 100, 3), r3(best.y * 100, 3)];
     },
     /**
@@ -1563,6 +1917,12 @@ export function createModelEditor(canvas: HTMLCanvasElement, onChange: (snap: Ed
     },
     /** Screen point (canvas px from its top-left) of the selected part's origin = where the gizmo sits; null if none. */
     selectedScreen(): [number, number] | null {
+      if (rootSel && root) {
+        place.updateMatrixWorld(true);
+        const q = place.position.clone().project(camera);
+        if (q.z > 1) return null;
+        return [((q.x + 1) / 2) * canvas.clientWidth, ((1 - q.y) / 2) * canvas.clientHeight];
+      }
       const o = selected ? objects.get(selected) : undefined;
       if (!o) return null;
       root?.updateMatrixWorld(true);
@@ -1570,15 +1930,78 @@ export function createModelEditor(canvas: HTMLCanvasElement, onChange: (snap: Ed
       if (p.z > 1) return null;
       return [((p.x + 1) / 2) * canvas.clientWidth, ((1 - p.y) / 2) * canvas.clientHeight];
     },
-    /** Model bounding box in Blender cm. */
+    /** Model bounding box in Blender cm, in the model's own frame (the placement is not applied). */
     modelBox(): BlenderBox | null {
       if (!root) return null;
-      const vis = [...objects.values()].filter((o) => o.visible);
-      const b = new THREE.Box3();
-      for (const o of vis) b.expandByObject(o, true);
-      if (b.isEmpty()) return null;
-      const c = (x: number) => r3(x * 100, 2);
-      return { x: [c(b.min.x), c(b.max.x)], y: [c(-b.max.z), c(-b.min.z)], z: [c(b.min.y), c(b.max.y)] };
+      const b = modelLocalBox();
+      if (!b) return null;
+      const c = (x: number) => r3(x, 2);
+      return { x: [c(b.min[0]), c(b.max[0])], y: [c(b.min[1]), c(b.max[1])], z: [c(b.min[2]), c(b.max[2])] };
+    },
+
+    // ---------- whole object (Object mode on the root) ----------
+    selectRoot,
+    get rootSelected(): boolean {
+      return rootSel;
+    },
+    /** Selection scope: 'object' makes clicks select the whole object. */
+    setScope(next: SelectScope): void {
+      scope = next;
+      if (next === 'object' && selected) selectRoot();
+      else emit();
+    },
+    get scope(): SelectScope {
+      return scope;
+    },
+    /** Select a part from the outliner (switches to Part scope). */
+    selectPart(name: string): void {
+      scope = 'part';
+      select(name);
+    },
+    setScaleLocked(on: boolean): void {
+      scaleLocked = on;
+      if (on && modal?.root && modal.kind === 'scale') endModal(false);
+      attach();
+      emit();
+      render();
+    },
+    setFloorSnap(on: boolean): void {
+      floorSnap = on;
+      emit();
+    },
+    get placement(): Placement | null {
+      return state.placement ? structuredClone(state.placement) : null;
+    },
+    /** Set one placement value: location (cm) / rotation (deg) on a Blender axis, or the uniform scale. Undoable. */
+    setPlacementValue(kind: 'position' | 'rotation' | 'scale', axis: 0 | 1 | 2, value: number): boolean {
+      if (!root || !Number.isFinite(value)) return false;
+      if (kind === 'scale' && (scaleLocked || value <= 0)) return false;
+      const p = placementOf(state);
+      if (kind === 'position') p.position[axis] = value;
+      else if (kind === 'rotation') p.rotation[axis] = value;
+      else p.scale = value;
+      change((draft) => setDraftPlacement(draft, p));
+      return true;
+    },
+    /** Replace the whole placement (null = identity). Undoable. */
+    setPlacement(next: Placement | null): void {
+      change((draft) => setDraftPlacement(draft, next ?? undefined));
+    },
+    /** Alt+G / Alt+R / Alt+S: clear location / rotation / scale of the whole object. */
+    clearPlacement(kind: 'position' | 'rotation' | 'scale'): void {
+      const p = placementOf(state);
+      if (kind === 'position') p.position = [0, 0, 0];
+      else if (kind === 'rotation') p.rotation = [0, 0, 0];
+      else p.scale = 1;
+      change((draft) => setDraftPlacement(draft, p));
+    },
+    /** Put the lowest point of the visible model on the floor (Z = 0). */
+    snapToFloor(): void {
+      const b = worldBox();
+      if (b.isEmpty()) return;
+      const p = placementOf(state);
+      p.position[2] -= b.min.y * 100;
+      change((draft) => setDraftPlacement(draft, p));
     },
 
     /** Set position (cm), rotation (deg) or size (cm) of the selected part. */
@@ -1642,6 +2065,7 @@ export function createModelEditor(canvas: HTMLCanvasElement, onChange: (snap: Ed
     reset(): void {
       change((draft) => {
         draft.parts = initialState().parts;
+        delete draft.placement;
       });
     },
     undo(): void {
@@ -1655,8 +2079,12 @@ export function createModelEditor(canvas: HTMLCanvasElement, onChange: (snap: Ed
       apply(JSON.parse(history[index]!) as EditState);
     },
 
-    async exportGlb(): Promise<Blob> {
-      const out = exportRoot();
+    /**
+     * GLB of the edited model. The whole-object placement becomes the root node's transform (default) or, with
+     * `bake`, is applied to the top-level nodes.
+     */
+    async exportGlb(options: { bake?: boolean } = {}): Promise<Blob> {
+      const out = applyPlacementForExport(exportRoot(), state.placement, !!options.bake, objectName());
       const data = await new GLTFExporter().parseAsync(out, { binary: true });
       return new Blob([data as ArrayBuffer], { type: 'model/gltf-binary' });
     },
@@ -1677,7 +2105,10 @@ export function createModelEditor(canvas: HTMLCanvasElement, onChange: (snap: Ed
           part.scale.some((v, i) => Math.abs(v - base.scale[i]!) > 1e-6);
         const visible = obj?.visible;
         if (obj) obj.visible = true;
+        // model frame (as the build scripts see it): without the whole-object placement
+        if (state.placement) applyPlacement({ position: [0, 0, 0], rotation: [0, 0, 0], scale: 1 });
         const after = obj && !part.deleted ? blenderBox(obj) : null;
+        if (state.placement) applyPlacement();
         if (obj && visible !== undefined) obj.visible = visible;
         return {
           name: part.name,
@@ -1704,8 +2135,17 @@ export function createModelEditor(canvas: HTMLCanvasElement, onChange: (snap: Ed
         units: {
           positionDeltaCm: 'glTF / Three.js axes: x right, y up, z towards the front',
           pivotCm: 'origin moved from the GLB origin, part-local axes (the exported GLB already has it baked in)',
-          blenderBoxCm: 'Blender axes (Z-up, front = -Y), world cm; maps to box(name, x0, x1, y0, y1, z0, z1) in blender/build_master.py',
+          blenderBoxCm: 'Blender axes (Z-up, front = -Y), model frame cm (placement not applied); maps to box(name, x0, x1, y0, y1, z0, z1) in blender/build_master.py',
+          placement: 'whole object in the scene, Blender axes: positionCm = where the origin sits, rotationDeg = XYZ Euler, uniform scale, originCm = origin in the model frame',
         },
+        placement: state.placement
+          ? {
+              positionCm: state.placement.position,
+              rotationDeg: state.placement.rotation,
+              scale: state.placement.scale,
+              originCm: state.placement.origin ?? [0, 0, 0],
+            }
+          : null,
         summary: {
           deleted: parts.filter((p) => p.deleted).map((p) => p.name),
           added: parts.filter((p) => p.copyOf).map((p) => p.name),

@@ -54,20 +54,21 @@ Place 3D Cursor).
 
 | Keys | Action |
 |---|---|
-| LMB | Select a part / drag a gizmo handle |
+| LMB | Select a part (the whole object in Whole object scope) / drag a gizmo handle |
 | MMB drag | Orbit (orbit view); pan the 2D window (mock-up view) |
 | Shift+MMB drag | Pan |
 | Wheel | Zoom |
 | Shift+RMB | Place the 3D cursor (touch: Place 3D Cursor tool, then tap) |
 | Shift+C | Reset the 3D cursor and frame all |
 | G / R / S | Modal grab / rotate / scale. Mouse drives the value; click or Enter confirms; RMB or Esc cancels |
-| X / Y / Z (in a modal) | Constrain to the global axis; press twice for the local axis |
+| X / Y / Z (in a modal) | Constrain to Blender's global axis (X right, Y back, Z up); press twice for the local axis |
 | Digits, `-`, `.`, Backspace (in a modal) | Type an exact value (cm, degrees, or a factor) |
 | Ctrl (in a modal) | Toggle snapping while held |
 | Shift (in a modal) | Precision (slower movement) |
 | Shift+D | Duplicate, then grab |
 | X / Delete | Delete (asks for a confirm) |
-| A / Alt+A | Select all (shows a note: one part at a time) / deselect |
+| A / Alt+A | Select the whole object (Object mode on the asset root) / deselect |
+| Alt+G / Alt+R / Alt+S | Clear the whole object's location / rotation / scale |
 | Numpad . (F alias) | Frame selected |
 | Home | Frame all |
 | N | Toggle the sidebar |
@@ -76,14 +77,29 @@ Place 3D Cursor).
 
 Options > Transform > **Affect Only Origins** moves only the part's origin. **Set Origin** offers Origin to
 Geometry, Origin to 3D Cursor, Geometry to Origin, Origin to Bottom and Reset Origin. Axes use Blender's colours
-(X red, Y green, Z blue). A status bar at the top of the viewport (Blender: bottom of the window) shows the running modal's value and keys. Thai labels keep
+(X red, Y green, Z blue) and directions (X right, Y back, Z up), also inside G / R / S. A status bar at the top of the viewport (Blender: bottom of the window) shows the running modal's value and keys. Thai labels keep
 the Blender term in parentheses.
 
-Known differences from Blender: one part is selected at a time (no multi-select) and there are no edit modes;
+Known differences from Blender: one part (or the whole object) is selected at a time (no multi-select) and there are no edit modes; whole-object scale is uniform and locked by default;
 Space+drag also pans the mock-up; Esc does not deselect; the Place 3D Cursor tool stays on until toggled; the
 cursor is not saved; rotate snap is 15°; scale along a global axis uses the part's local axes; R / S do not
 affect origins; Ctrl+MMB pans instead of zooming; Delete asks for a confirm; Origin to Bottom and the F alias are
 extras; menus are popovers, not pie menus.
+
+### Whole-object placement
+
+The toolbar's **Part / Whole object** toggle sets the selection scope; **A** or the root row at the top of the
+parts list selects the whole object. Its sidebar panel shows Blender's Location (cm), Rotation (degrees, XYZ
+Euler) and a uniform Scale. G / R / S / gizmo / typed values work as for parts (R defaults to a Z yaw, like
+rotating about the view axis seen from above); grid snap applies, and **Snap base to floor** (on by default, Ctrl
+toggles snapping) lands a base within 3 cm of Z = 0 exactly on the floor. Scale is locked by default because it
+changes the furniture's real size. Set Origin works on the object origin.
+
+| Data | Where |
+|---|---|
+| `placement` `{positionCm, rotationDeg, scale, originCm?}` | `<variant>.edits.json` (only when moved; older files load unchanged), the local draft and the dev save API; undoable |
+| GLB export | the placement is the GLB root node's transform; *Bake placement into the parts* puts it on the parts below the root instead |
+| Camera match | the mock-up camera stays in world space, so moving the object moves it in the mock-up; the solver works in the object's frame |
 
 ## Scene objects
 
