@@ -16,6 +16,7 @@
   import { partLabel } from '../lib/editor/partLabels';
   import { SourceFiles, editsStorageKey, type FileChange } from '../lib/editor/sourceFiles.svelte';
   import { glbFileName, stableStringify } from '../lib/editor/editorFilesCore.mjs';
+  import { T } from '../lib/editor/strings';
 
   const options = SHOWCASE_ASSETS.flatMap((asset) =>
     asset.variants.map((variant) => ({ key: `${asset.slug}|${variant.id}`, asset, variant })),
@@ -179,8 +180,8 @@
       const sf = files?.asset === option.asset ? files : null;
       if (sf) await sf.ready;
       const { from } = await editor.load(option.asset, option.variant, sf?.editsFile(option.variant.id) ?? null);
-      if (from === 'draft') say('เปิดงานที่แก้ค้างไว้ (บันทึกในเครื่องนี้)');
-      else if (from === 'file') say('เปิดงานจากไฟล์ต้นฉบับ');
+      if (from === 'draft') say(T.files.openedDraft);
+      else if (from === 'file') say(T.files.openedFile);
       refreshFiles();
     } catch (err) {
       console.warn('editor load failed', err);
@@ -275,7 +276,7 @@
       say(`ดาวน์โหลด ${fileBase}.glb แล้ว`);
     } catch (err) {
       console.warn('export failed', err);
-      say('ส่งออก GLB ไม่สำเร็จ');
+      say(T.files.glbFailed);
     }
   }
   function exportEdits(): void {
@@ -294,12 +295,12 @@
   // ---------- source files (dev save API) ----------
   let withGlb = $state(false);
   let copied = $state(false);
-  const changeLabel = (c: FileChange) => (c.status === 'new' ? 'ไฟล์ใหม่' : 'แก้ต่างจากไฟล์');
+  const changeLabel = (c: FileChange) => (c.status === 'new' ? T.files.statusNew : T.files.statusModified);
   async function saveFiles(): Promise<void> {
     const sf = files;
     if (!sf) return;
     if (sf.api !== 'on') {
-      say('บันทึกลงไฟล์ได้เมื่อรัน npm run dev — ตอนนี้ใช้ปุ่มดาวน์โหลดไฟล์แทน');
+      say(T.files.noApi);
       return;
     }
     if (sf.saving) return;
@@ -310,22 +311,22 @@
         glb = { name: glbFileName(option.variant.id), blob: await editor.exportGlb() };
       } catch (err) {
         console.warn('export failed', err);
-        say('ส่งออก GLB ไม่สำเร็จ');
+        say(T.files.glbFailed);
         return;
       }
     }
     if (!sf.changes.length && !glb) {
-      say('ไฟล์ต้นฉบับตรงกับงานแล้ว ไม่มีอะไรต้องบันทึก');
+      say(T.files.nothingToSave);
       return;
     }
     const res = await sf.save(sf.changes, glb);
     if (!res.ok) {
-      say(`บันทึกลงไฟล์ไม่สำเร็จ: ${res.error}`);
+      say(T.files.saveFailed(res.error));
       return;
     }
     copied = false;
     refreshFiles();
-    say(`บันทึกลงไฟล์แล้ว ${res.paths.length} ไฟล์ — commit ได้เลย`);
+    say(T.files.saved(res.paths.length));
   }
   function keepDraft(): void {
     if (files) files.dismissed = true;
@@ -333,7 +334,7 @@
   function revertToFile(): void {
     const sf = files;
     if (!sf || !sf.canRevert) return;
-    if (!confirm('กลับไปใช้ไฟล์ต้นฉบับ? งานที่ยังไม่บันทึกลงไฟล์จะหายไป')) return;
+    if (!confirm(T.files.revertConfirm)) return;
     for (const c of sf.changes) {
       if (c.status !== 'modified') continue;
       if (c.kind === 'match' && match) {
@@ -351,18 +352,18 @@
       }
     }
     refreshFiles();
-    say('กลับไปใช้ไฟล์ต้นฉบับแล้ว');
+    say(T.files.reverted);
   }
   function downloadSource(c: FileChange): void {
     download(new Blob([stableStringify(c.data)], { type: 'application/json' }), c.name);
-    say(`ดาวน์โหลด ${c.name} แล้ว — วางไว้ใน ${files?.dir ?? ''}`);
+    say(T.files.downloaded(c.name, files?.dir ?? ''));
   }
   async function copyGit(text: string): Promise<void> {
     try {
       await navigator.clipboard.writeText(text);
       copied = true;
     } catch {
-      say('คัดลอกไม่ได้ — เลือกข้อความแล้วคัดลอกเอง');
+      say(T.files.copyFailed);
     }
   }
 
@@ -382,8 +383,8 @@
     <a class="e-back" href="#/showcase" aria-label="กลับไปมุมออกแบบ">‹ กลับ</a>
     <h1>แก้โมเดล 3D</h1>
     <div class="hist">
-      <button type="button" class="e-hist" onclick={undo} disabled={lineHistory ? lineHistory.lineUndoCount === 0 : !snap.canUndo} aria-label="ย้อน (Undo)">↶ ย้อน</button>
-      <button type="button" class="e-hist" onclick={redo} disabled={lineHistory ? lineHistory.lineRedoCount === 0 : !snap.canRedo} aria-label="ทำซ้ำ (Redo)">↷ ทำต่อ</button>
+      <button type="button" class="e-hist" onclick={undo} disabled={lineHistory ? lineHistory.lineUndoCount === 0 : !snap.canUndo} aria-label={T.common.undoAria}>{T.common.undo}</button>
+      <button type="button" class="e-hist" onclick={redo} disabled={lineHistory ? lineHistory.lineRedoCount === 0 : !snap.canRedo} aria-label={T.common.redoAria}>{T.common.redoNext}</button>
     </div>
   </header>
 
@@ -402,13 +403,13 @@
           <button type="button" aria-label="ซูมเข้า" onclick={() => match?.zoomAt(1.4)}>＋</button>
           <button type="button" aria-label="ซูมออก" onclick={() => match?.zoomAt(1 / 1.4)}>－</button>
           <button type="button" aria-label="พอดีจอ" onclick={() => match?.fit()}>⤢</button>
-          <button type="button" aria-label="แม่เหล็กเส้น" title="แม่เหล็กเส้น (Alt ค้าง = ปิดชั่วคราว)" class="snap" class:on={match.snap} aria-pressed={match.snap} data-stage-snap
-            onclick={() => { if (match) { match.snap = !match.snap; match.save(); say(match.snap ? 'แม่เหล็กเส้น: เปิด' : 'แม่เหล็กเส้น: ปิด'); } }}>🧲</button>
+          <button type="button" aria-label={T.snap.label} title={T.snap.title} class="snap" class:on={match.snap} aria-pressed={match.snap} data-stage-snap
+            onclick={() => { if (match) { match.snap = !match.snap; match.save(); say(T.snap.toast(match.snap)); } }}>🧲</button>
         </div>
         {#if diffOn || (match.dragging && match.liveFail)}
           <div class="live-badges">
-            {#if diffOn}<span class="badge diff" data-diff-badge>เทียบความต่าง</span>{/if}
-            {#if match.dragging && match.liveFail}<span class="badge fail" data-solve-fail>คำนวณกล้องไม่สำเร็จ · ใช้ค่าล่าสุด</span>{/if}
+            {#if diffOn}<span class="badge diff" data-diff-badge>{T.diff.badge}</span>{/if}
+            {#if match.dragging && match.liveFail}<span class="badge fail" data-solve-fail>{T.diff.solveFailed}</span>{/if}
           </div>
         {/if}
         {#if match.pick}
@@ -431,7 +432,7 @@
     <div class="panel">
       {#if files?.showBadge}
         <div class="unsaved" role="status" data-unsaved>
-          <b>● มีงานที่ยังไม่บันทึกลงไฟล์</b>
+          <b>{T.files.unsaved}</b>
           <ul>
             {#each files.changes as c (c.name)}
               <li><code>{c.name}</code> · {changeLabel(c)}</li>
@@ -439,11 +440,11 @@
           </ul>
           <div class="actions">
             {#if files.api === 'on'}
-              <button type="button" class="primary" onclick={saveFiles} disabled={files.saving} data-act="save-files-badge">💾 บันทึกลงไฟล์ต้นฉบับ</button>
+              <button type="button" class="primary" onclick={saveFiles} disabled={files.saving} data-act="save-files-badge">{T.files.saveButton}</button>
             {/if}
-            <button type="button" onclick={keepDraft} data-act="keep-draft">ใช้งานที่ค้างไว้ต่อ</button>
+            <button type="button" onclick={keepDraft} data-act="keep-draft">{T.files.keepDraft}</button>
             {#if files.canRevert}
-              <button type="button" class="danger" onclick={revertToFile} data-act="revert-file">กลับไปใช้ไฟล์</button>
+              <button type="button" class="danger" onclick={revertToFile} data-act="revert-file">{T.files.revert}</button>
             {/if}
           </div>
         </div>
@@ -581,7 +582,7 @@
 
       {#if files}
         <section class="source" data-source-files={files.api}>
-          <h2>ไฟล์ต้นฉบับ (commit ได้)</h2>
+          <h2>{T.files.heading}</h2>
           <p class="tip"><code>{files.dir}/</code></p>
           {#if files.changes.length}
             <ul class="changes">
@@ -589,39 +590,39 @@
                 <li data-change={c.name}>
                   <code>{c.name}</code> · {changeLabel(c)}
                   {#if files.api !== 'on'}
-                    <button type="button" class="small" onclick={() => downloadSource(c)} data-act="download-source">ดาวน์โหลด</button>
+                    <button type="button" class="small" onclick={() => downloadSource(c)} data-act="download-source">{T.files.download}</button>
                   {/if}
                 </li>
               {/each}
             </ul>
           {:else if files.api !== 'probing'}
-            <p class="tip ok" data-in-sync>✓ งานตรงกับไฟล์ต้นฉบับ{files.hasFiles ? '' : ' (ยังไม่มีไฟล์ — ยังไม่ได้แก้อะไร)'}</p>
+            <p class="tip ok" data-in-sync>{T.files.inSync}{files.hasFiles ? '' : T.files.noFilesYet}</p>
           {/if}
           {#if files.api === 'on'}
             <label class="check">
               <input type="checkbox" bind:checked={withGlb} data-with-glb />
-              <span>รวม <code>{glbFileName(option.variant.id)}</code> (โมเดลที่แก้แล้ว)</span>
+              <span>{T.files.includeGlb} <code>{glbFileName(option.variant.id)}</code> {T.files.includeGlbNote}</span>
             </label>
             <div class="actions col">
               <button type="button" class="primary" onclick={saveFiles} disabled={files.saving || (!files.changes.length && !withGlb)} data-act="save-files"
-                >{files.saving ? 'กำลังบันทึก…' : '💾 บันทึกลงไฟล์ต้นฉบับ'} <small>Ctrl+S</small></button
+                >{files.saving ? T.files.saving : T.files.saveButton} <small>Ctrl+S</small></button
               >
             </div>
             {#if files.lastSave}
               <div class="saved" data-saved>
-                <p>บันทึกแล้ว:</p>
+                <p>{T.files.savedList}</p>
                 <ul>
                   {#each files.lastSave.paths as path (path)}<li><code>{path}</code></li>{/each}
                 </ul>
-                <p>แล้ว commit ด้วย:</p>
+                <p>{T.files.thenCommit}</p>
                 <pre data-git>{files.lastSave.git}</pre>
-                <button type="button" class="small" onclick={() => copyGit(files!.lastSave!.git)}>{copied ? 'คัดลอกแล้ว ✓' : 'คัดลอกคำสั่ง'}</button>
+                <button type="button" class="small" onclick={() => copyGit(files!.lastSave!.git)}>{copied ? T.files.copied : T.files.copyCommand}</button>
               </div>
             {/if}
           {:else if files.api === 'off'}
             <p class="tip" data-dev-hint>
-              บันทึกลงไฟล์โดยตรงได้เมื่อเปิดหน้านี้จาก <code>npm run dev</code> (ในโฟลเดอร์ <code>game/</code>) — ตอนนี้กดดาวน์โหลดแล้ววางไฟล์ไว้ใน
-              <code>{files.dir}/</code> เองได้
+              {T.files.devHintLead} <code>npm run dev</code> {T.files.devHintIn} <code>game/</code>{T.files.devHintThen}
+              <code>{files.dir}/</code> {T.files.devHintTail}
             </p>
           {/if}
         </section>

@@ -90,7 +90,7 @@ export class SourceFiles {
   changes = $state.raw<FileChange[]>([]);
   saving = $state(false);
   lastSave = $state.raw<(SaveResult & { ok: true }) | null>(null);
-  /** "ใช้งานที่ค้างไว้ต่อ": hide the badge for the rest of this session. */
+  /** "Keep draft" (T.files.keepDraft): hide the badge for the rest of this session. */
   dismissed = $state(false);
   readonly ready: Promise<void>;
 

@@ -1,5 +1,5 @@
 /**
- * Guide line ↔ mock-up edge alignment ("ดูดเข้าขอบภาพ").
+ * Guide line ↔ mock-up edge alignment (the "snap to image edges" tool, T.edges).
  *
  * Pure, DOM-free: an edge map (Sobel gradient on a downscaled grayscale copy of the view image), a per-line
  * alignment measure (perpendicular offset from the line to the strongest edge of matching orientation, sampled
@@ -8,6 +8,7 @@
  * its downscale internally).
  */
 import type { V2 } from './camMath.ts';
+import { T } from './strings.ts';
 
 export type EdgeMap = {
   /** Map size (downscaled). */
@@ -235,7 +236,7 @@ function principalDir(pts: V2[], w: number[], c: V2): V2 {
  */
 export function refineLine(map: EdgeMap, a: V2, b: V2, fixed: { a?: boolean; b?: boolean } = {}, opts: EdgeOpts & { iters?: number } = {}): RefineResult {
   const before = alignLine(map, a, b, opts);
-  if (fixed.a && fixed.b) return { a, b, before, after: before, moved: false, message: 'ปลายทั้งสองเชื่อมมุมอยู่ — ไม่ขยับ' };
+  if (fixed.a && fixed.b) return { a, b, before, after: before, moved: false, message: T.edges.bothLinked };
   let A: V2 = [a[0], a[1]];
   let B: V2 = [b[0], b[1]];
   const iters = opts.iters ?? 5;
@@ -284,9 +285,9 @@ export function refineLine(map: EdgeMap, a: V2, b: V2, fixed: { a?: boolean; b?:
   }
   const after = alignLine(map, A, B, opts);
   const better = after.meanOff !== null && (before.meanOff === null || after.meanOff <= before.meanOff + 1e-6 || after.coverage > before.coverage);
-  if (!better) return { a, b, before, after: before, moved: false, message: 'ไม่พบขอบภาพที่ชัดพอในแถบรอบเส้น' };
+  if (!better) return { a, b, before, after: before, moved: false, message: T.edges.noClearEdge };
   const moved = Math.hypot(A[0] - a[0], A[1] - a[1]) + Math.hypot(B[0] - b[0], B[1] - b[1]) > 1e-3;
-  return { a: A, b: B, before, after, moved, message: moved ? `ดูดเข้าขอบภาพแล้ว · ห่าง ${fmtPx(before.meanOff)} → ${fmtPx(after.meanOff)}` : 'อยู่บนขอบภาพแล้ว' };
+  return { a: A, b: B, before, after, moved, message: moved ? T.edges.refinedOne(fmtPx(before.meanOff), fmtPx(after.meanOff)) : T.edges.alreadyOnEdge };
 }
 
 export const fmtPx = (v: number | null): string => (v === null ? '—' : `${v < 10 ? v.toFixed(1) : Math.round(v)} px`);

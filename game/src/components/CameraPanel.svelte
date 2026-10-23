@@ -2,6 +2,7 @@
   import type { Axis, V3 } from '../lib/editor/camMath';
   import type { DisplayMode } from '../lib/editor/modelEditor';
   import { AXIS_COLORS, AXIS_NAMES, type MatchState, type PrincipalMode } from '../lib/editor/matchState.svelte';
+  import { T } from '../lib/editor/strings';
 
   type Props = {
     st: MatchState;
@@ -32,7 +33,8 @@
 
   const band = (deg: number): string => (deg < 0.5 ? 'good' : deg <= 2 ? 'warn' : 'bad');
   const fmtDeg = (deg: number): string => `${deg < 0.1 ? deg.toFixed(2) : deg.toFixed(1)}°`;
-  /** "รวม X" (mode → auto, converge to the VP) / "ขนาน X" (mode → parallel, exactly parallel) / all axes (keep modes). */
+  const otherGroupName = $derived(T.groups[st.group === 'room' ? 'object' : 'room']);
+  /** Per-axis "consolidate" (mode → auto, converge to the VP) / "parallel" (mode → parallel, exactly parallel) / all axes (keep modes). */
   function consolidate(axis?: Axis, mode?: 'auto' | 'parallel'): void {
     const r = st.consolidate(axis, mode);
     let msg = r.message;
@@ -43,7 +45,7 @@
   function modeHint(a: Axis): string {
     const h = st.parallelHints[a];
     if (!h) return '';
-    return h.far ? `จุดลับตาไกล ${Number.isFinite(h.distDiag) ? `${Math.round(h.distDiag)}×` : '∞ ×'} ทแยงภาพ` : `ขนานแทบไม่เสียความแม่น (${fmtDeg(h.parDeg)})`;
+    return h.far ? T.vp.hintFar(Number.isFinite(h.distDiag) ? `${Math.round(h.distDiag)}×` : '∞ ×') : T.vp.hintCheap(fmtDeg(h.parDeg));
   }
   const selEdge = $derived.by(() => {
     const l = st.lines.find((x) => x.id === st.selectedLine);
@@ -106,23 +108,23 @@
 
   <div class="seg3" role="radiogroup" aria-label="ภาพที่ใช้">
     <button type="button" class:on={st.image === 'crop'} aria-checked={st.image === 'crop'} role="radio" data-image="crop"
-      onclick={() => { st.setImage('crop'); onChange(); say('เส้นวัตถุ (ภาพครอป)'); }}>ภาพครอป · วัตถุ</button>
+      onclick={() => { st.setImage('crop'); onChange(); say(T.groups.cropToast); }}>{T.groups.cropButton}</button>
     <button type="button" class:on={st.image === 'wide'} aria-checked={st.image === 'wide'} role="radio" data-image="wide"
-      disabled={!st.asset.ref?.mockup} onclick={() => { st.setImage('wide'); onChange(); say('เส้นห้อง (Mock-up เต็ม)'); }}>Mock-up เต็ม · ห้อง</button>
+      disabled={!st.asset.ref?.mockup} onclick={() => { st.setImage('wide'); onChange(); say(T.groups.wideToast); }}>{T.groups.wideButton}</button>
   </div>
   {#if st.asset.ref?.mockup}
     <p class="tip group" data-group={st.group}>
-      กำลังแก้ <b class="gname g-{st.group}">เส้น{st.groupName}</b> ({st.lines.length} เส้น) · เส้น{st.group === 'room' ? 'วัตถุ' : 'ห้อง'} {st.otherLines.length} เส้น
-      {st.group === 'room' ? 'วาดตามผนัง พื้น เพดาน ขอบประตู/หน้าต่าง' : 'วาดตามขอบของวัตถุ'} — ทั้งสองชุดใช้กล้องตัวเดียวกัน
+      {T.groups.editing} <b class="gname g-{st.group}">{T.groups.lineOf(st.groupName)}</b> {T.groups.count(st.lines.length)} · {T.groups.otherCount(otherGroupName, st.otherLines.length)}
+      {st.group === 'room' ? T.groups.roomHowTo : T.groups.objectHowTo} — {T.groups.sharedCamera}
     </p>
   {/if}
   <div class="actions snaprow">
     {#if st.asset.ref?.mockup}
       <button type="button" class:on={st.ghost} aria-pressed={st.ghost} data-ghost
-        onclick={() => { st.ghost = !st.ghost; onChange(); }}>👻 เส้น{st.group === 'room' ? 'วัตถุ' : 'ห้อง'}จาง ๆ {st.ghost ? 'เปิด' : 'ปิด'}</button>
+        onclick={() => { st.ghost = !st.ghost; onChange(); }}>{T.groups.ghost(otherGroupName, st.ghost)}</button>
     {/if}
     <button type="button" class:on={st.rays} aria-pressed={st.rays} data-rays
-      onclick={() => { st.rays = !st.rays; onChange(); }}>↔ เส้นต่อถึงขอบ {st.rays ? 'เปิด' : 'ปิด'}</button>
+      onclick={() => { st.rays = !st.rays; onChange(); }}>{T.groups.rays(st.rays)}</button>
   </div>
 
   <h3>การแสดงผล</h3>
@@ -156,16 +158,16 @@
   </div>
   <div class="actions snaprow">
     <button type="button" class:on={st.snap} aria-pressed={st.snap} data-line-snap
-      onclick={() => { st.snap = !st.snap; onChange(); say(st.snap ? 'แม่เหล็กเส้น: เปิด' : 'แม่เหล็กเส้น: ปิด'); }}>🧲 แม่เหล็กเส้น {st.snap ? 'เปิด' : 'ปิด'}</button>
+      onclick={() => { st.snap = !st.snap; onChange(); say(T.snap.toast(st.snap)); }}>{T.snap.button(st.snap)}</button>
     <button type="button" disabled={!st.lines.find((l) => l.id === st.selectedLine)?.links} data-act="unlink-line"
-      onclick={() => { const n = st.unlinkLine(st.selectedLine); onChange(); if (n) say('แยกมุมของเส้นที่เลือกแล้ว'); }}>แยกมุมที่เชื่อม</button>
-    <button type="button" class="small" aria-label="ย้อนการแก้เส้น" disabled={st.lineUndoCount === 0} data-act="undo-lines"
-      onclick={() => { st.undoLines(); onChange(); }}>↶ ย้อน</button>
-    <button type="button" class="small" aria-label="ทำซ้ำการแก้เส้น" disabled={st.lineRedoCount === 0} data-act="redo-lines"
-      onclick={() => { st.redoLines(); onChange(); }}>↷ ทำซ้ำ</button>
+      onclick={() => { const n = st.unlinkLine(st.selectedLine); onChange(); if (n) say(T.snap.unlinked); }}>{T.snap.unlink}</button>
+    <button type="button" class="small" aria-label={T.snap.undoLinesAria} disabled={st.lineUndoCount === 0} data-act="undo-lines"
+      onclick={() => { st.undoLines(); onChange(); }}>{T.common.undo}</button>
+    <button type="button" class="small" aria-label={T.snap.redoLinesAria} disabled={st.lineRedoCount === 0} data-act="redo-lines"
+      onclick={() => { st.redoLines(); onChange(); }}>{T.common.redo}</button>
   </div>
   <div class="vpbox" data-vp-panel>
-    <div class="vphead">จุดลับตารวม <small>(หาจุดที่ดีที่สุดจากทุกเส้นของแกน)</small></div>
+    <div class="vphead">{T.vp.heading} <small>{T.vp.headingNote}</small></div>
     {#each [0, 1, 2] as const as a (a)}
       {@const f = st.vpFits[a]}
       {@const par = st.vpModes[a] === 'parallel'}
@@ -174,66 +176,66 @@
         {#if f}
           {@const nOut = f.fit.outlier.filter(Boolean).length}
           <span class="rms {band(f.fit.rmsDeg)}" data-vp-rms={a} data-rms={f.fit.rmsDeg.toFixed(4)}>{par ? '∠' : 'RMS'} {fmtDeg(f.fit.rmsDeg)}</span>
-          <span class="n">{f.ids.length} เส้น{par ? ' · ∞ ขนาน' : ''}{nOut ? ` · ⚠ ${nOut} เส้นเพี้ยน` : ''}</span>
+          <span class="n">{T.common.lines(f.ids.length)}{par ? T.vp.parallelTag : ''}{nOut ? T.vp.outliers(nOut) : ''}</span>
         {:else}
           <span class="rms">—</span>
-          <span class="n">ต้องมีอย่างน้อย 2 เส้น{par ? ' · ∞ ขนาน' : ''}</span>
+          <span class="n">{T.vp.needTwo}{par ? T.vp.parallelTag : ''}</span>
         {/if}
         <span class="pair">
           <button type="button" class="small mode" class:on={!par} aria-pressed={!par} data-consolidate={a} data-active={!par}
-            title="รวมทุกเส้นเข้าจุดลับตาเดียว (โหมดอัตโนมัติ)" onclick={() => consolidate(a, 'auto')}>รวม {AXIS_NAMES[a]}</button>
+            title={T.vp.consolidateTitle} onclick={() => consolidate(a, 'auto')}>{T.vp.consolidateAxis(AXIS_NAMES[a])}</button>
           <button type="button" class="small mode" class:on={par} aria-pressed={par} data-parallel={a} data-active={par}
-            title="ทำให้ทุกเส้นขนานกันตามทิศเฉลี่ย (จุดลับตาที่ ∞)" onclick={() => consolidate(a, 'parallel')}>ขนาน {AXIS_NAMES[a]}</button>
+            title={T.vp.parallelTitle} onclick={() => consolidate(a, 'parallel')}>{T.vp.parallelAxis(AXIS_NAMES[a])}</button>
         </span>
       </div>
       {#if st.parallelHints[a]}
         <button type="button" class="hint" data-parallel-hint={a} onclick={() => consolidate(a, 'parallel')}
-          >💡 แกน {AXIS_NAMES[a]} น่าจะขนาน — {modeHint(a)} · แตะเพื่อใช้ "ขนาน {AXIS_NAMES[a]}"</button>
+          >{T.vp.hint(AXIS_NAMES[a], modeHint(a))}</button>
       {/if}
     {/each}
     <div class="actions">
-      <button type="button" data-act="consolidate" disabled={!st.vpFits.some(Boolean)} onclick={() => consolidate()}>🎯 รวมจุดลับตา</button>
+      <button type="button" data-act="consolidate" disabled={!st.vpFits.some(Boolean)} onclick={() => consolidate()}>{T.vp.consolidateAll}</button>
       <button type="button" class:on={st.lockVp} aria-pressed={st.lockVp} data-lock-vp
-        onclick={() => { st.lockVp = !st.lockVp; onChange(); say(st.lockVp ? 'ล็อกเข้าจุดลับตา: เปิด (แกนที่มี 3 เส้นขึ้นไป)' : 'ล็อกเข้าจุดลับตา: ปิด'); }}>🔒 ล็อกเข้าจุดลับตา {st.lockVp ? 'เปิด' : 'ปิด'}</button>
+        onclick={() => { st.lockVp = !st.lockVp; onChange(); say(T.vp.lockToast(st.lockVp)); }}>{T.vp.lock(st.lockVp)}</button>
     </div>
-    <p class="tip legend">สีขอบเส้น = มุมเพี้ยนจากจุดลับตา: <span class="good">● &lt; 0.5°</span> <span class="warn">● ≤ 2°</span> <span class="bad">● &gt; 2°</span> · ⚠ = เส้นเพี้ยนมาก (ไม่นำมาคิด) · <b>รวมจุดลับตา</b> หมุนทุกเส้นรอบจุดกึ่งกลาง (หรือรอบมุมที่เชื่อม) ให้ผ่านจุดเดียวกัน · <b>ล็อก</b>: ลากปลายเส้นแล้วเส้นยังชี้ไปจุดลับตาของเส้นอื่น · <b>ขนาน</b>: จุดลับตาอยู่ที่ ∞ (เช่น แกน Z ของกล้องที่ตั้งตรง ไม่ก้ม/เงย) — กล้องจะถูกบังคับให้แกนนั้นขนานกับภาพ · ขนาน 2 แกน (ทัศนมิติจุดเดียว) ต้องล็อกเลนส์หรือใช้คู่จุด</p>
+    <p class="tip legend">{T.vp.legendColor} <span class="good">● &lt; 0.5°</span> <span class="warn">● ≤ 2°</span> <span class="bad">● &gt; 2°</span> · {T.vp.legendOutlier} · <b>{T.vp.legendConsolidate}</b> {T.vp.legendConsolidateText} · <b>{T.vp.legendLock}</b>{T.vp.legendLockText} · <b>{T.vp.legendParallel}</b>{T.vp.legendParallelText}</p>
   </div>
   <div class="vpbox" data-edge-panel>
-    <div class="vphead">เทียบเส้นกับขอบภาพ <small>(เส้นนำสายตา ↔ ขอบจริงใน Mock-up)</small>
-      {#if !st.edgeMap}<span class="n" data-edge-loading>กำลังหาขอบภาพ…</span>{/if}
+    <div class="vphead">{T.edges.heading} <small>{T.edges.headingNote}</small>
+      {#if !st.edgeMap}<span class="n" data-edge-loading>{T.edges.loading}</span>{/if}
     </div>
-    <div class="seg3" role="radiogroup" aria-label="แสดงขอบภาพ">
-      {#each [['drag', 'ขณะลาก'], ['always', 'เปิดตลอด'], ['off', 'ปิด']] as const as [id, label] (id)}
+    <div class="seg3" role="radiogroup" aria-label={T.edges.showAria}>
+      {#each (['drag', 'always', 'off'] as const).map((id) => [id, T.showModes[id]] as const) as [id, label] (id)}
         <button type="button" role="radio" aria-checked={st.edgeMode === id} class:on={st.edgeMode === id} data-edge-mode={id}
           onclick={() => { st.edgeMode = id; onChange(); }}>{label}</button>
       {/each}
     </div>
     {#if selEdge}
       <div class="vprow" data-edge-readout={selEdge.band} data-edge-off={selEdge.meanOff === null ? null : selEdge.meanOff.toFixed(3)}>
-        <b class="ax">เส้น</b>
-        <span class="rms {selEdge.band === 'none' ? '' : selEdge.band}">{selEdge.meanOff === null ? 'ไม่พบขอบ' : `ห่างขอบภาพ ${selEdge.meanOff.toFixed(1)} px`}</span>
-        <span class="n">คะแนน {Math.round(selEdge.score * 100)}% · เจอขอบ {Math.round(selEdge.coverage * 100)}%</span>
+        <b class="ax">{T.edges.line}</b>
+        <span class="rms {selEdge.band === 'none' ? '' : selEdge.band}">{selEdge.meanOff === null ? T.edges.none : T.edges.offBy(`${selEdge.meanOff.toFixed(1)} px`)}</span>
+        <span class="n">{T.edges.score(Math.round(selEdge.score * 100), Math.round(selEdge.coverage * 100))}</span>
         <span></span>
       </div>
     {/if}
     <div class="actions">
-      <button type="button" data-act="edge-refine" disabled={st.selectedLine === null || !st.edgeMap} onclick={() => edgeRefine('selected')}>🧷 ดูดเข้าขอบภาพ (เส้นที่เลือก)</button>
-      <button type="button" data-act="edge-refine-all" disabled={!st.lines.length || !st.edgeMap} onclick={() => edgeRefine('all')}>ทุกเส้น</button>
+      <button type="button" data-act="edge-refine" disabled={st.selectedLine === null || !st.edgeMap} onclick={() => edgeRefine('selected')}>{T.edges.refineSelected}</button>
+      <button type="button" data-act="edge-refine-all" disabled={!st.lines.length || !st.edgeMap} onclick={() => edgeRefine('all')}>{T.edges.refineAll}</button>
       <button type="button" class:on={st.edgeSnap} aria-pressed={st.edgeSnap} data-edge-snap
-        onclick={() => { st.edgeSnap = !st.edgeSnap; onChange(); say(st.edgeSnap ? 'ดูดเข้าขอบภาพขณะลาก: เปิด (Alt = ปิดชั่วคราว)' : 'ดูดเข้าขอบภาพขณะลาก: ปิด'); }}>ดูดขณะลาก {st.edgeSnap ? 'เปิด' : 'ปิด'}</button>
+        onclick={() => { st.edgeSnap = !st.edgeSnap; onChange(); say(T.edges.snapWhileDragToast(st.edgeSnap)); }}>{T.edges.snapWhileDrag(st.edgeSnap)}</button>
     </div>
-    <p class="tip legend">ภาพจะมืดลงและขอบที่ตรวจพบเรืองแสง · ขีดสั้น ๆ จากเส้นไปขอบ = ระยะห่างจริง: <span class="good">● &lt; 1 px</span> <span class="warn">● ≤ 2.5 px</span> <span class="bad">● &gt; 2.5 px</span> · <b>ดูดเข้าขอบภาพ</b> ฟิตเส้นเข้ากับขอบในแถบ ±8 px (มุมที่เชื่อมอยู่ไม่ขยับ) ย้อนได้</p>
+    <p class="tip legend">{T.edges.legendLead} <span class="good">● &lt; 1 px</span> <span class="warn">● ≤ 2.5 px</span> <span class="bad">● &gt; 2.5 px</span> · <b>{T.edges.legendRefine}</b> {T.edges.legendRefineText}</p>
   </div>
-  <div class="field" role="radiogroup" aria-label="โหมดเทียบความต่าง">
-    <span>โหมดเทียบความต่างกับโมเดล (โมเดล ⊖ ภาพ: ตรงกัน = มืด, เพี้ยน = เรืองแสง) · ค่าเริ่มต้น ปิด</span>
+  <div class="field" role="radiogroup" aria-label={T.diff.aria}>
+    <span>{T.diff.label}</span>
     <div class="seg3">
-      {#each [['drag', 'ขณะลาก'], ['always', 'เปิดตลอด'], ['off', 'ปิด']] as const as [id, label] (id)}
+      {#each (['drag', 'always', 'off'] as const).map((id) => [id, T.showModes[id]] as const) as [id, label] (id)}
         <button type="button" role="radio" aria-checked={st.diff === id} class:on={st.diff === id} data-diff-mode={id}
           onclick={() => { st.diff = id; onChange(); }}>{label}</button>
       {/each}
     </div>
   </div>
-  <p class="tip">ลากปลายเส้น (หรือลากทั้งเส้น) ไปใกล้เส้นแกนอื่น จะดูดติดปลายเส้น จุดตัด หรือบนเส้น · ปลายที่ดูดติดกันจะ<b>เชื่อมเป็นมุมเดียว</b> (กรอบเหลือง) ลากไปด้วยกัน · <b>กดค้าง</b>ที่มุมเพื่อแยก · กด Alt ค้างขณะลากเพื่อปิดแม่เหล็กชั่วคราว{st.linkedEnds ? ` · เชื่อมอยู่ ${st.linkedEnds} ปลาย` : ''}</p>
+  <p class="tip">{T.snap.tipDrag}<b>{T.snap.tipLinked}</b>{T.snap.tipLinkedRest}<b>{T.snap.tipHold}</b>{T.snap.tipHoldRest}{st.linkedEnds ? T.snap.tipLinkedEnds(st.linkedEnds) : ''}</p>
   <div class="zoom">
     <button type="button" aria-label="ซูมเข้า" data-zoom="in" onclick={() => st.zoomAt(1.4)}>＋</button>
     <button type="button" aria-label="ซูมออก" data-zoom="out" onclick={() => st.zoomAt(1 / 1.4)}>－</button>
@@ -256,22 +258,22 @@
   </div>
   {#if st.asset.ref?.mockup}
     <label class="check"><input type="checkbox" checked={st.roomAligned} data-room-aligned
-      onchange={(e) => { st.roomAligned = e.currentTarget.checked; run(() => st.solveLines()); }} /> วัตถุวางตรงกับห้อง (แกน X/Y เดียวกับผนัง)</label>
+      onchange={(e) => { st.roomAligned = e.currentTarget.checked; run(() => st.solveLines()); }} /> {T.room.aligned}</label>
     {#if !st.roomAligned}
-      <p class="tip" data-room-yaw={st.roomYaw.toFixed(3)}>วัตถุหมุนจากแนวห้อง <b>{st.roomYaw.toFixed(1)}°</b> (รอบแกน Z) · ใช้ร่วมกันแค่แนวตั้ง/เส้นขอบฟ้า/เลนส์ · ตอนวางโมเดลในห้องให้หมุน Z {st.roomYaw.toFixed(1)}° (อยู่ในไฟล์ส่งออก)</p>
+      <p class="tip" data-room-yaw={st.roomYaw.toFixed(3)}>{T.room.yawLead} <b>{st.roomYaw.toFixed(1)}°</b> {T.room.yawRest(st.roomYaw.toFixed(1))}</p>
     {/if}
     {@const ag = st.agreement}
     <div class="vpbox" data-agree-panel data-band={ag?.band ?? null}>
-      <div class="vphead">ความสอดคล้อง วัตถุ↔ห้อง
-        {#if ag?.band}<span class="rms {ag.band}" data-agree-overall={ag.band}>{ag.band === 'good' ? '✔ ตรงกัน' : ag.band === 'warn' ? '≈ ใกล้เคียง' : '✖ ไม่ตรง'}{ag.maxDeg !== null ? ` · สูงสุด ${fmtDeg(ag.maxDeg)}` : ''}</span>{/if}
+      <div class="vphead">{T.room.agreement}
+        {#if ag?.band}<span class="rms {ag.band}" data-agree-overall={ag.band}>{ag.band === 'good' ? T.room.bandGood : ag.band === 'warn' ? T.room.bandWarn : T.room.bandBad}{ag.maxDeg !== null ? T.room.max(fmtDeg(ag.maxDeg)) : ''}</span>{/if}
       </div>
       {#if !ag}
-        <p class="tip">วาดเส้นทั้งวัตถุ (ภาพครอป) และห้อง (Mock-up เต็ม) เพื่อตรวจว่าตรงกันไหม</p>
+        <p class="tip">{T.room.drawBoth}</p>
       {:else}
         {#each ag.axes as a (a.axis)}
           <button type="button" class="vprow agree" class:hl={st.highlight?.axis === a.axis} data-agree-axis={a.axis} data-band={a.band}
             data-deg={a.deg === null ? null : a.deg.toFixed(4)} disabled={!a.worst.length}
-            onclick={() => { st.highlightAxis(a.axis); onChange(); if (st.highlight) say(`ไฮไลต์ ${st.highlight.ids.length} เส้นที่เพี้ยนที่สุดของแกน ${AXIS_NAMES[a.axis]}`); }}>
+            onclick={() => { st.highlightAxis(a.axis); onChange(); if (st.highlight) say(T.room.highlighted(st.highlight.ids.length, AXIS_NAMES[a.axis])); }}>
             <b class="ax" style="color:{AXIS_COLORS[a.axis]}">{AXIS_NAMES[a.axis]}</b>
             {#if a.deg !== null}
               <span class="rms {a.band}">{fmtDeg(a.deg)}</span>
@@ -279,19 +281,19 @@
               <span class="n">—</span>
             {/if}
             <span class="n" data-agree-notpar={a.notParallel.length ? a.notParallel.join(',') : null}
-              >{a.deg === null ? 'ต้องมี ≥ 2 เส้นทั้งสองชุด' : a.mode === 'parallel' ? 'มุมต่างของทิศ ∞' : 'มุมต่างของจุดลับตา'}{a.notParallel.length
-                ? ` · ⚠ เส้น${a.notParallel.map((g) => (g === 'object' ? 'วัตถุ' : 'ห้อง')).join('/')}ไม่ขนาน`
+              >{a.deg === null ? T.room.needTwoBoth : a.mode === 'parallel' ? T.room.diffParallel : T.room.diffVp}{a.notParallel.length
+                ? T.room.notParallel(a.notParallel.map((g) => T.groups[g]).join('/'))
                 : ''}</span>
-            <span class="n">ดูเส้น</span>
+            <span class="n">{T.room.showLines}</span>
           </button>
         {/each}
         <div class="vprow" data-agree-focal={ag.fDiffPct === null ? null : ag.fDiffPct.toFixed(2)}>
           <b class="ax">f</b>
           {#if ag.fDiffPct !== null}<span class="rms {ag.fBand}">{ag.fDiffPct.toFixed(1)}%</span>{:else}<span class="n">—</span>{/if}
-          <span class="n">เลนส์ วัตถุ {ag.fObject ? `${r(st.lensOfFull(ag.fObject), 1)} มม.` : '—'} · ห้อง {ag.fRoom ? `${r(st.lensOfFull(ag.fRoom), 1)} มม.` : '—'}</span>
+          <span class="n">{T.room.lenses(ag.fObject ? T.common.mm(r(st.lensOfFull(ag.fObject), 1)) : '—', ag.fRoom ? T.common.mm(r(st.lensOfFull(ag.fRoom), 1)) : '—')}</span>
           <span></span>
         </div>
-        <p class="tip legend">มุมต่าง: <span class="good">● &lt; 1°</span> <span class="warn">● ≤ 3°</span> <span class="bad">● &gt; 3°</span> · เลนส์ต่าง <span class="good">&lt; 5%</span> <span class="warn">≤ 15%</span> · แตะแกนเพื่อไฮไลต์เส้นที่เพี้ยนที่สุด (ทั้งสองชุด)</p>
+        <p class="tip legend">{T.room.legendAngle} <span class="good">● &lt; 1°</span> <span class="warn">● ≤ 3°</span> <span class="bad">● &gt; 3°</span> · {T.room.legendLens} <span class="good">&lt; 5%</span> <span class="warn">≤ 15%</span> · {T.room.legendTap}</p>
       {/if}
     </div>
   {/if}

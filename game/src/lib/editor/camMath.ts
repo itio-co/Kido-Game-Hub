@@ -10,6 +10,7 @@
  * - u = f · x/z + cx, v = f · y/z + cy.
  */
 import { fitVPMode, type Frame, type VpMode } from './vpFit.ts';
+import { T } from './strings.ts';
 export { smallestEigenvector } from './vpFit.ts';
 export type { Frame } from './vpFit.ts';
 
@@ -277,14 +278,14 @@ export function solveFromLines(
       ok: false,
       message:
         parallel.length >= 2
-          ? 'แกนขนาน 2 แกน (ทัศนมิติจุดเดียว) หาเลนส์จากเส้นไม่ได้ — ล็อกเลนส์ หรือใช้คู่จุดแทน'
-          : 'มีจุดลับตาจริงแค่แกนเดียว หาเลนส์จากเส้นไม่ได้ — เพิ่มเส้นอีกแกน ล็อกเลนส์ หรือใช้คู่จุด',
+          ? T.vp.onePointNoLens
+          : T.vp.oneRealVpNoLens,
       vps,
       vpRms,
     };
   }
   if (opts.principal === 'vp3') {
-    if (parallel.length) return { ok: false, message: 'หาจุดกึ่งกลางภาพต้องใช้จุดลับตาจริงครบ 3 แกน (มีแกนขนานอยู่)', vps, vpRms };
+    if (parallel.length) return { ok: false, message: T.vp.principalNeedsThree, vps, vpRms };
     if (have.length < 3) return { ok: false, message: 'หาจุดกึ่งกลางภาพต้องใช้ครบ 3 แกน', vps, vpRms };
     const p = vps.map((v) => (v ? dehom(v) : null));
     const o = p[0] && p[1] && p[2] ? orthocentre(p[0], p[1], p[2]) : null;

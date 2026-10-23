@@ -1,6 +1,7 @@
 // Plain test for per-axis parallel VP mode (no test framework in game/): `npm test` in game/.
 import { fromBlenderEulerDeg, mulMV, project, solveFromLines, type Axis, type Cam, type GuideLine, type V2, type V3 } from '../src/lib/editor/camMath.ts';
 import { agreement, solveJoint } from '../src/lib/editor/roomMatch.ts';
+import { T } from '../src/lib/editor/strings.ts';
 import { consolidate, fitParallel, fitVP, fitVPMode, lockedPoint, lockVp, parallelSuggestion, type VpModes } from '../src/lib/editor/vpFit.ts';
 
 declare const process: { exitCode?: number };
@@ -79,7 +80,7 @@ test('exactly parallel input: direction exact, zero residual, consolidate moves 
   ok(r.moved.length === 0, `moved ${r.moved}`);
 });
 
-test('near-parallel noisy input: mean direction, outlier rejected, ขนาน makes them exactly parallel', () => {
+test('near-parallel noisy input: mean direction, outlier rejected, parallel mode makes them exactly parallel', () => {
   const base = 88; // deg
   const ls = [80, 200, 330, 460, 600, 720].map((x, i) => {
     const t = (base + (i === 4 ? 9 : 0.6 * rnd())) / D;
@@ -99,7 +100,7 @@ test('near-parallel noisy input: mean direction, outlier rejected, ขนาน 
   ok(r.lines[0]!.a[0] === ls[0]!.a[0] && r.lines[0]!.a[1] === ls[0]!.a[1], 'linked corner fixed');
   const mid = (l: { a: V2; b: V2 }): V2 => [(l.a[0] + l.b[0]) / 2, (l.a[1] + l.b[1]) / 2];
   ok(Math.hypot(mid(r.lines[2]!)[0] - mid(ls[2]!)[0], mid(r.lines[2]!)[1] - mid(ls[2]!)[1]) < 1e-9, 'unlinked line turns about its midpoint');
-  // after ขนาน the parallel fit is exact
+  // after switching to parallel the parallel fit is exact
   ok(fitVPMode(r.lines, frame, 'parallel')!.rmsDeg < 1e-9, 'exact after consolidate');
 });
 
@@ -148,7 +149,7 @@ test('one-point perspective (X and Z parallel): focal needs a locked lens; with 
   const modes: VpModes = ['parallel', 'auto', 'parallel'];
   const prior: Cam = { ...TRUE, f: 1100, R: fromBlenderEulerDeg([86, 3, 4]) };
   const free = solveFromLines(ls, { ...prior, f: 800 }, { frame, modes });
-  ok(!free.ok && /ล็อกเลนส์/.test(free.message ?? ''), `free: ${free.ok} ${free.message}`);
+  ok(!free.ok && free.message === T.vp.onePointNoLens, `free: ${free.ok} ${free.message}`);
   const fixed = solveFromLines(ls, prior, { frame, modes, fixedF: true });
   ok(fixed.ok && !!fixed.cam, fixed.message ?? 'no cam');
   ok(colAngle(fixed.cam!, TRUE) < 0.05, `R off by ${colAngle(fixed.cam!, TRUE)}°`);

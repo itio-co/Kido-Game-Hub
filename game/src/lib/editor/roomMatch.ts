@@ -2,15 +2,15 @@
  * Object ↔ room guide-line groups for camera matching (pure functions, no DOM / Svelte).
  *
  * Two groups of guide lines describe ONE photo:
- *   - 'object' ("วัตถุ") — drawn on the crop (the item itself),
- *   - 'room'   ("ห้อง")  — drawn on the full mock-up (walls, floor, furniture around it).
+ *   - 'object' — drawn on the crop (the item itself),
+ *   - 'room'   — drawn on the full mock-up (walls, floor, furniture around it).
  * The crop is a sub-rectangle of the full image, so both groups live in one coordinate system once the crop
  * transform is applied:   full = (x + s·u, y + s·v)   for a crop px (u, v)   (CropT = { x, y, s }).
  * The camera is the same for both; only the principal point / focal must be taken in FULL-image terms
  * (the principal point is the full-image centre, not the crop centre).
  *
  * Joint solve:
- *   - aligned ("วัตถุวางตรงกับห้อง"): the object stands square to the room → the X/Y/Z lines of both groups
+ *   - aligned (the "object square to the room" option): the object stands square to the room → the X/Y/Z lines of both groups
  *     share one VP per axis; it is plain solveFromLines on the union.
  *   - yawed: only the vertical is shared (horizon, tilt, focal). The object is turned about Z by ψ (yaw):
  *     X_room = Rz(ψ) · X_obj, so the room's axis a seen in object coordinates is Rz(−ψ)·e_a and
@@ -42,6 +42,7 @@ import {
   type V3,
 } from './camMath.ts';
 import { AUTO_MODES, angleToVp, fitParallel, fitVPMode, type Frame, type VpMode } from './vpFit.ts';
+import { T } from './strings.ts';
 
 export type LineGroup = 'object' | 'room';
 export type GroupedLine = GuideLine & { group: LineGroup };
@@ -50,7 +51,7 @@ export type CropT = { x: number; y: number; s: number };
 export type Band = 'good' | 'warn' | 'bad';
 
 export const IDENTITY_CROP: CropT = { x: 0, y: 0, s: 1 };
-export const GROUP_NAMES: Record<LineGroup, string> = { object: 'วัตถุ', room: 'ห้อง' };
+export const GROUP_NAMES: Record<LineGroup, string> = { object: T.groups.object, room: T.groups.room };
 
 const D = 180 / Math.PI;
 
@@ -285,7 +286,7 @@ export function solveJoint(object: readonly GuideLine[], room: readonly GuideLin
       init = { ...b.cam, R: orthonormalize(mulMM(b.cam.R, rotZ(yaw))) };
     }
   }
-  if (!init) return { ok: false, message: message ?? 'ต้องมีเส้นอย่างน้อย 2 เส้น ใน 2 แกน', yaw: yaw0, yawSolved: false };
+  if (!init) return { ok: false, message: message ?? T.room.needTwoInTwoAxes, yaw: yaw0, yawSolved: false };
   // yaw is only observable when both groups have horizontal (X/Y) lines
   const yawFree = hasHorizontal(object) && hasHorizontal(room);
   const n = 3 + (opts.fixedF ? 0 : 1) + (yawFree ? 1 : 0);
@@ -303,9 +304,9 @@ export function solveJoint(object: readonly GuideLine[], room: readonly GuideLin
   const out = build(x);
   out.cam.R = orthonormalize(out.cam.R);
   if (!(out.cam.f > 0) || ![out.cam.f, ...out.cam.R.flat(), out.yaw].every(Number.isFinite)) {
-    return { ok: false, message: 'คำนวณไม่สำเร็จ', yaw: yaw0, yawSolved: false };
+    return { ok: false, message: T.room.solveFailed, yaw: yaw0, yawSolved: false };
   }
-  return { ok: true, cam: out.cam, yaw: wrap180(out.yaw), yawSolved: yawFree, message: yawFree ? undefined : 'ต้องมีเส้นแกน X/Y ทั้งในวัตถุและห้อง จึงจะหามุมหมุนได้ (ใช้มุมเดิม)' };
+  return { ok: true, cam: out.cam, yaw: wrap180(out.yaw), yawSolved: yawFree, message: yawFree ? undefined : T.room.needXYBoth };
 }
 
 // ---------- agreement ----------

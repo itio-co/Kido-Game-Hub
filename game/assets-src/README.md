@@ -158,61 +158,83 @@ fSpy-style camera matching inside the editor: line the model up with the mock-up
 7. **การแสดงผล**: ทึบ / โครงลวด / เส้นขอบ, แถบความทึบโมเดล, แถบ **เลื่อนเทียบ ก่อน|หลัง**
 8. บันทึกอัตโนมัติในเครื่อง (`kido-cam:<slug>`) และ **มุม Mock-up** จะใช้กล้องที่จับไว้
 9. **ดาวน์โหลด cam.json** (รูปแบบเดียวกับ `blender/cam.json`) หรือ **ดาวน์โหลดค่าทั้งหมด** (Blender + Three.js)
-10. **แม่เหล็กเส้น** (v0.2.9, ปุ่ม 🧲 ที่มุมภาพหรือในแผง): ลากปลายเส้น (หรือจับกลางเส้นลากทั้งเส้น) ไปใกล้เส้น
-    **แกนอื่น** จะดูดติด ตามลำดับ: ปลายเส้นนั้น → จุดที่เส้นที่ลากต่อออกไปตัดเส้นนั้น → จุดใกล้สุดบนเส้น
-    (ระยะดูด ~12 px เมาส์ / ~22 px นิ้ว ตามจอ ไม่ขึ้นกับการซูม) มีวงเหลือง + กากบาทบอกจุดที่ดูด
-    - ปลายที่ดูดติดปลายอีกเส้น = **เชื่อมเป็นมุมเดียว** (กรอบเหลืองประ) ลากไปด้วยกัน; **กดค้าง** ที่มุม = แยก,
-      หรือปุ่ม **แยกมุมที่เชื่อม** (เส้นที่เลือก); กด **Alt** ค้างขณะลาก = ปิดแม่เหล็กชั่วคราว
-    - **วางเส้นตามกล้องปัจจุบัน** จะเชื่อมมุมกล่องที่ใช้ร่วมกันให้เลย; **↶ ย้อน / ↷ ทำซ้ำ** (ในแผงหรือหัวจอ,
-      Ctrl+Z / Ctrl+Y) ย้อนการแก้เส้นได้
-    - ขณะลากมี **แว่นขยาย** (~3.5×) แสดงภาพ + โมเดล + เส้นรอบจุด พร้อมกากบาทตรงจุดที่ลาก (บนมือถืออยู่เหนือนิ้ว)
-11. **โหมดเทียบความต่าง**: ขณะลากเส้น/จุด กล้องจะคำนวณใหม่ทุกเฟรม และโมเดลแสดงแบบ difference กับภาพ
-    (ตรงกัน = มืด, เพี้ยน = เรืองแสง) เลือก **ขณะลาก** / **เปิดตลอด** / **ปิด** (ค่าเริ่ม = ปิด);
-    ถ้าคำนวณไม่ได้จะใช้กล้องล่าสุดและขึ้นป้ายเล็ก ๆ ที่มุมภาพ
-12. **จุดลับตารวม** (v0.2.9): วาดเส้นแกนละกี่เส้นก็ได้ ระบบหา **จุดลับตาจุดเดียวต่อแกน** จากทุกเส้น
-    (least-squares แบบทนเส้นเพี้ยน) และใช้จุดนั้นคำนวณกล้อง
-    - วงกลมสีแกน = จุดลับตา (ถ้าอยู่นอกภาพเป็นลูกศรที่ขอบภาพ + ระยะ px, ∞ = เส้นขนานกัน) เส้นจาง ๆ จากทุกเส้นวิ่งไปที่จุดนั้น
-    - ขอบเส้นบอกว่าเส้นเพี้ยนจากจุดลับตากี่องศา: **เขียว < 0.5°**, **เหลือง 0.5–2°**, **แดง > 2°**
-      (ตัวเลของศาข้างเส้น, ⚠ + ขอบประ = เส้นเพี้ยนมากจนไม่นำมาคิด) แผงแสดง RMS (องศา) ของแต่ละแกนและจำนวนเส้นเพี้ยน
-    - **🎯 รวมจุดลับตา** (หรือ **รวม X / Y / Z** ทีละแกน) = หมุนทุกเส้นให้ผ่านจุดลับตาเดียวกัน โดยคงความยาวและจุดกึ่งกลาง;
-      เส้นที่ปลายข้างหนึ่งเชื่อมมุมอยู่จะหมุนรอบมุมนั้นแทน (มุมไม่ขยับ); เส้นที่ปลายทั้งสองเชื่อมมุมจะข้ามและแจ้ง
-      ให้แยกมุมก่อน; ย้อนได้ด้วย ↶
-    - **🔒 ล็อกเข้าจุดลับตา**: เมื่อเปิด ลากปลายเส้นของแกนที่มี 3 เส้นขึ้นไป เส้นจะชี้ไปจุดลับตาของเส้น**อื่น**เสมอ
-      (ปลายที่ลากเลื่อนไปตามเส้นประ) แม่เหล็กยังดูดมุม/จุดตัดที่อยู่บนเส้นนั้นได้
-13. **เส้นวัตถุ / เส้นห้อง** (v0.2.9): ภาพ **ภาพครอป · วัตถุ** = แก้เส้นของวัตถุ, **Mock-up เต็ม · ห้อง** = แก้เส้นของห้อง
-    (ผนัง พื้น เพดาน ขอบประตู/หน้าต่าง) ทั้งสองชุดใช้กล้องตัวเดียวกัน (ภาพครอปคือส่วนหนึ่งของ Mock-up ที่ x=368, y=540)
-    - **👻 เส้น…จาง ๆ** = แสดงอีกชุดแบบจาง ๆ ไว้เทียบ; แม่เหล็กดูดข้ามชุดได้ (เช่น ปลายเส้นวัตถุดูดเข้าขอบผนัง)
-    - **คำนวณจากเส้น** ใช้เส้นทั้งสองชุดพร้อมกัน; ถ้าวัตถุวางเฉียงห้อง ให้เอาติ๊ก **วัตถุวางตรงกับห้อง** ออก →
-      ระบบหามุมหมุนรอบแกน Z ของวัตถุ (ใส่ในไฟล์ส่งออกด้วย) โดยใช้ร่วมกันแค่แนวตั้ง/เส้นขอบฟ้า/เลนส์
-    - แผง **ความสอดคล้อง วัตถุ↔ห้อง**: มุมต่างของจุดลับตาแต่ละแกน (เขียว < 1°, เหลือง ≤ 3°, แดง > 3°) และเลนส์ต่าง (%)
-      แตะแกน = ไฮไลต์เส้นที่เพี้ยนที่สุดของทั้งสองชุด
-    - ข้อมูลเก่า (มีแต่เส้นวัตถุ) โหลดได้ตามเดิม
-14. **↔ เส้นต่อถึงขอบ** (ค่าเริ่ม เปิด): ทุกเส้นลากต่อจากจุดลับตา ผ่านเส้น ไปจนสุดขอบภาพ
-    (ถ้าจุดลับตาอยู่ที่ ∞ จะต่อทั้งสองทาง) เส้นของชุดที่จาง ๆ ก็จางลงด้วย
-15. **เทียบเส้นกับขอบภาพ** (เส้นนำสายตา ↔ ขอบจริงใน Mock-up): ระบบหาขอบในภาพ (Sobel) ไว้ล่วงหน้า
-    - **ขณะลาก** (ค่าเริ่ม) / **เปิดตลอด** / **ปิด**: ภาพมืดลง ขอบที่ตรวจพบเรืองแสง มีขีดสั้น ๆ จากเส้นไปขอบที่ใกล้สุด
-      และป้ายบอกระยะห่าง (เขียว < 1 px, เหลือง ≤ 2.5 px, แดง > 2.5 px); แว่นขยายแสดงขอบด้วย
-    - **🧷 ดูดเข้าขอบภาพ** (เส้นที่เลือก / **ทุกเส้น**) = ฟิตเส้นเข้ากับขอบในแถบ ±8 px (มุมที่เชื่อมอยู่ไม่ขยับ) ย้อนได้;
-      **ดูดขณะลาก** = ปล่อยมือแล้วเส้นเข้าขอบเอง (Alt = ปิดชั่วคราว)
-    - โหมดเทียบความต่างกับ **โมเดล** (ข้อ 11) ยังมีอยู่ แต่ค่าเริ่มต้นเป็น ปิด
-16. **รวม / ขนาน ทีละแกน**: ในแผงจุดลับตารวม แต่ละแกนมีสองปุ่มคู่กัน (ปุ่มที่ใช้อยู่เป็นสีฟ้า, สูง ≥ 44 px บนมือถือ)
-    - **รวม X/Y/Z** = โหมดอัตโนมัติ: หาจุดลับตาจุดเดียว แล้วหมุนเส้นเข้าหา
-    - **ขนาน X/Y/Z** = จุดลับตาอยู่ที่ ∞: หมุนทุกเส้นให้ขนานกันตามทิศเฉลี่ย และ **บังคับกล้อง** ให้แกนนั้นขนานกับภาพ
-      เช่น **ขนาน Z** = กล้องตั้งตรง ไม่ก้ม/เงย (เส้นแนวตั้งในภาพตั้งตรง) แผงแสดง ∠ = มุมเพี้ยนจากแนวขนาน และลูกศรสองหัว
-      “∞ Z ขนาน” ที่ขอบภาพแทนจุดลับตา
-    - ถ้าเส้นของแกนเกือบขนานอยู่แล้ว (จุดลับตาไกลมาก) จะมีปุ่ม 💡 แนะนำให้แตะใช้ **ขนาน** ได้ทันที
-    - **ขนาน 2 แกน** = ทัศนมิติจุดเดียว: หาเลนส์จากเส้นไม่ได้ → ต้อง **ล็อกเลนส์** หรือใช้คู่จุด
-    - ใช้กับเส้นทั้งชุดวัตถุและห้อง; ถ้าเส้นชุดใดไม่ขนานจริง แผงความสอดคล้องจะขึ้น ⚠ “เส้น…ไม่ขนาน”
-    - โหมดบันทึกไปกับเส้น (`vpModes`) และอยู่ในไฟล์ส่งออก; ↶ ย้อน คืนตำแหน่งเส้น แต่ไม่คืนโหมด
-17. **💾 บันทึกลงไฟล์ต้นฉบับ** (เฉพาะตอนรัน `npm run dev` ในโฟลเดอร์ `game/`): งานที่แก้ถูกเก็บในเครื่อง (localStorage) อัตโนมัติ
-    และกดปุ่มนี้ (หรือ **Ctrl+S**) เพื่อเขียนลงไฟล์ใน `game/assets-src/<item>/editor/` แล้ว commit ได้
-    - `camera-match.json` = เส้นนำสายตา (ทั้งวัตถุและห้อง), คู่จุด, ล็อกจุดลับตา, โหมดรวม/ขนาน, กรอบครอป, กล้องที่คำนวณได้
-    - `<variant>.edits.json` (เช่น `lowpoly.edits.json`) = การแก้โมเดล (ไม่มีประวัติย้อน); ติ๊ก **รวม …-edited.glb** ถ้าต้องการไฟล์โมเดลด้วย
-    - แผง **ไฟล์ต้นฉบับ** บอกว่าไฟล์ไหนจะเปลี่ยน; บันทึกเสร็จจะแสดงที่อยู่ไฟล์และคำสั่ง
-      `git add game/assets-src/nightstand/editor && git commit -m "…"`
-    - ไฟล์ที่ commit แล้วคือค่าเริ่มต้น: เปิดหน้าใหม่ (ไม่มีงานค้าง) จะโหลดจากไฟล์ ถ้างานในเครื่องต่างจากไฟล์ จะขึ้นกรอบเหลือง
-      **“มีงานที่ยังไม่บันทึกลงไฟล์”** — **ใช้งานที่ค้างไว้ต่อ** (ซ่อนกรอบจนปิดหน้า) หรือ **กลับไปใช้ไฟล์** (ทิ้งงานในเครื่อง)
-    - หน้าเว็บที่ build แล้ว (เช่นลิงก์ตัวอย่าง) ไม่มี API: ใช้ปุ่ม **ดาวน์โหลด** แล้ววางไฟล์ไว้ในโฟลเดอร์เดียวกันเอง
+
+### v0.2.9 additions (English)
+
+UI labels are shown in bold as they appear in the (Thai) UI, with an English gloss.
+
+1. **Line snapping** (🧲 button on the view or in the panel): drag a line end (or grab the middle to move the
+   whole line) near a line of **another axis** and it snaps, in priority order, to that line's endpoint → the
+   intersection with that line's extension → the nearest point on the segment. Snap radius is ~12 px (mouse) /
+   ~22 px (touch) on screen, independent of zoom; a yellow ring + cross marks the snap target.
+   - An end snapped onto another line's end becomes **one shared corner** (dashed yellow box) and drags together;
+     **long-press** the corner to split it, or use **แยกมุมที่เชื่อม** (unlink corners, selected line); hold
+     **Alt** while dragging to disable snapping temporarily.
+   - **วางเส้นตามกล้องปัจจุบัน** (place lines from the current camera) links shared box corners automatically;
+     **↶ / ↷** (panel or header, Ctrl+Z / Ctrl+Y) undo / redo line edits.
+   - While dragging, a **loupe** (~3.5×) shows image + model + lines around the point with a crosshair
+     (above the finger on phones).
+2. **Difference view**: while dragging lines/points the camera is re-solved every frame and the model is drawn
+   in `difference` blend over the image (match = dark, mismatch = bright). Modes **ขณะลาก** (while dragging) /
+   **เปิดตลอด** (always) / **ปิด** (off, default). If a solve fails the last camera is kept and a small badge shows.
+3. **Consolidated vanishing points**: draw any number of lines per axis; one VP per axis is fitted from all of them
+   (robust least squares) and used for the solve.
+   - Axis-coloured circle = VP (an arrow at the view edge + distance in px when off-image, ∞ = parallel lines);
+     faint rays run from every line to it.
+   - Line outline = angular error to the VP: **green < 0.5°**, **amber 0.5–2°**, **red > 2°** (degrees next to the
+     line; ⚠ + dashed outline = outlier excluded from the fit). The panel shows per-axis RMS (°) and outlier count.
+   - **🎯 รวมจุดลับตา** (consolidate all, or **รวม X / Y / Z** per axis) rotates every line onto the shared VP,
+     keeping length and midpoint; a line with one linked corner pivots about that corner (corners never move); a
+     line with both ends linked is skipped — unlink it first. Undoable with ↶.
+   - **🔒 ล็อกเข้าจุดลับตา** (lock to VP): when on, dragging an endpoint on an axis with ≥ 3 lines keeps the line
+     pointing at the VP of the *other* lines (the end slides along the dashed ray); snaps on that ray still apply.
+4. **Object / room lines**: the **ภาพครอป · วัตถุ** (crop · object) view edits object lines, **Mock-up เต็ม · ห้อง**
+   (full mock-up · room) edits room lines (walls, floor, ceiling, door/window frames). Both share one camera (the
+   crop is the part of the mock-up at x = 368, y = 540).
+   - **👻** shows the other group faintly for reference; snapping works across groups (e.g. an object corner onto
+     a wall edge).
+   - **คำนวณจากเส้น** (solve from lines) uses both groups. If the object is rotated relative to the room, untick
+     **วัตถุวางตรงกับห้อง** (object aligned with room) → the object's yaw about Z is solved (and exported), sharing
+     only the vertical, horizon and lens.
+   - The **วัตถุ↔ห้อง** agreement panel shows per-axis VP angle difference (green < 1°, amber ≤ 3°, red > 3°) and
+     lens difference (%); tapping an axis highlights the worst lines of both groups.
+   - Older data (object lines only) loads unchanged.
+5. **↔ เส้นต่อถึงขอบ** (full rays, default on): every line is extended from its VP through the segment to the view
+   edge (both directions for a VP at ∞); faint-group rays are faint too.
+6. **Edge alignment** (guide line ↔ real edges in the mock-up): image edges are precomputed (Sobel).
+   - **ขณะลาก** (default) / **เปิดตลอด** / **ปิด**: the image dims, detected edges glow, short ticks join the line
+     to the nearest edge and a label shows the offset (green < 1 px, amber ≤ 2.5 px, red > 2.5 px); the loupe
+     shows edges too.
+   - **🧷 ดูดเข้าขอบภาพ** (snap to image edge; selected line / **ทุกเส้น** all lines) fits the line to edges within
+     ±8 px (linked corners stay fixed), undoable; **ดูดขณะลาก** snaps on release (Alt = off temporarily).
+   - The model difference view (item 2) is still available but defaults to off.
+7. **Consolidate / parallel per axis**: each axis in the VP panel has a pair of buttons (active one is blue,
+   ≥ 44 px tall on phones).
+   - **รวม X/Y/Z** (consolidate) = auto mode: fit one finite VP and rotate lines onto it.
+   - **ขนาน X/Y/Z** (parallel) = VP at ∞: rotate all lines parallel to their mean direction and **constrain the
+     camera** so that axis is parallel to the image plane — e.g. **ขนาน Z** = level camera (no pitch, verticals
+     vertical). The panel shows ∠ = deviation from parallel, and a "∞ Z ขนาน" double arrow at the view edge
+     replaces the VP marker.
+   - If an axis is already nearly parallel (VP very far away), a 💡 button suggests switching to parallel.
+   - **Two parallel axes** = one-point perspective: the lens cannot be found from lines → lock the lens
+     (**ล็อกเลนส์**) or use point pairs.
+   - Applies to both object and room lines; if a group's lines are not actually parallel the agreement panel
+     shows ⚠.
+   - The mode is saved with the lines (`vpModes`) and exported; ↶ restores line positions but not the mode.
+8. **💾 บันทึกลงไฟล์ต้นฉบับ** (save to source files; only under `npm run dev` in `game/`): work is autosaved to
+   localStorage; press this button (or **Ctrl+S**) to write the files in `game/assets-src/<item>/editor/`, then
+   commit them.
+   - `camera-match.json` = guide lines (object + room), point pairs, VP lock, consolidate/parallel modes, crop and
+     the solved camera.
+   - `<variant>.edits.json` (e.g. `lowpoly.edits.json`) = model edits (no undo history); tick
+     **รวม …-edited.glb** to also write the model file.
+   - The **ไฟล์ต้นฉบับ** (source files) panel lists which files will change; after saving it shows the paths and
+     `git add game/assets-src/nightstand/editor && git commit -m "…"`.
+   - Committed files are the baseline: a fresh page (no local draft) loads from them. If the local draft differs
+     from the files, a **"มีงานที่ยังไม่บันทึกลงไฟล์"** (unsaved work) banner offers **ใช้งานที่ค้างไว้ต่อ** (keep the
+     draft; hidden until the page is closed) or **กลับไปใช้ไฟล์** (revert to the files, discarding the draft).
+   - Built pages (e.g. the preview link) have no API: use the **ดาวน์โหลด** (download) buttons and put the files in
+     that folder yourself.
 
 ### Notes (English)
 

@@ -4,6 +4,7 @@
   import { joints, snapEndpoint, snapLine, SNAP_PX, type End, type EndRef, type SnapTarget } from '../lib/editor/guideSnap';
   import { distToRay, lockedPoint, lockVp, residualBand, vpPoint } from '../lib/editor/vpFit';
   import type { V3 } from '../lib/editor/camMath';
+  import { T } from '../lib/editor/strings';
 
   type Props = {
     st: MatchState;
@@ -93,7 +94,7 @@
   }
 
   /**
-   * "เส้นต่อถึงขอบ": the whole line of a guide — from its VP (or where it enters the view when the VP is off
+   * Full ray (T.groups.rays): the whole line of a guide — from its VP (or where it enters the view when the VP is off
    * screen), through the drawn segment, on to the view edge. VP at infinity → both directions. Clipped to the view.
    */
   function fullRay(l: { a: V2; b: V2 }, vp: V3): [V2, V2] | null {
@@ -140,7 +141,7 @@
   });
   /** Line being dragged (for the live edge label / ticks). */
   let dragId = $state<number | null>(null);
-  /** The dragged line was pulled onto an image edge ("ดูดเข้าขอบภาพ" while dragging). */
+  /** The dragged line was pulled onto an image edge (edge snap while dragging). */
   let edgeSnapped = $state(false);
   /** Per active line: alignment with the image edges (offset in ref px, band, samples for the ticks). */
   const edgeInfo = $derived.by(() => {
@@ -178,7 +179,7 @@
     });
     return out;
   });
-  /** While "ล็อกเข้าจุดลับตา" holds a drag: the ray the endpoint slides along. */
+  /** While lock-to-VP (T.vp.lock) holds a drag: the ray the endpoint slides along. */
   let lockRay = $state<{ axis: number; ray: [V2, V2] | null } | null>(null);
   const fmtDeg = (deg: number): string => `${deg < 10 ? deg.toFixed(1) : Math.round(deg)}°`;
 
@@ -234,7 +235,7 @@
   // ---------- pointer handling ----------
   type LineDrag = {
     kind: 'line'; id: number; end: End; off: V2; members: EndRef[]; x: number; y: number; moved: boolean;
-    /** "ล็อกเข้าจุดลับตา": the line's fixed end and the VP of the other lines of its axis. */
+    /** Lock to VP: the line's fixed end and the VP of the other lines of its axis. */
     lock?: { fixed: V2; vp: V3; axis: number };
   };
   type SegDrag = { kind: 'seg'; id: number; p0: V2; a0: V2; b0: V2; ma: EndRef[]; mb: EndRef[]; x: number; y: number; moved: boolean };
@@ -246,7 +247,7 @@
   let hint = $state<(SnapTarget & { from?: End }) | null>(null);
   let pressTimer: ReturnType<typeof setTimeout> | null = null;
   const LONG_PRESS_MS = 550;
-  const SNAP_LABEL = { endpoint: 'มุม', intersection: 'จุดตัด', segment: 'บนเส้น' } as const;
+  const SNAP_LABEL = T.snap.kinds;
   const cornerList = $derived(joints(st.lines));
 
   // ---------- magnifier loupe (while dragging) ----------
@@ -382,7 +383,7 @@
         st.endLive();
         if (st.unlink({ line: id, end })) {
           navigator.vibrate?.(25);
-          say?.('แยกมุมแล้ว — ปลายเส้นนี้ลากได้อิสระ');
+          say?.(T.snap.cornerSplit);
           onChange();
         }
       }, LONG_PRESS_MS);
@@ -507,7 +508,7 @@
     // (corners never link across groups: a ghost line is only a snap target)
     if (t?.kind === 'endpoint' && t.end && t.from && st.isActive(t.line)) {
       st.link({ line: d.id, end: t.from }, { line: t.line, end: t.end });
-      say?.('เชื่อมมุมแล้ว — ลากไปด้วยกัน (กดค้างที่มุมเพื่อแยก)');
+      say?.(T.snap.cornerLinked);
     }
     st.dropLastPush();
     onChange();
@@ -663,7 +664,7 @@
       {@const mx = (line.a[0] + line.b[0]) / 2}
       {@const my = (line.a[1] + line.b[1]) / 2}
       <text x={mx + 10 * s} y={my + 22 * s} font-size={13 * s} stroke-width={3 * s} class="elabel {ea.band}" data-edge-label={line.id}
-        >{ea.meanOff === null ? 'ไม่พบขอบภาพใกล้เส้น' : `ห่างขอบภาพ ${fmtPx(ea.meanOff)}`}{edgeSnapped ? ' · ดูดแล้ว' : ''}</text>
+        >{ea.meanOff === null ? T.edges.noneNearLine : T.edges.offBy(fmtPx(ea.meanOff))}{edgeSnapped ? T.edges.snapped : ''}</text>
     {/if}
     {#if info && info.band !== 'good'}
       <text x={(line.a[0] + line.b[0]) / 2 + 8 * s} y={(line.a[1] + line.b[1]) / 2 - 8 * s} font-size={12 * s} stroke-width={3 * s} class="rlabel {info.band}"
@@ -677,7 +678,7 @@
       class="handle seg-hit"
       role="button"
       tabindex="-1"
-      aria-label="ลากทั้งเส้น"
+      aria-label={T.snap.dragLineAria}
       data-seg={line.id}
       onpointerdown={(e) => segHandle(e, line.id)}
     />
@@ -699,7 +700,7 @@
         class="handle"
         role="button"
         tabindex="-1"
-        aria-label="ปลายเส้น"
+        aria-label={T.snap.endpointAria}
         data-handle="{line.id}-{end}"
         data-axis={line.axis}
         data-linked={line.links?.[end] ?? null}
@@ -737,7 +738,7 @@
           <path d="M {-8 * s} {-7 * s} L {-20 * s} 0 L {-8 * s} {7 * s} Z" fill={AXIS_COLORS[m.axis]} />
         </g>
         <text x={0} y={(m.at[1] > vr.y0 + vr.h / 2 ? -16 : 28) * s} font-size={13 * s} text-anchor="middle" fill={AXIS_COLORS[m.axis]}
-          >∞ {AXIS_NAMES[m.axis]} ขนาน</text
+          >{T.vp.overlayParallel(AXIS_NAMES[m.axis])}</text
         >
       </g>
     {:else}
@@ -816,8 +817,8 @@
       </g>
     </svg>
     {#if hint}<span class="lsnap">{SNAP_LABEL[hint.kind]}</span>
-    {:else if edgeSnapped}<span class="lsnap" data-loupe-edge-snap>ขอบภาพ</span>
-    {:else if dragId !== null && st.showEdges && edgeInfo.get(dragId)}<span class="lsnap edge" data-loupe-edge-off>ห่างขอบ {fmtPx(edgeInfo.get(dragId)?.meanOff)}</span>{/if}
+    {:else if edgeSnapped}<span class="lsnap" data-loupe-edge-snap>{T.edges.loupeSnapped}</span>
+    {:else if dragId !== null && st.showEdges && edgeInfo.get(dragId)}<span class="lsnap edge" data-loupe-edge-off>{T.edges.loupeOff(fmtPx(edgeInfo.get(dragId)?.meanOff))}</span>{/if}
   </div>
 {/if}
 

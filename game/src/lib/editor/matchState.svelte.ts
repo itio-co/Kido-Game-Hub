@@ -24,6 +24,7 @@ import {
 } from './camMath';
 import { blenderValues, camFromMatched, camJson, focalFromLens, fullExport, hfovDeg, lensMm, type ViewRect } from './cameraMatch';
 import type { DisplayMode } from './modelEditor';
+import { T } from './strings';
 import { jointMembers, linkEnds, removeLineLinks, unlinkEnd, type EndRef } from './guideSnap';
 import { alignLine, edgeMapFromRGBA, edgeOverlayRGBA, refineLine, type EdgeAlign, type EdgeMap } from './edgeAlign';
 import { consolidate as consolidateLines, fitAxes, parallelSuggestion, type Frame, type VpFit, type VpMode, type VpModes } from './vpFit';
@@ -58,9 +59,9 @@ type Saved = {
   crop?: CropT;
   /** v2: faint other-group lines shown. */
   ghost?: boolean;
-  /** v2: "เส้นต่อถึงขอบ". */
+  /** v2: full rays (T.groups.rays). */
   rays?: boolean;
-  /** v2: "วัตถุวางตรงกับห้อง". */
+  /** v2: object square to the room (T.room.aligned). */
   roomAligned?: boolean;
   /** v2: object yaw vs the room (deg). */
   roomYaw?: number;
@@ -75,7 +76,7 @@ type Saved = {
   modelDiff?: DiffMode;
   edgeMode?: EdgeMode;
   edgeSnap?: boolean;
-  /** "ล็อกเข้าจุดลับตา" (optional; default off). */
+  /** Lock to VP (T.vp.lock; optional; default off). */
   lockVp?: boolean;
   /** Per-axis VP mode ('auto' | 'parallel'), shared by both groups (optional; default auto). */
   vpModes?: VpModes;
@@ -145,9 +146,9 @@ export class MatchState {
   otherLines = $state<GuideLine[]>([]);
   /** Show the other group's lines faintly (and let lines snap to them). */
   ghost = $state(true);
-  /** "เส้นต่อถึงขอบ": draw every guide line as a ray from its VP, through the segment, on to the view edge. */
+  /** Full rays (T.groups.rays): draw every guide line as a ray from its VP, through the segment, on to the view edge. */
   rays = $state(true);
-  /** "วัตถุวางตรงกับห้อง": object axes = room axes (X/Y/Z VPs shared). Off: only the vertical is shared. */
+  /** Object square to the room (T.room.aligned): object axes = room axes (X/Y/Z VPs shared). Off: only the vertical is shared. */
   roomAligned = $state(true);
   /** Object yaw relative to the room (deg, Blender Z): X_room = Rz(yaw)·X_obj. Solved when not aligned. */
   roomYaw = $state(0);
@@ -157,13 +158,13 @@ export class MatchState {
   image = $state<ImageChoice>('crop');
   principal = $state<PrincipalMode>('center');
   lockLens = $state(false);
-  /** "แม่เหล็กเส้น": snap dragged guide lines to lines of other axes. */
+  /** Line magnet (T.snap.label): snap dragged guide lines to lines of other axes. */
   snap = $state(true);
-  /** Model difference-blend ("โหมดเทียบความต่าง"): off by default — line editing compares lines with image edges. */
+  /** Model difference-blend (T.diff): off by default — line editing compares lines with image edges. */
   diff = $state<DiffMode>('off');
   /** Guide line ↔ mock-up edges: 'drag' = edge overlay while dragging, 'always', 'off'. */
   edgeMode = $state<EdgeMode>('drag');
-  /** "ดูดเข้าขอบภาพ" while dragging (below corner/axis snap; Alt disables). */
+  /** Snap to image edges while dragging (below corner/axis snap; Alt disables). */
   edgeSnap = $state(false);
   /** Edge map of the current view image (null while computing / unavailable). */
   edgeMap = $state.raw<EdgeMap | null>(null);
@@ -172,7 +173,7 @@ export class MatchState {
   /** Natural size of the current view image (edge map / image px space). */
   private edgeNat = { w: 1, h: 1 };
   private static edgeCache = new Map<string, Promise<{ map: EdgeMap; url: string; w: number; h: number } | null>>();
-  /** "ล็อกเข้าจุดลับตา": a dragged endpoint keeps its line aimed at the VP of the other lines of its axis. */
+  /** Lock to VP (T.vp.lock): a dragged endpoint keeps its line aimed at the VP of the other lines of its axis. */
   lockVp = $state(false);
   /** Per-axis VP mode: 'auto' (free VP) or 'parallel' (VP at infinity), shared by both groups. */
   vpModes = $state<VpModes>(['auto', 'auto', 'auto']);
@@ -349,7 +350,7 @@ export class MatchState {
   }
 
   // ---------- object / room groups ----------
-  /** Group edited on the current view: crop = "วัตถุ" (object), full mock-up = "ห้อง" (room). */
+  /** Group edited on the current view: crop = object, full mock-up = room. */
   get group(): LineGroup {
     return this.image === 'wide' ? 'room' : 'object';
   }
@@ -394,7 +395,7 @@ export class MatchState {
   private fullLines(ls: readonly GuideLine[]): GuideLine[] {
     return (($state.snapshot(ls) as GuideLine[]) ?? []).map((l) => lineToFull(l, this.crop));
   }
-  /** Object ↔ room agreement ("ความสอดคล้อง วัตถุ↔ห้อง"); null until both groups have lines. */
+  /** Object ↔ room agreement (T.room.agreement); null until both groups have lines. */
   readonly agreement = $derived.by((): Agreement | null => {
     const o = this.objectLines;
     const r = this.roomLines;
@@ -431,7 +432,7 @@ export class MatchState {
   /** Same for the ghost (other) group — its lines draw their own faint rays. */
   readonly ghostFits = $derived.by((): ({ fit: VpFit; ids: number[] } | null)[] => fitAxes(this.otherLines, this.vpFrame, this.vpModes));
   /**
-   * One-tap suggestion per axis to switch to "ขนาน": the free VP is > 20 image diagonals away, or forcing parallel
+   * One-tap suggestion per axis to switch to parallel mode: the free VP is > 20 image diagonals away, or forcing parallel
    * costs (almost) nothing. Only for 'auto' axes with ≥ 2 lines in the active group; null otherwise.
    */
   readonly parallelHints = $derived.by(() =>
@@ -464,18 +465,18 @@ export class MatchState {
     return null;
   }
   /**
-   * "รวมจุดลับตา": turn every line of `axis` (or of all axes) so it passes exactly through the consolidated VP.
+   * Consolidate VPs (T.vp.consolidateAll): turn every line of `axis` (or of all axes) so it passes exactly through the consolidated VP.
    * Undoable; lines with both ends linked are skipped and reported.
    */
   consolidate(axis?: Axis, mode?: VpMode): { moved: number; skipped: number; message: string } {
-    // "รวม X" → back to a free (finite) VP; "ขนาน X" → parallel; "รวมจุดลับตา" (all) keeps each axis' mode
+    // per-axis "consolidate" → back to a free (finite) VP; per-axis "parallel" → parallel; all axes keeps each axis' mode
     if (axis !== undefined && mode) this.setVpMode(axis, mode);
     const axes = axis === undefined ? ([0, 1, 2] as Axis[]) : [axis];
     const ready = axes.filter((a) => this.vpFits[a]);
-    const name = axis === undefined ? '' : ` แกน ${['X', 'Y', 'Z'][axis]}`;
+    const name = axis === undefined ? '' : T.vp.axisName(axis);
     const par = axis !== undefined && this.vpModes[axis] === 'parallel';
     if (!ready.length) {
-      return { moved: 0, skipped: 0, message: `ต้องมีอย่างน้อย 2 เส้น${name || 'ในแกนเดียวกัน'} ก่อน${par ? 'ทำให้ขนาน' : 'รวมจุดลับตา'}` };
+      return { moved: 0, skipped: 0, message: T.vp.needTwoBefore(name, par) };
     }
     this.pushLines();
     const r = consolidateLines($state.snapshot(this.lines) as GuideLine[], ready, this.vpFrame, 1e-6, this.vpModes);
@@ -483,12 +484,12 @@ export class MatchState {
     else this.lines = r.lines;
     let message = par
       ? r.moved.length
-        ? `ทำให้เส้น${name} ขนานกันแล้ว · ปรับ ${r.moved.length} เส้นตามทิศเฉลี่ย (จุดลับตาที่ ∞)`
-        : `เส้น${name} ขนานกันอยู่แล้ว`
+        ? T.vp.madeParallel(name, r.moved.length)
+        : T.vp.alreadyParallel(name)
       : r.moved.length
-        ? `รวมจุดลับตา${name}แล้ว · ปรับ ${r.moved.length} เส้นให้ผ่านจุดลับตาเดียวกัน`
-        : `เส้น${name}ผ่านจุดลับตาเดียวกันอยู่แล้ว`;
-    if (r.skipped.length) message += ` · ข้าม ${r.skipped.length} เส้น (ปลายทั้งสองเชื่อมมุมอยู่ — แยกมุมก่อน)`;
+        ? T.vp.consolidated(name, r.moved.length)
+        : T.vp.alreadyConsolidated(name);
+    if (r.skipped.length) message += T.vp.skippedLinked(r.skipped.length);
     return { moved: r.moved.length, skipped: r.skipped.length, message };
   }
   /** Remember the current lines before an edit (for undo). */
@@ -582,7 +583,7 @@ export class MatchState {
   /** Two guide lines per axis along the model's box edges, as seen by the current camera. */
   seedLines(): boolean {
     if (this.group === 'room') {
-      this.say('เส้นห้องวางเองตามขอบผนัง พื้น เพดาน ประตู (กล้องปัจจุบันไม่รู้รูปทรงห้อง)');
+      this.say(T.groups.roomSeedNote);
       return false;
     }
     const kp = this.keyPoints();
@@ -690,9 +691,9 @@ export class MatchState {
     else cam = this.keepAnchor(prior, cam);
     this.cam = cam;
     if (!this.roomAligned && res.yawSolved) this.roomYaw = res.yaw;
-    const groups = this.objectLines.length && this.roomLines.length ? ' (วัตถุ+ห้อง)' : '';
-    const yaw = this.roomAligned ? '' : ` · วัตถุหมุน ${this.roomYaw.toFixed(1)}°`;
-    this.say(`คำนวณจากเส้นแล้ว${groups} · เลนส์ ${lensMm(cam.f, this.width).toFixed(1)} มม.${yaw}${res.message ? ` · ${res.message}` : ''}`);
+    const both = !!(this.objectLines.length && this.roomLines.length);
+    const yaw = this.roomAligned ? null : this.roomYaw.toFixed(1);
+    this.say(T.room.solvedFromLines(both, lensMm(cam.f, this.width).toFixed(1), yaw, res.message ?? null));
     return true;
   }
   // ---------- guide line ↔ mock-up edges ----------
@@ -748,13 +749,13 @@ export class MatchState {
     return { a: this.imgToRef(r.a), b: this.imgToRef(r.b), before: r.before.meanOff === null ? null : r.before.meanOff * k, after: r.after.meanOff === null ? null : r.after.meanOff * k };
   }
   /**
-   * "ดูดเข้าขอบภาพ": refine the selected line (or all lines) onto the image edges. Linked corners stay fixed
+   * Snap to image edges (T.edges.refineSelected): refine the selected line (or all lines) onto the image edges. Linked corners stay fixed
    * (the line pivots about them). Undoable as one step.
    */
   edgeRefine(which: 'selected' | 'all'): { moved: number; message: string } {
-    if (!this.edgeMap) return { moved: 0, message: 'กำลังเตรียมขอบภาพ… ลองอีกครั้ง' };
+    if (!this.edgeMap) return { moved: 0, message: T.edges.preparing };
     const ids = which === 'all' ? this.lines.map((l) => l.id) : this.selectedLine !== null ? [this.selectedLine] : [];
-    if (!ids.length) return { moved: 0, message: 'เลือกเส้นก่อน (แตะเส้น) หรือกด “ทุกเส้น”' };
+    if (!ids.length) return { moved: 0, message: T.edges.selectFirst };
     this.pushLines();
     let moved = 0;
     let fixedBoth = 0;
@@ -779,9 +780,9 @@ export class MatchState {
     if (!moved) this.dropLastPush();
     const avg = (v: number[]) => (v.length ? v.reduce((x, y) => x + y, 0) / v.length : 0);
     let message = moved
-      ? `ดูดเข้าขอบภาพแล้ว ${moved} เส้น · ห่างขอบเฉลี่ย ${avg(before).toFixed(1)} → ${avg(after).toFixed(1)} px`
-      : 'เส้นอยู่บนขอบภาพแล้ว หรือไม่พบขอบที่ชัดพอใกล้เส้น';
-    if (fixedBoth) message += ` · ข้าม ${fixedBoth} เส้น (ปลายทั้งสองเชื่อมมุม)`;
+      ? T.edges.refinedMany(moved, avg(before).toFixed(1), avg(after).toFixed(1))
+      : T.edges.nothingToRefine;
+    if (fixedBoth) message += T.edges.skippedLinked(fixedBoth);
     return { moved, message };
   }
   get showDiff(): boolean {

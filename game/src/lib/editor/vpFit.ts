@@ -14,6 +14,7 @@
  * Image (ref) px throughout; homogeneous VPs are in px too (third component 0 = at infinity).
  */
 import type { Axis, GuideLine, M3, V2, V3 } from './camMath';
+import { T } from './strings.ts';
 
 export type Seg = { a: V2; b: V2 };
 export type Frame = { cx: number; cy: number; s: number };
@@ -353,12 +354,12 @@ export function consolidate(lines: readonly GuideLine[], axes: readonly Axis[], 
       const la = l.links?.a !== undefined;
       const lb = l.links?.b !== undefined;
       if (la && lb) {
-        skipped.push({ id: l.id, reason: 'ปลายทั้งสองเชื่อมมุมอยู่' });
+        skipped.push({ id: l.id, reason: T.vp.skipBothLinked });
         return;
       }
       const next = aimAt(l, fit.vp, la ? 'a' : lb ? 'b' : 'mid');
       if (!next) {
-        skipped.push({ id: l.id, reason: 'จุดหมุนอยู่ที่จุดลับตา' });
+        skipped.push({ id: l.id, reason: T.vp.skipPivotAtVp });
         return;
       }
       const o = out.find((x) => x.id === l.id)!;
