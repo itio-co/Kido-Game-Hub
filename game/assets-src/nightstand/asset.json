@@ -110,7 +110,25 @@
     "runtime": [
       "game/public/models/nightstand.glb",
       "game/public/models/nightstand-master.glb"
-    ]
+    ],
+    "partNodes": [
+      "TopSlab",
+      "Leg_LF",
+      "Leg_RF",
+      "Leg_LB",
+      "Leg_RB",
+      "Apron_L",
+      "Apron_R",
+      "Apron_B",
+      "Rail_Top",
+      "Rail_Bot",
+      "Drawer_Face",
+      "Drawer_Cavity",
+      "Knob",
+      "Stretcher_L",
+      "Stretcher_R"
+    ],
+    "partNodesNote": "One mesh node per part under a root node (Nightstand_Master / Nightstand_LowPoly), origin at part centre; used by #/editor."
   },
   "notes": [
     "The dark vertical post at the left of the crop is the bed, not part of this asset.",

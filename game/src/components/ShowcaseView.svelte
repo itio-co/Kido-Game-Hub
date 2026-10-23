@@ -3,6 +3,7 @@
   import CompareSlider from './CompareSlider.svelte';
   import NightstandView from './NightstandView.svelte';
   import type { NightstandVariant } from '../lib/nightstandStage';
+  import { findAsset } from '../lib/showcaseAssets';
 
   let { room }: { room: PlayerRoom } = $props();
 
@@ -15,10 +16,10 @@
 
   const initial: NightstandVariant = location.hash.includes('model=master') ? 'master' : 'lowpoly';
   let variant = $state<NightstandVariant>(initial);
-  const variants: { id: NightstandVariant; label: string }[] = [
-    { id: 'lowpoly', label: 'Low-poly (เกม)' },
-    { id: 'master', label: 'Master' },
-  ];
+  const variants = (findAsset('player-room/nightstand')?.variants ?? []).map((v) => ({
+    id: v.id as NightstandVariant,
+    label: v.label,
+  }));
 </script>
 
 <div class="showcase">
@@ -58,6 +59,8 @@
         {/key}
       </div>
     </section>
+
+    <a class="edit-link" href="#/editor?asset=player-room/nightstand&model={variant}" data-editor-link>✎ แก้โมเดลนี้ (3D editor)</a>
 
     <section>
       <h2>หมุนดู</h2>
@@ -136,6 +139,19 @@
     background: #8fdfff;
     border-color: #8fdfff;
     color: #082030;
+  }
+  .edit-link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 48px;
+    margin: 0 0 22px;
+    border-radius: 10px;
+    background: #ffcf4d;
+    color: #2a1a00;
+    font-size: 17px;
+    font-weight: 700;
+    text-decoration: none;
   }
   .hint { margin: 0 0 8px; font-size: 14px; color: #c5d7e6; }
 </style>

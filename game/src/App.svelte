@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import EditorView from './components/EditorView.svelte';
   import CalendarPanel from './components/CalendarPanel.svelte';
   import DemoRibbon from './components/DemoRibbon.svelte';
   import FlowView from './components/flow/FlowView.svelte';
@@ -32,6 +33,7 @@
   let hintTier = 0;
   let route = $state(window.location.hash);
   const showcasing = $derived(route.startsWith('#/showcase'));
+  const editing = $derived(route.startsWith('#/editor'));
 
   const calendar = $derived.by((): CalendarEntity | null => {
     const found = room?.objects.find((obj) => obj.kind === 'calendar');
@@ -189,9 +191,11 @@
   });
 </script>
 
-<div class="phone" data-text={save.player.textSize}>
+<div class="phone" class:wide={editing} data-text={save.player.textSize}>
   <VersionBadge />
-  {#if error}
+  {#if editing}
+    <EditorView />
+  {:else if error}
     <p class="error">{error}</p>
   {:else if !room}
     <p class="status">กำลังเปิดห้อง…</p>
@@ -279,6 +283,7 @@
 </div>
 
 <style>
+  .phone.wide { width: 100vw; }
   .room-layer { position: absolute; inset: 0; }
   .room-layer.hidden { visibility: hidden; pointer-events: none; }
   .flow-sub {

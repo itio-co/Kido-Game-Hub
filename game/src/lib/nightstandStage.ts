@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { findAsset, vfovFromHfov } from './showcaseAssets';
 
 export type NightstandStage = { dispose: () => void };
 export type NightstandVariant = 'lowpoly' | 'master';
@@ -7,29 +8,16 @@ export type NightstandVariant = 'lowpoly' | 'master';
 /** Cream wall sampled to the crop's background. */
 const WALL = '#f0c9a0';
 
+const NIGHTSTAND = findAsset('player-room/nightstand')!;
+
 /** Runtime models exported from game/assets-src/nightstand (Blender). */
 export const NIGHTSTAND_MODELS: Record<NightstandVariant, string> = {
-  lowpoly: `${import.meta.env.BASE_URL}models/nightstand.glb`,
-  master: `${import.meta.env.BASE_URL}models/nightstand-master.glb`,
+  lowpoly: NIGHTSTAND.variants.find((v) => v.id === 'lowpoly')!.url,
+  master: NIGHTSTAND.variants.find((v) => v.id === 'master')!.url,
 };
 
-/**
- * Camera matched in Blender to showcase/nightstand-ref.png (252×284).
- * Blender: lens 162.12 mm on a 36 mm sensor (horizontal fit), location (1.5167, -3.0410, 1.3648) m,
- * rotation XYZ (73.63°, 0.54°, 26.89°). Converted Z-up → Y-up as (x, y, z) → (x, z, -y).
- * See game/assets-src/nightstand/cam.json and solve_cam.py.
- */
-const MATCH = {
-  /** Horizontal field of view (deg). Vertical FOV is derived from the canvas aspect. */
-  hfovDeg: 2 * THREE.MathUtils.radToDeg(Math.atan(36 / 2 / 162.1169)),
-  position: new THREE.Vector3(1.51665, 1.36477, 3.04096),
-  quaternion: new THREE.Quaternion(-0.139571, 0.230806, 0.028608, 0.962512),
-};
-
-function vfovFromHfov(hfovDeg: number, aspect: number): number {
-  const h = THREE.MathUtils.degToRad(hfovDeg);
-  return THREE.MathUtils.radToDeg(2 * Math.atan(Math.tan(h / 2) / aspect));
-}
+/** Camera matched in Blender to showcase/nightstand-ref.png (see showcaseAssets.ts). */
+const MATCH = NIGHTSTAND.ref!.camera;
 
 /**
  * Isolated nightstand for the showcase, loaded from a GLB.
