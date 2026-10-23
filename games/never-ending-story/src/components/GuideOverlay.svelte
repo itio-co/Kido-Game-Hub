@@ -19,6 +19,7 @@
   let { st, onModelTap, onChange, say, modelCanvas = null }: Props = $props();
 
   let svg = $state<SVGSVGElement>();
+  let candMenuEl = $state<HTMLDivElement>();
   const vr = $derived(st.viewRect);
   const s = $derived(1 / st.k);
 
@@ -133,6 +134,8 @@
     });
   });
   const highlighted = $derived(new Set(st.highlight?.ids ?? []));
+  /** Masters per axis (two → the badges show ★1 / ★2). */
+  const masterCount = $derived([0, 1, 2].map((a) => st.lines.filter((l) => l.axis === a && l.master).length));
 
   // ---------- guide line ↔ mock-up edges ----------
   $effect(() => {
@@ -184,6 +187,12 @@
   const fmtDeg = (deg: number): string => `${deg < 10 ? deg.toFixed(1) : Math.round(deg)}°`;
 
   /** Measured vanishing points: on-screen marker, or an arrow at the edge pointing to it. */
+  /** Exact VP (ref px, 'x,y'; '' at infinity) — exposed as data-vp-point for checks. */
+  function vpAttr(axis: number): string {
+    const fit = st.vps[axis];
+    if (!fit || Math.abs(fit.vp[2]) < 1e-12) return '';
+    return `${fit.vp[0] / fit.vp[2]},${fit.vp[1] / fit.vp[2]}`;
+  }
   const vpMarks = $derived.by(() => {
     const out: { axis: 0 | 1 | 2; inside: boolean; at: V2; angle: number; dist: number; par: boolean }[] = [];
     const cx = vr.x0 + vr.w / 2;
@@ -239,7 +248,7 @@
     lock?: { fixed: V2; vp: V3; axis: number };
   };
   type SegDrag = { kind: 'seg'; id: number; p0: V2; a0: V2; b0: V2; ma: EndRef[]; mb: EndRef[]; x: number; y: number; moved: boolean };
-  type Drag = LineDrag | SegDrag | { kind: 'pair'; id: number; off: V2 };
+  type Drag = LineDrag | SegDrag | { kind: 'pair'; id: number; off: V2 } | { kind: 'origin'; off: V2; moved: boolean };
   let drag: Drag | null = null;
   const pointers = new Map<number, { x: number; y: number }>();
   let gesture: { startX: number; startY: number; moved: boolean; pinch: number | null; center: V2; zoom: number } | null = null;
@@ -343,7 +352,7 @@
     if (pressTimer) clearTimeout(pressTimer);
     pressTimer = null;
   }
-  function startHandle(event: PointerEvent, next: Drag): void {
+  function startHandle(event: PointerEvent, next: Exclude<Drag, { kind: 'origin' }>): void {
     event.stopPropagation();
     event.preventDefault();
     svg!.setPointerCapture(event.pointerId);
@@ -416,7 +425,7 @@
     st.endLive();
   }
   function menuSetMaster(): void {
-    const msg = menu ? st.setMaster(menu.id) : null;
+    const msg = menu ? st.toggleMaster(menu.id) : null;
     menu = null;
     if (msg === null) return;
     st.solveLines();
@@ -433,9 +442,93 @@
   }
   function windowDown(event: PointerEvent): void {
     if (menu && !menuEl?.contains(event.target as Node)) menu = null;
+    if (candMenu && !candMenuEl?.contains(event.target as Node)) candMenu = null;
   }
   function windowKey(event: KeyboardEvent): void {
     if (menu && event.key === 'Escape') menu = null;
+    else if (candMenu && event.key === 'Escape') candMenu = null;
+    else if (st.originMode && event.key === 'Escape') st.originMode = false;
+    else if (event.key === 'Escape' && st.candidates.length && !st.pick) {
+      st.clearCandidates();
+      say?.(T.detect.cleared);
+    } else if (hoverCand !== null && !event.ctrlKey && !event.metaKey && !event.altKey && /^[123]$/.test(event.key)) {
+      // hover a candidate + 1/2/3 = its axis (X/Y/Z)
+      event.preventDefault();
+      const a = (Number(event.key) - 1) as 0 | 1 | 2;
+      st.setCandidateAxis(hoverCand, a);
+      say?.(T.detect.axisSet(AXIS_NAMES[a]));
+    }
+  }
+
+  // ---------- axis origin (T.axisOrigin) ----------
+  /** Segment (guide line or detected candidate) of an origin junction id. */
+  function originSeg(id: number): { a: V2; b: V2 } | undefined {
+    return id < 0 ? st.candidates.find((c) => c.id === -id) : st.lines.find((l) => l.id === id);
+  }
+  /** Corner markers: from each junction, a short arm along each of its three lines (toward the far end). */
+  const originMarks = $derived(
+    st.originCands.map((c) => ({
+      c,
+      arms: c.ids.map((id, axis) => {
+        const g = originSeg(id);
+        if (!g) return null;
+        const far = Math.hypot(g.a[0] - c.p[0], g.a[1] - c.p[1]) > Math.hypot(g.b[0] - c.p[0], g.b[1] - c.p[1]) ? g.a : g.b;
+        const dx = far[0] - c.p[0];
+        const dy = far[1] - c.p[1];
+        const n = Math.hypot(dx, dy) || 1;
+        return { axis: axis as 0 | 1 | 2, d: [dx / n, dy / n] as V2 };
+      }),
+    })),
+  );
+  const tripod = $derived(st.originTripod);
+  /** Live position of the dragged ⌖ handle (ref px) and how it snapped. */
+  let originSnap = $state<'candidate' | 'cross' | null>(null);
+  function pickOrigin(p: V2): void {
+    st.setAxisOrigin(p);
+    onChange();
+    if (st.message) say?.(st.message);
+  }
+  function originCandDown(event: PointerEvent, p: V2): void {
+    event.stopPropagation();
+    if (event.button !== 0) return;
+    pickOrigin([p[0], p[1]]);
+  }
+  function originHandle(event: PointerEvent): void {
+    if (event.button !== 0 || !tripod) return;
+    event.stopPropagation();
+    event.preventDefault();
+    svg!.setPointerCapture(event.pointerId);
+    const p = toRef(event.clientX, event.clientY);
+    drag = { kind: 'origin', off: [tripod.at[0] - p[0], tripod.at[1] - p[1]], moved: false };
+    originSnap = null;
+  }
+
+  // ---------- detected line candidates ----------
+  let hoverCand = $state<number | null>(null);
+  let candMenu = $state<{ id: number; left: number; top: number } | null>(null);
+  function acceptCand(id: number, axis?: 0 | 1 | 2): void {
+    candMenu = null;
+    const msg = st.acceptCandidate(id, axis);
+    if (msg === null) return;
+    if (st.lines.length > 0 && msg !== T.detect.needAxis) {
+      st.solveLines();
+      onChange();
+    }
+    say?.(msg);
+  }
+  function candDown(event: PointerEvent, id: number): void {
+    event.stopPropagation();
+    if (event.button === 2) return; // context menu → axis chooser
+    if (event.button !== 0 || st.pick) return;
+    // no axis yet: ask (chooser at the pointer)
+    if (st.candidates.find((c) => c.id === id)?.axis === null) candContext(event, id);
+    else acceptCand(id);
+  }
+  function candContext(event: MouseEvent, id: number): void {
+    event.preventDefault();
+    event.stopPropagation();
+    const r = svg!.getBoundingClientRect();
+    candMenu = { id, left: event.clientX - r.left + 6, top: event.clientY - r.top + 6 };
   }
 
   function segHandle(event: PointerEvent, id: number): void {
@@ -486,6 +579,16 @@
 
   function dragMove(event: PointerEvent, d: Drag): void {
     const p = toRef(event.clientX, event.clientY);
+    if (d.kind === 'origin') {
+      const q: V2 = [p[0] + d.off[0], p[1] + d.off[1]];
+      // snaps to corner candidates, then to crossings of two lines; Alt = free
+      const sn = event.altKey ? { p: q, kind: null } : st.snapAxisOrigin(q);
+      originSnap = sn.kind;
+      d.moved = true;
+      st.setAxisOrigin(sn.p, true);
+      showLoupe(event, sn.p);
+      return;
+    }
     if (d.kind === 'pair') {
       const pair = st.pairs.find((x) => x.id === d.id);
       if (pair) pair.image = [p[0] + d.off[0], p[1] + d.off[1]];
@@ -511,7 +614,8 @@
       edgeSnapped = false;
       if (!t && !lock && st.edgeSnap && !event.altKey && st.edgeMap) {
         const l = st.lines.find((x) => x.id === d.id);
-        if (l) {
+        // masters are references: edge snapping never moves them
+        if (l && !l.master) {
           const other = d.end === 'a' ? l.b : l.a;
           const r = d.end === 'a' ? st.edgeFitSegment(q, other, { b: true }, 6) : st.edgeFitSegment(other, q, { a: true }, 6);
           const nq = r ? (d.end === 'a' ? r.a : r.b) : null;
@@ -537,7 +641,7 @@
         b = [b[0] + t.delta[0], b[1] + t.delta[1]];
       }
       edgeSnapped = false;
-      if (!t && st.edgeSnap && !event.altKey && st.edgeMap) {
+      if (!t && st.edgeSnap && !event.altKey && st.edgeMap && !st.lines.find((x) => x.id === d.id)?.master) {
         const r = st.edgeFitSegment(a, b, {}, 6);
         if (r && Math.max(Math.hypot(r.a[0] - a[0], r.a[1] - a[1]), Math.hypot(r.b[0] - b[0], r.b[1] - b[1])) < threshold(event)) {
           a = r.a;
@@ -560,6 +664,12 @@
     st.endLive();
   }
   function dragEnd(d: Drag): void {
+    if (d.kind === 'origin') {
+      loupe = null;
+      originSnap = null;
+      if (d.moved && st.axisOrigin) pickOrigin(st.axisOrigin);
+      return;
+    }
     clearPress();
     const t = hint;
     hint = null;
@@ -630,7 +740,11 @@
     if (!g || g.moved) return;
     // a tap
     const pick = st.pick;
-    if (pick?.want === 'image') {
+    if (st.originMode && !pick) {
+      // origin mode: a click anywhere sets the origin (snapped to corners / crossings; Alt = exactly here)
+      const q = toRef(event.clientX, event.clientY);
+      pickOrigin(event.altKey ? q : st.snapAxisOrigin(q).p);
+    } else if (pick?.want === 'image') {
       st.setPairImage(pick.pairId, toRef(event.clientX, event.clientY));
       onChange();
     } else if (pick?.want === 'model') {
@@ -650,6 +764,8 @@
   bind:this={svg}
   class="guides"
   class:picking={!!st.pick}
+  class:originmode={st.originMode}
+  data-origin-mode={st.originMode ? 'true' : null}
   viewBox="{vr.x0} {vr.y0} {vr.w} {vr.h}"
   preserveAspectRatio="none"
   onpointerdown={down}
@@ -688,6 +804,16 @@
       {/each}
     </g>
   {/each}
+  {#each st.candidates as c (c.id)}
+    {@const col = c.axis === null ? '#b9c3cc' : AXIS_COLORS[c.axis]}
+    <g class="cand" class:hover={hoverCand === c.id} data-cand={c.id} data-cand-axis={c.axis ?? 'none'}
+      data-cand-a="{c.a[0].toFixed(2)},{c.a[1].toFixed(2)}" data-cand-b="{c.b[0].toFixed(2)},{c.b[1].toFixed(2)}">
+      <line x1={c.a[0]} y1={c.a[1]} x2={c.b[0]} y2={c.b[1]} stroke={col} class="cseg" />
+      <line x1={c.a[0]} y1={c.a[1]} x2={c.b[0]} y2={c.b[1]} class="chit" role="button" tabindex="-1" aria-label={T.detect.heading}
+        onpointerdown={(e) => candDown(e, c.id)} oncontextmenu={(e) => candContext(e, c.id)}
+        onpointerenter={() => (hoverCand = c.id)} onpointerleave={() => { if (hoverCand === c.id) hoverCand = null; }} />
+    </g>
+  {/each}
   {#each st.lines as line (line.id)}
     {@const info = lineInfo.get(line.id)}
     {@const ext = info ? null : extend(line.a, line.b)}
@@ -698,7 +824,7 @@
     {/if}
     {#if info?.ray}
       <line x1={info.ray[0][0]} y1={info.ray[0][1]} x2={info.ray[1][0]} y2={info.ray[1][1]} stroke={c} class="vray" class:full={st.rays}
-        class:master={line.master} data-vp-ray={line.id} data-ray={st.rays ? line.id : null} data-master-ray={line.master ? line.axis : null} />
+        class:master={!!line.master} data-vp-ray={line.id} data-ray={st.rays ? line.id : null} data-master-ray={line.master ? line.axis : null} />
     {/if}
     {#if highlighted.has(line.id)}
       <line x1={line.a[0]} y1={line.a[1]} x2={line.b[0]} y2={line.b[1]} class="hl" data-hl={line.id} />
@@ -712,7 +838,7 @@
       <line x1={line.a[0]} y1={line.a[1]} x2={line.b[0]} y2={line.b[1]} class="halo {info.band}" class:outlier={info.outlier}
         data-res={line.id} data-band={info.band} data-deg={info.deg.toFixed(4)} data-outlier={info.outlier || null} />
     {/if}
-    <line x1={line.a[0]} y1={line.a[1]} x2={line.b[0]} y2={line.b[1]} stroke={c} class="seg" class:sel class:master={line.master}
+    <line x1={line.a[0]} y1={line.a[1]} x2={line.b[0]} y2={line.b[1]} stroke={c} class="seg" class:sel class:master={!!line.master}
       data-line={line.id} data-master={line.master ? line.axis : null} />
     {#if ea && tickIds.has(line.id)}
       <g class="ticks" data-edge-ticks={line.id}>
@@ -739,9 +865,12 @@
     {#if line.master}
       {@const mx = (line.a[0] + line.b[0]) / 2}
       {@const my = (line.a[1] + line.b[1]) / 2}
-      <g class="mbadge" data-master-badge={line.id} data-axis={line.axis} transform="translate({mx} {my})">
-        <circle r={11 * s} stroke={c} stroke-width={2} />
-        <text y={5.5 * s} font-size={16 * s} text-anchor="middle" fill={c}>★</text>
+      {@const rank = line.master === 2 ? 2 : 1}
+      {@const two = masterCount[line.axis] === 2}
+      <g class="mbadge" class:m2={rank === 2} data-master-badge={line.id} data-master-rank={rank} data-axis={line.axis} transform="translate({mx} {my})">
+        <circle r={(two ? 13 : 11) * s} stroke={c} stroke-width={2} stroke-dasharray={rank === 2 ? `${4 * s} ${2.5 * s}` : null} />
+        <text x={two ? -3 * s : 0} y={5.5 * s} font-size={16 * s} text-anchor="middle" fill={c}>★</text>
+        {#if two}<text x={8 * s} y={8 * s} font-size={11 * s} text-anchor="middle" fill={c} class="mnum">{rank}</text>{/if}
       </g>
     {/if}
     <line
@@ -798,7 +927,7 @@
 
   {#each vpMarks as m (m.axis)}
     {#if m.inside}
-      <g class="vp" data-vp={m.axis}>
+      <g class="vp" data-vp={m.axis} data-vp-point={vpAttr(m.axis)}>
         <circle cx={m.at[0]} cy={m.at[1]} r={9 * s} fill="none" stroke={AXIS_COLORS[m.axis]} />
         <line x1={m.at[0] - 14 * s} y1={m.at[1]} x2={m.at[0] + 14 * s} y2={m.at[1]} stroke={AXIS_COLORS[m.axis]} />
         <line x1={m.at[0]} y1={m.at[1] - 14 * s} x2={m.at[0]} y2={m.at[1] + 14 * s} stroke={AXIS_COLORS[m.axis]} />
@@ -806,7 +935,7 @@
       </g>
     {:else if m.par}
       <!-- parallel axis: VP at infinity → a two-headed "∞" direction arrow at the edge -->
-      <g class="vp off par" data-vp={m.axis} data-vp-parallel={m.axis} transform="translate({m.at[0]} {m.at[1]})">
+      <g class="vp off par" data-vp={m.axis} data-vp-point={vpAttr(m.axis)} data-vp-parallel={m.axis} transform="translate({m.at[0]} {m.at[1]})">
         <g transform="rotate({m.angle})">
           <line x1={-16 * s} y1={0} x2={16 * s} y2={0} stroke={AXIS_COLORS[m.axis]} stroke-width={3 * s} />
           <path d="M {8 * s} {-7 * s} L {20 * s} 0 L {8 * s} {7 * s} Z" fill={AXIS_COLORS[m.axis]} />
@@ -817,7 +946,7 @@
         >
       </g>
     {:else}
-      <g class="vp off" data-vp={m.axis} transform="translate({m.at[0]} {m.at[1]})">
+      <g class="vp off" data-vp={m.axis} data-vp-point={vpAttr(m.axis)} transform="translate({m.at[0]} {m.at[1]})">
         <g transform="rotate({m.angle})">
           <path d="M {-10 * s} {-9 * s} L {12 * s} 0 L {-10 * s} {9 * s} Z" fill={AXIS_COLORS[m.axis]} />
         </g>
@@ -846,6 +975,43 @@
       </g>
     {/if}
   {/each}
+
+  <!-- axis origin: corner candidates (3-colour arms) and the tripod / ⌖ handle -->
+  {#each originMarks as m, i (m.c.p.join(','))}
+    <g class="ocand" class:live={st.originMode} data-origin-cand="{m.c.p[0].toFixed(2)},{m.c.p[1].toFixed(2)}" data-origin-score={m.c.score.toFixed(3)}>
+      {#each m.arms as arm (arm?.axis)}
+        {#if arm}
+          <line x1={m.c.p[0]} y1={m.c.p[1]} x2={m.c.p[0] + arm.d[0] * 14 * s} y2={m.c.p[1] + arm.d[1] * 14 * s} stroke={AXIS_COLORS[arm.axis]} class="oarm" />
+        {/if}
+      {/each}
+      <circle cx={m.c.p[0]} cy={m.c.p[1]} r={2.6 * s} class="odot" />
+      {#if st.originMode}
+        <circle cx={m.c.p[0]} cy={m.c.p[1]} r={9 * s} class="ohit" role="button" tabindex="-1" aria-label={T.axisOrigin.candAria(i + 1)}
+          onpointerdown={(e) => originCandDown(e, m.c.p)} />
+      {/if}
+    </g>
+  {/each}
+  {#if tripod}
+    {@const o = tripod.at}
+    <g class="tripod" class:live={st.originMode} class:inherited={!st.axisOrigin} data-origin-tripod="{o[0].toFixed(3)},{o[1].toFixed(3)}"
+      data-origin-proj={tripod.proj ? `${tripod.proj[0].toFixed(3)},${tripod.proj[1].toFixed(3)}` : null} data-origin-snap={originSnap}>
+      {#each tripod.dirs as d, a (a)}
+        {#if d}
+          {@const e = [o[0] + d[0] * 46 * s, o[1] + d[1] * 46 * s]}
+          <line x1={o[0]} y1={o[1]} x2={e[0]} y2={e[1]} stroke={AXIS_COLORS[a]} class="tleg" data-origin-axis={a} />
+          <path d="M {e[0] + d[0] * 9 * s} {e[1] + d[1] * 9 * s} L {e[0] - d[1] * 5 * s} {e[1] + d[0] * 5 * s} L {e[0] + d[1] * 5 * s} {e[1] - d[0] * 5 * s} Z" fill={AXIS_COLORS[a]} />
+          <text x={e[0] + d[0] * 16 * s} y={e[1] + d[1] * 16 * s + 4 * s} font-size={12 * s} fill={AXIS_COLORS[a]} text-anchor="middle" class="tlabel">{AXIS_NAMES[a]}</text>
+        {/if}
+      {/each}
+      <circle cx={o[0]} cy={o[1]} r={6 * s} class="tknob" />
+      <line x1={o[0] - 9 * s} y1={o[1]} x2={o[0] + 9 * s} y2={o[1]} class="tcross" />
+      <line x1={o[0]} y1={o[1] - 9 * s} x2={o[0]} y2={o[1] + 9 * s} class="tcross" />
+      {#if st.originMode}
+        <circle cx={o[0]} cy={o[1]} r={14 * s} class="thit" role="button" tabindex="-1" aria-label={T.axisOrigin.handleAria} data-origin-handle
+          onpointerdown={originHandle} />
+      {/if}
+    </g>
+  {/if}
 </svg>
 
 {#if loupeBox && loupe}
@@ -873,7 +1039,7 @@
         {@const ext = extend(line.a, line.b)}
         {#if ext}<line x1={ext[0][0]} y1={ext[0][1]} x2={ext[1][0]} y2={ext[1][1]} stroke={AXIS_COLORS[line.axis]} class="ext" />{/if}
         {#if line.master}<line x1={line.a[0]} y1={line.a[1]} x2={line.b[0]} y2={line.b[1]} stroke={AXIS_COLORS[line.axis]} class="lmaster" data-loupe-master={line.id} />{/if}
-        <line x1={line.a[0]} y1={line.a[1]} x2={line.b[0]} y2={line.b[1]} stroke={AXIS_COLORS[line.axis]} class="lseg" class:master={line.master} />
+        <line x1={line.a[0]} y1={line.a[1]} x2={line.b[0]} y2={line.b[1]} stroke={AXIS_COLORS[line.axis]} class="lseg" class:master={!!line.master} />
         {#each ['a', 'b'] as const as end (end)}
           <circle cx={line[end][0]} cy={line[end][1]} r={7 * ls} fill="none" stroke={AXIS_COLORS[line.axis]} class="lend" />
         {/each}
@@ -900,15 +1066,33 @@
 
 {#if menu && menuLine}
   {@const ax = AXIS_NAMES[menuLine.axis]}
+  {@const ms = st.lines.filter((l) => l.axis === menuLine.axis && l.master)}
+  {@const par = st.vpModes[menuLine.axis] === 'parallel'}
   <div class="lmenu" bind:this={menuEl} role="menu" aria-label={T.master.menuAria} style="left:{menu.left}px;top:{menu.top}px;border-color:{AXIS_COLORS[menuLine.axis]}"
     data-line-menu={menuLine.id}>
     <div class="mtitle" style="color:{AXIS_COLORS[menuLine.axis]}">{T.master.option(st.lineLabel(menuLine.id))}</div>
     {#if menuLine.master}
-      <div class="mitem done" data-menu-is-master>{T.master.isMaster(ax)}</div>
+      <div class="mitem done" data-menu-is-master={menuLine.master === 2 ? 2 : 1}>{ms.length === 2 ? (menuLine.master === 2 ? T.master.isMaster2(ax) : T.master.isMaster1(ax)) : T.master.isMaster(ax)}</div>
+      {#if ms.length === 2}
+        <button type="button" role="menuitem" class="mitem" data-menu-unset-master onclick={menuSetMaster}>{T.master.toggleUnset}</button>
+      {/if}
     {:else}
-      <button type="button" role="menuitem" class="mitem" data-menu-set-master onclick={menuSetMaster}>{T.master.set}</button>
+      {@const oldest = ms.find((l) => l.master === true)}
+      <button type="button" role="menuitem" class="mitem" data-menu-set-master onclick={menuSetMaster}
+        >{par || !ms.length ? T.master.set : ms.length === 1 ? T.master.addSecond : T.master.replaceOldest(st.lineLabel(oldest?.id ?? -1))}</button>
     {/if}
     <button type="button" role="menuitem" class="mitem close" data-menu-close onclick={() => (menu = null)}>{T.master.menuClose}</button>
+  </div>
+{/if}
+
+{#if candMenu}
+  {@const cm = candMenu}
+  <div class="lmenu cmenu" bind:this={candMenuEl} role="menu" aria-label={T.detect.chooserAria} style="left:{cm.left}px;top:{cm.top}px" data-cand-menu={cm.id}>
+    <div class="mtitle">{T.detect.chooserAria}</div>
+    {#each [0, 1, 2] as const as a (a)}
+      <button type="button" role="menuitem" class="mitem" style="color:{AXIS_COLORS[a]}" data-cand-accept={a} onclick={() => acceptCand(cm.id, a)}>{T.detect.chooserAccept(AXIS_NAMES[a])} <small>&nbsp;({a + 1})</small></button>
+    {/each}
+    <button type="button" role="menuitem" class="mitem close" onclick={() => (candMenu = null)}>{T.master.menuClose}</button>
   </div>
 {/if}
 
@@ -917,6 +1101,7 @@
 <style>
   .guides { position: absolute; inset: 0; width: 100%; height: 100%; touch-action: none; cursor: grab; z-index: 3; }
   .guides.picking { cursor: crosshair; }
+  .guides.originmode { cursor: crosshair; }
   .guides.picking .handle { pointer-events: none; }
   line, circle, path, rect { vector-effect: non-scaling-stroke; }
   .ext { stroke-width: 1.5; stroke-dasharray: 7 6; opacity: 0.85; }
@@ -928,6 +1113,7 @@
   .mbadge { pointer-events: none; }
   .mbadge circle { fill: rgba(6, 16, 24, 0.85); }
   .mbadge text { font-weight: 700; }
+  .mbadge .mnum { font-weight: 800; }
   .lmaster { stroke-width: 9; opacity: 0.35; stroke-linecap: round; }
   .lseg.master { stroke-width: 4; }
   .lmenu { position: absolute; z-index: 6; width: 220px; display: grid; gap: 4px; padding: 8px; border: 2px solid; border-radius: 10px; background: rgba(10, 20, 30, 0.96); box-shadow: 0 6px 24px rgba(0, 0, 0, 0.5); }
@@ -939,6 +1125,25 @@
   .vray { stroke-width: 1; opacity: 0.4; pointer-events: none; }
   .vray.full { stroke-width: 1.2; opacity: 0.5; }
   .ghost { pointer-events: none; }
+  .cseg { stroke-width: 1.6; stroke-dasharray: 6 4; opacity: 0.9; pointer-events: none; }
+  .cand.hover .cseg { stroke-width: 3; opacity: 1; }
+  .chit { stroke: transparent; stroke-width: 12; stroke-linecap: round; pointer-events: stroke; cursor: copy; }
+  .chit:focus { outline: none; }
+  .ocand { pointer-events: none; opacity: 0.75; }
+  .ocand.live { opacity: 1; }
+  .oarm { stroke-width: 2.6; stroke-linecap: round; }
+  .odot { fill: #fff; stroke: #000; stroke-width: 0.6; }
+  .ocand.live .odot { fill: #ffe14d; }
+  .ohit { fill: transparent; stroke: #ffe14d; stroke-width: 1; stroke-dasharray: 2 2; pointer-events: all; cursor: pointer; }
+  .ohit:focus, .thit:focus { outline: none; }
+  .tripod { pointer-events: none; }
+  .tripod.inherited { opacity: 0.55; }
+  .tleg { stroke-width: 2.4; stroke-linecap: round; }
+  .tlabel { font-weight: 800; paint-order: stroke; stroke: rgba(0, 0, 0, 0.85); stroke-width: 3; }
+  .tknob { fill: rgba(255, 255, 255, 0.15); stroke: #fff; stroke-width: 1.6; }
+  .tcross { stroke: #fff; stroke-width: 1.2; }
+  .thit { fill: transparent; pointer-events: all; cursor: move; }
+  .cmenu { border-color: #b9c3cc; }
   .gray { stroke-width: 1; opacity: 0.22; }
   .gseg { stroke-width: 2; opacity: 0.45; stroke-dasharray: 8 4; }
   .gdot { opacity: 0.45; }

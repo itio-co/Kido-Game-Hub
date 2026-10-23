@@ -50,6 +50,21 @@
     onChange();
     say(msg);
   }
+  /** ★ toggle on the selected line (converging axes may have two masters). */
+  function toggleMaster(id: number | null): void {
+    const msg = st.toggleMaster(id);
+    if (msg === null) return;
+    st.solveLines();
+    onChange();
+    say(msg);
+  }
+  function setMaster2(a: Axis, v: string): void {
+    const msg = st.setMaster2(a, v === '' ? null : Number(v));
+    if (msg === null) return;
+    st.solveLines();
+    onChange();
+    say(msg);
+  }
   function cycleMaster(a: Axis): void {
     const msg = st.cycleMaster(a);
     if (msg === null) return;
@@ -78,6 +93,17 @@
     if (r.moved) st.solveLines();
     onChange();
     say(r.message);
+  }
+  async function detect(): Promise<void> {
+    const n = await st.detectLines();
+    if (n !== null && st.message) say(st.message);
+  }
+  function acceptAll(a: Axis): void {
+    const msg = st.acceptAll(a);
+    if (msg === null) return;
+    st.solveLines();
+    onChange();
+    say(msg);
   }
   function run(fn: () => boolean): void {
     fn();
@@ -217,7 +243,9 @@
       {@const axLines = st.lines.filter((l) => l.axis === a)}
       {#if axLines.length}
         {@const mid = st.masterId(a)}
-        <div class="mrow" data-master-row={a} data-master-id={mid}>
+        {@const mid2 = st.master2Id(a)}
+        {@const mwarn = st.masterWarning(a)}
+        <div class="mrow" data-master-row={a} data-master-id={mid} data-master2-id={mid2}>
           <span class="mlabel" style="color:{AXIS_COLORS[a]}">{T.master.label(AXIS_NAMES[a])}</span>
           <select data-master-select={a} aria-label={T.master.selectAria(AXIS_NAMES[a])} value={mid ?? ''}
             onchange={(e) => setMaster(Number(e.currentTarget.value))}>
@@ -227,9 +255,25 @@
           </select>
           <button type="button" class="small" data-master-cycle={a} disabled={axLines.length < 2}
             aria-label={T.master.cycleAria(AXIS_NAMES[a])} title={T.master.cycleAria(AXIS_NAMES[a])} onclick={() => cycleMaster(a)}>{T.master.cycle}</button>
-          <button type="button" class="small" data-set-master={a} disabled={!selLine || selLine.axis !== a || !!selLine.master}
-            title={T.master.setTitle(AXIS_NAMES[a])} onclick={() => setMaster(st.selectedLine)}>{T.master.set}</button>
+          <button type="button" class="small" class:on={!!selLine?.master && selLine.axis === a} data-set-master={a} disabled={!selLine || selLine.axis !== a}
+            aria-pressed={!!selLine?.master && selLine.axis === a}
+            title={T.master.toggleTitle(AXIS_NAMES[a])} onclick={() => toggleMaster(st.selectedLine)}
+            >{selLine?.master && selLine.axis === a ? T.master.toggleUnset : T.master.toggleSet}</button>
         </div>
+        {#if !par && axLines.length >= 2}
+          <div class="mrow" data-master2-row={a}>
+            <span class="mlabel" style="color:{AXIS_COLORS[a]}">{T.master.label2(AXIS_NAMES[a])}</span>
+            <select data-master2-select={a} aria-label={T.master.select2Aria(AXIS_NAMES[a])} value={mid2 === null ? '' : String(mid2)}
+              onchange={(e) => setMaster2(a, e.currentTarget.value)}>
+              <option value="">{T.master.none}</option>
+              {#each axLines.filter((l) => l.id !== mid) as l (l.id)}
+                <option value={String(l.id)}>{T.master.option(st.lineLabel(l.id))}{resOf(a, l.id)}</option>
+              {/each}
+            </select>
+          </div>
+        {/if}
+        {#if par && mid2 !== null}<p class="tip mtip" data-master-parallel-ignored={a}>{T.master.parallelIgnored(st.lineLabel(mid2))}</p>{/if}
+        {#if mwarn}<p class="tip mtip mwarn" data-master-warn={a}>{mwarn}</p>{/if}
         {#if axLines.length === 1 && !f}<p class="tip mtip" data-master-only={a}>{T.master.onlyMaster(AXIS_NAMES[a])}</p>{/if}
       {/if}
     {/each}
@@ -247,7 +291,7 @@
     <div class="seg3" role="radiogroup" aria-label={T.edges.showAria}>
       {#each (['drag', 'always', 'off'] as const).map((id) => [id, T.showModes[id]] as const) as [id, label] (id)}
         <button type="button" role="radio" aria-checked={st.edgeMode === id} class:on={st.edgeMode === id} data-edge-mode={id}
-          onclick={() => { st.edgeMode = id; onChange(); }}>{label}</button>
+          onclick={() => { st.edgeMode = id; onChange(); if (id === 'always' && !st.candidates.length && st.detecting === null) void detect(); }}>{label}</button>
       {/each}
     </div>
     {#if selEdge}
@@ -265,6 +309,53 @@
         onclick={() => { st.edgeSnap = !st.edgeSnap; onChange(); say(T.edges.snapWhileDragToast(st.edgeSnap)); }}>{T.edges.snapWhileDrag(st.edgeSnap)}</button>
     </div>
     <p class="tip legend">{T.edges.legendLead} <span class="good">● &lt; 1 px</span> <span class="warn">● ≤ 2.5 px</span> <span class="bad">● &gt; 2.5 px</span> · <b>{T.edges.legendRefine}</b> {T.edges.legendRefineText}</p>
+  </div>
+  <div class="vpbox" data-detect-panel>
+    <div class="vphead">{T.detect.heading} <small>{T.detect.headingNote}</small>
+      {#if st.detecting !== null}<span class="n" data-detect-running>{T.detect.running(Math.round(st.detecting * 100))}</span>
+      {:else if st.candidates.length}<span class="n" data-detect-count={st.candidates.length}>{st.candidates.length}</span>{/if}
+    </div>
+    <div class="actions">
+      <button type="button" data-act="detect-lines" title={T.detect.runTitle} disabled={st.detecting !== null} onclick={() => void detect()}>{T.detect.run}</button>
+      <label class="n" data-detect-minlen>{T.detect.minLen(st.detectMinLen)}
+        <input type="range" min="15" max="200" step="5" value={st.detectMinLen} onchange={(e) => { st.detectMinLen = e.currentTarget.valueAsNumber; if (st.candidates.length) void detect(); }} /></label>
+    </div>
+    {#if st.candidates.length}
+      <div class="actions">
+        {#each [0, 1, 2] as const as a (a)}
+          {@const n = st.candidates.filter((c) => c.axis === a).length}
+          <button type="button" data-act="accept-all" data-axis={a} disabled={!n} style="border-color:{AXIS_COLORS[a]}"
+            onclick={() => acceptAll(a)}>{T.detect.acceptAll(AXIS_NAMES[a])} ({n})</button>
+        {/each}
+        <button type="button" data-act="clear-candidates" onclick={() => { st.clearCandidates(); say(T.detect.cleared); }}>{T.detect.clear}</button>
+      </div>
+    {/if}
+    <p class="tip legend">{T.detect.legend}</p>
+  </div>
+  <div class="vpbox" data-origin-panel data-origin-group={st.group} data-origin-set={st.axisOrigin ? 'true' : 'false'}>
+    <div class="vphead">{T.axisOrigin.heading} <small>{T.axisOrigin.headingNote}</small>
+      <span class="n" data-origin-count={st.originCands.length}>{st.originCands.length ? T.axisOrigin.candidates(st.originCands.length) : ''}</span>
+    </div>
+    <p class="n" data-origin-status>
+      {#if st.axisOrigin}{T.axisOrigin.setAt(Math.round(st.axisOrigin[0]), Math.round(st.axisOrigin[1]))}
+      {:else if st.anchorGroup}{T.axisOrigin.fromOther(T.groups[st.anchorGroup])}
+      {:else}{T.axisOrigin.notSet}{/if}
+    </p>
+    {#if !st.originCands.length}<p class="tip">{T.axisOrigin.noCandidates}</p>{/if}
+    <div class="actions">
+      <button type="button" data-act="origin-mode" aria-pressed={st.originMode} class:on={st.originMode} title={T.axisOrigin.placeTitle}
+        onclick={() => { st.originMode = !st.originMode; if (st.originMode) say(T.axisOrigin.modeOn); }}>{T.axisOrigin.place}</button>
+      <button type="button" data-act="origin-clear" disabled={!st.axisOrigin} onclick={() => { st.setAxisOrigin(null); onChange(); say(T.axisOrigin.cleared); }}>{T.axisOrigin.clear}</button>
+      <label class="n"><input type="checkbox" data-origin-detected checked={st.originUseDetected} onchange={(e) => { st.originUseDetected = e.currentTarget.checked; onChange(); }} /> {T.axisOrigin.useDetected}</label>
+    </div>
+    <div class="actions">
+      {#each [0, 1, 2] as const as a (a)}
+        <button type="button" data-act="origin-flip" data-axis={a} style="border-color:{AXIS_COLORS[a]}" title={T.axisOrigin.flipTitle(AXIS_NAMES[a], AXIS_NAMES[a === 0 ? 1 : 0])}
+          onclick={() => { st.flipOriginAxis(a); onChange(); if (st.message) say(st.message); }}>{T.axisOrigin.flip(AXIS_NAMES[a])}</button>
+      {/each}
+    </div>
+    <p class="tip">{st.group === 'object' ? T.axisOrigin.objectNote : T.axisOrigin.roomNote}</p>
+    <p class="tip legend">{T.axisOrigin.legend}</p>
   </div>
   <div class="field" role="radiogroup" aria-label={T.diff.aria}>
     <span>{T.diff.label}</span>
@@ -431,6 +522,7 @@
   .mrow .mlabel { font-weight: 700; white-space: nowrap; }
   .mrow select { flex: 1 1 96px; min-height: 40px; min-width: 96px; padding: 0 6px; background: #1a2836; color: #e6f1fa; border: 1px solid #3a5670; border-radius: 6px; font-size: 14px; }
   .mtip { margin: -4px 0 8px 30px; }
+  .mwarn { color: #ffcf6e; }
   .small.mode { min-width: 64px; min-height: 44px; border: 1px solid #3a5670; background: #1a2836; color: #c5d7e6; }
   .small.mode.on { background: #8fd8ff; color: #06202f; border-color: #8fd8ff; }
   .hint { width: 100%; min-height: 44px; text-align: left; font-size: 14px; font-weight: 400; border: 1px dashed #ffd36b; background: rgba(255, 211, 107, 0.08); color: #ffe7a6; border-radius: 8px; padding: 4px 8px; margin: 2px 0 6px; }

@@ -49,6 +49,14 @@ assert.ok(text.includes('"y": [1, 2, 3]'), 'flat arrays stay on one line');
 assert.equal(stableStringify(JSON.parse(text)), text, 'parse → stringify is a fixed point');
 assert.deepEqual(canonicalize({ b: [{ d: 1, c: 2 }], a: 1 }), { a: 1, b: [{ c: 2, d: 1 }] });
 ok('stable key order, -0, undefined, NaN, round trip');
+// whole-object placement block of <variant>.edits.json: vectors stay on one line, stable round trip, optional
+const withPlacement = { format: 'kido-editor-edits@1', parts: [], placement: { positionCm: [12.5, -40, 0], rotationDeg: [0, 0, 15], scale: 1 } };
+const placed = stableStringify(withPlacement);
+assert.ok(placed.includes('"positionCm": [12.5, -40, 0]') && placed.includes('"rotationDeg": [0, 0, 15]'), placed);
+assert.equal(stableStringify(JSON.parse(placed)), placed);
+assert.ok(!sameData(withPlacement, { ...withPlacement, placement: undefined }), 'placement is part of the data');
+assert.ok(sameData({ format: 'kido-editor-edits@1', parts: [] }, { ...withPlacement, placement: undefined }), 'no placement = older file');
+ok('edits.json placement block round trip');
 assert.equal(normalizeText('\uFEFF{\r\n  "a": 1\r\n}\r\n'), '{\n  "a": 1\n}\n');
 assert.ok(sameData(JSON.parse(normalizeText(text.replace(/\n/g, '\r\n'))), a));
 ok('CRLF / BOM normalised');

@@ -12,6 +12,7 @@ import { withDefaultMasters } from './masterLine';
 import type { ShowcaseAsset } from '../showcaseAssets';
 import type { EditState } from './modelEditor';
 import { migrateParts } from './pivot';
+import { cleanPlacement, placementFileData } from './placement';
 import {
   API_HEADER,
   API_PATH,
@@ -54,15 +55,20 @@ export function editsFileData(asset: ShowcaseAsset, variant: string, state: Edit
     variant,
     model: v?.url.replace(/^.*\/models\//, 'models/') ?? null,
     parts: state.parts,
+    // whole-object placement (Blender cm / deg), only when moved: older files stay byte-identical
+    ...(state.placement ? { placement: placementFileData(state.placement) } : {}),
   };
 }
 
 /** EditState stored in an edits file (null if the file does not look right). */
 export function editsStateOf(file: unknown): EditState | null {
-  const f = file as { format?: string; parts?: unknown } | null;
+  const f = file as { format?: string; parts?: unknown; placement?: unknown } | null;
   if (!f || f.format !== FORMAT_EDITS || !Array.isArray(f.parts)) return null;
-  // `pivot` is optional: files written before pivots existed load with the GLB origins.
-  return { parts: migrateParts(structuredClone(f.parts) as EditState['parts']) };
+  // `pivot` and `placement` are optional: older files load with the GLB origins and the model where the GLB puts it.
+  const out: EditState = { parts: migrateParts(structuredClone(f.parts) as EditState['parts']) };
+  const placement = cleanPlacement(f.placement);
+  if (placement) out.placement = placement;
+  return out;
 }
 
 function bundledFor(item: string): Record<string, unknown> {
