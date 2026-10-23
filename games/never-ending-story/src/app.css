@@ -157,11 +157,12 @@ button { cursor: pointer; -webkit-tap-highlight-color: transparent; }
   left: 10px;
   right: 10px;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 8px;
-  height: 40px;
+  min-height: 40px;
   pointer-events: none;
 }
+.hud .rule, .hud .place { align-self: center; }
 .hud .rule {
   flex: 1;
   height: 2px;
@@ -191,6 +192,44 @@ button { cursor: pointer; -webkit-tap-highlight-color: transparent; }
 }
 .icon svg { display: block; }
 .hud .spacer { width: 40px; flex: none; }
+/* Status + place in one compact two-line pill on the top row, so nothing hangs below the bar over hotspots. */
+.hud .titles {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 40px;
+  padding: 3px 10px;
+  border: 1px solid var(--cyan);
+  border-radius: 14px;
+  background: var(--hud);
+  text-align: center;
+  line-height: 1.15;
+}
+.hud .titles > span {
+  display: block;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.hud .titles > .hud-status {
+  /* Up to two lines, then an ellipsis: narrow phones keep the evidence count and most of the mission. */
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  white-space: normal;
+  overflow-wrap: break-word;
+  font-size: min(var(--fs-sm), 3.3vw, 13px);
+  font-weight: 700;
+}
+.hud .place-sub {
+  font-size: min(calc(var(--fs-sm) * 0.82), 3vw);
+  opacity: 0.8;
+}
+/* The DEMO ribbon owns the top-right corner; the settings button steps left of its band. */
+.hud.demo { right: 60px; }
 
 .back, .case {
   position: absolute;

@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { Snippet } from 'svelte';
+  import { t } from '../lib/i18n/core';
 
   type Crop = { x: number; y: number; w: number; h: number };
 
@@ -51,7 +52,7 @@
   aria-valuemin={0}
   aria-valuemax={100}
   aria-valuenow={Math.round(value)}
-  aria-label="เปรียบเทียบ Mock-up กับ 3D"
+  aria-label={t('game.showcase.compare')}
   tabindex="0"
 >
   <img class="fill" style={shift} {src} alt="Mock-up" draggable="false" />

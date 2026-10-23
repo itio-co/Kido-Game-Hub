@@ -1,5 +1,7 @@
 <script lang="ts">
   import type { CalendarEntity, CalendarThemeEntity } from '../lib/types';
+  import { t } from '../lib/i18n/core';
+  import { tx } from '../lib/i18n/content';
 
   let {
     calendar,
@@ -18,7 +20,7 @@
   } = $props();
 
   const theme = $derived(calendar.themes.find((item) => item.id === themeId) ?? calendar.themes[0]);
-  const weekdays = ['อา', 'จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส'];
+  const weekdays = $derived(t('game.calendar.weekdays').split(' '));
 
   const grid = $derived.by(() => {
     const [yearText, monthText] = calendar.month.split('-');
@@ -47,14 +49,14 @@
 
 <div class="scrim" onclick={onClose} role="presentation">
   {#if theme}
-    <dialog class="sheet" aria-label={calendar.title} open onclick={(event) => event.stopPropagation()}>
+    <dialog class="sheet" aria-label={tx(calendar, 'title')} open onclick={(event) => event.stopPropagation()}>
       <div class="cal" style="background:{theme.paper};color:{theme.ink};border:4px solid {theme.frame}">
         <div class="cal-head" style="background:{theme.head}">
-          <span>{theme.art} {calendar.title}</span>
-          <small>{calendar.monthLabel}</small>
+          <span>{theme.art} {tx(calendar, 'title')}</span>
+          <small>{tx(calendar, 'monthLabel')}</small>
         </div>
         <div class="grid">
-          {#each weekdays as name}
+          {#each weekdays as name, index (index)}
             <div class="dow">{name}</div>
           {/each}
           {#each grid as cell, index (index)}
@@ -73,9 +75,9 @@
               <button
                 type="button"
                 onclick={() =>
-                  onEntry(entry.eventRef ? `${entry.title} — ออกทางประตูเพื่อเลือกเหตุการณ์` : entry.title)}
+                  onEntry(entry.eventRef ? t('game.calendar.leaveByDoor', { title: tx(entry, 'title') }) : tx(entry, 'title'))}
               >
-                {entry.icon} {dayLabel(entry.date)} {entry.title}
+                {entry.icon} {dayLabel(entry.date)} {tx(entry, 'title')}
               </button>
             </li>
           {/each}
@@ -83,7 +85,7 @@
       </div>
       {#if calendar.themeSwitch}
         <div class="themes">
-          <p>ธีม</p>
+          <p>{t('game.calendar.theme')}</p>
           <div class="row">
             {#each calendar.themes as item (item.id)}
               <button
@@ -92,17 +94,17 @@
                 class:on={item.id === theme.id}
                 aria-pressed={item.id === theme.id}
                 onclick={() => {
-                  if (locked(item)) onEntry(item.lockedHint ?? 'ยังล็อกอยู่');
+                  if (locked(item)) onEntry(item.lockedHint ? tx(item, 'lockedHint') : t('game.flow.stillLocked'));
                   else onTheme(item.id);
                 }}
               >
-                {locked(item) ? 'ล็อก ' : ''}{item.title}
+                {locked(item) ? t('game.calendar.lockedPrefix') : ''}{tx(item, 'title')}
               </button>
             {/each}
           </div>
         </div>
       {/if}
-      <button type="button" class="close" onclick={onClose}>ปิด</button>
+      <button type="button" class="close" onclick={onClose}>{t('game.common.close')}</button>
     </dialog>
   {/if}
 </div>

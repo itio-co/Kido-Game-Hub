@@ -429,6 +429,7 @@
       "themeSwitch": true,
       "month": "2026-10",
       "monthLabel": "ตุลาคม 2569",
+      "monthLabelEn": "October 2026",
       "today": "2026-10-22",
       "entries": [
         {
@@ -503,7 +504,8 @@
           "unlock": {
             "afterCase": "case-01"
           },
-          "lockedHint": "ปลดล็อกเมื่อจบคดี 01"
+          "lockedHint": "ปลดล็อกเมื่อจบคดี 01",
+          "lockedHintEn": "Unlocks after Case 01"
         }
       ]
     },
@@ -779,6 +781,7 @@
       "action": "decor",
       "targetId": "986db4af-6e8e-4601-8933-42d0ba33e5c0",
       "emptyHint": "ช่องบนผนังว่างอยู่ ไขคดีแล้วค่อยมาวางของ",
+      "emptyHintEn": "The wall slot is empty. Solve a case, then come back to place something.",
       "anchor": [
         -0.5,
         1.8,
@@ -806,6 +809,7 @@
       "action": "decor",
       "targetId": "581b099c-be90-4bd9-b754-a7dff282dbbc",
       "emptyHint": "ชั้นนี้ยังว่าง ไว้โชว์ของจากคดี",
+      "emptyHintEn": "This shelf is empty, ready to show items from cases.",
       "anchor": [
         0.58,
         1.4,
@@ -833,6 +837,7 @@
       "action": "decor",
       "targetId": "89fbcc73-f41c-4e4b-b0b4-0e306ece3d04",
       "emptyHint": "ขอบชั้นกระถางว่างอยู่",
+      "emptyHintEn": "The plant-shelf edge is empty.",
       "anchor": [
         -0.52,
         1.05,
@@ -860,6 +865,7 @@
       "action": "decor",
       "targetId": "3a07eebc-03c1-421c-87a7-7e6d0037ceae",
       "emptyHint": "มุมตู้ว่างอยู่ ยังไม่มีของมาวาง",
+      "emptyHintEn": "The cabinet corner is empty. Nothing placed here yet.",
       "anchor": [
         0.55,
         0.66,
@@ -887,6 +893,7 @@
       "action": "decor",
       "targetId": "6f44d481-04a3-43b9-83f0-094e8eaf6cc1",
       "emptyHint": "บนเตียงยังว่าง",
+      "emptyHintEn": "The bed is empty.",
       "anchor": [
         -0.3,
         0.48,
@@ -914,6 +921,7 @@
       "action": "decor",
       "targetId": "464ce4ea-51d4-46c8-9b70-93f53ab317f9",
       "emptyHint": "ช่องบนพรมว่างอยู่",
+      "emptyHintEn": "The rug slot is empty.",
       "anchor": [
         -0.4,
         0.06,
@@ -941,6 +949,7 @@
       "action": "decor",
       "targetId": "464ce4ea-51d4-46c8-9b70-93f53ab317f9",
       "emptyHint": "ช่องบนพรมว่างอยู่",
+      "emptyHintEn": "The rug slot is empty.",
       "anchor": [
         0.02,
         0.06,
@@ -968,6 +977,7 @@
       "action": "decor",
       "targetId": "464ce4ea-51d4-46c8-9b70-93f53ab317f9",
       "emptyHint": "ช่องบนพรมว่างอยู่",
+      "emptyHintEn": "The rug slot is empty.",
       "anchor": [
         0.42,
         0.06,
@@ -989,44 +999,67 @@
   ],
   "hud": {
     "backLabel": "ย้อนกลับ",
+    "backLabelEn": "Back",
     "caseLabel": "สมุดคดี",
+    "caseLabelEn": "Case notebook",
     "hintLabel": "คำใบ้",
+    "hintLabelEn": "Hint",
     "settingsLabel": "ตั้งค่า",
+    "settingsLabelEn": "Settings",
     "hereToast": "อยู่ห้องนี้แล้ว",
+    "hereToastEn": "You are already in this room",
     "hintTarget": "164142d3-913a-4534-b8f3-d7bea8dbd23d",
     "hintLines": [
       "ลองออกทางประตู เพื่อไปเลือกเหตุการณ์",
       "แตะจุดที่ประตู"
+    ],
+    "hintLinesEn": [
+      "Try going out through the door to choose an event",
+      "Tap the spot on the door"
     ]
   },
   "onboarding": [
     {
       "title": "ขั้นที่ 1 จาก 3",
-      "body": "แตะจุดเล็ก ๆ บนวัตถุ\nแล้วแตะอีกครั้งเพื่อใช้"
+      "titleEn": "Step 1 of 3",
+      "body": "แตะจุดเล็ก ๆ บนวัตถุ\nแล้วแตะอีกครั้งเพื่อใช้",
+      "bodyEn": "Tap a small dot on an object,\nthen tap again to use it"
     },
     {
       "title": "ขั้นที่ 2 จาก 3",
-      "body": "ปุ่มลูกศร มุมล่างซ้าย\nใช้ย้อนกลับเสมอ"
+      "titleEn": "Step 2 of 3",
+      "body": "ปุ่มลูกศร มุมล่างซ้าย\nใช้ย้อนกลับเสมอ",
+      "bodyEn": "The arrow button at the bottom left\nalways takes you back"
     },
     {
       "title": "ขั้นที่ 3 จาก 3",
-      "body": "ปุ่มสมุดคดี มุมล่างขวา\nเปิดกระดานคดี"
+      "titleEn": "Step 3 of 3",
+      "body": "ปุ่มสมุดคดี มุมล่างขวา\nเปิดกระดานคดี",
+      "bodyEn": "The case notebook button at the bottom right\nopens the case board"
     }
   ],
   "screens": {
     "eventSelect": {
       "title": "เลือกเหตุการณ์",
+      "titleEn": "Choose an event",
       "body": "รายการเหตุการณ์จะมาจากชุดเรื่อง หน้านี้ยังเป็นที่ว่าง",
+      "bodyEn": "Events will come from the story sets. This page is still a placeholder.",
       "cardTitle": "เร็ว ๆ นี้",
-      "cardBody": "ยังไม่มีเหตุการณ์ให้เลือก"
+      "cardTitleEn": "Coming soon",
+      "cardBody": "ยังไม่มีเหตุการณ์ให้เลือก",
+      "cardBodyEn": "No events to choose yet"
     },
     "practice": {
       "title": "มุมฝึกเล่น",
-      "body": "ยังไม่มีเกมที่ปลดล็อก เล่นในคดีก่อน แล้วกลับมาฝึกที่นี่"
+      "titleEn": "Practice corner",
+      "body": "ยังไม่มีเกมที่ปลดล็อก เล่นในคดีก่อน แล้วกลับมาฝึกที่นี่",
+      "bodyEn": "No games unlocked yet. Play them in a case first, then come back to practice here."
     },
     "caseBoard": {
       "title": "สมุดคดี",
-      "body": "ยังไม่ได้เริ่มเหตุการณ์ ไม่มีหลักฐานให้ดู"
+      "titleEn": "Case notebook",
+      "body": "ยังไม่ได้เริ่มเหตุการณ์ ไม่มีหลักฐานให้ดู",
+      "bodyEn": "No event started yet, so there is no evidence to show."
     }
   }
 }

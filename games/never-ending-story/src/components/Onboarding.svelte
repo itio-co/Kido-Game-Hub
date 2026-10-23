@@ -1,10 +1,13 @@
 <script lang="ts">
+  import { t } from '../lib/i18n/core';
+  import { tx } from '../lib/i18n/content';
+
   let {
     steps,
     index,
     onNext,
   }: {
-    steps: { title: string; body: string }[];
+    steps: { title: string; titleEn?: string; body: string; bodyEn?: string }[];
     index: number;
     onNext: () => void;
   } = $props();
@@ -14,14 +17,14 @@
 </script>
 
 {#if step}
-  <section class="tutor" aria-label="บทสอน">
+  <section class="tutor" aria-label={t('game.tutor.label')}>
     <div class="steps" aria-hidden="true">
       {#each steps as _, stepIndex}
         <i class:on={stepIndex === index}></i>
       {/each}
     </div>
-    <h2>{step.title}</h2>
-    <p>{step.body}</p>
-    <button type="button" onclick={onNext}>{last ? 'เริ่มเล่น' : 'ถัดไป'}</button>
+    <h2>{tx(step, 'title')}</h2>
+    <p>{tx(step, 'body')}</p>
+    <button type="button" onclick={onNext}>{last ? t('game.tutor.start') : t('game.tutor.next')}</button>
   </section>
 {/if}

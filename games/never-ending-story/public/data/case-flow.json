@@ -2,22 +2,23 @@
   "id": "a4c0e001-0000-4000-8000-000000000094",
   "kind": "story-flow",
   "title": "คดี 01 อัลบั้มครอบครัวที่หายไป",
+  "titleEn": "Case 01: The missing family album",
   "slug": "flow/case-01",
-  "titleEn": "Case 01",
   "difficulties": [
-    "ง่าย",
-    "ปานกลาง",
-    "ยาก"
+    "easy",
+    "medium",
+    "hard"
   ],
   "events": [
     {
       "id": "a4c0e001-0000-4000-8000-000000000063",
       "kind": "event",
       "title": "เยี่ยมบ้านคุณย่า",
+      "titleEn": "Visit Grandma",
       "slug": "flow/event/case-01",
-      "titleEn": "Visit grandma",
       "eventId": "case-01",
       "subtitle": "อัลบั้มครอบครัวหายไป",
+      "subtitleEn": "The family album is missing",
       "cover": "cutscene-01-p2.jpg",
       "unlockAfter": null,
       "lockedHint": null
@@ -26,25 +27,29 @@
       "id": "a4c0e001-0000-4000-8000-000000000064",
       "kind": "event",
       "title": "ห้องสมุดวันวาน",
+      "titleEn": "Library of Yesterday",
       "slug": "flow/event/case-02",
-      "titleEn": "Library of yesterday",
       "eventId": "case-02",
       "subtitle": "ลิ้นชักหมายเลข 7",
+      "subtitleEn": "Drawer number 7",
       "cover": "study-wide.jpg",
       "unlockAfter": "case-01",
-      "lockedHint": "ปลดล็อกเมื่อจบคดี 01"
+      "lockedHint": "ปลดล็อกเมื่อจบคดี 01",
+      "lockedHintEn": "Unlocks after Case 01"
     },
     {
       "id": "a4c0e001-0000-4000-8000-000000000065",
       "kind": "event",
       "title": "ตลาดน้ำยามเช้า",
-      "slug": "flow/event/case-03",
       "titleEn": "Morning market",
+      "slug": "flow/event/case-03",
       "eventId": "case-03",
       "subtitle": "เร็ว ๆ นี้",
+      "subtitleEn": "Coming soon",
       "cover": "kitchen-wide.jpg",
       "unlockAfter": "case-02",
-      "lockedHint": "ปลดล็อกเมื่อจบคดี 02"
+      "lockedHint": "ปลดล็อกเมื่อจบคดี 02",
+      "lockedHintEn": "Unlocks after Case 02"
     }
   ],
   "pages": [
@@ -52,18 +57,23 @@
       "id": "a4c0e001-0000-4000-8000-000000000068",
       "kind": "cutscene-page",
       "title": "ย่าโทรมา",
+      "titleEn": "Grandma calls",
       "slug": "flow/cutscene/case-01/p1",
       "eventId": "case-01",
       "image": "cutscene-01-p1.jpg",
       "caption": "คืนวันศุกร์ คุณย่ามะลิโทรมาหาแม่",
+      "captionEn": "On Friday night, Grandma Mali called Mom.",
       "lines": [
         {
           "id": "a4c0e001-0000-4000-8000-000000000066",
           "kind": "speech-line",
           "title": "แม่",
+          "titleEn": "Mom",
           "slug": "flow/cutscene/case-01/p1/mom",
           "who": "แม่",
+          "whoEn": "Mom",
           "text": "พรุ่งนี้เราไปเยี่ยมบ้านคุณย่ากันนะ",
+          "textEn": "Let's visit Grandma's house tomorrow.",
           "x": 4,
           "y": 22,
           "w": 48
@@ -72,9 +82,12 @@
           "id": "a4c0e001-0000-4000-8000-000000000067",
           "kind": "speech-line",
           "title": "หนู",
+          "titleEn": "Me",
           "slug": "flow/cutscene/case-01/p1/child",
           "who": "หนู",
+          "whoEn": "Me",
           "text": "เย้! ไปหาคุณย่า!",
+          "textEn": "Yay! We're going to see Grandma!",
           "x": 40,
           "y": 58,
           "w": 44
@@ -85,18 +98,23 @@
       "id": "a4c0e001-0000-4000-8000-00000000006a",
       "kind": "cutscene-page",
       "title": "ถึงบ้านไม้",
+      "titleEn": "At the wooden house",
       "slug": "flow/cutscene/case-01/p2",
       "eventId": "case-01",
       "image": "cutscene-01-p2.jpg",
       "caption": "เช้าวันเสาร์ ครอบครัวมาถึงบ้านไม้ของคุณย่า",
+      "captionEn": "On Saturday morning, the family arrived at Grandma's wooden house.",
       "lines": [
         {
           "id": "a4c0e001-0000-4000-8000-000000000069",
           "kind": "speech-line",
           "title": "ย่ามะลิ",
+          "titleEn": "Grandma Mali",
           "slug": "flow/cutscene/case-01/p2/grandma",
           "who": "ย่ามะลิ",
+          "whoEn": "Grandma Mali",
           "text": "มาแล้วเหรอจ๊ะหลาน ย่าคิดถึงจังเลย",
+          "textEn": "You're here, dear! I missed you so much.",
           "x": 2,
           "y": 46,
           "w": 50
@@ -107,18 +125,23 @@
       "id": "a4c0e001-0000-4000-8000-00000000006d",
       "kind": "cutscene-page",
       "title": "อัลบั้มหาย",
+      "titleEn": "The album is missing",
       "slug": "flow/cutscene/case-01/p3",
       "eventId": "case-01",
       "image": "cutscene-01-p3.jpg",
       "caption": "แต่คุณย่าดูไม่สบายใจเลย…",
+      "captionEn": "But Grandma looked worried…",
       "lines": [
         {
           "id": "a4c0e001-0000-4000-8000-00000000006b",
           "kind": "speech-line",
           "title": "ย่ามะลิ",
+          "titleEn": "Grandma Mali",
           "slug": "flow/cutscene/case-01/p3/grandma",
           "who": "ย่ามะลิ",
+          "whoEn": "Grandma Mali",
           "text": "อัลบั้มรูปครอบครัวหายไปจากชั้นจ้ะ ในนั้นมีรูปตาตอนหนุ่ม ๆ ด้วย",
+          "textEn": "The family photo album is gone from the shelf, dear. It has photos of your grandpa when he was young.",
           "x": 2,
           "y": 50,
           "w": 34
@@ -127,9 +150,12 @@
           "id": "a4c0e001-0000-4000-8000-00000000006c",
           "kind": "speech-line",
           "title": "หนู",
+          "titleEn": "Me",
           "slug": "flow/cutscene/case-01/p3/child",
           "who": "หนู",
+          "whoEn": "Me",
           "text": "ไม่ต้องห่วงนะย่า หนูจะช่วยตามหาเอง!",
+          "textEn": "Don't worry, Grandma. I'll help you find it!",
           "x": 56,
           "y": 72,
           "w": 42
@@ -142,41 +168,51 @@
       "id": "a4c0e001-0000-4000-8000-00000000006e",
       "kind": "evidence",
       "title": "ข้อความของน้าริน",
+      "titleEn": "Aunt Rin's note",
       "slug": "flow/evidence/e01",
       "code": "E01",
-      "text": "ข้อความของน้าริน: \"ขอย้ายเก็บก่อน — ริน / เก็บตามผังเดิมนะ โต๊ะยังเปียกอยู่\""
+      "text": "ข้อความของน้าริน: \"ขอย้ายเก็บก่อน — ริน / เก็บตามผังเดิมนะ โต๊ะยังเปียกอยู่\"",
+      "textEn": "Aunt Rin's note: \"Moving it to keep it safe — Rin / Put it back by the storage plan. The table is still wet.\""
     },
     {
       "id": "a4c0e001-0000-4000-8000-00000000006f",
       "kind": "evidence",
       "title": "โต๊ะที่เปียก",
+      "titleEn": "The wet table",
       "slug": "flow/evidence/e02",
       "code": "E02",
-      "text": "โต๊ะที่เปียก (น้ำจากแจกันหก)"
+      "text": "โต๊ะที่เปียก (น้ำจากแจกันหก)",
+      "textEn": "The wet table (water spilled from the vase)"
     },
     {
       "id": "a4c0e001-0000-4000-8000-000000000070",
       "kind": "evidence",
       "title": "กล่องมีรูปดาว",
+      "titleEn": "The box with a star",
       "slug": "flow/evidence/e03",
       "code": "E03",
-      "text": "ลุงเมฆ: กล่องมีรูปดาว"
+      "text": "ลุงเมฆ: กล่องมีรูปดาว",
+      "textEn": "Uncle Mek: the box has a star on it"
     },
     {
       "id": "a4c0e001-0000-4000-8000-000000000071",
       "kind": "evidence",
       "title": "แผนผังที่เก็บภาพ",
+      "titleEn": "Photo storage plan",
       "slug": "flow/evidence/e04",
       "code": "E04",
-      "text": "แผนผังบ้าน: ภาพถ่ายเก็บใต้หน้าต่างห้องทำงาน"
+      "text": "แผนผังบ้าน: ภาพถ่ายเก็บใต้หน้าต่างห้องทำงาน",
+      "textEn": "House map: photos are kept under the study window"
     },
     {
       "id": "a4c0e001-0000-4000-8000-000000000072",
       "kind": "evidence",
       "title": "พบอัลบั้ม",
+      "titleEn": "Album found",
       "slug": "flow/evidence/e05",
       "code": "E05",
-      "text": "พบอัลบั้มในกล่องรูปดาว"
+      "text": "พบอัลบั้มในกล่องรูปดาว",
+      "textEn": "The album was found in the star box"
     }
   ],
   "slots": [
@@ -184,28 +220,33 @@
       "id": "a4c0e001-0000-4000-8000-000000000073",
       "kind": "time-slot",
       "title": "เมื่อวานเย็น (21 ต.ค.)",
+      "titleEn": "Yesterday evening (Oct 21)",
       "slug": "flow/time/yesterday",
       "slot": "yesterday",
       "part": "day",
       "image": "living-wide-yesterday.jpg",
       "unlockBy": "E01",
-      "hint": "ลองหาข้อความบนโต๊ะกลางก่อน"
+      "hint": "ลองหาข้อความบนโต๊ะกลางก่อน",
+      "hintEn": "Look for the note on the coffee table first."
     },
     {
       "id": "a4c0e001-0000-4000-8000-000000000074",
       "kind": "time-slot",
       "title": "บ่ายนี้ 14:00",
+      "titleEn": "This afternoon 14:00",
       "slug": "flow/time/afternoon",
       "slot": "afternoon",
       "part": "hour",
       "image": "living-wide-afternoon.jpg",
       "unlockBy": "E02",
-      "hint": "ลองตรวจรอยน้ำบนโต๊ะก่อน"
+      "hint": "ลองตรวจรอยน้ำบนโต๊ะก่อน",
+      "hintEn": "Check the water mark on the table first."
     },
     {
       "id": "a4c0e001-0000-4000-8000-000000000075",
       "kind": "time-slot",
       "title": "ตอนนี้ 17:00",
+      "titleEn": "Now 17:00",
       "slug": "flow/time/now",
       "slot": "now",
       "part": "hour",
@@ -219,19 +260,20 @@
       "id": "a4c0e001-0000-4000-8000-00000000001b",
       "kind": "scene",
       "title": "แผนผังบ้านย่า",
+      "titleEn": "Grandma's house map",
       "slug": "flow/scene/house-map",
-      "titleEn": "House map",
       "screen": "house-map",
       "image": "house-map.jpg",
       "contain": true,
       "hud": "เลือกห้องที่จะไป",
+      "hudEn": "Choose a room to visit",
       "spots": [
         {
           "id": "a4c0e001-0000-4000-8000-000000000018",
           "kind": "hotspot",
           "title": "ห้องนั่งเล่น (จุดเริ่ม)",
+          "titleEn": "Living room (start)",
           "slug": "flow/house-map/living",
-          "titleEn": "Living room",
           "x": 50.2,
           "y": 27.5,
           "when": "always",
@@ -245,8 +287,8 @@
           "id": "a4c0e001-0000-4000-8000-000000000019",
           "kind": "hotspot",
           "title": "ห้องทำงาน",
-          "slug": "flow/house-map/study",
           "titleEn": "Study",
+          "slug": "flow/house-map/study",
           "x": 34.9,
           "y": 62.3,
           "when": "always",
@@ -260,8 +302,8 @@
           "id": "a4c0e001-0000-4000-8000-00000000001a",
           "kind": "hotspot",
           "title": "ครัว (เสริม)",
+          "titleEn": "Kitchen (optional)",
           "slug": "flow/house-map/kitchen",
-          "titleEn": "Kitchen",
           "x": 72.5,
           "y": 62.3,
           "when": "always",
@@ -277,8 +319,8 @@
       "id": "a4c0e001-0000-4000-8000-00000000002e",
       "kind": "scene",
       "title": "ห้องนั่งเล่น",
-      "slug": "flow/scene/living-room",
       "titleEn": "Living room",
+      "slug": "flow/scene/living-room",
       "screen": "living-room",
       "image": "living-wide.jpg",
       "images": {
@@ -289,13 +331,14 @@
       "map": true,
       "timed": true,
       "hud": "ภารกิจ: ตามหาอัลบั้มครอบครัว",
+      "hudEn": "Mission: find the family album",
       "spots": [
         {
           "id": "a4c0e001-0000-4000-8000-00000000001c",
           "kind": "hotspot",
           "title": "นาฬิกา",
-          "slug": "flow/living-room/clock",
           "titleEn": "Clock",
+          "slug": "flow/living-room/clock",
           "x": 13,
           "y": 12.5,
           "when": "always",
@@ -308,8 +351,8 @@
           "id": "a4c0e001-0000-4000-8000-00000000001d",
           "kind": "hotspot",
           "title": "ปฏิทินของย่า",
+          "titleEn": "Grandma's calendar",
           "slug": "flow/living-room/calendar",
-          "titleEn": "Grandma calendar",
           "x": 80,
           "y": 27,
           "when": "always",
@@ -322,8 +365,8 @@
           "id": "a4c0e001-0000-4000-8000-00000000001e",
           "kind": "hotspot",
           "title": "ถาดชิ้นแผนผัง",
-          "slug": "flow/living-room/tray",
           "titleEn": "Map tray",
+          "slug": "flow/living-room/tray",
           "x": 41,
           "y": 37,
           "when": "now",
@@ -337,8 +380,8 @@
           "id": "a4c0e001-0000-4000-8000-00000000001f",
           "kind": "hotspot",
           "title": "ประตูไปครัว",
-          "slug": "flow/living-room/kitchen-door",
           "titleEn": "Door to the kitchen",
+          "slug": "flow/living-room/kitchen-door",
           "x": 12,
           "y": 25.3,
           "when": "now",
@@ -352,8 +395,8 @@
           "id": "a4c0e001-0000-4000-8000-000000000020",
           "kind": "hotspot",
           "title": "ประตูไปห้องทำงาน",
-          "slug": "flow/living-room/study-door",
           "titleEn": "Door to the study",
+          "slug": "flow/living-room/study-door",
           "x": 92,
           "y": 33.8,
           "when": "now",
@@ -367,14 +410,15 @@
           "id": "a4c0e001-0000-4000-8000-000000000021",
           "kind": "hotspot",
           "title": "กล่องรูปดาว (ข้างโซฟา)",
+          "titleEn": "Star box (by the sofa)",
           "slug": "flow/living-room/star-box",
-          "titleEn": "Star box by the sofa",
           "x": 85.3,
           "y": 70.5,
           "when": "now",
           "action": {
             "type": "toast",
-            "text": "สัญลักษณ์ตรงแล้ว แต่ตำแหน่งนี้ตรงกับผังเก็บภาพถ่ายหรือยัง?"
+            "text": "สัญลักษณ์ตรงแล้ว แต่ตำแหน่งนี้ตรงกับผังเก็บภาพถ่ายหรือยัง?",
+            "textEn": "The symbol matches, but does this spot match the photo storage plan?"
           },
           "doneEvidence": null
         },
@@ -382,8 +426,8 @@
           "id": "a4c0e001-0000-4000-8000-000000000022",
           "kind": "hotspot",
           "title": "โต๊ะกลาง",
-          "slug": "flow/living-room/table",
           "titleEn": "Coffee table",
+          "slug": "flow/living-room/table",
           "x": 42,
           "y": 71.1,
           "when": "now",
@@ -397,8 +441,8 @@
           "id": "a4c0e001-0000-4000-8000-000000000023",
           "kind": "hotspot",
           "title": "ลุงเมฆ",
-          "slug": "flow/living-room/mek",
           "titleEn": "Uncle Mek",
+          "slug": "flow/living-room/mek",
           "x": 17.8,
           "y": 49.6,
           "when": "now",
@@ -412,8 +456,8 @@
           "id": "a4c0e001-0000-4000-8000-000000000024",
           "kind": "hotspot",
           "title": "ย่ามะลิ",
-          "slug": "flow/living-room/grandma",
           "titleEn": "Grandma Mali",
+          "slug": "flow/living-room/grandma",
           "x": 61.4,
           "y": 50.1,
           "when": "now",
@@ -427,13 +471,15 @@
           "id": "a4c0e001-0000-4000-8000-000000000025",
           "kind": "hotspot",
           "title": "กล่องรูปดาว (ข้างโซฟา)",
+          "titleEn": "Star box (by the sofa)",
           "slug": "flow/living-room/star-box-past",
           "x": 84.3,
           "y": 70.5,
           "when": "afternoon",
           "action": {
             "type": "toast",
-            "text": "กล่องนี้อยู่ที่เดิมทุกช่วงเวลา"
+            "text": "กล่องรูปดาววางอยู่ข้างโซฟา",
+            "textEn": "The star box sits by the sofa."
           },
           "doneEvidence": null
         },
@@ -441,17 +487,22 @@
           "id": "a4c0e001-0000-4000-8000-000000000026",
           "kind": "hotspot",
           "title": "น้าริน (บ่ายนี้)",
+          "titleEn": "Aunt Rin (this afternoon)",
           "slug": "flow/living-room/rin",
-          "titleEn": "Aunt Rin this afternoon",
           "x": 27,
           "y": 44.2,
           "when": "afternoon",
           "action": {
             "type": "lines",
             "who": "น้าริน",
+            "whoEn": "Aunt Rin",
             "lines": [
               "แย่จัง แจกันล้ม น้ำหกเต็มโต๊ะเลย ต้องรีบเช็ดก่อน",
               "ของบนโต๊ะต้องยกออกไปก่อน เดี๋ยวเปียกหมด"
+            ],
+            "linesEn": [
+              "Oh no, the vase fell over and water is all over the table. I need to wipe it up!",
+              "Everything on the table has to come off first, or it will all get wet."
             ]
           },
           "doneEvidence": null
@@ -460,15 +511,20 @@
           "id": "a4c0e001-0000-4000-8000-000000000027",
           "kind": "hotspot",
           "title": "แจกันล้ม",
+          "titleEn": "Fallen vase",
           "slug": "flow/living-room/fallen-vase",
           "x": 38.5,
           "y": 68,
           "when": "afternoon",
           "action": {
             "type": "lines",
-            "who": "ย้อนเวลา: บ่ายนี้",
+            "who": "ภาพย้อนเวลา · 14:00",
+            "whoEn": "Flashback · 14:00",
             "lines": [
-              "แจกันล้ม น้ำหกนองโต๊ะ — อัลบั้มวางอยู่ข้าง ๆ เกือบเปียก!"
+              "แจกันล้ม น้ำหกนองโต๊ะ อัลบั้มที่วางอยู่ข้าง ๆ เกือบเปียก!"
+            ],
+            "linesEn": [
+              "The vase fell over and water is all over the table. The album next to it almost got wet!"
             ]
           },
           "doneEvidence": null
@@ -476,16 +532,21 @@
         {
           "id": "a4c0e001-0000-4000-8000-000000000028",
           "kind": "hotspot",
-          "title": "อัลบั้ม (บ่ายนี้)",
+          "title": "อัลบั้มบนโต๊ะ",
+          "titleEn": "Album on the table",
           "slug": "flow/living-room/album-then",
           "x": 58,
           "y": 69.5,
           "when": "afternoon",
           "action": {
             "type": "lines",
-            "who": "ย้อนเวลา: บ่ายนี้",
+            "who": "ภาพย้อนเวลา · 14:00",
+            "whoEn": "Flashback · 14:00",
             "lines": [
-              "บ่ายนี้อัลบั้มยังอยู่บนโต๊ะ แต่ตอนนี้หายไป ใครยกไปตอนเช็ดน้ำนะ?"
+              "อัลบั้มปกดอกไม้ยังวางอยู่บนโต๊ะ ข้างแจกัน"
+            ],
+            "linesEn": [
+              "The flower-cover album is still on the table, next to the vase."
             ]
           },
           "doneEvidence": null
@@ -494,13 +555,15 @@
           "id": "a4c0e001-0000-4000-8000-000000000029",
           "kind": "hotspot",
           "title": "ถาดชิ้นแผนผัง",
+          "titleEn": "Map-piece tray",
           "slug": "flow/living-room/tray-afternoon",
           "x": 47,
           "y": 37,
           "when": "afternoon",
           "action": {
             "type": "toast",
-            "text": "ชิ้นแผนผังยังอยู่ในถาด"
+            "text": "ชิ้นแผนผังยังอยู่ในถาด",
+            "textEn": "The map pieces are still in the tray."
           },
           "doneEvidence": null
         },
@@ -508,13 +571,15 @@
           "id": "a4c0e001-0000-4000-8000-00000000002a",
           "kind": "hotspot",
           "title": "กล่องรูปดาว (ข้างโซฟา)",
+          "titleEn": "Star box (by the sofa)",
           "slug": "flow/living-room/star-box-yesterday",
           "x": 84.3,
           "y": 70.5,
           "when": "yesterday",
           "action": {
             "type": "toast",
-            "text": "กล่องนี้อยู่ที่เดิมทุกช่วงเวลา"
+            "text": "กล่องรูปดาววางอยู่ข้างโซฟา",
+            "textEn": "The star box sits by the sofa."
           },
           "doneEvidence": null
         },
@@ -522,6 +587,7 @@
           "id": "a4c0e001-0000-4000-8000-00000000002b",
           "kind": "hotspot",
           "title": "ย่ามะลิ (เมื่อวาน)",
+          "titleEn": "Grandma Mali (yesterday)",
           "slug": "flow/living-room/grandma-yesterday",
           "x": 26.7,
           "y": 39,
@@ -529,9 +595,14 @@
           "action": {
             "type": "lines",
             "who": "ย่ามะลิ",
+            "whoEn": "Grandma Mali",
             "lines": [
               "พรุ่งนี้หลานจะมา ย่าจะหยิบอัลบั้มเล่มนี้ลงไปเปิดให้ดูตอนเช้า",
               "รูปเก่า ๆ บ้านเรามีที่เก็บประจำนะ แต่เล่มนี้ย่าชอบไว้ใกล้ตัว"
+            ],
+            "linesEn": [
+              "My grandchild is coming tomorrow. I will take this album down in the morning to show them.",
+              "Our old photos have their own storage place, but I like to keep this album close."
             ]
           },
           "doneEvidence": null
@@ -540,15 +611,20 @@
           "id": "a4c0e001-0000-4000-8000-00000000002c",
           "kind": "hotspot",
           "title": "อัลบั้มบนชั้น",
+          "titleEn": "Album on the shelf",
           "slug": "flow/living-room/album-shelf",
           "x": 43,
           "y": 30,
           "when": "yesterday",
           "action": {
             "type": "lines",
-            "who": "ย้อนเวลา: เมื่อวาน",
+            "who": "ภาพย้อนเวลา · เมื่อวาน",
+            "whoEn": "Flashback · yesterday",
             "lines": [
               "อัลบั้มปกดอกไม้ตั้งอยู่บนชั้นบน ใกล้มือย่า"
+            ],
+            "linesEn": [
+              "The flower-covered album stands on the top shelf, within Grandma's reach."
             ]
           },
           "doneEvidence": null
@@ -557,13 +633,15 @@
           "id": "a4c0e001-0000-4000-8000-00000000002d",
           "kind": "hotspot",
           "title": "ถาดชิ้นแผนผัง",
+          "titleEn": "Map-piece tray",
           "slug": "flow/living-room/tray-yesterday",
           "x": 42.5,
           "y": 37.5,
           "when": "yesterday",
           "action": {
             "type": "toast",
-            "text": "ชิ้นแผนผังยังเรียงอยู่ในถาดครบ"
+            "text": "ชิ้นแผนผังยังเรียงอยู่ในถาดครบ",
+            "textEn": "All the map pieces are still neatly in the tray."
           },
           "doneEvidence": null
         }
@@ -573,25 +651,27 @@
       "id": "a4c0e001-0000-4000-8000-000000000031",
       "kind": "scene",
       "title": "ห้องทำงาน",
-      "slug": "flow/scene/study",
       "titleEn": "Study",
+      "slug": "flow/scene/study",
       "screen": "study",
       "image": "study-wide.jpg",
       "map": true,
       "hud": "ภารกิจ: หากล่องที่ถูกต้อง",
+      "hudEn": "Mission: find the right box",
       "spots": [
         {
           "id": "a4c0e001-0000-4000-8000-00000000002f",
           "kind": "hotspot",
           "title": "กล่องรูปใบไม้",
-          "slug": "flow/study/leaf-box",
           "titleEn": "Leaf box",
+          "slug": "flow/study/leaf-box",
           "x": 66.5,
           "y": 64,
           "when": "always",
           "action": {
             "type": "toast",
-            "text": "อยู่ในโซนที่หาแล้ว ลองเทียบสัญลักษณ์กับสิ่งที่ลุงเมฆเห็นอีกครั้ง"
+            "text": "อยู่ในโซนที่หาแล้ว ลองเทียบสัญลักษณ์กับสิ่งที่ลุงเมฆเห็นอีกครั้ง",
+            "textEn": "It is in the right area. Compare the symbol with what Uncle Mek saw again."
           },
           "doneEvidence": null
         },
@@ -599,8 +679,8 @@
           "id": "a4c0e001-0000-4000-8000-000000000030",
           "kind": "hotspot",
           "title": "กล่องรูปดาว (ใต้หน้าต่าง)",
+          "titleEn": "Star box (under the window)",
           "slug": "flow/study/star-box",
-          "titleEn": "Star box under the window",
           "x": 50.8,
           "y": 63,
           "when": "always",
@@ -616,19 +696,20 @@
       "id": "a4c0e001-0000-4000-8000-000000000034",
       "kind": "scene",
       "title": "ครัว",
-      "slug": "flow/scene/kitchen",
       "titleEn": "Kitchen",
+      "slug": "flow/scene/kitchen",
       "screen": "kitchen",
       "image": "kitchen-wide.jpg",
       "map": true,
       "hud": "ไม่บังคับ",
+      "hudEn": "Optional",
       "spots": [
         {
           "id": "a4c0e001-0000-4000-8000-000000000032",
           "kind": "hotspot",
           "title": "ผ้าเปียกบนราว",
+          "titleEn": "Wet cloth on the rail",
           "slug": "flow/kitchen/cloth",
-          "titleEn": "Wet cloth",
           "x": 31.5,
           "y": 40.5,
           "when": "always",
@@ -642,8 +723,8 @@
           "id": "a4c0e001-0000-4000-8000-000000000033",
           "kind": "hotspot",
           "title": "แจกันเติมน้ำใหม่",
-          "slug": "flow/kitchen/vase",
           "titleEn": "Refilled vase",
+          "slug": "flow/kitchen/vase",
           "x": 79.5,
           "y": 50,
           "when": "always",
@@ -659,19 +740,20 @@
       "id": "a4c0e001-0000-4000-8000-000000000037",
       "kind": "scene",
       "title": "ครัวมุมใกล้",
-      "slug": "flow/scene/kitchen-close",
       "titleEn": "Kitchen close-up",
+      "slug": "flow/scene/kitchen-close",
       "screen": "kitchen-close",
       "image": "kitchen-close.jpg",
       "map": true,
       "hud": "ร่องรอยน้ำหก",
+      "hudEn": "Traces of spilled water",
       "spots": [
         {
           "id": "a4c0e001-0000-4000-8000-000000000035",
           "kind": "hotspot",
           "title": "ผ้าเปียก",
-          "slug": "flow/kitchen-close/cloth",
           "titleEn": "Wet cloth",
+          "slug": "flow/kitchen-close/cloth",
           "x": 28.6,
           "y": 40,
           "when": "always",
@@ -679,7 +761,9 @@
             "type": "evidence",
             "evidence": "E02",
             "who": "ผ้าเปียก",
-            "text": "ผ้าที่ใช้เช็ดโต๊ะยังเปียก"
+            "whoEn": "Wet cloth",
+            "text": "ผ้าที่ใช้เช็ดโต๊ะยังเปียก",
+            "textEn": "The cloth used to wipe the table is still wet."
           },
           "doneEvidence": null
         },
@@ -687,14 +771,15 @@
           "id": "a4c0e001-0000-4000-8000-000000000036",
           "kind": "hotspot",
           "title": "แจกันเติมน้ำใหม่",
-          "slug": "flow/kitchen-close/vase",
           "titleEn": "Refilled vase",
+          "slug": "flow/kitchen-close/vase",
           "x": 68.7,
           "y": 59.5,
           "when": "always",
           "action": {
             "type": "toast",
-            "text": "แจกันถูกเติมน้ำใหม่ — มีน้ำหกจริง"
+            "text": "แจกันถูกเติมน้ำใหม่ — มีน้ำหกจริง",
+            "textEn": "The vase has been refilled — water really was spilled."
           },
           "doneEvidence": null
         }
@@ -704,19 +789,20 @@
       "id": "a4c0e001-0000-4000-8000-00000000003b",
       "kind": "scene",
       "title": "โต๊ะกลาง",
-      "slug": "flow/scene/table",
       "titleEn": "Coffee table",
+      "slug": "flow/scene/table",
       "screen": "table",
       "image": "living-table.jpg",
       "map": true,
       "hud": "แตะเพื่อตรวจ",
+      "hudEn": "Tap to inspect",
       "spots": [
         {
           "id": "a4c0e001-0000-4000-8000-000000000038",
           "kind": "hotspot",
           "title": "ข้อความของน้าริน",
-          "slug": "flow/table/note",
           "titleEn": "Aunt Rin's note",
+          "slug": "flow/table/note",
           "x": 35,
           "y": 31.3,
           "when": "always",
@@ -724,7 +810,9 @@
             "type": "evidence",
             "evidence": "E01",
             "who": "ข้อความ",
-            "text": "ขอย้ายเก็บก่อน — ริน / (ด้านหลัง) เก็บตามผังเดิมนะ โต๊ะยังเปียกอยู่"
+            "whoEn": "Note",
+            "text": "ขอย้ายเก็บก่อน — ริน / (ด้านหลัง) เก็บตามผังเดิมนะ โต๊ะยังเปียกอยู่",
+            "textEn": "Moving it to keep it safe — Rin / (on the back) Put it back by the storage plan. The table is still wet."
           },
           "doneEvidence": "E01"
         },
@@ -732,8 +820,8 @@
           "id": "a4c0e001-0000-4000-8000-000000000039",
           "kind": "hotspot",
           "title": "รอยน้ำ",
-          "slug": "flow/table/water",
           "titleEn": "Water mark",
+          "slug": "flow/table/water",
           "x": 39.8,
           "y": 53.3,
           "when": "always",
@@ -741,7 +829,9 @@
             "type": "evidence",
             "evidence": "E02",
             "who": "รอยน้ำ",
-            "text": "โต๊ะเปียก — น้ำหกจากแจกัน"
+            "whoEn": "Water mark",
+            "text": "โต๊ะเปียก — น้ำหกจากแจกัน",
+            "textEn": "The table is wet — water spilled from the vase."
           },
           "doneEvidence": "E02"
         },
@@ -749,14 +839,15 @@
           "id": "a4c0e001-0000-4000-8000-00000000003a",
           "kind": "hotspot",
           "title": "รอยที่อัลบั้มเคยวาง",
-          "slug": "flow/table/album-mark",
           "titleEn": "Where the album sat",
+          "slug": "flow/table/album-mark",
           "x": 70,
           "y": 64.3,
           "when": "always",
           "action": {
             "type": "toast",
-            "text": "ตรงนี้เคยมีอัลบั้มวางอยู่"
+            "text": "ตรงนี้เคยมีอัลบั้มวางอยู่",
+            "textEn": "The album used to be right here."
           },
           "doneEvidence": null
         }
@@ -766,19 +857,20 @@
       "id": "a4c0e001-0000-4000-8000-00000000003d",
       "kind": "scene",
       "title": "ถาดชิ้นแผนผัง",
-      "slug": "flow/scene/tray",
       "titleEn": "Map-piece tray",
+      "slug": "flow/scene/tray",
       "screen": "tray",
       "image": "living-shelf-tray.jpg",
       "map": true,
       "hud": "ชิ้นแผนผังแม่เหล็กหล่นกระจาย",
+      "hudEn": "The magnetic map pieces are scattered",
       "spots": [
         {
           "id": "a4c0e001-0000-4000-8000-00000000003c",
           "kind": "hotspot",
           "title": "ต่อจิ๊กซอว์แผนผังบ้าน",
-          "slug": "flow/tray/jigsaw",
           "titleEn": "House-map jigsaw",
+          "slug": "flow/tray/jigsaw",
           "x": 58.7,
           "y": 65.5,
           "when": "always",
@@ -794,12 +886,13 @@
       "id": "a4c0e001-0000-4000-8000-00000000003f",
       "kind": "scene",
       "title": "ย่ามะลิ",
-      "slug": "flow/scene/grandma",
       "titleEn": "Grandma Mali",
+      "slug": "flow/scene/grandma",
       "screen": "grandma",
       "image": "living-grandma.jpg",
       "map": true,
       "hud": "คุยกับย่ามะลิ",
+      "hudEn": "Talk to Grandma Mali",
       "enter": "flow/dialogue/grandma-open",
       "enterWhenSolved": "flow/dialogue/grandma-win",
       "spots": [
@@ -807,8 +900,8 @@
           "id": "a4c0e001-0000-4000-8000-00000000003e",
           "kind": "hotspot",
           "title": "คุยกับย่า",
-          "slug": "flow/grandma/talk",
           "titleEn": "Talk",
+          "slug": "flow/grandma/talk",
           "x": 50,
           "y": 42,
           "when": "always",
@@ -824,20 +917,21 @@
       "id": "a4c0e001-0000-4000-8000-000000000041",
       "kind": "scene",
       "title": "ลุงเมฆ",
-      "slug": "flow/scene/uncle",
       "titleEn": "Uncle Mek",
+      "slug": "flow/scene/uncle",
       "screen": "uncle",
       "image": "uncle-mek.jpg",
       "map": true,
       "hud": "คุยกับลุงเมฆ",
+      "hudEn": "Talk to Uncle Mek",
       "enter": "flow/dialogue/mek-open",
       "spots": [
         {
           "id": "a4c0e001-0000-4000-8000-000000000040",
           "kind": "hotspot",
           "title": "คุยกับลุงเมฆ",
-          "slug": "flow/uncle/talk",
           "titleEn": "Talk",
+          "slug": "flow/uncle/talk",
           "x": 50,
           "y": 40,
           "when": "always",
@@ -853,25 +947,27 @@
       "id": "a4c0e001-0000-4000-8000-000000000044",
       "kind": "scene",
       "title": "กล่องรูปดาว",
-      "slug": "flow/scene/star-box",
       "titleEn": "Star box",
+      "slug": "flow/scene/star-box",
       "screen": "star-box",
       "image": "study-box.jpg",
       "map": true,
       "hud": "กล่องสีน้ำเงินติดรูปดาว · ตัวล็อกเลื่อนบล็อกบนฝา",
+      "hudEn": "Blue box with a star sticker · sliding-block lock on the lid",
       "spots": [
         {
           "id": "a4c0e001-0000-4000-8000-000000000042",
           "kind": "hotspot",
           "title": "สติกเกอร์รูปดาว",
-          "slug": "flow/star-box/sticker",
           "titleEn": "Star sticker",
+          "slug": "flow/star-box/sticker",
           "x": 46.5,
           "y": 70,
           "when": "always",
           "action": {
             "type": "toast",
-            "text": "กล่องสีน้ำเงินติดรูปดาว"
+            "text": "กล่องสีน้ำเงินติดรูปดาว",
+            "textEn": "A blue box with a star sticker."
           },
           "doneEvidence": null
         },
@@ -879,8 +975,8 @@
           "id": "a4c0e001-0000-4000-8000-000000000043",
           "kind": "hotspot",
           "title": "ตัวล็อก",
-          "slug": "flow/star-box/lock",
           "titleEn": "Lock",
+          "slug": "flow/star-box/lock",
           "x": 52.6,
           "y": 44.8,
           "when": "always",
@@ -895,19 +991,20 @@
       "id": "a4c0e001-0000-4000-8000-000000000047",
       "kind": "scene",
       "title": "พบอัลบั้มแล้ว",
-      "slug": "flow/scene/album",
       "titleEn": "Album found",
+      "slug": "flow/scene/album",
       "screen": "album",
       "image": "album-found.jpg",
       "hud": "หลักฐาน E05",
+      "hudEn": "Evidence E05",
       "enter": "flow/dialogue/album-open",
       "spots": [
         {
           "id": "a4c0e001-0000-4000-8000-000000000045",
           "kind": "hotspot",
           "title": "รูปตาตอนหนุ่ม",
+          "titleEn": "Grandpa's photo as a young man",
           "slug": "flow/album/portrait",
-          "titleEn": "Grandfather's photo",
           "x": 37.8,
           "y": 44.5,
           "when": "always",
@@ -921,8 +1018,8 @@
           "id": "a4c0e001-0000-4000-8000-000000000046",
           "kind": "hotspot",
           "title": "โปสการ์ด",
-          "slug": "flow/album/postcard",
           "titleEn": "Postcard",
+          "slug": "flow/album/postcard",
           "x": 80,
           "y": 45,
           "when": "always",
@@ -940,14 +1037,18 @@
       "id": "a4c0e001-0000-4000-8000-00000000004a",
       "kind": "dialogue",
       "title": "ย่าเปิดเรื่อง",
+      "titleEn": "Grandma opens the story",
       "slug": "flow/dialogue/grandma-open",
       "who": "ย่ามะลิ",
+      "whoEn": "Grandma Mali",
       "text": "หลานมาแล้วเหรอจ๊ะ ย่าหาอัลบั้มรูปครอบครัวไม่เจอ ในนั้นมีรูปตาตอนหนุ่ม ๆ ด้วยนะ",
+      "textEn": "You're here, dear! I can't find the family photo album. It has pictures of your grandpa when he was young.",
       "choices": [
         {
           "id": "a4c0e001-0000-4000-8000-000000000048",
           "kind": "choice",
           "title": "ถามเรื่องอัลบั้ม",
+          "titleEn": "Ask about the album",
           "slug": "flow/dialogue/grandma-open/ask",
           "next": "flow/dialogue/grandma-ask"
         },
@@ -955,6 +1056,7 @@
           "id": "a4c0e001-0000-4000-8000-000000000049",
           "kind": "choice",
           "title": "ปิด",
+          "titleEn": "Close",
           "slug": "flow/dialogue/grandma-open/close"
         }
       ]
@@ -963,14 +1065,18 @@
       "id": "a4c0e001-0000-4000-8000-00000000004c",
       "kind": "dialogue",
       "title": "ย่าเล่าเรื่องอัลบั้ม",
+      "titleEn": "Grandma tells about the album",
       "slug": "flow/dialogue/grandma-ask",
       "who": "ย่ามะลิ",
+      "whoEn": "Grandma Mali",
       "text": "เมื่อเช้าย่ายังเห็นวางอยู่บนโต๊ะกลางเลย แต่บ่ายนี้น้ารินเข้ามาเก็บกวาดนะ",
+      "textEn": "This morning I still saw it on the coffee table. But this afternoon Aunt Rin came in to tidy up.",
       "choices": [
         {
           "id": "a4c0e001-0000-4000-8000-00000000004b",
           "kind": "choice",
           "title": "ปิด",
+          "titleEn": "Close",
           "slug": "flow/dialogue/grandma-ask/close"
         }
       ]
@@ -979,14 +1085,18 @@
       "id": "a4c0e001-0000-4000-8000-00000000004e",
       "kind": "dialogue",
       "title": "ย่าดีใจ",
+      "titleEn": "Grandma is happy",
       "slug": "flow/dialogue/grandma-win",
       "who": "ย่ามะลิ",
+      "whoEn": "Grandma Mali",
       "text": "นี่ไงรูปตา ขอบใจนะหลาน มานั่งดูด้วยกันมา ย่าจะเล่าให้ฟัง",
+      "textEn": "Here's Grandpa's photo. Thank you, dear! Come sit and look with me, I'll tell you all about it.",
       "choices": [
         {
           "id": "a4c0e001-0000-4000-8000-00000000004d",
           "kind": "choice",
           "title": "ปิด",
+          "titleEn": "Close",
           "slug": "flow/dialogue/grandma-win/close"
         }
       ]
@@ -995,14 +1105,18 @@
       "id": "a4c0e001-0000-4000-8000-000000000051",
       "kind": "dialogue",
       "title": "ลุงเมฆเล่า",
+      "titleEn": "Uncle Mek tells",
       "slug": "flow/dialogue/mek-open",
       "who": "ลุงเมฆ",
+      "whoEn": "Uncle Mek",
       "text": "รินเอาอัลบั้มใส่กล่องที่ติดรูปดาว ลุงเห็นตอนเธอยกผ่านโต๊ะ แต่ไม่ได้มองว่าเอาไปวางที่ไหน",
+      "textEn": "Rin put the album in the box with the star sticker. I saw her carry it past the table, but I did not see where she put it.",
       "choices": [
         {
           "id": "a4c0e001-0000-4000-8000-00000000004f",
           "kind": "choice",
           "title": "ช่วยเติมครอสเวิร์ด (เสริม)",
+          "titleEn": "Help with the crossword (optional)",
           "slug": "flow/dialogue/mek-open/help",
           "next": "flow/dialogue/mek-crossword"
         },
@@ -1010,6 +1124,7 @@
           "id": "a4c0e001-0000-4000-8000-000000000050",
           "kind": "choice",
           "title": "ปิด",
+          "titleEn": "Close",
           "slug": "flow/dialogue/mek-open/close"
         }
       ]
@@ -1018,14 +1133,18 @@
       "id": "a4c0e001-0000-4000-8000-000000000054",
       "kind": "dialogue",
       "title": "ลุงชวนเล่นครอสเวิร์ด",
+      "titleEn": "Uncle Mek offers a crossword",
       "slug": "flow/dialogue/mek-crossword",
       "who": "ลุงเมฆ",
+      "whoEn": "Uncle Mek",
       "text": "ถ้าชอบเกมคำศัพท์ มาช่วยลุงเติมหน้านี้ด้วยก็ได้นะ อีกไม่กี่คำเอง",
+      "textEn": "If you like word games, help me fill in this page. Only a few words left!",
       "choices": [
         {
           "id": "a4c0e001-0000-4000-8000-000000000052",
           "kind": "choice",
           "title": "เปิดครอสเวิร์ด",
+          "titleEn": "Open the crossword",
           "slug": "flow/dialogue/mek-crossword/play",
           "action": {
             "type": "minigame",
@@ -1036,6 +1155,7 @@
           "id": "a4c0e001-0000-4000-8000-000000000053",
           "kind": "choice",
           "title": "ปิด",
+          "titleEn": "Close",
           "slug": "flow/dialogue/mek-crossword/close"
         }
       ]
@@ -1044,14 +1164,18 @@
       "id": "a4c0e001-0000-4000-8000-000000000056",
       "kind": "dialogue",
       "title": "ลุงขอบคุณ",
+      "titleEn": "Uncle Mek says thanks",
       "slug": "flow/dialogue/mek-thanks",
       "who": "ลุงเมฆ",
+      "whoEn": "Uncle Mek",
       "text": "ครบแล้ว! เดี๋ยวให้ทุกคนลองเล่นกัน ขอบใจมากนะ",
+      "textEn": "All done! I'll let everyone try it. Thank you so much!",
       "choices": [
         {
           "id": "a4c0e001-0000-4000-8000-000000000055",
           "kind": "choice",
           "title": "ปิด",
+          "titleEn": "Close",
           "slug": "flow/dialogue/mek-thanks/close"
         }
       ]
@@ -1060,14 +1184,18 @@
       "id": "a4c0e001-0000-4000-8000-000000000058",
       "kind": "dialogue",
       "title": "เปิดอัลบั้ม",
+      "titleEn": "Opening the album",
       "slug": "flow/dialogue/album-open",
       "who": "ย่ามะลิ",
+      "whoEn": "Grandma Mali",
       "text": "เจอแล้ว! หน้าปกดอกไม้เล่มนี้เอง",
+      "textEn": "Found it! This is the one with the flower cover.",
       "choices": [
         {
           "id": "a4c0e001-0000-4000-8000-000000000057",
           "kind": "choice",
           "title": "ปิด",
+          "titleEn": "Close",
           "slug": "flow/dialogue/album-open/close"
         }
       ]
@@ -1076,14 +1204,18 @@
       "id": "a4c0e001-0000-4000-8000-00000000005a",
       "kind": "dialogue",
       "title": "รูปตา",
+      "titleEn": "Grandpa's photo",
       "slug": "flow/dialogue/album-portrait",
       "who": "ย่ามะลิ",
+      "whoEn": "Grandma Mali",
       "text": "นี่ไงรูปตา ขอบใจนะหลาน มานั่งดูด้วยกันมา ย่าจะเล่าให้ฟัง",
+      "textEn": "Here's Grandpa's photo. Thank you, dear! Come sit and look with me, I'll tell you all about it.",
       "choices": [
         {
           "id": "a4c0e001-0000-4000-8000-000000000059",
           "kind": "choice",
           "title": "ต่อ",
+          "titleEn": "Next",
           "slug": "flow/dialogue/album-portrait/next",
           "next": "flow/dialogue/album-rin"
         }
@@ -1093,14 +1225,18 @@
       "id": "a4c0e001-0000-4000-8000-00000000005c",
       "kind": "dialogue",
       "title": "รินอธิบาย",
+      "titleEn": "Rin explains",
       "slug": "flow/dialogue/album-rin",
       "who": "ริน",
+      "whoEn": "Rin",
       "text": "หาเจอแล้วใช่ไหม? เมื่อกี้น้ำหกบนโต๊ะ ฉันเลยรีบยกอัลบั้มใส่กล่อง แล้วทิ้งข้อความไว้",
+      "textEn": "You found it? Water spilled on the table earlier, so I quickly put the album in a box and left a note.",
       "choices": [
         {
           "id": "a4c0e001-0000-4000-8000-00000000005b",
           "kind": "choice",
           "title": "ปิด",
+          "titleEn": "Close",
           "slug": "flow/dialogue/album-rin/close"
         }
       ]
@@ -1109,14 +1245,18 @@
       "id": "a4c0e001-0000-4000-8000-00000000005e",
       "kind": "dialogue",
       "title": "โปสการ์ด",
+      "titleEn": "Postcard",
       "slug": "flow/dialogue/album-card",
       "who": "โปสการ์ด",
+      "whoEn": "Postcard",
       "text": "ภาพที่เหลือฝากไว้ที่ห้องสมุดวันวาน — ลิ้นชักหมายเลข 7",
+      "textEn": "The rest of the photos are kept at the Library of Yesterday — drawer number 7.",
       "choices": [
         {
           "id": "a4c0e001-0000-4000-8000-00000000005d",
           "kind": "choice",
           "title": "เก็บโปสการ์ด แล้วกลับบ้าน",
+          "titleEn": "Keep the postcard and go home",
           "slug": "flow/dialogue/album-card/home",
           "action": {
             "type": "home"
@@ -1128,14 +1268,18 @@
       "id": "a4c0e001-0000-4000-8000-000000000060",
       "kind": "dialogue",
       "title": "สรุปคดีผ่าน",
+      "titleEn": "Case solved",
       "slug": "flow/dialogue/deduce-ok",
       "who": "ย่ามะลิ",
+      "whoEn": "Grandma Mali",
       "text": "เก่งมากหลาน! งั้นไปดูที่ห้องทำงานกันเถอะ",
+      "textEn": "Well done, dear! Let's go look in the study.",
       "choices": [
         {
           "id": "a4c0e001-0000-4000-8000-00000000005f",
           "kind": "choice",
           "title": "ไปห้องทำงาน",
+          "titleEn": "Go to the study",
           "slug": "flow/dialogue/deduce-ok/go",
           "action": {
             "type": "go",
@@ -1148,14 +1292,18 @@
       "id": "a4c0e001-0000-4000-8000-000000000062",
       "kind": "dialogue",
       "title": "แผนผังบอกที่เก็บ",
+      "titleEn": "The map shows where things are kept",
       "slug": "flow/dialogue/map-clue",
       "who": "แผนผัง",
+      "whoEn": "House map",
       "text": "หมวด “ภาพถ่ายและจดหมาย” อยู่ใต้หน้าต่างห้องทำงาน ส่วนข้างโซฟาในห้องนั่งเล่นเป็นของเล่น",
+      "textEn": "The “Photos and letters” section is under the study window. The spot by the sofa in the living room is for toys.",
       "choices": [
         {
           "id": "a4c0e001-0000-4000-8000-000000000061",
           "kind": "choice",
           "title": "ปิด",
+          "titleEn": "Close",
           "slug": "flow/dialogue/map-clue/close"
         }
       ]
@@ -1166,28 +1314,31 @@
       "id": "a4c0e001-0000-4000-8000-000000000076",
       "kind": "minigame",
       "title": "ครอสเวิร์ดของลุงเมฆ",
+      "titleEn": "Uncle Mek's crossword",
       "slug": "flow/minigame/crossword",
-      "titleEn": "Crossword",
       "game": "crossword",
-      "hud": "มินิเกม: ครอสเวิร์ด"
+      "hud": "มินิเกม: ครอสเวิร์ด",
+      "hudEn": "Mini-game: crossword"
     },
     {
       "id": "a4c0e001-0000-4000-8000-000000000077",
       "kind": "minigame",
       "title": "จิ๊กซอว์แผนผังบ้าน",
+      "titleEn": "House-map jigsaw",
       "slug": "flow/minigame/jigsaw",
-      "titleEn": "Jigsaw",
       "game": "jigsaw",
-      "hud": "มินิเกม: จิ๊กซอว์ (ชิ้นไม่ต้องหมุน)"
+      "hud": "มินิเกม: จิ๊กซอว์ (ชิ้นไม่ต้องหมุน)",
+      "hudEn": "Mini-game: jigsaw (pieces do not rotate)"
     },
     {
       "id": "a4c0e001-0000-4000-8000-000000000078",
       "kind": "minigame",
       "title": "ตัวล็อกเลื่อนบล็อก",
+      "titleEn": "Sliding-block lock",
       "slug": "flow/minigame/slide",
-      "titleEn": "Sliding block",
       "game": "slide",
-      "hud": "มินิเกม: พากุญแจ K ไปทางออกด้านขวา"
+      "hud": "มินิเกม: พากุญแจ K ไปทางออกด้านขวา",
+      "hudEn": "Mini-game: move key K to the exit on the right"
     }
   ],
   "practice": [
@@ -1195,10 +1346,11 @@
       "id": "a4c0e001-0000-4000-8000-000000000079",
       "kind": "practice-game",
       "title": "ครอสเวิร์ด",
+      "titleEn": "Crossword",
       "slug": "flow/practice/cross-0",
       "game": "cross",
       "icon": "📰",
-      "group": "คำ",
+      "group": "word",
       "caseNo": "01",
       "future": false
     },
@@ -1206,10 +1358,11 @@
       "id": "a4c0e001-0000-4000-8000-00000000007a",
       "kind": "practice-game",
       "title": "จิ๊กซอว์แผนผัง",
+      "titleEn": "Map jigsaw",
       "slug": "flow/practice/jig-1",
       "game": "jig",
       "icon": "🗺",
-      "group": "ภาพ",
+      "group": "picture",
       "caseNo": "01",
       "future": false
     },
@@ -1217,10 +1370,11 @@
       "id": "a4c0e001-0000-4000-8000-00000000007b",
       "kind": "practice-game",
       "title": "เลื่อนบล็อก",
+      "titleEn": "Sliding block",
       "slug": "flow/practice/slide-2",
       "game": "slide",
       "icon": "🧩",
-      "group": "ตรรกะ",
+      "group": "logic",
       "caseNo": "01",
       "future": false
     },
@@ -1228,10 +1382,11 @@
       "id": "a4c0e001-0000-4000-8000-00000000007c",
       "kind": "practice-game",
       "title": "จับผิดภาพ",
+      "titleEn": "Spot the difference",
       "slug": "flow/practice/future-3",
       "game": "ex",
       "icon": "🔍",
-      "group": "ภาพ",
+      "group": "picture",
       "caseNo": "02",
       "future": true
     },
@@ -1239,10 +1394,11 @@
       "id": "a4c0e001-0000-4000-8000-00000000007d",
       "kind": "practice-game",
       "title": "จับคู่ความจำ",
+      "titleEn": "Memory match",
       "slug": "flow/practice/future-4",
       "game": "ex",
       "icon": "🃏",
-      "group": "ภาพ",
+      "group": "picture",
       "caseNo": "03",
       "future": true
     },
@@ -1250,10 +1406,11 @@
       "id": "a4c0e001-0000-4000-8000-00000000007e",
       "kind": "practice-game",
       "title": "ถอดรหัส",
+      "titleEn": "Code breaker",
       "slug": "flow/practice/future-5",
       "game": "ex",
       "icon": "🔐",
-      "group": "คำ",
+      "group": "word",
       "caseNo": "02",
       "future": true
     },
@@ -1261,10 +1418,11 @@
       "id": "a4c0e001-0000-4000-8000-00000000007f",
       "kind": "practice-game",
       "title": "เขาวงกต",
+      "titleEn": "Maze",
       "slug": "flow/practice/future-6",
       "game": "ex",
       "icon": "🌀",
-      "group": "ตรรกะ",
+      "group": "logic",
       "caseNo": "04",
       "future": true
     },
@@ -1272,10 +1430,11 @@
       "id": "a4c0e001-0000-4000-8000-000000000080",
       "kind": "practice-game",
       "title": "ต่อท่อ",
+      "titleEn": "Pipe connect",
       "slug": "flow/practice/future-7",
       "game": "ex",
       "icon": "🚰",
-      "group": "ตรรกะ",
+      "group": "logic",
       "caseNo": "05",
       "future": true
     },
@@ -1283,10 +1442,11 @@
       "id": "a4c0e001-0000-4000-8000-000000000081",
       "kind": "practice-game",
       "title": "เรียงลำดับเหตุการณ์",
+      "titleEn": "Order the events",
       "slug": "flow/practice/future-8",
       "game": "ex",
       "icon": "🗓",
-      "group": "คำ",
+      "group": "word",
       "caseNo": "03",
       "future": true
     }
@@ -1296,20 +1456,24 @@
       "id": "a4c0e001-0000-4000-8000-000000000085",
       "kind": "question",
       "title": "ใครย้ายอัลบั้ม",
+      "titleEn": "Who moved the album",
       "slug": "flow/question/who",
       "prompt": "1. ใครย้ายอัลบั้ม?",
+      "promptEn": "1. Who moved the album?",
       "right": "rin",
       "evidence": [
         "E01",
         "E03"
       ],
       "hint": "ลองอ่านกระดาษบนโต๊ะอีกทีสิจ๊ะ ใครเป็นคนเขียนไว้นะ",
+      "hintEn": "Read the note on the table again, dear. Who wrote it?",
       "mode": "portrait",
       "answers": [
         {
           "id": "a4c0e001-0000-4000-8000-000000000082",
           "kind": "choice",
           "title": "ย่ามะลิ",
+          "titleEn": "Grandma Mali",
           "slug": "flow/question/who/grandma",
           "value": "grandma",
           "image": "living-grandma.jpg"
@@ -1318,6 +1482,7 @@
           "id": "a4c0e001-0000-4000-8000-000000000083",
           "kind": "choice",
           "title": "ลุงเมฆ",
+          "titleEn": "Uncle Mek",
           "slug": "flow/question/who/mek",
           "value": "mek",
           "image": "uncle-mek.jpg"
@@ -1326,6 +1491,7 @@
           "id": "a4c0e001-0000-4000-8000-000000000084",
           "kind": "choice",
           "title": "น้าริน",
+          "titleEn": "Aunt Rin",
           "slug": "flow/question/who/rin",
           "value": "rin",
           "image": "rin.jpg"
@@ -1336,19 +1502,23 @@
       "id": "a4c0e001-0000-4000-8000-000000000089",
       "kind": "question",
       "title": "ย้ายทำไม",
+      "titleEn": "Why was it moved",
       "slug": "flow/question/why",
       "prompt": "2. ย้ายทำไม?",
+      "promptEn": "2. Why was it moved?",
       "right": "water",
       "evidence": [
         "E02"
       ],
       "hint": "โต๊ะยังเปียกอยู่เลยนะ หลานว่าเกิดอะไรขึ้น",
+      "hintEn": "The table is still wet. What do you think happened?",
       "mode": "chips",
       "answers": [
         {
           "id": "a4c0e001-0000-4000-8000-000000000086",
           "kind": "choice",
           "title": "น้ำหกบนโต๊ะ",
+          "titleEn": "Water spilled on the table",
           "slug": "flow/question/why/water",
           "value": "water"
         },
@@ -1356,6 +1526,7 @@
           "id": "a4c0e001-0000-4000-8000-000000000087",
           "kind": "choice",
           "title": "แอบซ่อนไว้",
+          "titleEn": "To hide it",
           "slug": "flow/question/why/hide",
           "value": "hide"
         },
@@ -1363,6 +1534,7 @@
           "id": "a4c0e001-0000-4000-8000-000000000088",
           "kind": "choice",
           "title": "หยิบไปดูรูป",
+          "titleEn": "To look at the photos",
           "slug": "flow/question/why/look",
           "value": "look"
         }
@@ -1372,19 +1544,23 @@
       "id": "a4c0e001-0000-4000-8000-00000000008d",
       "kind": "question",
       "title": "เก็บไว้ที่ไหน",
+      "titleEn": "Where was it put",
       "slug": "flow/question/where",
       "prompt": "3. เก็บไว้ที่ไหน? (แตะบนแผนผัง)",
+      "promptEn": "3. Where was it put? (tap the map)",
       "right": "study",
       "evidence": [
         "E04"
       ],
       "hint": "รูปเก่า ๆ บ้านนี้เขาเก็บไว้ที่เดียวกันมาตลอดแหละ ลองต่อแผนที่ที่หล่นกระจายอยู่ดูสิ",
+      "hintEn": "This house has always kept old photos in the same place. Try putting the scattered map back together.",
       "mode": "map",
       "answers": [
         {
           "id": "a4c0e001-0000-4000-8000-00000000008a",
           "kind": "choice",
           "title": "ห้องนั่งเล่น",
+          "titleEn": "Living room",
           "slug": "flow/question/where/living",
           "value": "living"
         },
@@ -1392,6 +1568,7 @@
           "id": "a4c0e001-0000-4000-8000-00000000008b",
           "kind": "choice",
           "title": "ห้องทำงาน (ใต้หน้าต่าง)",
+          "titleEn": "Study (under the window)",
           "slug": "flow/question/where/study",
           "value": "study"
         },
@@ -1399,6 +1576,7 @@
           "id": "a4c0e001-0000-4000-8000-00000000008c",
           "kind": "choice",
           "title": "ครัว",
+          "titleEn": "Kitchen",
           "slug": "flow/question/where/kitchen",
           "value": "kitchen"
         }
@@ -1410,61 +1588,79 @@
       "id": "a4c0e001-0000-4000-8000-00000000008e",
       "kind": "goal",
       "title": "ตรวจโต๊ะกลาง",
+      "titleEn": "Inspect the coffee table",
       "slug": "flow/goal/table",
       "code": "table",
       "room": "ห้องนั่งเล่น",
+      "roomEn": "Living room",
       "at": "living-room",
-      "object": "โต๊ะกลาง"
+      "object": "โต๊ะกลาง",
+      "objectEn": "Coffee table"
     },
     {
       "id": "a4c0e001-0000-4000-8000-00000000008f",
       "kind": "goal",
       "title": "ต่อแผนผัง",
+      "titleEn": "Put the map together",
       "slug": "flow/goal/tray",
       "code": "tray",
       "room": "ห้องนั่งเล่น",
+      "roomEn": "Living room",
       "at": "living-room",
-      "object": "ถาดชิ้นแผนผัง"
+      "object": "ถาดชิ้นแผนผัง",
+      "objectEn": "Map-piece tray"
     },
     {
       "id": "a4c0e001-0000-4000-8000-000000000090",
       "kind": "goal",
       "title": "คุยกับลุงเมฆ",
+      "titleEn": "Talk to Uncle Mek",
       "slug": "flow/goal/mek",
       "code": "mek",
       "room": "ห้องนั่งเล่น",
+      "roomEn": "Living room",
       "at": "living-room",
-      "object": "ลุงเมฆ"
+      "object": "ลุงเมฆ",
+      "objectEn": "Uncle Mek"
     },
     {
       "id": "a4c0e001-0000-4000-8000-000000000091",
       "kind": "goal",
       "title": "สรุปคดี",
+      "titleEn": "Solve the case",
       "slug": "flow/goal/deduce",
       "code": "deduce",
       "room": "สมุดคดี",
+      "roomEn": "Case notebook",
       "at": null,
-      "object": "ปุ่มสมุดคดี"
+      "object": "ปุ่มสมุดคดี",
+      "objectEn": "Case notebook button"
     },
     {
       "id": "a4c0e001-0000-4000-8000-000000000092",
       "kind": "goal",
       "title": "เปิดกล่องรูปดาว",
+      "titleEn": "Open the star box",
       "slug": "flow/goal/box",
       "code": "box",
       "room": "ห้องทำงาน",
+      "roomEn": "Study",
       "at": "study",
-      "object": "กล่องรูปดาว"
+      "object": "กล่องรูปดาว",
+      "objectEn": "Star box"
     },
     {
       "id": "a4c0e001-0000-4000-8000-000000000093",
       "kind": "goal",
       "title": "กลับบ้าน",
+      "titleEn": "Go home",
       "slug": "flow/goal/home",
       "code": "home",
       "room": "บ้านของฉัน",
+      "roomEn": "My home",
       "at": "player-room",
-      "object": "ช่องวางของ"
+      "object": "ช่องวางของ",
+      "objectEn": "Decor slot"
     }
   ]
 }

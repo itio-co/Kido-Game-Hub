@@ -11,6 +11,7 @@
  */
 import { fitVPMode, type Frame, type VpMode } from './vpFit.ts';
 import { T } from './strings.ts';
+import { t } from '../i18n/core.ts';
 export { smallestEigenvector } from './vpFit.ts';
 export type { Frame } from './vpFit.ts';
 
@@ -272,7 +273,7 @@ export function solveFromLines(
     }
   }
   const have = ([0, 1, 2] as Axis[]).filter((a) => vps[a]);
-  if (have.length < 2) return { ok: false, message: 'ต้องมีเส้นอย่างน้อย 2 เส้น ใน 2 แกน', vps, vpRms };
+  if (have.length < 2) return { ok: false, message: t('editor.match.solve.needTwoAxes'), vps, vpRms };
 
   let { cx, cy } = prior;
   const finite = have.filter((a) => modes[a] !== 'parallel');
@@ -290,10 +291,10 @@ export function solveFromLines(
   }
   if (opts.principal === 'vp3') {
     if (parallel.length) return { ok: false, message: T.vp.principalNeedsThree, vps, vpRms };
-    if (have.length < 3) return { ok: false, message: 'หาจุดกึ่งกลางภาพต้องใช้ครบ 3 แกน', vps, vpRms };
+    if (have.length < 3) return { ok: false, message: t('editor.match.solve.principalNeedsAllAxes'), vps, vpRms };
     const p = vps.map((v) => (v ? dehom(v) : null));
     const o = p[0] && p[1] && p[2] ? orthocentre(p[0], p[1], p[2]) : null;
-    if (!o) return { ok: false, message: 'จุดลับตาบางจุดอยู่ไกลเกินไป หาจุดกึ่งกลางภาพไม่ได้', vps, vpRms };
+    if (!o) return { ok: false, message: t('editor.match.solve.vpTooFar'), vps, vpRms };
     [cx, cy] = o;
   }
 
@@ -315,7 +316,7 @@ export function solveFromLines(
       }
     }
     if (!Number.isFinite(best)) {
-      return { ok: false, message: 'คำนวณเลนส์ไม่ได้ (เส้นแทบขนานกัน) ลองล็อกเลนส์ หรือเพิ่มเส้นที่ยาวขึ้น', vps, vpRms };
+      return { ok: false, message: t('editor.match.solve.lensFailed'), vps, vpRms };
     }
     f = best;
   }

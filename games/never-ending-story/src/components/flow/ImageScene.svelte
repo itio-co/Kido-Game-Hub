@@ -1,5 +1,6 @@
 <script lang="ts">
   import { imageUrl } from '../../lib/flow/loadFlow';
+  import { t } from '../../lib/i18n/core';
   import type { FlowScene, FlowSpot } from '../../lib/flow/types';
 
   let {
@@ -29,20 +30,30 @@
   const width = $derived(scene.contain ? 864 : 720);
   const height = $derived(scene.contain ? 1152 : 1280);
   const font = 34;
+  let boxW = $state(0);
+  let boxH = $state(0);
+  // 'slice' crops the picture to fill the screen (the sides on a portrait phone), so keep name labels inside the visible part.
+  const view = $derived.by(() => {
+    if (scene.contain || !boxW || !boxH) return { x0: 0, x1: width, y0: 0, y1: height };
+    const scale = Math.max(boxW / width, boxH / height);
+    const vw = boxW / scale;
+    const vh = boxH / scale;
+    return { x0: (width - vw) / 2, x1: (width + vw) / 2, y0: (height - vh) / 2, y1: (height + vh) / 2 };
+  });
 
   function place(spot: FlowSpot) {
     const cx = (spot.x / 100) * width;
     const cy = (spot.y / 100) * height;
     const label = labelFor(spot);
     const tw = Math.max(120, label.length * font * 0.72 + 28);
-    const lx = Math.max(8, Math.min(width - tw - 8, cx - tw / 2));
+    const lx = Math.max(view.x0 + 8, Math.min(view.x1 - tw - 8, cx - tw / 2));
     const above = cy - font - 70;
-    const ly = above < 150 ? cy + 28 : above;
+    const ly = above < view.y0 + 150 ? cy + 28 : above;
     return { cx, cy, label, tw, lx, ly };
   }
 </script>
 
-<div class="photo">
+<div class="photo" bind:clientWidth={boxW} bind:clientHeight={boxH}>
   <img class:contain={scene.contain} src={imageUrl(image)} alt="" />
   <svg
     class="layer"
@@ -80,7 +91,7 @@
     {/each}
   </svg>
   {#if onMap}
-    <button type="button" class="mapbtn" onclick={onMap}>แผนผังบ้าน</button>
+    <button type="button" class="mapbtn" onclick={onMap}>{t('game.scene.houseMap')}</button>
   {/if}
 </div>
 
@@ -99,8 +110,10 @@
   .mapbtn {
     position: absolute;
     z-index: 4;
-    top: 58px;
+    /* Bottom left, stacked above the back button: at the top it sat over the clock dot, and in the bottom centre it ran into a long case-notebook label. */
+    bottom: calc(88px + env(safe-area-inset-bottom, 0px));
     left: 12px;
+    min-height: 44px;
     background: rgba(6, 30, 48, 0.9);
     border: 1px solid #39e0ff;
     color: #fff;
