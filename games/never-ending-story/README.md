@@ -1,5 +1,7 @@
 # Never Ending Story Game
 
+This game lives at `games/never-ending-story/`. Thai specs and story packs are in `docs/design/`. Early demos are in `prototypes/`. Per-asset source folders stay under `assets-src/<slug>/`.
+
 Playable first screen: the player's room (hub). Portrait, touch-first. Svelte draws the HUD. Three.js draws the low-poly room from `public/data/player-room.json`, matched to `prototypes/poc-clickthrough/img/player-room-wide.jpg`.
 
 Progress is saved in `localStorage` on this device. There is no account.
@@ -7,12 +9,12 @@ Progress is saved in `localStorage` on this device. There is no account.
 ## Run
 
 ```bash
-cd game
+cd games/never-ending-story
 npm install
 npm run dev
 ```
 
-This folder is an npm workspace of the repo root. `npm install` here installs into the root `node_modules` and updates the root `package-lock.json`. There is no `game/package-lock.json`. Running `npm install` at the repo root does the same.
+This folder is an npm workspace of the repo root. `npm install` here installs into the root `node_modules` and updates the root `package-lock.json`. There is no `games/never-ending-story/package-lock.json`. Running `npm install` at the repo root does the same.
 
 Open the URL Vite prints (default `http://localhost:5173`) on a phone, or use a narrow portrait window such as 390×844.
 
@@ -23,7 +25,7 @@ npm run build
 npm run preview
 ```
 
-`npm run build` writes a static site to `game/dist`. `npm run preview` serves that folder. Asset paths are relative, so the same `dist` folder can be hosted as static files at the site root or in a subfolder.
+`npm run build` writes a static site to `games/never-ending-story/dist`. `npm run preview` serves that folder. Asset paths are relative, so the same `dist` folder can be hosted as static files at the site root or in a subfolder.
 
 ## Install (PWA)
 

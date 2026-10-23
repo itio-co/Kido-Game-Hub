@@ -2,7 +2,7 @@ import * as THREE from 'three';
 
 /**
  * Models shown in the showcase (#/showcase) and editable in the model editor (#/editor).
- * Add an entry here when a new asset from game/assets-src/<slug>/ is exported to public/models/;
+ * Add an entry here when a new asset from games/never-ending-story/assets-src/<slug>/ is exported to public/models/;
  * both pages pick it up automatically.
  */
 export type ShowcaseVariant = {
@@ -90,7 +90,7 @@ export const SHOWCASE_ASSETS: ShowcaseAsset[] = [
        * Camera matched in Blender to showcase/nightstand-ref.png (252×284).
        * Blender: lens 162.12 mm on a 36 mm sensor (horizontal fit), location (1.5167, -3.0410, 1.3648) m,
        * rotation XYZ (73.63°, 0.54°, 26.89°). Converted Z-up → Y-up as (x, y, z) → (x, z, -y).
-       * See game/assets-src/nightstand/blender/cam.json and solve_cam.py.
+       * See games/never-ending-story/assets-src/nightstand/blender/cam.json and solve_cam.py.
        */
       camera: {
         hfovDeg: 2 * THREE.MathUtils.radToDeg(Math.atan(36 / 2 / 162.1169)),

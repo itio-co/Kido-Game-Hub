@@ -1,5 +1,5 @@
 /**
- * Source files of the editor's work: game/assets-src/<item>/editor/
+ * Source files of the editor's work: games/never-ending-story/assets-src/<item>/editor/
  *   camera-match.json        guide lines, point pairs, VP lock / modes, crop rect, solved camera
  *   <variant>.edits.json     model edits (parts state, no undo history)
  *   <variant>-edited.glb     optional exported model
@@ -86,7 +86,7 @@ export class SourceFiles {
   api = $state<'probing' | 'on' | 'off'>('probing');
   /** Source files by name (JSON only). */
   files = $state.raw<Record<string, unknown>>({});
-  /** Folder relative to the git root, e.g. game/assets-src/nightstand/editor. */
+  /** Folder relative to the git root, e.g. games/never-ending-story/assets-src/nightstand/editor. */
   dir = $state('');
   changes = $state.raw<FileChange[]>([]);
   saving = $state(false);
@@ -99,7 +99,7 @@ export class SourceFiles {
     this.asset = asset;
     this.item = itemOfSlug(asset.slug);
     this.files = this.item ? bundledFor(this.item) : {};
-    this.dir = this.item ? `game/${editorDirRel(this.item)}` : '';
+    this.dir = this.item ? editorDirRel(this.item) : '';
     this.ready = this.probe();
   }
 

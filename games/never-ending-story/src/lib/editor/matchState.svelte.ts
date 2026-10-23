@@ -230,7 +230,7 @@ export class MatchState {
     else if (baseline && this.loadFile(baseline)) this.origin = 'file';
   }
 
-  // ---------- source file (game/assets-src/<item>/editor/camera-match.json) ----------
+  // ---------- source file (games/never-ending-story/assets-src/<item>/editor/camera-match.json) ----------
   /**
    * The work as stored in the committed source file: lines (both groups, FULL-image px), point
    * pairs, solver settings and the solved camera. UI preferences (image, ghost, rays, snap, diff,

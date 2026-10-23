@@ -21,8 +21,8 @@ Inputs and settings are in [`../prompt.md`](../prompt.md).
 From the repo root, with Blender 4.x:
 
 ```sh
-blender -b --python game/assets-src/tools/import_external.py -- \
-    game/assets-src/nightstand game/assets-src/nightstand/external/meshy/model.glb
+blender -b --python games/never-ending-story/assets-src/tools/import_external.py -- \
+    games/never-ending-story/assets-src/nightstand games/never-ending-story/assets-src/nightstand/external/meshy/model.glb
 ```
 
 This:
@@ -36,7 +36,7 @@ This:
    `--fit none` keeps the size as is), centres it and puts the origin on the floor;
 4. renders it with Cycles at the matched camera and lighting from `blender/cam.json`;
 5. writes to `external/meshy/compare/`:
-   - `model-normalised.glb`: the fixed model, ready to copy to `game/public/models/`
+   - `model-normalised.glb`: the fixed model, ready to copy to `games/never-ending-story/public/models/`
    - `model-render.png`, `model-side-by-side.png`, `model-overlay.png` (cyan = model outline), `model-turntable.png`,
      `model-yaw-candidates.png`
    - `model-report.json`: chosen yaw, scale, triangles, silhouette IoU vs `ref/nightstand-ref-mask.png`

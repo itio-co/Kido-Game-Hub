@@ -1,4 +1,4 @@
-// Plain test for object ↔ room guide-line groups (no test framework in game/): `npm test` in game/.
+// Plain test for object ↔ room guide-line groups (no test framework in games/never-ending-story/): `npm test` in games/never-ending-story/.
 import { fromBlenderEulerDeg, mulMV, project, sub, type Axis, type Cam, type GuideLine, type V2, type V3 } from '../src/lib/editor/camMath.ts';
 import {
   agreement,

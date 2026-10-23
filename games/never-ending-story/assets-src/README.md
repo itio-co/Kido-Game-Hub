@@ -3,7 +3,7 @@
 Source packages for 3D assets. One folder per asset, named after the last part of its slug
 (`player-room/nightstand` → `nightstand/`). Each folder is self-contained, so it can be zipped and
 taken to an external tool (Meshy, Tripo, Rodin, Hunyuan3D, TRELLIS, Blender) and brought back.
-Runtime files go to `game/public/models/`; nothing in `assets-src/` is shipped.
+Runtime files go to `games/never-ending-story/public/models/`; nothing in `assets-src/` is shipped.
 
 ## Layout (copy this for new assets: bed, window, door…)
 
@@ -26,7 +26,7 @@ assets-src/
 
 ## `asset.json`
 
-Required (every entity has `id`, `kind`, `title`, `slug`, matching `game/public/data/*.json`):
+Required (every entity has `id`, `kind`, `title`, `slug`, matching `games/never-ending-story/public/data/*.json`):
 
 | key | |
 | --- | --- |
@@ -54,7 +54,7 @@ Required (every entity has `id`, `kind`, `title`, `slug`, matching `game/public/
 ## Checking an external model
 
 ```sh
-blender -b --python game/assets-src/tools/import_external.py -- game/assets-src/<slug> path/to/model.glb
+blender -b --python games/never-ending-story/assets-src/tools/import_external.py -- games/never-ending-story/assets-src/<slug> path/to/model.glb
 ```
 
 See `nightstand/external/README.md` for the options and outputs.
@@ -81,11 +81,11 @@ mock-up. Open the game at `#/editor` (or the **✎ แก้โมเดลน�
 
 เอากลับเข้าโปรเจกต์:
 
-- คัดลอก GLB ไปไว้ที่ `game/assets-src/<item>/external/editor/model.glb` แล้วรัน
+- คัดลอก GLB ไปไว้ที่ `games/never-ending-story/assets-src/<item>/external/editor/model.glb` แล้วรัน
   `import_external.py` (คำสั่งด้านล่าง) เพื่อเรนเดอร์เทียบกับ ref และดูค่า IoU
 - ถ้าจะให้แก้ถาวรใน Blender: ใช้ค่า `blenderBoxCm.after` ในไฟล์ JSON แก้ `blender/dims.json` /
   `build_master.py` แล้ว build ใหม่ (ดูด้านล่าง)
-- ถ้าจะใช้ GLB ตรงๆ ในเกม: คัดลอกไปทับ `game/public/models/<slug>.glb`
+- ถ้าจะใช้ GLB ตรงๆ ในเกม: คัดลอกไปทับ `games/never-ending-story/public/models/<slug>.glb`
 
 ### How to use (English)
 
@@ -109,26 +109,26 @@ mock-up. Open the game at `#/editor` (or the **✎ แก้โมเดลน�
 Bringing it back:
 
 ```sh
-mkdir -p game/assets-src/<item>/external/editor
-cp ~/Downloads/<item>-lowpoly-edited.glb game/assets-src/<item>/external/editor/model.glb
-blender -b --python game/assets-src/tools/import_external.py -- \
-    game/assets-src/<item> game/assets-src/<item>/external/editor/model.glb --fit none --yaw 0
+mkdir -p games/never-ending-story/assets-src/<item>/external/editor
+cp ~/Downloads/<item>-lowpoly-edited.glb games/never-ending-story/assets-src/<item>/external/editor/model.glb
+blender -b --python games/never-ending-story/assets-src/tools/import_external.py -- \
+    games/never-ending-story/assets-src/<item> games/never-ending-story/assets-src/<item>/external/editor/model.glb --fit none --yaw 0
 ```
 
 Use `--fit none --yaw 0`: the editor keeps real size and orientation, while the defaults (`--fit box`,
 `--yaw auto`) would stretch it back to `asset.json` and may turn it. The script joins the parts, renders at the
 matched camera and writes `external/editor/compare/` (side-by-side, overlay, IoU in `model-report.json`).
 To keep the change in the Blender source, copy the `blenderBoxCm.after` numbers into `blender/dims.json` /
-`build_master.py`, rebuild (`build_all.sh`, `render_all.sh`) and copy the GLBs to `game/public/models/`.
+`build_master.py`, rebuild (`build_all.sh`, `render_all.sh`) and copy the GLBs to `games/never-ending-story/public/models/`.
 Rotations and recolours are not in `dims.json`; port them by hand.
 
 ### Adding an asset to the editor
 
 1. Export GLBs with **one named node per part** (see `nightstand/blender/finalize.py`, `split_parts`): a root
    empty, then a mesh per part with its origin at the part centre. A single joined mesh shows as one part.
-2. Add an entry to `SHOWCASE_ASSETS` in `game/src/lib/showcaseAssets.ts` (slug, title, variant URLs, `ref` image +
+2. Add an entry to `SHOWCASE_ASSETS` in `games/never-ending-story/src/lib/showcaseAssets.ts` (slug, title, variant URLs, `ref` image +
    matched camera for the mock-up view, orbit framing). The editor's model menu reads that list.
-3. Optional: Thai part names in `game/src/lib/editor/partLabels.ts`.
+3. Optional: Thai part names in `games/never-ending-story/src/lib/editor/partLabels.ts`.
 4. Optional, for camera match: `ref.mockup` (full mock-up + crop offset) and `ref.keyPoints` (named model
    corners in Blender cm) and `ref.camParams` (the first five `p` values of `cam.json`).
 
@@ -221,15 +221,15 @@ UI labels are shown in bold as they appear in the (Thai) UI, with an English glo
    - Applies to both object and room lines; if a group's lines are not actually parallel the agreement panel
      shows ⚠.
    - The mode is saved with the lines (`vpModes`) and exported; ↶ restores line positions but not the mode.
-8. **💾 บันทึกลงไฟล์ต้นฉบับ** (save to source files; only under `npm run dev` in `game/`): work is autosaved to
-   localStorage; press this button (or **Ctrl+S**) to write the files in `game/assets-src/<item>/editor/`, then
+8. **💾 บันทึกลงไฟล์ต้นฉบับ** (save to source files; only under `npm run dev` in `games/never-ending-story/`): work is autosaved to
+   localStorage; press this button (or **Ctrl+S**) to write the files in `games/never-ending-story/assets-src/<item>/editor/`, then
    commit them.
    - `camera-match.json` = guide lines (object + room), point pairs, VP lock, consolidate/parallel modes, crop and
      the solved camera.
    - `<variant>.edits.json` (e.g. `lowpoly.edits.json`) = model edits (no undo history); tick
      **รวม …-edited.glb** to also write the model file.
    - The **ไฟล์ต้นฉบับ** (source files) panel lists which files will change; after saving it shows the paths and
-     `git add game/assets-src/nightstand/editor && git commit -m "…"`.
+     `git add games/never-ending-story/assets-src/nightstand/editor && git commit -m "…"`.
    - Committed files are the baseline: a fresh page (no local draft) loads from them. If the local draft differs
      from the files, a **"มีงานที่ยังไม่บันทึกลงไฟล์"** (unsaved work) banner offers **ใช้งานที่ค้างไว้ต่อ** (keep the
      draft; hidden until the page is closed) or **กลับไปใช้ไฟล์** (revert to the files, discarding the draft).
@@ -266,7 +266,7 @@ UI labels are shown in bold as they appear in the (Thai) UI, with an English glo
   dotted English keys (e.g. `cameraMatch.vp.consolidateAll`) to `{ en, th }` with `{name}` placeholders,
   `localeTable('en' | 'th')` gives the flat shape of `src/locales/<locale>.json`, and components use the typed `T`
   facade (renders Thai today). `tests/strings.test.ts` checks keys, both values and matching placeholders.
-- Snapping (v0.2.9): `src/lib/editor/guideSnap.ts` (pure; `npm test` in `game/` runs `tests/guideSnap.test.ts`
+- Snapping (v0.2.9): `src/lib/editor/guideSnap.ts` (pure; `npm test` in `games/never-ending-story/` runs `tests/guideSnap.test.ts`
   through `tsc` + node, no test framework needed). Lines may carry optional `links: {a?, b?}` joint ids — endpoints
   with the same id are one shared corner. Older saved/exported line data without `links` loads unchanged.
 - Live solve while dragging: guide-line drags re-run the line solve, point drags re-run PnP (≥4 pairs) or position

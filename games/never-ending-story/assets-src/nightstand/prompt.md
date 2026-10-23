@@ -47,7 +47,7 @@ After download, put the file in `external/<tool>/` and run the import check (see
 4. ตั้งค่าตามตาราง: low-poly ประมาณ 5k–20k faces, ปิด PBR, export เป็น **GLB**
 5. ดาวน์โหลดไฟล์แล้ววางที่ `external/<ชื่อเครื่องมือ>/` เช่น `external/meshy/model.glb`
 6. รันสคริปต์ตรวจ (ต้องมี Blender):
-   `blender -b --python game/assets-src/tools/import_external.py -- game/assets-src/nightstand game/assets-src/nightstand/external/meshy/model.glb`
+   `blender -b --python games/never-ending-story/assets-src/tools/import_external.py -- games/never-ending-story/assets-src/nightstand games/never-ending-story/assets-src/nightstand/external/meshy/model.glb`
 7. เปิดดู `external/meshy/compare/model-side-by-side.png` และ `model-overlay.png` เทียบกับภาพต้นฉบับ ค่า IoU ใน `model-report.json` ยิ่งใกล้ 1 ยิ่งตรง
 
 ข้อควรจำ: เสาสีเข้มทางซ้ายคือ **เตียง** และก้อนสีขาวคือ **ที่นอน/หมอน** ไม่ใช่ส่วนของตู้ ตู้มีลิ้นชักเดียว ขา 4 ขา มีคานล่างเฉพาะด้านซ้าย-ขวา **ไม่มีคานหลัง**

@@ -1,4 +1,4 @@
-// Plain test for the master guide line per axis (no test framework in game/): `npm test` in game/.
+// Plain test for the master guide line per axis (no test framework in games/never-ending-story/): `npm test` in games/never-ending-story/.
 import type { Axis, GuideLine, V2 } from '../src/lib/editor/camMath.ts';
 import { applyMasterIds, ensureMasters, masterIds, parseMasterMap, promoteMaster, roomAuthoritative, setMasterFlag, withDefaultMasters } from '../src/lib/editor/masterLine.ts';
 import { consolidate, fitParallel, fitVP, fitVPMode, frameOf, lockVp } from '../src/lib/editor/vpFit.ts';

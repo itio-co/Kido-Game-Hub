@@ -3,7 +3,7 @@
     "id": "case-01",
     "title": "อัลบั้มครอบครัวที่หายไป",
     "version": "0.3.0",
-    "source": "docs/design/never-ending-story-game-case-01-missing-family-album-th.md",
+    "source": "games/never-ending-story/docs/design/never-ending-story-game-case-01-missing-family-album-th.md",
     "language": "th",
     "imageCoordSpace": "percent of 9:16 image (0-100); map uses image pixels"
   },

@@ -52,14 +52,14 @@ interface EditObject { id: string; name: string; transform: Transform; mesh: Edi
 interface EditDocument { version: 1; objects: EditObject[]; camera?: CameraMatch; meta?: Record<string, unknown> }
 ```
 
-- `id` is stable across sessions. Kido authored entities use their UUID v4 (see `game/README.md` › Scene objects). GLB parts without an id get a fresh UUID on import, and their name is kept in `name`.
+- `id` is stable across sessions. Kido authored entities use their UUID v4 (see `games/never-ending-story/README.md` › Scene objects). GLB parts without an id get a fresh UUID on import, and their name is kept in `name`.
 - `name` matches the GLB node name and `parts[].name` in edits.json.
 - `transform` is relative to the document root. **v1 scope (agreed): flat objects.** There is no parent/child nesting. The Kido editor already flattens a GLB to its top-level parts (`partsOf()`).
 - The document is plain JSON (`JSON.parse(JSON.stringify(doc))` deep-equals `doc`).
 
 ## 4. edits.json (`kido-model-edits/1`)
 
-This is the file the editor exports so a human or an agent can port changes back into `game/assets-src/<slug>/blender/build_master.py`. The format is exactly what `exportEdits()` writes in the current Kido editor (`game/src/lib/editor/modelEditor.ts` on `cursor/model-editor-ec81`). All existing fields keep their names, units, and meanings. New fields are **optional additions**, and `format` stays `kido-model-edits/1`. Old files still validate, and old readers ignore the new fields.
+This is the file the editor exports so a human or an agent can port changes back into `games/never-ending-story/assets-src/<slug>/blender/build_master.py`. The format is exactly what `exportEdits()` writes in the current Kido editor (`games/never-ending-story/src/lib/editor/modelEditor.ts` on `cursor/model-editor-ec81`). All existing fields keep their names, units, and meanings. New fields are **optional additions**, and `format` stays `kido-model-edits/1`. Old files still validate, and old readers ignore the new fields.
 
 ```jsonc
 {
@@ -262,7 +262,7 @@ interface CameraMatch {
 
 Relations: `fPx = lensMm / 36 · image.width`, `hfov = 2·atan(18 / lensMm)`, `vfov = 2·atan(tan(hfov/2) / aspect)`. Guide axes are three.js world axes. The principal point defaults to the image centre.
 
-**Blender `cam.json`** (`BlenderCamJson`) is exactly what `solve_cam.py` writes and `add_cam.py` reads (`game/assets-src/nightstand/blender/cam.json`):
+**Blender `cam.json`** (`BlenderCamJson`) is exactly what `solve_cam.py` writes and `add_cam.py` reads (`games/never-ending-story/assets-src/nightstand/blender/cam.json`):
 
 | field | meaning |
 |---|---|
@@ -317,16 +317,16 @@ Conversions, checked against the nightstand files:
 | Snapping (`SnapProvider`s, `composeSnaps`) | Never Ending Game |
 | GLB import and weld (`fromBufferGeometry` caller, part flattening, edits.json export) | Never Ending Game |
 | Svelte UI panels (`./svelte`), theme, i18n | Never Ending Game |
-| Kido integration (`game/` → `games/never-ending-story/` editor route) | Never Ending Game |
+| Kido integration (`games/never-ending-story/` editor route) | Never Ending Game |
 | `EditorViewport` shell, `History`, `EditorHost` contract | shared (agreed): changes need both reviews |
 
 `weld` itself lives in `EditMeshOps` (GamesBuilder). The GLB import pipeline that calls it belongs to Never Ending Game.
 
 ## 14. Workspace layout
 
-The root `package.json` workspaces are `["packages/*", "games/*", "game"]`. **Every directory directly under `games/` that has a `package.json` becomes a workspace**, and so does `game/` until it moves to `games/never-ending-story/`.
+The root `package.json` workspaces are `["packages/*", "games/*"]`. **Every directory directly under `games/` that has a `package.json` becomes a workspace.**
 
 - Don't put a stray `package.json` under `games/`, such as a scratch folder, a copied template, or a nested app. It would be installed and hoisted by the root `npm install`.
 - A nested SvelteKit app keeps exactly one `package.json`, at `games/<name>/package.json`.
 - There is one lockfile, the root `package-lock.json`.
-- When `game/` moves, remove `"game"` from the workspaces list in the same PR.
+- Games today: `games/never-ending-story` (package `never-ending-story-game`) and `games/starship` (package `starship-interior`). The folder name and the npm package name do not have to match.

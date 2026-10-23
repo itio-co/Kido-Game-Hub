@@ -1,4 +1,4 @@
-// Plain test for per-axis parallel VP mode (no test framework in game/): `npm test` in game/.
+// Plain test for per-axis parallel VP mode (no test framework in games/never-ending-story/): `npm test` in games/never-ending-story/.
 import { fromBlenderEulerDeg, mulMV, project, solveFromLines, type Axis, type Cam, type GuideLine, type V2, type V3 } from '../src/lib/editor/camMath.ts';
 import { agreement, solveJoint } from '../src/lib/editor/roomMatch.ts';
 import { T } from '../src/lib/editor/strings.ts';

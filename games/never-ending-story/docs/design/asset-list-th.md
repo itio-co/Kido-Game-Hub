@@ -1,6 +1,6 @@
 # รายการแอสเซตเกม (Asset List) — ร่าง
 
-หน้าแสดงผล: [`prototypes/asset-showcase/index.html`](../../prototypes/asset-showcase/index.html) · ดูออนไลน์: https://raw.githack.com/itio-co/Kido-Game-Hub/docs/design-spec-v0.3/prototypes/asset-showcase/index.html
+หน้าแสดงผล: [`prototypes/asset-showcase/index.html`](../../prototypes/asset-showcase/index.html) · ดูออนไลน์: https://raw.githack.com/itio-co/Kido-Game-Hub/docs/design-spec-v0.3/games/never-ending-story/prototypes/asset-showcase/index.html
 
 ## สไตล์
 - ทุกตัวละคร ฉาก และวัตถุเป็น **low-poly 3D แบบ flat-shaded** เรขาคณิตเรียบง่ายที่โมเดลได้จริง แสงสม่ำเสมอ (อ้างอิง: ย่ามะลิ `concepts/v2/living-grandma.jpg`)
@@ -19,6 +19,6 @@
 การ์ตูนเปิดเรื่อง 3 หน้า · ฉากหลังมุมกว้าง · ฉากตามช่วงเวลา (`living-wide-afternoon`, `living-wide-yesterday`) · มุมใกล้ · แผนผังบ้าน · ภาพหน้าจอมินิเกม · ธีมปฏิทิน (UI)
 
 ## ข้อมูลและการอัปเดต
-- แหล่งข้อมูลเดียว: `prototypes/asset-showcase/assets.json` (ฝังสำเนาใน `index.html` เผื่อเปิดไฟล์ตรง)
-- สร้างจากไฟล์จริงใน `prototypes/poc-clickthrough/img/` และ `story-packs/*/case.json` (`calendarThemes` `timeSlots` `rooms[].states`) ด้วย `python3 prototypes/asset-showcase/build_assets.py`
+- แหล่งข้อมูลเดียว: `games/never-ending-story/prototypes/asset-showcase/assets.json` (ฝังสำเนาใน `index.html` เผื่อเปิดไฟล์ตรง)
+- สร้างจากไฟล์จริงใน `games/never-ending-story/prototypes/poc-clickthrough/img/` และ `games/never-ending-story/docs/design/story-packs/*/case.json` (`calendarThemes` `timeSlots` `rooms[].states`) ด้วย `python3 games/never-ending-story/prototypes/asset-showcase/build_assets.py`
 - รายการแอสเซต 3D (ชื่อ หมวด ตำแหน่งครอปภาพย่อ) ตอนนี้กำหนดในสคริปต์ — Story Pack ถัดไปควรมีส่วน `assets[]` ของตัวเองเพื่อเพิ่มเข้าหน้านี้อัตโนมัติ

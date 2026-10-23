@@ -16,7 +16,7 @@ export const MAX_BODY_BYTES = 48 * 1024 * 1024;
 const ITEM_RE = /^[a-z0-9][a-z0-9_-]{0,63}$/;
 const VARIANT_RE = /^[a-z0-9][a-z0-9_-]{0,63}$/;
 
-/** `player-room/nightstand` → `nightstand` (the folder under game/assets-src/). */
+/** `player-room/nightstand` → `nightstand` (the folder under games/never-ending-story/assets-src/). */
 export function itemOfSlug(slug) {
   const item = String(slug).split('/').pop() ?? '';
   return isValidItem(item) ? item : null;
@@ -50,8 +50,8 @@ export function isReservedName(name) {
   return /^(con|prn|aux|nul|com[0-9]|lpt[0-9])(\..*)?$/i.test(name);
 }
 
-/** game/assets-src/<item>/editor (POSIX separators, for messages and `git add`). */
-export const editorDirRel = (item) => `game/assets-src/${item}/editor`;
+/** games/never-ending-story/assets-src/<item>/editor (POSIX separators, for messages and `git add`). */
+export const editorDirRel = (item) => `games/never-ending-story/assets-src/${item}/editor`;
 
 /** Strip a BOM and turn CRLF / CR into LF (files checked out on Windows with autocrlf). */
 export function normalizeText(text) {

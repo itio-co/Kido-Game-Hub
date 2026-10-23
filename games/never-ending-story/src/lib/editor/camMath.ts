@@ -2,7 +2,7 @@
  * Camera matching maths (fSpy-style): vanishing points from guide lines, focal length + rotation from
  * two or three vanishing points, position from point pairs, and a Levenberg–Marquardt refinement.
  *
- * Conventions (same as game/assets-src/<item>/blender/cam.json):
+ * Conventions (same as games/never-ending-story/assets-src/<item>/blender/cam.json):
  * - World = Blender: X right (width), Y back (front = −Y), Z up, centimetres.
  * - Camera = OpenCV: x right, y down, z forward. x_cam = R · (X − C).
  * - Image = "ref px": pixels of the asset's reference crop (top-left origin). Other images (the full mock-up)

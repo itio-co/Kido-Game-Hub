@@ -1,15 +1,13 @@
 # games/
 
-Each folder here is one game: its own npm workspace with its own `package.json`, build, and deploy output. Games share code through `packages/` (for example `@itio/mesh-editor`).
+Each folder here is one game: its own npm workspace with its own `package.json`, build, and deploy output. Games share code through `packages/` (for example `@itio/mesh-editor`). A game also keeps its own docs and prototypes inside its folder.
 
-Planned layout:
-
-| Folder | Game | Status |
+| Folder | npm name | Game |
 |---|---|---|
-| `games/never-ending-story/` | Never Ending Story Game (Svelte + three.js, Vite) | Still at [`../game/`](../game/). It moves here after the open editor PRs that touch `game/` are merged. Until then the root workspace list includes `game`. |
-| `games/starship-interior/` | Starship Interior (SvelteKit) | GamesBuilder will import the SvelteKit app here. |
+| [`never-ending-story/`](never-ending-story/) | `never-ending-story-game` | Never Ending Story Game (Svelte + three.js, Vite). Specs are in [`never-ending-story/docs/design/`](never-ending-story/docs/design/). Prototypes are in [`never-ending-story/prototypes/`](never-ending-story/prototypes/). |
+| [`starship/`](starship/) | `starship-interior` | Starship Interior (SvelteKit). The folder is `starship`; the package name stays `starship-interior`. |
 
-Root `workspaces` is `["packages/*", "games/*", "game"]`. Every direct subfolder of `games/` that has a `package.json` becomes a workspace, so don't put a stray `package.json` (scratch, experiment, copied template) directly under `games/<name>/` unless it is meant to be a game. When `game/` moves to `games/never-ending-story/`, drop `"game"` from the list.
+Root `workspaces` is `["packages/*", "games/*"]`. Every direct subfolder of `games/` that has a `package.json` becomes a workspace, so don't put a stray `package.json` (scratch, experiment, copied template) directly under `games/<name>/` unless it is meant to be a game.
 
 Rules for a game folder:
 

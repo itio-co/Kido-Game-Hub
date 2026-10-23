@@ -1,5 +1,5 @@
 // Dev-only save API for the 3D editor: lets `npm run dev` write the editor's work into
-// game/assets-src/<item>/editor/ so it can be committed. Never part of a build (apply: 'serve').
+// games/never-ending-story/assets-src/<item>/editor/ so it can be committed. Never part of a build (apply: 'serve').
 //
 //   GET  /__editor/files?item=nightstand   → { ok, item, dir, files: { name: json }, binaries: [{ name, bytes }] }
 //   POST /__editor/files                   ← { item, files: [{ name, json } | { name, base64 }] }

@@ -36,7 +36,7 @@
   },
   "style": "stylised low-poly game prop, warm light wood, flat shading, no visible grain in the low-poly",
   "source": {
-    "mockup": "game/public/img/player-room-wide.jpg",
+    "mockup": "games/never-ending-story/public/img/player-room-wide.jpg",
     "mockupSize": {
       "width": 720,
       "height": 1280
@@ -47,7 +47,7 @@
       "width": 252,
       "height": 284
     },
-    "cropBoxNotes": "Pixels in the mock-up, top-left origin. The crop is identical to game/public/showcase/nightstand-ref.png (template match score 1.0)."
+    "cropBoxNotes": "Pixels in the mock-up, top-left origin. The crop is identical to games/never-ending-story/public/showcase/nightstand-ref.png (template match score 1.0)."
   },
   "ref": {
     "crop": "ref/nightstand-ref.png",
@@ -108,8 +108,8 @@
       "texture": null
     },
     "runtime": [
-      "game/public/models/nightstand.glb",
-      "game/public/models/nightstand-master.glb"
+      "games/never-ending-story/public/models/nightstand.glb",
+      "games/never-ending-story/public/models/nightstand-master.glb"
     ],
     "partNodes": [
       "TopSlab",

@@ -1,4 +1,4 @@
-// Checks the i18n-ready string table (no test framework in game/): `npm test` in game/.
+// Checks the i18n-ready string table (no test framework in games/never-ending-story/): `npm test` in games/never-ending-story/.
 import { MESSAGES, T, format, localeTable, type MessageKey } from '../src/lib/editor/strings.ts';
 
 declare const process: { exitCode?: number };

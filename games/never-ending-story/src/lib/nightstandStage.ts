@@ -10,7 +10,7 @@ const WALL = '#f0c9a0';
 
 const NIGHTSTAND = findAsset('player-room/nightstand')!;
 
-/** Runtime models exported from game/assets-src/nightstand (Blender). */
+/** Runtime models exported from games/never-ending-story/assets-src/nightstand (Blender). */
 export const NIGHTSTAND_MODELS: Record<NightstandVariant, string> = {
   lowpoly: NIGHTSTAND.variants.find((v) => v.id === 'lowpoly')!.url,
   master: NIGHTSTAND.variants.find((v) => v.id === 'master')!.url,

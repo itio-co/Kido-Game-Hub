@@ -1,4 +1,4 @@
-// Plain test for vanishing-point consolidation (no test framework in game/): `npm test` in game/.
+// Plain test for vanishing-point consolidation (no test framework in games/never-ending-story/): `npm test` in games/never-ending-story/.
 import type { GuideLine, V2, V3 } from '../src/lib/editor/camMath.ts';
 import { aimAt, angleToVp, consolidate, distToRay, fitVP, lockedPoint, lockVp, residualBand, vpPoint } from '../src/lib/editor/vpFit.ts';
 

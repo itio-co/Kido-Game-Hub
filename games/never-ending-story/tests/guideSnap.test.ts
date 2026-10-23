@@ -1,4 +1,4 @@
-// Plain test for the guide-line snapping math (no test framework in game/): `npm test` in game/.
+// Plain test for the guide-line snapping math (no test framework in games/never-ending-story/): `npm test` in games/never-ending-story/.
 import type { GuideLine, V2 } from '../src/lib/editor/camMath.ts';
 import {
   closestOnSegment,

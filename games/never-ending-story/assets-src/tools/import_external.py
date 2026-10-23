@@ -1,6 +1,6 @@
 """Normalise a model from an external tool and compare it with the asset's reference.
 
-    blender -b --python game/assets-src/tools/import_external.py -- \
+    blender -b --python games/never-ending-story/assets-src/tools/import_external.py -- \
         <asset_dir> <model.glb|.gltf|.obj|.fbx|.ply|.stl> [options]
 
 Options:

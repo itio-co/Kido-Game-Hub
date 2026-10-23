@@ -47,7 +47,7 @@
   const ref = $derived(option.asset.ref);
   /** Camera-match session of the current asset (also drives the mock-up view's camera). */
   let match = $state.raw<MatchState | null>(null);
-  /** Source files (game/assets-src/<item>/editor/) of the current asset + the dev save API. */
+  /** Source files (games/never-ending-story/assets-src/<item>/editor/) of the current asset + the dev save API. */
   let files = $state.raw<SourceFiles | null>(null);
   let matchFor = '';
   $effect(() => {
@@ -622,7 +622,7 @@
             {/if}
           {:else if files.api === 'off'}
             <p class="tip" data-dev-hint>
-              {T.files.devHintLead} <code>npm run dev</code> {T.files.devHintIn} <code>game/</code>{T.files.devHintThen}
+              {T.files.devHintLead} <code>npm run dev</code> {T.files.devHintIn} <code>games/never-ending-story/</code>{T.files.devHintThen}
               <code>{files.dir}/</code> {T.files.devHintTail}
             </p>
           {/if}

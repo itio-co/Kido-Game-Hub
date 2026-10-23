@@ -1,4 +1,4 @@
-// Plain test for guide line ↔ mock-up edge alignment (synthetic images). `npm test` in game/.
+// Plain test for guide line ↔ mock-up edge alignment (synthetic images). `npm test` in games/never-ending-story/.
 import type { V2 } from '../src/lib/editor/camMath.ts';
 import { alignLine, edgeMapFromRGBA, refineLine, sobel, downscaleGray } from '../src/lib/editor/edgeAlign.ts';
 

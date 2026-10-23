@@ -108,7 +108,7 @@ export type MatchExtras = {
   room?: object;
 };
 
-/** Same layout as game/assets-src/<item>/blender/cam.json (+ cx, cy when the principal point is off-centre). */
+/** Same layout as games/never-ending-story/assets-src/<item>/blender/cam.json (+ cx, cy when the principal point is off-centre). */
 export function camJson(cam: Cam, width: number, height: number, dims: V3, head?: readonly number[]) {
   const rv = rotvec(cam.R);
   const t = mulMV(cam.R, scale(cam.C, -1));

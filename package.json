@@ -5,8 +5,7 @@
   "license": "SEE LICENSE IN LICENSE",
   "workspaces": [
     "packages/*",
-    "games/*",
-    "game"
+    "games/*"
   ],
   "engines": {
     "node": ">=20.19"

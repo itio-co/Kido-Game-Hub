@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """Build assets.json from the real prototype images + Story Pack case.json, then embed it into index.html.
-Run: python3 prototypes/asset-showcase/build_assets.py  (from repo root or anywhere)"""
+Run: python3 games/never-ending-story/prototypes/asset-showcase/build_assets.py  (from repo root or anywhere)"""
 import json,os,re,glob
 from PIL import Image
 H=os.path.dirname(os.path.abspath(__file__));ROOT=os.path.abspath(H+'/../..')
+PREFIX='games/never-ending-story/'  # paths stored in assets.json are from the repo root; ROOT is this game folder
 IMG=ROOT+'/prototypes/poc-clickthrough/img';CON=ROOT+'/docs/design/concepts/v2'
 case=json.load(open(ROOT+'/docs/design/story-packs/case-01/case.json'))
 html=open(ROOT+'/prototypes/poc-clickthrough/index.html').read()
@@ -56,14 +57,14 @@ for p in sorted(glob.glob(IMG+'/*.jpg')):
   if f=='rin.jpg':w=['น้าริน portrait · deduction (ใครย้ายอัลบั้ม?)']
   if f=='living-wide.jpg':w=['living @ now (ค่าเริ่ม)']
   if f=='house-map.jpg':w.append('jigsaw pieces / deduction mini-map')
-  i2.append(dict(file='prototypes/poc-clickthrough/img/'+f,thumb=P(f),category=cat(f),usedIn=w or ['(closeup)'],size=f"{im.width}×{im.height}",kb=round(os.path.getsize(p)/1024)))
+  i2.append(dict(file=PREFIX+'prototypes/poc-clickthrough/img/'+f,thumb=P(f),category=cat(f),usedIn=w or ['(closeup)'],size=f"{im.width}×{im.height}",kb=round(os.path.getsize(p)/1024)))
 for p in sorted(glob.glob(CON+'/minigame-*.png')):
   f=os.path.basename(p);im=Image.open(p)
-  i2.append(dict(file='docs/design/concepts/v2/'+f,thumb='../../docs/design/concepts/v2/'+f,category='minigame',usedIn=['minigame screenshot ('+f[9:-4]+')'],size=f"{im.width}×{im.height}",kb=round(os.path.getsize(p)/1024)))
+  i2.append(dict(file=PREFIX+'docs/design/concepts/v2/'+f,thumb='../../docs/design/concepts/v2/'+f,category='minigame',usedIn=['minigame screenshot ('+f[9:-4]+')'],size=f"{im.width}×{im.height}",kb=round(os.path.getsize(p)/1024)))
 states=[]
 for r in case['rooms']:
   for k,v in (r.get('states') or {}).items():states.append(dict(room=r['id'],slot=k,image=v['image'],changes=v.get('changes',[]),lighting=v.get('lighting','')))
-data=dict(generatedFrom=['prototypes/poc-clickthrough/img/*','docs/design/story-packs/case-01/case.json'],assets3d=a3,images2d=i2,calendarThemes=case.get('calendarThemes',[]),timeSlots=case.get('timeSlots',[]),roomStates=states)
+data=dict(generatedFrom=[PREFIX+'prototypes/poc-clickthrough/img/*',PREFIX+'docs/design/story-packs/case-01/case.json'],assets3d=a3,images2d=i2,calendarThemes=case.get('calendarThemes',[]),timeSlots=case.get('timeSlots',[]),roomStates=states)
 js=json.dumps(data,ensure_ascii=False,indent=1)
 open(H+'/assets.json','w').write(js+'\n')
 ix=open(H+'/index.html').read()

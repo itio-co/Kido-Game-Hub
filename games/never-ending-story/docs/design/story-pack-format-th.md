@@ -86,7 +86,7 @@ practice-packs/
 
 ## ตัวตนของวัตถุในฉาก (ห้องผู้เล่น)
 
-ห้องฮับใน `game/public/data/player-room.json` ใช้ตัวตนที่เข้มกว่า `id` ร่างของ `case.json`:
+ห้องฮับใน `games/never-ending-story/public/data/player-room.json` ใช้ตัวตนที่เข้มกว่า `id` ร่างของ `case.json`:
 
 - `id` เป็น UUID v4 ที่เขียนไว้ในไฟล์ ไม่สุ่มตอนเปิดเกม
 - `kind` บอกชนิดที่โค้ดรู้จัก เช่น `room` `bookshelf` `shelf-row` `book` `hotspot` `decor-slot` `calendar` `door` `desk` ตัวสร้างฉากเลือกฟังก์ชันตาม `kind`

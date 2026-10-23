@@ -61,7 +61,7 @@ export interface CameraMatch {
 }
 
 /**
- * Exact shape of game/assets-src/<slug>/blender/cam.json as written by solve_cam.py and read by
+ * Exact shape of games/never-ending-story/assets-src/<slug>/blender/cam.json as written by solve_cam.py and read by
  * add_cam.py. Units: centimetres, Blender world (Z-up, front = −Y). Camera model: OpenCV
  * (x right, y down, z forward), principal point at the image centre.
  */

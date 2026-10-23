@@ -1,7 +1,7 @@
 {
  "generatedFrom": [
-  "prototypes/poc-clickthrough/img/*",
-  "docs/design/story-packs/case-01/case.json"
+  "games/never-ending-story/prototypes/poc-clickthrough/img/*",
+  "games/never-ending-story/docs/design/story-packs/case-01/case.json"
  ],
  "assets3d": [
   {
@@ -556,7 +556,7 @@
  ],
  "images2d": [
   {
-   "file": "prototypes/poc-clickthrough/img/album-found.jpg",
+   "file": "games/never-ending-story/prototypes/poc-clickthrough/img/album-found.jpg",
    "thumb": "../poc-clickthrough/img/album-found.jpg",
    "category": "closeup",
    "usedIn": [
@@ -566,7 +566,7 @@
    "kb": 137
   },
   {
-   "file": "prototypes/poc-clickthrough/img/cutscene-01-p1.jpg",
+   "file": "games/never-ending-story/prototypes/poc-clickthrough/img/cutscene-01-p1.jpg",
    "thumb": "../poc-clickthrough/img/cutscene-01-p1.jpg",
    "category": "cutscene",
    "usedIn": [
@@ -576,7 +576,7 @@
    "kb": 149
   },
   {
-   "file": "prototypes/poc-clickthrough/img/cutscene-01-p2.jpg",
+   "file": "games/never-ending-story/prototypes/poc-clickthrough/img/cutscene-01-p2.jpg",
    "thumb": "../poc-clickthrough/img/cutscene-01-p2.jpg",
    "category": "cutscene",
    "usedIn": [
@@ -587,7 +587,7 @@
    "kb": 190
   },
   {
-   "file": "prototypes/poc-clickthrough/img/cutscene-01-p3.jpg",
+   "file": "games/never-ending-story/prototypes/poc-clickthrough/img/cutscene-01-p3.jpg",
    "thumb": "../poc-clickthrough/img/cutscene-01-p3.jpg",
    "category": "cutscene",
    "usedIn": [
@@ -597,7 +597,7 @@
    "kb": 120
   },
   {
-   "file": "prototypes/poc-clickthrough/img/house-map.jpg",
+   "file": "games/never-ending-story/prototypes/poc-clickthrough/img/house-map.jpg",
    "thumb": "../poc-clickthrough/img/house-map.jpg",
    "category": "map",
    "usedIn": [
@@ -609,7 +609,7 @@
    "kb": 101
   },
   {
-   "file": "prototypes/poc-clickthrough/img/kitchen-close.jpg",
+   "file": "games/never-ending-story/prototypes/poc-clickthrough/img/kitchen-close.jpg",
    "thumb": "../poc-clickthrough/img/kitchen-close.jpg",
    "category": "closeup",
    "usedIn": [
@@ -619,7 +619,7 @@
    "kb": 117
   },
   {
-   "file": "prototypes/poc-clickthrough/img/kitchen-wide.jpg",
+   "file": "games/never-ending-story/prototypes/poc-clickthrough/img/kitchen-wide.jpg",
    "thumb": "../poc-clickthrough/img/kitchen-wide.jpg",
    "category": "background",
    "usedIn": [
@@ -629,7 +629,7 @@
    "kb": 102
   },
   {
-   "file": "prototypes/poc-clickthrough/img/living-grandma.jpg",
+   "file": "games/never-ending-story/prototypes/poc-clickthrough/img/living-grandma.jpg",
    "thumb": "../poc-clickthrough/img/living-grandma.jpg",
    "category": "closeup",
    "usedIn": [
@@ -639,7 +639,7 @@
    "kb": 243
   },
   {
-   "file": "prototypes/poc-clickthrough/img/living-shelf-tray.jpg",
+   "file": "games/never-ending-story/prototypes/poc-clickthrough/img/living-shelf-tray.jpg",
    "thumb": "../poc-clickthrough/img/living-shelf-tray.jpg",
    "category": "closeup",
    "usedIn": [
@@ -649,7 +649,7 @@
    "kb": 135
   },
   {
-   "file": "prototypes/poc-clickthrough/img/living-table.jpg",
+   "file": "games/never-ending-story/prototypes/poc-clickthrough/img/living-table.jpg",
    "thumb": "../poc-clickthrough/img/living-table.jpg",
    "category": "closeup",
    "usedIn": [
@@ -659,7 +659,7 @@
    "kb": 102
   },
   {
-   "file": "prototypes/poc-clickthrough/img/living-wide-afternoon.jpg",
+   "file": "games/never-ending-story/prototypes/poc-clickthrough/img/living-wide-afternoon.jpg",
    "thumb": "../poc-clickthrough/img/living-wide-afternoon.jpg",
    "category": "time-state",
    "usedIn": [
@@ -669,7 +669,7 @@
    "kb": 140
   },
   {
-   "file": "prototypes/poc-clickthrough/img/living-wide-yesterday.jpg",
+   "file": "games/never-ending-story/prototypes/poc-clickthrough/img/living-wide-yesterday.jpg",
    "thumb": "../poc-clickthrough/img/living-wide-yesterday.jpg",
    "category": "time-state",
    "usedIn": [
@@ -679,7 +679,7 @@
    "kb": 128
   },
   {
-   "file": "prototypes/poc-clickthrough/img/living-wide.jpg",
+   "file": "games/never-ending-story/prototypes/poc-clickthrough/img/living-wide.jpg",
    "thumb": "../poc-clickthrough/img/living-wide.jpg",
    "category": "background",
    "usedIn": [
@@ -689,7 +689,7 @@
    "kb": 135
   },
   {
-   "file": "prototypes/poc-clickthrough/img/player-room-wide.jpg",
+   "file": "games/never-ending-story/prototypes/poc-clickthrough/img/player-room-wide.jpg",
    "thumb": "../poc-clickthrough/img/player-room-wide.jpg",
    "category": "background",
    "usedIn": [
@@ -699,7 +699,7 @@
    "kb": 107
   },
   {
-   "file": "prototypes/poc-clickthrough/img/rin.jpg",
+   "file": "games/never-ending-story/prototypes/poc-clickthrough/img/rin.jpg",
    "thumb": "../poc-clickthrough/img/rin.jpg",
    "category": "closeup",
    "usedIn": [
@@ -709,7 +709,7 @@
    "kb": 107
   },
   {
-   "file": "prototypes/poc-clickthrough/img/study-box.jpg",
+   "file": "games/never-ending-story/prototypes/poc-clickthrough/img/study-box.jpg",
    "thumb": "../poc-clickthrough/img/study-box.jpg",
    "category": "closeup",
    "usedIn": [
@@ -719,7 +719,7 @@
    "kb": 101
   },
   {
-   "file": "prototypes/poc-clickthrough/img/study-wide.jpg",
+   "file": "games/never-ending-story/prototypes/poc-clickthrough/img/study-wide.jpg",
    "thumb": "../poc-clickthrough/img/study-wide.jpg",
    "category": "background",
    "usedIn": [
@@ -729,7 +729,7 @@
    "kb": 107
   },
   {
-   "file": "prototypes/poc-clickthrough/img/uncle-mek.jpg",
+   "file": "games/never-ending-story/prototypes/poc-clickthrough/img/uncle-mek.jpg",
    "thumb": "../poc-clickthrough/img/uncle-mek.jpg",
    "category": "closeup",
    "usedIn": [
@@ -739,7 +739,7 @@
    "kb": 233
   },
   {
-   "file": "docs/design/concepts/v2/minigame-crossword.png",
+   "file": "games/never-ending-story/docs/design/concepts/v2/minigame-crossword.png",
    "thumb": "../../docs/design/concepts/v2/minigame-crossword.png",
    "category": "minigame",
    "usedIn": [
@@ -749,7 +749,7 @@
    "kb": 92
   },
   {
-   "file": "docs/design/concepts/v2/minigame-jigsaw.png",
+   "file": "games/never-ending-story/docs/design/concepts/v2/minigame-jigsaw.png",
    "thumb": "../../docs/design/concepts/v2/minigame-jigsaw.png",
    "category": "minigame",
    "usedIn": [
@@ -759,7 +759,7 @@
    "kb": 186
   },
   {
-   "file": "docs/design/concepts/v2/minigame-sliding-block.png",
+   "file": "games/never-ending-story/docs/design/concepts/v2/minigame-sliding-block.png",
    "thumb": "../../docs/design/concepts/v2/minigame-sliding-block.png",
    "category": "minigame",
    "usedIn": [

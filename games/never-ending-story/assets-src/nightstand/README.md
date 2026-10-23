@@ -9,7 +9,7 @@ nightstand/
 ├── asset.json        id / kind / title / slug, size in cm, colours, status, source crop, camera, notes
 ├── prompt.md         prompt + settings for Meshy / Tripo / Rodin / Hunyuan3D / TRELLIS, Thai how-to
 ├── ref/              reference images
-│   ├── nightstand-ref.png               original crop from game/public/img/player-room-wide.jpg (252×284)
+│   ├── nightstand-ref.png               original crop from games/never-ending-story/public/img/player-room-wide.jpg (252×284)
 │   ├── nightstand-isolated.png          same crop, background removed (RGBA)
 │   ├── nightstand-isolated-1024.png     1024² square, transparent, padded — input for image-to-3D
 │   ├── nightstand-isolated-1024-white.png  the same on white
@@ -30,7 +30,7 @@ nightstand/
 ## Rebuild
 
 ```sh
-cd game/assets-src/nightstand/blender
+cd games/never-ending-story/assets-src/nightstand/blender
 BLENDER=/path/to/blender ./build_all.sh                    # → ../export/*.glb, .blend
 cp ../export/nightstand.glb ../export/nightstand-master.glb ../../../public/models/
 BLENDER=/path/to/blender PYTHON=python3 ./render_all.sh    # → ../compare (needs pillow + numpy)
@@ -62,7 +62,7 @@ Image 252 × 284 px, focal 1134.8 px, principal point at the centre.
   rotation XYZ (73.63°, 0.54°, 26.89°). HFOV 12.67°, VFOV 14.26° at 252:284.
 - Three.js (Y-up, `(x, y, z)_three = (x, z, −y)_blender`): position (1.51665, 1.36477, 3.04096),
   quaternion (x −0.139571, y 0.230806, z 0.028608, w 0.962512); vertical FOV
-  `2·atan(tan(12.67°/2) / aspect)`. See `game/src/lib/nightstandStage.ts`.
+  `2·atan(tan(12.67°/2) / aspect)`. See `games/never-ending-story/src/lib/nightstandStage.ts`.
 - Lighting: sun towards (−1.3, −0.7, 1.9) i.e. from the upper left, colour (1, 0.86, 0.7), strength 4;
   world (1, 0.85, 0.7) × 0.35; view transform Standard.
 

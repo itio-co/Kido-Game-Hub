@@ -10,22 +10,22 @@ All geometry, textures and the environment map are procedural, so it works fully
 
 ## Run
 
-`games/starship-interior` is an npm workspace (`package.json` name `starship-interior`). Install from the **repository root**. The lockfile is the root `package-lock.json`, so `npm ci` and `npm install` must be run there, not inside `games/starship-interior`.
+`games/starship` is an npm workspace (`package.json` name `starship-interior`). Install from the **repository root**. The lockfile is the root `package-lock.json`, so `npm ci` and `npm install` must be run there, not inside `games/starship`.
 
 Node.js **22 or newer** is required. `camera-controls` 3.1.2 (a dependency of `@threlte/extras`) sets `engines.node` to `>=22.0.0`.
 
 ```bash
 # from the repository root
 npm ci                                          # or: npm install
-npm run dev -w games/starship-interior          # http://localhost:5173 (bound to 0.0.0.0 → reachable from a phone on the LAN)
-npm run check -w games/starship-interior        # svelte-check
-npm run build -w games/starship-interior        # static site in games/starship-interior/build (adapter-static)
+npm run dev -w games/starship       # http://localhost:5173 (bound to 0.0.0.0 → reachable from a phone on the LAN)
+npm run check -w games/starship     # svelte-check
+npm run build -w games/starship     # static site in games/starship/build (adapter-static)
 ```
 
 Headless tests still run from the game directory, after that root install:
 
 ```bash
-cd games/starship-interior
+cd games/starship
 npx playwright install chromium && node scripts/screenshot.mjs   # headless test → screenshots + samples/
 node scripts/crew-test.mjs     # crew-sim test (desktop + iPhone 13): move, use, ladder, queue, possession, launch
 ```
@@ -45,12 +45,12 @@ That copy is **v24.22.0**, which satisfies the Node 22+ requirement above.
 set PATH=C:\Users\User\.node-portable\node-v24.22.0-win-x64;%PATH%
 ```
 
-3. `cd` to the repo root (the directory that contains `package-lock.json`). Installs must be run from there, not inside `games\starship-interior`, because the lockfile lives at the root.
+3. `cd` to the repo root (the directory that contains `package-lock.json`). Installs must be run from there, not inside `games\starship`, because the lockfile lives at the root.
 4. Install and start the dev server on port 5173:
 
 ```bat
 npm ci
-npm run dev -w games/starship-interior -- --port 5173
+npm run dev -w games/starship -- --port 5173
 ```
 
 5. Open http://localhost:5173.
