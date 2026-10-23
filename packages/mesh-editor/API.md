@@ -133,7 +133,8 @@ interface EditorHost {
   - `true` means editable.
   - `false` or a **string** means locked. A string is the reason, and the UI shows it (Thai or English is the host's choice).
   - A locked object can still be **selected**, so it highlights and shows in panels. It **refuses** picks-for-transform: no gizmo is attached, a drag doesn't start a session, and typed values are rejected. The reason is shown instead.
-  - In a mixed selection, the locked objects are dropped from the session, and the gizmo appears only if at least one object stays editable.
+  - In a mixed selection, the locked objects are dropped from the session, and the gizmo appears only if at least one object stays editable. The viewport emits a **`notice`** event (§6) listing the skipped objects and their reasons, so the UI can say "ข้าม 2 ชิ้นที่ล็อกอยู่" / "2 locked items skipped".
+  - If **every** selected object is locked, there is no gizmo and no session. The viewport emits the same notice with `allLocked: true`, and the UI shows the reason (or reasons).
   - The editor calls `canEdit` at the start of each session and each typed value, so the host can change locks at any time.
 
 ## 6. `EditorViewport`
@@ -159,7 +160,23 @@ viewport.dispose();
 
   A drag that starts on geometry or on the gizmo never boxes. Without one of these triggers, a drag on empty space goes to camera navigation. `selectBox(rect, op)` does the same programmatically.
 - **Transform mode:** `translate | rotate | scale | null` (`null` means no gizmo), and `space: 'local' | 'world'`.
-- **Events:** `on('selectionchange' | 'modechange' | 'transform' | 'history', cb)` returns an unsubscribe function.
+- **Events:** `on('selectionchange' | 'modechange' | 'transform' | 'history' | 'notice', cb)` returns an unsubscribe function. The event map is `EditorViewportEvents`.
+- **Notices (agreed):** `viewport.on('notice', n => ...)` carries UI-facing messages. v1 has one kind:
+
+  ```ts
+  type EditorNotice = {
+    kind: 'locked-skipped';
+    count: number;                                 // locked objects left out (= reasons.length)
+    reasons: { objId: string; reason?: string }[]; // reason = canEdit's string; undefined if it returned false
+    allLocked: boolean;                            // true: nothing editable, no gizmo shown
+  };
+  ```
+
+  - **When:** once each time the editable set is computed with locked objects in it. That happens on a selection change or `setTransformMode(non-null)` (when the gizmo would attach), at session start, and on an `applyTyped` that skips or rejects locked objects. It is **not** repeated on pointer moves, and it is not emitted while `transformMode` is `null` (plain selecting isn't refused).
+  - **Mixed selection:** `allLocked: false`. The gizmo attaches to the editable objects only.
+  - **All locked:** `allLocked: true`. There is no gizmo, drags don't start a session, and typed values are not applied.
+  - **UI text:** the Svelte panels show it with the message keys `notice.lockedSkipped` (th "ข้าม {count} ชิ้นที่ล็อกอยู่", en "{count} locked items skipped") and `notice.allLocked` (shows the reason; with several reasons, the first one plus "+N"). Hosts that don't use the panels can listen and show their own toast.
+  - Future notice kinds may be added. Listeners should ignore kinds they don't know.
 - **Gizmo (agreed):** wrap `three/addons` `TransformControls`, which the current Kido editor already uses, around a proxy `Object3D` placed at the pivot. The selection is never attached directly. On each change, the editor turns the proxy's motion since session start into the session delta matrix (§7, §8).
 
 ## 7. Selection and transform session

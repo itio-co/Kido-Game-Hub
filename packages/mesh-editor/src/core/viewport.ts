@@ -21,12 +21,42 @@ export interface EditorViewportOptions {
   pickRadiusPx?: number;
 }
 
+/** One locked object that was left out of a transform, with the host's `canEdit` reason. */
+export interface LockedReason {
+  objId: string;
+  /** The string `canEdit` returned; undefined when it returned `false`. */
+  reason?: string;
+}
+
+/**
+ * Notice for the UI (API.md §5, §6). Emitted when `canEdit` drops objects from a selection:
+ * - mixed selection: `count` locked objects skipped, `allLocked: false`, gizmo on the rest;
+ * - every selected object locked: `allLocked: true`, no gizmo, no session.
+ * Emitted once per (selection, transform mode, lock state) when the editable set is computed:
+ * on selectionchange or setTransformMode with a non-null mode, at session start, and on a
+ * rejected/partial `applyTyped`. Not repeated on every pointer move.
+ * UI text example: th "ข้าม {count} ชิ้นที่ล็อกอยู่", en "{count} locked items skipped".
+ */
+export interface LockedSkippedNotice {
+  kind: 'locked-skipped';
+  /** Number of locked objects left out (= reasons.length). */
+  count: number;
+  reasons: LockedReason[];
+  /** True when nothing in the selection is editable (no gizmo shown). */
+  allLocked: boolean;
+}
+
+/** Union of all notices; more kinds may be added (handle unknown kinds by ignoring them). */
+export type EditorNotice = LockedSkippedNotice;
+
 export interface EditorViewportEvents {
   selectionchange: Selection;
   modechange: { select: SelectMode; transform: TransformMode | null };
   /** Fired after every live update and on end; carries the session. */
   transform: TransformSession;
   history: { canUndo: boolean; canRedo: boolean };
+  /** Informational messages for the UI (toast / status line). */
+  notice: EditorNotice;
 }
 
 /**

@@ -17,7 +17,9 @@ export type MessageKey =
   | 'history.undo' | 'history.redo'
   | 'field.position' | 'field.rotation' | 'field.scale' | 'field.size'
   | 'camera.match' | 'camera.guides' | 'camera.lens' | 'camera.residual'
-  | 'file.import' | 'file.exportGlb' | 'file.exportEdits';
+  | 'file.import' | 'file.exportGlb' | 'file.exportEdits'
+  /** `{count}` is replaced with LockedSkippedNotice.count. */
+  | 'notice.lockedSkipped' | 'notice.allLocked';
 
 /** Thai + English string per key. Thai is the default locale. */
 export type I18nMap = Record<MessageKey, { th: string; en: string }>;

@@ -1,5 +1,5 @@
 import { describe, expect, expectTypeOf, it } from 'vitest';
-import type { EditDocument, EditMesh, KidoModelEdits } from '../src/index.js';
+import type { EditDocument, EditMesh, EditorViewportEvents, KidoModelEdits, LockedSkippedNotice } from '../src/index.js';
 import type { BlenderCamJson } from '../src/camera-match/index.js';
 
 /** Unit cube, 1 m, centred, CCW quads seen from outside. */
@@ -39,5 +39,16 @@ describe('API contract (types only in v0.0.1)', () => {
     expectTypeOf<BlenderCamJson>().toHaveProperty('R');
     expectTypeOf<BlenderCamJson['C']>().toEqualTypeOf<[number, number, number]>();
     expectTypeOf<KidoModelEdits['format']>().toEqualTypeOf<'kido-model-edits/1'>();
+  });
+
+  it('notice event carries locked-skipped reasons', () => {
+    const n: LockedSkippedNotice = {
+      kind: 'locked-skipped',
+      count: 2,
+      reasons: [{ objId: 'nightstand', reason: 'ล็อกโดยครู' }, { objId: 'lamp' }],
+      allLocked: false,
+    };
+    expect(n.count).toBe(n.reasons.length);
+    expectTypeOf<EditorViewportEvents['notice']>().toEqualTypeOf<LockedSkippedNotice>();
   });
 });
