@@ -1,0 +1,20 @@
+{
+  "name": "kido-game-hub",
+  "private": true,
+  "description": "Kido Game Hub monorepo: games plus shared packages (npm workspaces).",
+  "license": "SEE LICENSE IN LICENSE",
+  "workspaces": [
+    "packages/*",
+    "games/*"
+  ],
+  "engines": {
+    "node": ">=20.19"
+  },
+  "scripts": {
+    "dev": "npm -w never-ending-story-game run dev",
+    "build": "npm -w never-ending-story-game run build",
+    "build:packages": "npm -w @itio/mesh-editor run build",
+    "test": "npm -w @itio/mesh-editor run test",
+    "check": "npm -w @itio/mesh-editor run typecheck && npm -w never-ending-story-game run check"
+  }
+}
