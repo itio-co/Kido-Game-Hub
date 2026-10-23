@@ -478,8 +478,8 @@
           "when": "afternoon",
           "action": {
             "type": "toast",
-            "text": "กล่องนี้อยู่ที่เดิมทุกช่วงเวลา",
-            "textEn": "This box has been here the whole time."
+            "text": "กล่องรูปดาววางอยู่ข้างโซฟา",
+            "textEn": "The star box sits by the sofa."
           },
           "doneEvidence": null
         },
@@ -518,13 +518,13 @@
           "when": "afternoon",
           "action": {
             "type": "lines",
-            "who": "ย้อนเวลา: บ่ายนี้",
-            "whoEn": "Back in time: this afternoon",
+            "who": "ภาพย้อนเวลา · 14:00",
+            "whoEn": "Flashback · 14:00",
             "lines": [
-              "แจกันล้ม น้ำหกนองโต๊ะ — อัลบั้มวางอยู่ข้าง ๆ เกือบเปียก!"
+              "แจกันล้ม น้ำหกนองโต๊ะ อัลบั้มที่วางอยู่ข้าง ๆ เกือบเปียก!"
             ],
             "linesEn": [
-              "The vase fell and water flooded the table — the album was right next to it and nearly got wet!"
+              "The vase fell over and water is all over the table. The album next to it almost got wet!"
             ]
           },
           "doneEvidence": null
@@ -532,21 +532,21 @@
         {
           "id": "a4c0e001-0000-4000-8000-000000000028",
           "kind": "hotspot",
-          "title": "อัลบั้ม (บ่ายนี้)",
-          "titleEn": "Album (this afternoon)",
+          "title": "อัลบั้มบนโต๊ะ",
+          "titleEn": "Album on the table",
           "slug": "flow/living-room/album-then",
           "x": 58,
           "y": 69.5,
           "when": "afternoon",
           "action": {
             "type": "lines",
-            "who": "ย้อนเวลา: บ่ายนี้",
-            "whoEn": "Back in time: this afternoon",
+            "who": "ภาพย้อนเวลา · 14:00",
+            "whoEn": "Flashback · 14:00",
             "lines": [
-              "บ่ายนี้อัลบั้มยังอยู่บนโต๊ะ แต่ตอนนี้หายไป ใครยกไปตอนเช็ดน้ำนะ?"
+              "อัลบั้มปกดอกไม้ยังวางอยู่บนโต๊ะ ข้างแจกัน"
             ],
             "linesEn": [
-              "This afternoon the album was still on the table, but now it is gone. Who moved it while wiping up the water?"
+              "The flower-cover album is still on the table, next to the vase."
             ]
           },
           "doneEvidence": null
@@ -578,8 +578,8 @@
           "when": "yesterday",
           "action": {
             "type": "toast",
-            "text": "กล่องนี้อยู่ที่เดิมทุกช่วงเวลา",
-            "textEn": "This box has been here the whole time."
+            "text": "กล่องรูปดาววางอยู่ข้างโซฟา",
+            "textEn": "The star box sits by the sofa."
           },
           "doneEvidence": null
         },
@@ -618,8 +618,8 @@
           "when": "yesterday",
           "action": {
             "type": "lines",
-            "who": "ย้อนเวลา: เมื่อวาน",
-            "whoEn": "Back in time: yesterday",
+            "who": "ภาพย้อนเวลา · เมื่อวาน",
+            "whoEn": "Flashback · yesterday",
             "lines": [
               "อัลบั้มปกดอกไม้ตั้งอยู่บนชั้นบน ใกล้มือย่า"
             ],
