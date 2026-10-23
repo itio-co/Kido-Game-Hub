@@ -1,0 +1,160 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="420mm" height="297mm" viewBox="0 0 420 297" font-family="Helvetica, Arial, sans-serif">
+<rect width="420" height="297" fill="#fff"/>
+<rect x="8" y="8" width="404" height="281" fill="none" stroke="#000" stroke-width="0.5"/>
+<defs><pattern id="hatch" width="2" height="2" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="2" stroke="#555" stroke-width="0.4"/></pattern>
+<marker id="arr" viewBox="0 0 6 6" refX="3" refY="3" markerWidth="4" markerHeight="4" orient="auto-start-reverse"><path d="M0,0 L6,3 L0,6 z" fill="#000"/></marker></defs>
+<path d="M 55,150 a 95,95 0 1,0 190,0 a 95,95 0 1,0 -190,0 M 60,150 a 90,90 0 1,1 180,0 a 90,90 0 1,1 -180,0" fill="url(#hatch)" fill-rule="evenodd" stroke="#000" stroke-width="0.5"/>
+<circle cx="150" cy="150" r="20" fill="none" stroke="#9cc" stroke-width="0.15" stroke-dasharray="1 1.5"/>
+<circle cx="150" cy="150" r="40" fill="none" stroke="#9cc" stroke-width="0.15" stroke-dasharray="1 1.5"/>
+<circle cx="150" cy="150" r="60" fill="none" stroke="#9cc" stroke-width="0.15" stroke-dasharray="1 1.5"/>
+<circle cx="150" cy="150" r="80" fill="none" stroke="#9cc" stroke-width="0.15" stroke-dasharray="1 1.5"/>
+<line x1="49" y1="150" x2="251" y2="150" stroke="#666" stroke-width="0.18" stroke-dasharray="6 1.5 1 1.5"/>
+<line x1="150" y1="49" x2="150" y2="251" stroke="#666" stroke-width="0.18" stroke-dasharray="6 1.5 1 1.5"/>
+<polygon points="60.40,138.00 54.60,138.00 54.60,162.00 60.40,162.00" fill="#fff" stroke="#000" stroke-width="0.35"/>
+<text x="42" y="150" font-size="3" text-anchor="middle" dominant-baseline="middle" transform="rotate(-90 42 150)">AIRLOCK 1200</text>
+<polygon points="92.15,115.83 105.64,99.74 119.43,111.31 105.93,127.40" fill="none" stroke="#3a7bd5" stroke-width="0.2" stroke-dasharray="1 0.8"/>
+<polygon points="78.36,104.26 91.85,88.17 105.64,99.74 92.15,115.83" fill="#eef1f4" stroke="#000" stroke-width="0.35"/>
+<circle cx="98.8943999880708" cy="107.78508848717885" r="0.6" fill="#3a7bd5"/>
+<circle cx="92" cy="102" r="2.4" fill="#fff" stroke="#000" stroke-width="0.3"/>
+<text x="92" y="103" font-size="2.8" text-anchor="middle" font-weight="bold">1</text>
+<polygon points="208.14,200.49 189.75,215.92 179.47,203.66 197.85,188.23" fill="none" stroke="#3a7bd5" stroke-width="0.2" stroke-dasharray="1 0.8"/>
+<polygon points="215.85,209.68 197.46,225.11 189.75,215.92 208.14,200.49" fill="#eef1f4" stroke="#000" stroke-width="0.35"/>
+<circle cx="198.94327434188077" cy="208.20373334128612" r="0.6" fill="#3a7bd5"/>
+<circle cx="202.8" cy="212.8" r="2.4" fill="#fff" stroke="#000" stroke-width="0.3"/>
+<text x="202.8" y="213.8" font-size="2.8" text-anchor="middle" font-weight="bold">2</text>
+<polygon points="216.62,186.23 210.08,196.29 196.66,187.58 203.20,177.51" fill="none" stroke="#3a7bd5" stroke-width="0.2" stroke-dasharray="1 0.8"/>
+<polygon points="227.52,193.31 220.98,203.37 210.08,196.29 216.62,186.23" fill="#eef1f4" stroke="#000" stroke-width="0.35"/>
+<circle cx="213.34864130835473" cy="191.25984627240234" r="0.6" fill="#3a7bd5"/>
+<circle cx="218.8" cy="194.8" r="2.4" fill="#fff" stroke="#000" stroke-width="0.3"/>
+<text x="218.8" y="195.8" font-size="2.8" text-anchor="middle" font-weight="bold">3</text>
+<polygon points="226.08,177.29 222.56,185.58 209.67,180.11 213.19,171.82" fill="none" stroke="#3a7bd5" stroke-width="0.2" stroke-dasharray="1 0.8"/>
+<polygon points="233.44,180.42 229.92,188.71 222.56,185.58 226.08,177.29" fill="#eef1f4" stroke="#000" stroke-width="0.35"/>
+<circle cx="224.31798058619023" cy="181.43707548604291" r="0.6" fill="#3a7bd5"/>
+<circle cx="228" cy="183" r="2.4" fill="#fff" stroke="#000" stroke-width="0.3"/>
+<text x="228" y="184" font-size="2.8" text-anchor="middle" font-weight="bold">4</text>
+<polygon points="226.71,163.05 223.81,174.69 208.29,170.82 211.19,159.18" fill="none" stroke="#3a7bd5" stroke-width="0.2" stroke-dasharray="1 0.8"/>
+<polygon points="237.39,165.71 234.49,177.35 223.81,174.69 226.71,163.05" fill="#eef1f4" stroke="#000" stroke-width="0.35"/>
+<circle cx="225.26337350548204" cy="168.86942957420183" r="0.6" fill="#3a7bd5"/>
+<circle cx="230.60000000000002" cy="170.2" r="2.4" fill="#fff" stroke="#000" stroke-width="0.3"/>
+<text x="230.60000000000002" y="171.2" font-size="2.8" text-anchor="middle" font-weight="bold">5</text>
+<polygon points="224.69,136.72 225.11,160.71 209.11,160.99 208.69,136.99" fill="none" stroke="#3a7bd5" stroke-width="0.2" stroke-dasharray="1 0.8"/>
+<polygon points="237.69,136.49 238.11,160.48 225.11,160.71 224.69,136.72" fill="#eef1f4" stroke="#000" stroke-width="0.35"/>
+<circle cx="224.90098998148346" cy="148.71344064184234" r="0.6" fill="#3a7bd5"/>
+<circle cx="231.4" cy="148.6" r="2.4" fill="#fff" stroke="#000" stroke-width="0.3"/>
+<text x="231.4" y="149.6" font-size="2.8" text-anchor="middle" font-weight="bold">6</text>
+<polygon points="224.05,126.28 226.47,135.98 212.89,139.37 210.47,129.67" fill="none" stroke="#3a7bd5" stroke-width="0.2" stroke-dasharray="1 0.8"/>
+<polygon points="234.73,123.62 237.15,133.32 226.47,135.98 224.05,126.28" fill="#eef1f4" stroke="#000" stroke-width="0.35"/>
+<circle cx="225.26337350548204" cy="131.13057042579817" r="0.6" fill="#3a7bd5"/>
+<circle cx="230.60000000000002" cy="129.8" r="2.4" fill="#fff" stroke="#000" stroke-width="0.3"/>
+<text x="230.60000000000002" y="130.8" font-size="2.8" text-anchor="middle" font-weight="bold">7</text>
+<polygon points="175.24,86.06 192.56,96.06 186.56,106.45 169.24,96.45" fill="none" stroke="#3a7bd5" stroke-width="0.2" stroke-dasharray="1 0.8"/>
+<polygon points="182.24,73.94 199.56,83.94 192.56,96.06 175.24,86.06" fill="#eef1f4" stroke="#000" stroke-width="0.35"/>
+<circle cx="183.9" cy="91.06217782649108" r="0.6" fill="#3a7bd5"/>
+<circle cx="187.4" cy="85" r="2.4" fill="#fff" stroke="#000" stroke-width="0.3"/>
+<text x="187.4" y="86" font-size="2.8" text-anchor="middle" font-weight="bold">8</text>
+<polygon points="176.00,122.00 200.00,122.00 200.00,138.00 176.00,138.00" fill="#eef1f4" stroke="#000" stroke-width="0.35"/>
+<circle cx="188" cy="138" r="0.6" fill="#3a7bd5"/>
+<circle cx="188" cy="130" r="2.4" fill="#fff" stroke="#000" stroke-width="0.3"/>
+<text x="188" y="131" font-size="2.8" text-anchor="middle" font-weight="bold">9</text>
+<polygon points="186.50,148.00 177.50,148.00 177.50,139.00 186.50,139.00" fill="#eef1f4" stroke="#000" stroke-width="0.35"/>
+<circle cx="182" cy="139" r="0.6" fill="#3a7bd5"/>
+<circle cx="182" cy="143.5" r="2.4" fill="#fff" stroke="#000" stroke-width="0.3"/>
+<text x="182" y="144.5" font-size="2.8" text-anchor="middle" font-weight="bold">10</text>
+<polygon points="198.50,148.00 189.50,148.00 189.50,139.00 198.50,139.00" fill="#eef1f4" stroke="#000" stroke-width="0.35"/>
+<circle cx="194" cy="139" r="0.6" fill="#3a7bd5"/>
+<circle cx="194" cy="143.5" r="2.4" fill="#fff" stroke="#000" stroke-width="0.3"/>
+<text x="194" y="144.5" font-size="2.8" text-anchor="middle" font-weight="bold">11</text>
+<polygon points="177.50,112.00 186.50,112.00 186.50,121.00 177.50,121.00" fill="#eef1f4" stroke="#000" stroke-width="0.35"/>
+<circle cx="182" cy="121" r="0.6" fill="#3a7bd5"/>
+<circle cx="182" cy="116.5" r="2.4" fill="#fff" stroke="#000" stroke-width="0.3"/>
+<text x="182" y="117.5" font-size="2.8" text-anchor="middle" font-weight="bold">12</text>
+<polygon points="189.50,112.00 198.50,112.00 198.50,121.00 189.50,121.00" fill="#eef1f4" stroke="#000" stroke-width="0.35"/>
+<circle cx="194" cy="121" r="0.6" fill="#3a7bd5"/>
+<circle cx="194" cy="116.5" r="2.4" fill="#fff" stroke="#000" stroke-width="0.3"/>
+<text x="194" y="117.5" font-size="2.8" text-anchor="middle" font-weight="bold">13</text>
+<polygon points="217.50,145.00 217.50,155.00 210.50,155.00 210.50,145.00" fill="#eef1f4" stroke="#000" stroke-width="0.35"/>
+<circle cx="210.5" cy="150" r="0.6" fill="#3a7bd5"/>
+<circle cx="214" cy="150" r="2.4" fill="#fff" stroke="#000" stroke-width="0.3"/>
+<text x="214" y="151" font-size="2.8" text-anchor="middle" font-weight="bold">14</text>
+<polygon points="110.14,200.00 96.00,185.86 108.73,173.13 122.87,187.27" fill="none" stroke="#3a7bd5" stroke-width="0.2" stroke-dasharray="1 0.8"/>
+<polygon points="96.00,214.14 81.86,200.00 96.00,185.86 110.14,200.00" fill="#eef1f4" stroke="#000" stroke-width="0.35"/>
+<circle cx="103.07106781186548" cy="192.92893218813452" r="0.6" fill="#3a7bd5"/>
+<circle cx="96" cy="200" r="2.4" fill="#fff" stroke="#000" stroke-width="0.3"/>
+<text x="96" y="201" font-size="2.8" text-anchor="middle" font-weight="bold">15</text>
+<polygon points="180.00,217.00 156.00,217.00 156.00,202.00 180.00,202.00" fill="none" stroke="#3a7bd5" stroke-width="0.2" stroke-dasharray="1 0.8"/>
+<polygon points="180.00,229.00 156.00,229.00 156.00,217.00 180.00,217.00" fill="#eef1f4" stroke="#000" stroke-width="0.35"/>
+<circle cx="168" cy="217" r="0.6" fill="#3a7bd5"/>
+<circle cx="168" cy="223" r="2.4" fill="#fff" stroke="#000" stroke-width="0.3"/>
+<text x="168" y="224" font-size="2.8" text-anchor="middle" font-weight="bold">16</text>
+<polygon points="144.00,221.00 132.00,221.00 132.00,206.00 144.00,206.00" fill="none" stroke="#3a7bd5" stroke-width="0.2" stroke-dasharray="1 0.8"/>
+<polygon points="144.00,233.00 132.00,233.00 132.00,221.00 144.00,221.00" fill="#eef1f4" stroke="#000" stroke-width="0.35"/>
+<circle cx="138" cy="221" r="0.6" fill="#3a7bd5"/>
+<circle cx="138" cy="227" r="2.4" fill="#fff" stroke="#000" stroke-width="0.3"/>
+<text x="138" y="228" font-size="2.8" text-anchor="middle" font-weight="bold">17</text>
+<polygon points="142.00,161.00 158.00,161.00 158.00,173.00 142.00,173.00" fill="none" stroke="#3a7bd5" stroke-width="0.2" stroke-dasharray="1 0.8"/>
+<circle cx="150" cy="150" r="11" fill="none" stroke="#b58a00" stroke-width="0.35" stroke-dasharray="1.5 1"/>
+<line x1="146" y1="143.4" x2="154" y2="143.4" stroke="#000" stroke-width="0.9" />
+<rect x="161.8" y="147.4" width="13" height="4" rx="0.8" fill="#ffd23f" stroke="#000" stroke-width="0.2"/>
+<text x="162.6" y="150.4" font-size="2.8" font-weight="bold">L1-2 ↑</text>
+<line x1="60" y1="45" x2="240" y2="45" stroke="#000" stroke-width="0.25" marker-start="url(#arr)" marker-end="url(#arr)"/>
+<line x1="60" y1="43" x2="60" y2="150" stroke="#000" stroke-width="0.15"/>
+<line x1="240" y1="43" x2="240" y2="150" stroke="#000" stroke-width="0.15"/>
+<text x="150" y="43.5" font-size="3.5" text-anchor="middle">Ø 9000 (interior)</text>
+<text x="247" y="148" font-size="2.5">hull wall 250 (nominal)</text>
+<rect x="30" y="275" width="20" height="2.5" fill="#000" stroke="#000" stroke-width="0.25"/>
+<rect x="50" y="275" width="20" height="2.5" fill="#fff" stroke="#000" stroke-width="0.25"/>
+<rect x="70" y="275" width="20" height="2.5" fill="#000" stroke="#000" stroke-width="0.25"/>
+<text x="30" y="281.5" font-size="3" text-anchor="middle">0 m</text>
+<text x="50" y="281.5" font-size="3" text-anchor="middle">1 m</text>
+<text x="70" y="281.5" font-size="3" text-anchor="middle">2 m</text>
+<text x="90" y="281.5" font-size="3" text-anchor="middle">3 m</text>
+<text x="30" y="272.5" font-size="3">SCALE 1:50 (A3)</text>
+<text x="100" y="277" font-size="2.6">+X →   +Z ↓   (origin = hull axis)</text>
+<line x1="279" y1="8" x2="279" y2="289" stroke="#000" stroke-width="0.4"/>
+<text x="285" y="20" font-size="6" font-weight="bold">STARSHIP INTERIOR</text>
+<text x="285" y="28" font-size="4.5">Deck 1 (1 of 3) — floor plan</text>
+<text x="285" y="33" font-size="3.2" font-weight="bold">Surface/Cruise configuration</text>
+<text x="285" y="39" font-size="3">Clear height 2.40 m · slab 0.25 m · FFL +0.00 m</text>
+<text x="285" y="44" font-size="3">Dimensions in mm unless noted · 2026-10-19</text>
+<text x="285" y="52" font-size="3" font-weight="bold"># Module   W×D×H (m)   X, Z (m)   rot°  wall (m)</text>
+<line x1="285" y1="53.5" x2="408" y2="53.5" stroke="#000" stroke-width="0.25"/>
+<text x="285" y="57.7" font-size="2.7">1  Life Support (ECLSS) Rack</text>
+<text x="289" y="60.6" font-size="2.3" fill="#333">1.05×0.90×2.00 · -2.90, -2.40 · 50° · 0.25</text>
+<text x="285" y="64.5" font-size="2.7">2  Food Storage Lockers (pantry)</text>
+<text x="289" y="67.4" font-size="2.3" fill="#333">1.20×0.60×2.00 · 2.64, 3.14 · 220° · 0.06</text>
+<text x="285" y="71.3" font-size="2.7">3  Galley Refrigerator / Freezer</text>
+<text x="289" y="74.2" font-size="2.3" fill="#333">0.60×0.65×1.80 · 3.44, 2.24 · 237° · 0.06</text>
+<text x="285" y="78.1" font-size="2.7">4  Water Dispenser (hot / ambient)</text>
+<text x="289" y="81" font-size="2.3" fill="#333">0.45×0.40×1.50 · 3.90, 1.65 · 247° · 0.06</text>
+<text x="285" y="84.89999999999999" font-size="2.7">5  Food Warmer / Convection Oven</text>
+<text x="289" y="87.8" font-size="2.3" fill="#333">0.60×0.55×1.50 · 4.03, 1.01 · 256° · 0.06</text>
+<text x="285" y="91.69999999999999" font-size="2.7">6  Prep Counter (restraint clips)</text>
+<text x="289" y="94.6" font-size="2.3" fill="#333">1.20×0.65×0.95 · 4.07, -0.07 · 271° · 0.06</text>
+<text x="285" y="98.49999999999999" font-size="2.7">7  Trash Compactor / Waste Station</text>
+<text x="289" y="101.39999999999999" font-size="2.3" fill="#333">0.50×0.55×1.00 · 4.03, -1.01 · 284° · 0.06</text>
+<text x="285" y="105.29999999999998" font-size="2.7">8  Zero-g Food Station</text>
+<text x="289" y="108.19999999999999" font-size="2.3" fill="#333">1.00×0.70×1.05 · 1.87, -3.25 · 330° · 0.37</text>
+<text x="285" y="112.09999999999998" font-size="2.7">9  Galley Table (group)</text>
+<text x="289" y="114.99999999999999" font-size="2.3" fill="#333">1.20×0.80×0.74 · 1.90, -1.00 · 0° · 1.63</text>
+<text x="285" y="118.89999999999998" font-size="2.7">10  Chair (seat)</text>
+<text x="289" y="121.79999999999998" font-size="2.3" fill="#333">0.45×0.45×0.85 · 1.60, -0.33 · 180° · 2.59</text>
+<text x="285" y="125.69999999999997" font-size="2.7">11  Chair (seat)</text>
+<text x="289" y="128.59999999999997" font-size="2.3" fill="#333">0.45×0.45×0.85 · 2.20, -0.33 · 180° · 2.01</text>
+<text x="285" y="132.49999999999997" font-size="2.7">12  Chair (seat)</text>
+<text x="289" y="135.39999999999998" font-size="2.3" fill="#333">0.45×0.45×0.85 · 1.60, -1.68 · 0° · 1.87</text>
+<text x="285" y="139.29999999999995" font-size="2.7">13  Chair (seat)</text>
+<text x="289" y="142.19999999999996" font-size="2.3" fill="#333">0.45×0.45×0.85 · 2.20, -1.68 · 0° · 1.42</text>
+<text x="285" y="146.09999999999994" font-size="2.7">14  Foot Restraint</text>
+<text x="289" y="148.99999999999994" font-size="2.3" fill="#333">0.50×0.35×0.08 · 3.20, 0.00 · 270° · 1.12</text>
+<text x="285" y="152.89999999999992" font-size="2.7">15  Hygiene / Toilet</text>
+<text x="289" y="155.79999999999993" font-size="2.3" fill="#333">1.00×1.00×2.10 · -2.70, 2.50 · 135° · 0.27</text>
+<text x="285" y="159.6999999999999" font-size="2.7">16  Hydroponics Rack</text>
+<text x="289" y="162.5999999999999" font-size="2.3" fill="#333">1.20×0.60×2.00 · 0.90, 3.65 · 180° · 0.27</text>
+<text x="285" y="166.4999999999999" font-size="2.7">17  Storage Locker</text>
+<text x="289" y="169.3999999999999" font-size="2.3" fill="#333">0.60×0.60×2.00 · -0.60, 3.85 · 180° · 0.25</text>
+<text x="285" y="173.29999999999987" font-size="2.7">L1-2  Ladder deck 1→2 (ladder here)</text>
+<text x="289" y="176.19999999999987" font-size="2.3" fill="#333">X, Z 0.000, 0.000 · 0° · same coordinates on deck 2</text>
+<text x="285" y="275" font-size="2.4" fill="#3a7bd5">Dashed blue = front access zone; dot = front · ⊗ = floor opening</text>
+<text x="285" y="281" font-size="2.3" fill="#a00">Concept-planning tool only. Real spacecraft interiors</text>
+<text x="285" y="284.5" font-size="2.3" fill="#a00">require engineering, structural and safety certification.</text>
+</svg>

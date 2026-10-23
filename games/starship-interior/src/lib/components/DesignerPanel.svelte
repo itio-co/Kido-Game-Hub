@@ -1,0 +1,785 @@
+<script lang="ts">
+	/** Equipment Designer: library, parts, transforms (numeric + nudge), metadata, import/export. */
+	import { equip } from '$lib/game/equipStore.svelte';
+	import { MATERIALS, SHAPES, fitFootprint, poseOf, type EquipShape } from '$lib/game/equipment';
+	import type { MatName } from '$lib/three/materials';
+	import { download } from '$lib/game/exporters';
+	import { game } from '$lib/game/state.svelte';
+	import { glbAspect } from '$lib/three/glbPart';
+	import type { ModuleId } from '$lib/game/types';
+	import AffordanceEditor from './AffordanceEditor.svelte';
+	import { sanitizePartDoor, type PartDoor } from '$lib/game/doors';
+	import { lifeOf } from '$lib/sim/lifecycle';
+	import { PRIORITIES, powerOf, type Priority } from '$lib/sim/power';
+	import type { ModuleDef } from '$lib/game/types';
+	import { centroidOf, meshBounds, selVerts, transformVerts, validateMesh } from '$lib/game/editMesh';
+	import { Euler, Matrix4, Quaternion, Vector3 } from 'three';
+
+	interface Props {
+		mobile?: boolean;
+	}
+	let { mobile = false }: Props = $props();
+	let open = $state(false);
+	let jsonInput: HTMLInputElement;
+	let glbInput: HTMLInputElement;
+	let newShape = $state<EquipShape>('box');
+
+	const def = $derived(equip.selected);
+	const editable = $derived(equip.editable);
+	const part = $derived(equip.part);
+	const pose = $derived(part ? poseOf(part, equip.pose === 'stowed') : null);
+	const placed = $derived(game.decks.reduce((n, d) => n + d.modules.filter((m) => m.type === equip.selectedId).length, 0));
+	const flagged = $derived(game.invalidPlacements.filter((w) => game.decks[w.deck]?.modules.find((m) => m.uid === w.uid)?.type === equip.selectedId).length);
+	const lib = $derived(equip.library);
+	/** parts sticking out of a manually set footprint (auto-fit off) */
+	const overhang = $derived.by(() => {
+		if (!def || def.autoFit !== false || !def.parts.length) return '';
+		const f = fitFootprint(def);
+		const out: string[] = [];
+		if (f.w > def.w + 0.005 || f.d > def.d + 0.005 || f.height > def.height + 0.005) out.push('surface');
+		if (f.launch && def.launch && (f.launch.w > def.launch.w + 0.005 || f.launch.d > def.launch.d + 0.005 || f.launch.height > def.launch.height + 0.005)) out.push('launch');
+		return out.join(' + ');
+	});
+
+	const cm = (m: number) => Math.round(m * 1000) / 10;
+	function setVec(kind: 'pos' | 'rot' | 'size', i: number, v: number) {
+		if (!part || !pose || !isFinite(v)) return;
+		const cur = [...pose[kind]] as [number, number, number];
+		cur[i] = kind === 'rot' ? v : kind === 'size' ? Math.max(0.005, v / 100) : v / 100;
+		equip.setPose(part.id, { [kind]: cur });
+	}
+	function nudge(kind: 'pos' | 'rot', i: number, d: number) {
+		if (!part || !pose) return;
+		const cur = [...pose[kind]] as [number, number, number];
+		cur[i] = Math.round((cur[i] + d) * 1000) / 1000;
+		equip.setPose(part.id, { [kind]: cur });
+	}
+	function meta<K extends keyof NonNullable<typeof def>>(k: K, v: NonNullable<typeof def>[K]) {
+		equip.update(equip.selectedId, (e) => ((e as unknown as Record<string, unknown>)[k as string] = v));
+	}
+	const lifeBase = $derived(lifeOf({ id: def?.id ?? '', power: def?.power ?? 0 } as unknown as ModuleDef));
+	const powerBase = $derived(powerOf({ id: def?.id ?? '', power: def?.power ?? 0 } as unknown as ModuleDef) ?? { standby: 0, active: 0, priority: 'Normal' as Priority });
+	function setPow(k: 'standby' | 'active' | 'duty' | 'priority', v: number | Priority) {
+		if (typeof v === 'number' && (!isFinite(v) || v < 0)) return;
+		equip.update(equip.selectedId, (e) => (e.powerSpec = { ...(e.powerSpec ?? {}), [k]: v }));
+	}
+	function setPeak(w: number, sec: number) {
+		equip.update(equip.selectedId, (e) => (e.powerSpec = { ...(e.powerSpec ?? {}), peak: w > 0 && sec > 0 ? { w, s: sec } : undefined }));
+	}
+	function setLife(k: 'life' | 'mtbf' | 'service' | 'repair' | 'spares', v: number) {
+		if (!isFinite(v) || v < 0) return;
+		equip.update(equip.selectedId, (e) => (e.life = { ...(e.life ?? {}), [k]: v }));
+	}
+	function partField(k: 'name' | 'shape' | 'm', v: string) {
+		if (!part) return;
+		equip.update(equip.selectedId, (e) => {
+			const p = e.parts.find((x) => x.id === part.id);
+			if (p) (p as unknown as Record<string, unknown>)[k] = v;
+		});
+	}
+	/** mark / unmark the selected part as a door (hinge or slide) */
+	function setDoor(d: PartDoor | null) {
+		if (!part) return;
+		equip.update(equip.selectedId, (e) => {
+			const p = e.parts.find((x) => x.id === part.id);
+			if (!p) return;
+			if (d) p.door = sanitizePartDoor(d);
+			else delete p.door;
+		});
+	}
+	function doorField<K extends keyof PartDoor>(k: K, v: PartDoor[K]) {
+		if (part?.door) setDoor({ ...part.door, [k]: v });
+	}
+	/** default hinge: the part's left edge (module space), opening outwards */
+	function makeDoor() {
+		if (!part || !pose) return;
+		const [x, y, z] = pose.pos;
+		setDoor({ kind: 'hinge', axis: 'y', angle: -100, pivot: [Math.round((x - pose.size[0] / 2) * 1000) / 1000, Math.round((y - pose.size[1] / 2) * 1000) / 1000, z], dur: 0.8 });
+	}
+	let doorAnim = 0;
+	function testDoor() {
+		cancelAnimationFrame(doorAnim);
+		const t0 = performance.now();
+		const dur = (part?.door?.dur ?? 0.8) * 1000;
+		const tick = () => {
+			const t = (performance.now() - t0) / dur;
+			equip.doorPreview = t < 1 ? t : t < 2 ? 1 : t < 3 ? 3 - t : 0;
+			if (t < 3) doorAnim = requestAnimationFrame(tick);
+		};
+		tick();
+	}
+	function dup() {
+		const id = equip.duplicate(equip.selectedId);
+		game.flash(id ? `Duplicated → ${equip.selected?.name}` : 'Model still loading – try again');
+	}
+	function del() {
+		if (!confirm(`Delete "${def?.name}"?`)) return;
+		const err = equip.remove(equip.selectedId, placed > 0);
+		if (err) game.flash(err);
+	}
+	function exportJSON() {
+		const j = equip.exportJSON(equip.selectedId);
+		if (j) download(`${(def?.name ?? 'equipment').toLowerCase().replace(/[^a-z0-9]+/g, '-')}.equipment.json`, j, 'application/json');
+	}
+	async function onJSON(e: Event) {
+		const f = (e.currentTarget as HTMLInputElement).files?.[0];
+		(e.currentTarget as HTMLInputElement).value = '';
+		if (!f) return;
+		const n = equip.importJSON(await f.text());
+		game.flash(n ? `Imported ${n} equipment definition(s)` : 'Not an equipment JSON file');
+	}
+	async function onGLB(e: Event) {
+		const f = (e.currentTarget as HTMLInputElement).files?.[0];
+		(e.currentTarget as HTMLInputElement).value = '';
+		if (!f || !editable) return;
+		if (f.size > 1.5e6) return game.flash('GLB too large for the library (max 1.5 MB)');
+		const url: string = await new Promise((res) => {
+			const r = new FileReader();
+			r.onload = () => res(String(r.result));
+			r.readAsDataURL(f);
+		});
+		try {
+			const a = await glbAspect(url);
+			const k = 0.5 / Math.max(a[0], a[1], a[2], 1e-6);
+			equip.addPart('glb', { name: f.name.replace(/\.glb$/i, ''), glb: url, size: [a[0] * k, a[1] * k, a[2] * k], pos: [0, (a[1] * k) / 2, 0] });
+		} catch {
+			game.flash('Could not read that GLB');
+		}
+	}
+	function placeOnDeck() {
+		game.designer = false;
+		game.selectedModule = equip.selectedId as ModuleId;
+		game.tool = 'module';
+		game.flash(`Place ${def?.name} on ${game.deckLabel(game.current)}`);
+	}
+	// ---- component editing (selection centroid in equipment space, validation) ----
+	const comp = $derived(equip.editMode !== 'object');
+	const DEG = Math.PI / 180;
+	const partMat = $derived(part ? new Matrix4().compose(new Vector3(...part.pos), new Quaternion().setFromEuler(new Euler(part.rot[0] * DEG, part.rot[1] * DEG, part.rot[2] * DEG)), new Vector3(1, 1, 1)) : null);
+	const selC = $derived.by(() => {
+		const m = equip.workMesh;
+		if (!comp || !m || !partMat) return null;
+		const idx = selVerts(m, equip.editMode as 'vertex', equip.sel);
+		return idx.length ? { idx, w: centroidOf(m, idx).applyMatrix4(partMat) } : null;
+	});
+	function moveSel(axis: number, valueCm: number) {
+		const m = equip.workMesh;
+		if (!m || !selC || !partMat || !isFinite(valueCm)) return;
+		const target = selC.w.clone();
+		target.setComponent(axis, Math.round(valueCm / (equip.snap * 100)) * equip.snap);
+		const inv = partMat.clone().invert();
+		const d = target.applyMatrix4(inv).sub(selC.w.clone().applyMatrix4(inv));
+		equip.setMesh(transformVerts(m, selC.idx, new Matrix4().makeTranslation(d.x, d.y, d.z)));
+	}
+	function nudgeSel(axis: number, sign: number) {
+		if (selC) moveSel(axis, (selC.w.getComponent(axis) + sign * equip.snap) * 100);
+	}
+	const meshWarn = $derived.by(() => {
+		if (!part || part.shape !== 'mesh' || !part.mesh || !partMat) return [] as string[];
+		const w = validateMesh(part.mesh);
+		const b = meshBounds(part.mesh);
+		const lo = new Vector3(Infinity, Infinity, Infinity);
+		for (let i = 0; i < part.mesh.v.length; i += 3) lo.min(new Vector3(part.mesh.v[i], part.mesh.v[i + 1], part.mesh.v[i + 2]).applyMatrix4(partMat));
+		if (lo.y < -0.005) w.push(`Mesh goes ${Math.round(-lo.y * 100)} cm below the floor`);
+		const maxDeck = Math.max(...game.decks.map((d) => d.height), 2.4);
+		if (def && def.height > maxDeck) w.push(`Taller (${def.height.toFixed(2)} m) than the tallest deck (${maxDeck.toFixed(2)} m)`);
+		void b;
+		return w;
+	});
+	function onKey(e: KeyboardEvent) {
+		const t = e.target as HTMLElement;
+		if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT')) return;
+		if (!game.designer) return;
+		const ctrl = e.ctrlKey || e.metaKey;
+		if (ctrl && e.code === 'KeyZ') {
+			e.preventDefault();
+			if (e.shiftKey ? equip.redo() : equip.undo()) game.flash(e.shiftKey ? 'Redo' : 'Undo');
+			return;
+		}
+		if (ctrl && e.code === 'KeyY') {
+			e.preventDefault();
+			if (equip.redo()) game.flash('Redo');
+			return;
+		}
+		if (ctrl) return;
+		const canEdit = editable && !!part && part.shape !== 'glb';
+		if (e.code === 'Tab' && canEdit) {
+			e.preventDefault();
+			equip.setEditMode(comp ? 'object' : equip.lastComp);
+			return;
+		}
+		const modeKeys: Record<string, 'object' | 'vertex' | 'edge' | 'face'> = { Digit1: 'object', Digit2: 'vertex', Digit3: 'edge', Digit4: 'face' };
+		if (modeKeys[e.code] && canEdit) return void equip.setEditMode(modeKeys[e.code]);
+		if (comp && canEdit) {
+			const ops: Record<string, Parameters<typeof equip.op>[0]> = { KeyE: 'extrude', KeyI: 'inset', KeyB: 'bevel', KeyM: 'merge', KeyX: 'delete', Delete: 'delete', Backspace: 'delete', KeyA: 'all', KeyN: e.shiftKey ? 'recalc' : 'flip' };
+			if (ops[e.code]) {
+				e.preventDefault();
+				return void game.flash(equip.op(ops[e.code]));
+			}
+			if (e.code === 'Escape') {
+				if (equip.selCount) equip.sel = { v: [], e: [], f: [] };
+				else equip.setEditMode('object');
+				return;
+			}
+		}
+		if (e.code === 'KeyT') equip.gizmo = 'translate';
+		else if (e.code === 'KeyR') equip.gizmo = 'rotate';
+		else if (e.code === 'KeyS') equip.gizmo = 'scale';
+		else if ((e.code === 'Delete' || e.code === 'Backspace') && part && editable) equip.deletePart(part.id);
+		else if (e.code === 'KeyD' && part && editable) equip.duplicatePart(part.id);
+		else if (e.code === 'KeyM' && part && editable) equip.duplicatePart(part.id, true);
+		else if (e.code === 'Escape') equip.partId = null;
+	}
+</script>
+
+<svelte:window onkeydown={onKey} />
+
+<aside class="panel" class:mobile class:open>
+	{#if mobile}
+		<button class="handle" onclick={() => (open = !open)} aria-label="Toggle designer panel">
+			<span class="grip"></span><span>{open ? '▼ Close' : '▲ Designer: library · parts · metadata'}</span>
+		</button>
+	{/if}
+	<div class="content">
+		<div class="hdr">
+			<h1>🛠 Equipment Designer</h1>
+			<button onclick={() => (game.designer = false)}>◀ Planner</button>
+		</div>
+
+		<section>
+			<h2>Library</h2>
+			<div class="lib">
+				{#each lib as l (l.id)}
+					<button class:active={l.id === equip.selectedId} onclick={() => equip.select(l.id)} title={l.id}>
+						<span>{l.icon}</span><span class="nm">{l.name}</span>{#if l.builtin}<i class="ro">🔒</i>{:else}<i class="cu">custom</i>{/if}
+					</button>
+				{/each}
+			</div>
+			<div class="grid2">
+				<button onclick={() => equip.create()}>＋ New</button>
+				<button class="prim" onclick={dup}>⎘ Duplicate{def?.builtin ? ' to edit' : ''}</button>
+				<button onclick={exportJSON}>⬇ Export JSON</button>
+				<button onclick={async () => { const n = await equip.exportGLB?.(); if (n) game.flash(`GLB exported (${Math.round(n / 1024)} kB)`); }} data-testid="designer-export-glb">⬇ Export GLB</button>
+				<button onclick={() => jsonInput.click()}>⬆ Import JSON</button>
+				<button disabled={!editable} onclick={() => glbInput.click()}>📦 Import GLB part</button>
+				<button class="danger" disabled={!editable} onclick={del}>🗑 Delete</button>
+			</div>
+			<input bind:this={jsonInput} type="file" accept=".json,application/json" hidden onchange={onJSON} />
+			<input bind:this={glbInput} type="file" accept=".glb,model/gltf-binary" hidden onchange={onGLB} />
+			{#if def?.builtin}<div class="note">Built-in designs are read-only – use <b>Duplicate to edit</b>.</div>{/if}
+		</section>
+
+		{#if def}
+			<section>
+				<h2>View, pose & gizmo</h2>
+				<div class="seg">
+					{#each [['iso', 'Iso'], ['side', 'Side'], ['front', 'Front'], ['top', 'Top']] as [v, l]}
+						<button onclick={() => equip.setView(v as 'iso' | 'side' | 'front' | 'top')}>{l}</button>
+					{/each}
+				</div>
+				<div class="seg">
+					<button class:active={equip.pose === 'deployed'} onclick={() => (equip.pose = 'deployed')}>Deployed</button>
+					<button class:active={equip.pose === 'stowed'} onclick={() => (equip.pose = 'stowed')}>Stowed</button>
+					{#if def.seats}<label class="chk"><input type="checkbox" bind:checked={equip.occupant} /> 🧑‍🚀 Occupant</label>{/if}
+				</div>
+				{#if editable}
+					<div class="seg">
+						<button class:active={equip.gizmo === 'translate'} onclick={() => (equip.gizmo = 'translate')}>✥ Move (T)</button>
+						<button class:active={equip.gizmo === 'rotate'} onclick={() => (equip.gizmo = 'rotate')}>⟳ Rotate (R)</button>
+						<button class:active={equip.gizmo === 'scale'} onclick={() => (equip.gizmo = 'scale')}>⤢ Size (S)</button>
+					</div>
+					<div class="hint">Snap 1 cm / 5°. Editing the <b>{equip.pose}</b> pose{equip.pose === 'stowed' ? ' (stowed in ' + (def.stowPhase === 'surface' ? 'Surface/Cruise' : 'Launch/Landing') + ')' : ''}.</div>
+				{/if}
+			</section>
+
+			<section>
+				<h2>Parts ({def.parts.length})</h2>
+				<div class="parts">
+					{#each def.parts as p (p.id)}
+						<button class:active={p.id === equip.partId} onclick={() => (equip.partId = p.id)}>{p.name}<small>{p.shape} · {p.m}{p.stowed ? ' · ⇄' : ''}</small></button>
+					{/each}
+				</div>
+				{#if editable}
+					<div class="row">
+						<select bind:value={newShape}>
+							{#each SHAPES as s}<option value={s}>{s}</option>{/each}
+						</select>
+						<button onclick={() => equip.addPart(newShape)}>＋ Add</button>
+						<button disabled={!part} onclick={() => part && equip.duplicatePart(part.id)}>⎘</button>
+						<button disabled={!part} onclick={() => part && equip.duplicatePart(part.id, true)} title="Mirror across X">⇋ Mirror</button>
+						<button class="danger" disabled={!part} onclick={() => part && equip.deletePart(part.id)}>🗑</button>
+					</div>
+				{/if}
+				{#if part && pose}
+					<div class="sel">
+						<div class="row">
+							<input class="nm" value={part.name} disabled={!editable} onchange={(e) => partField('name', e.currentTarget.value)} />
+							<select value={part.shape} disabled={!editable || part.shape === 'glb'} onchange={(e) => partField('shape', e.currentTarget.value)}>
+								{#each SHAPES as s}<option value={s}>{s}</option>{/each}
+								{#if part.shape === 'glb'}<option value="glb">glb</option>{/if}
+								{#if part.shape === 'mesh'}<option value="mesh">mesh (edited)</option>{/if}
+							</select>
+							<select value={part.m} disabled={!editable} onchange={(e) => partField('m', e.currentTarget.value)}>
+								{#each MATERIALS as m}<option value={m}>{m}</option>{/each}
+							</select>
+						</div>
+						{#each [['pos', 'Position cm'], ['rot', 'Rotation °'], ['size', 'Size cm']] as [k, label]}
+							{@const kind = k as 'pos' | 'rot' | 'size'}
+							<div class="vec">
+								<span>{label}</span>
+								{#each ['X', 'Y', 'Z'] as ax, i}
+									<label>
+										{ax}<input
+											type="number"
+											step={kind === 'rot' ? 5 : 1}
+											disabled={!editable}
+											value={kind === 'rot' ? Math.round(pose.rot[i] * 10) / 10 : cm(pose[kind][i])}
+											onchange={(e) => setVec(kind, i, Number(e.currentTarget.value))}
+										/>
+									</label>
+								{/each}
+							</div>
+						{/each}
+						{#if editable}
+							<div class="nudge">
+								{#each ['X', 'Y', 'Z'] as ax, i}
+									<span>{ax}</span>
+									<button onclick={() => nudge('pos', i, -0.01)} aria-label="Nudge {ax} −1 cm">−1</button>
+									<button onclick={() => nudge('pos', i, 0.01)} aria-label="Nudge {ax} +1 cm">+1</button>
+								{/each}
+								<span>⟳</span>
+								<button onclick={() => nudge('rot', 1, -5)} aria-label="Yaw −5°">−5°</button>
+								<button onclick={() => nudge('rot', 1, 5)} aria-label="Yaw +5°">+5°</button>
+							</div>
+							<div class="door" data-testid="door-panel">
+								<label><input type="checkbox" checked={!!part.door} onchange={(e) => (e.currentTarget.checked ? makeDoor() : setDoor(null))} data-testid="door-toggle" /> 🚪 Door part</label>
+								{#if part.door}
+									{@const dd = part.door}
+									<select value={dd.kind} onchange={(e) => doorField('kind', e.currentTarget.value as 'hinge')} aria-label="Door kind">
+										<option value="hinge">hinge</option><option value="slide">slide</option>
+									</select>
+									{#if dd.kind === 'hinge'}
+										<select value={dd.axis ?? 'y'} onchange={(e) => doorField('axis', e.currentTarget.value as 'y')} aria-label="Hinge axis">
+											<option value="y">axis Y (side hinge)</option><option value="x">axis X (top/bottom)</option><option value="z">axis Z</option>
+										</select>
+										<label>angle °<input type="number" step="5" value={dd.angle ?? -100} onchange={(e) => doorField('angle', Number(e.currentTarget.value))} /></label>
+									{:else}
+										{#each ['X', 'Y', 'Z'] as ax, i}
+											<label>slide {ax} cm<input type="number" value={cm((dd.slide ?? [0.6, 0, 0])[i])} onchange={(e) => { const v = [...(dd.slide ?? [0.6, 0, 0])] as [number, number, number]; v[i] = Number(e.currentTarget.value) / 100; doorField('slide', v); }} /></label>
+										{/each}
+									{/if}
+									<div class="vec">
+										<span>Hinge / pivot cm</span>
+										{#each ['X', 'Y', 'Z'] as ax, i}
+											<label>{ax}<input type="number" value={cm(dd.pivot[i])} onchange={(e) => { const v = [...dd.pivot] as [number, number, number]; v[i] = Number(e.currentTarget.value) / 100; doorField('pivot', v); }} /></label>
+										{/each}
+									</div>
+									<label>duration s<input type="number" step="0.1" min="0.2" max="4" value={dd.dur ?? 0.8} onchange={(e) => doorField('dur', Number(e.currentTarget.value))} /></label>
+									<label title="Closes behind the user while in use"><input type="checkbox" checked={!!dd.private} onchange={(e) => doorField('private', e.currentTarget.checked)} /> private</label>
+									<label title="The user steps inside (use point within the footprint)"><input type="checkbox" checked={!!dd.enter} onchange={(e) => doorField('enter', e.currentTarget.checked)} /> walk-in</label>
+									<button onclick={testDoor} data-testid="door-test">▶ Test door</button>
+								{/if}
+							</div>
+							{#if part.shape !== 'glb'}
+								<div class="comp" data-testid="component-panel">
+									<div class="row">
+										<b>Edit</b>
+										{#each [['object', 'Object'], ['vertex', 'Vertex'], ['edge', 'Edge'], ['face', 'Face']] as [m, l], i (m)}
+											<button class:active={equip.editMode === m} onclick={() => equip.setEditMode(m as 'object')} title="{l} mode ({i + 1})">{l}</button>
+										{/each}
+									</div>
+									{#if comp}
+										<div class="hint">
+											{equip.selCount} {equip.selCount === 1 ? equip.editMode : equip.editMode === 'vertex' ? 'vertices' : equip.editMode + 's'} selected · click / Shift-click / Shift-drag box · gizmo T/R/S moves the selection ·
+											{equip.editMode === 'face' ? 'E extrude · I inset · ' : equip.editMode === 'edge' ? 'B bevel · ' : ''}M merge · X delete · A all · Esc back · Ctrl+Z undo
+										</div>
+										{#if selC}
+											<div class="vec">
+												<span>Selection cm</span>
+												{#each ['X', 'Y', 'Z'] as ax, i}
+													<label>{ax}<input type="number" step={equip.snap * 100} value={Math.round(selC.w.getComponent(i) * 1000) / 10} data-testid="sel-pos-{ax.toLowerCase()}" onchange={(e) => moveSel(i, Number(e.currentTarget.value))} /></label>
+												{/each}
+											</div>
+											<div class="nudge">
+												{#each ['X', 'Y', 'Z'] as ax, i}
+													<span>{ax}</span>
+													<button onclick={() => nudgeSel(i, -1)} aria-label="Move selection {ax} −{equip.snap * 100} cm">−</button>
+													<button onclick={() => nudgeSel(i, 1)} aria-label="Move selection {ax} +{equip.snap * 100} cm">+</button>
+												{/each}
+												<button onclick={() => (equip.snap = equip.snap === 0.01 ? 0.05 : 0.01)} title="Snap / nudge step">{equip.snap * 100} cm</button>
+											</div>
+										{/if}
+									{:else if part.shape !== 'mesh'}
+										<div class="hint">Tab or 2/3/4 to edit vertices, edges or faces – the {part.shape} becomes an editable mesh on the first edit.</div>
+									{/if}
+									{#if comp && equip.editMode === 'face' && equip.sel.f.length}
+										<div class="row">
+											<span>Face material</span>
+											<select data-testid="face-mat" value={(part.mesh?.fm?.[equip.sel.f[0]] ?? '') as string} onchange={(e) => game.flash(equip.setFaceMaterial((e.currentTarget.value || null) as MatName | null))}>
+												<option value="">(part: {part.m})</option>
+												{#each MATERIALS as m}<option value={m}>{m}</option>{/each}
+											</select>
+										</div>
+									{/if}
+									{#if part.shape === 'mesh' && part.mesh}
+										<div class="row">
+											<span>Shading</span>
+											<button class:active={!part.mesh.sm} onclick={() => part.mesh?.sm && game.flash(equip.op('shade'))} data-testid="shade-flat">Flat</button>
+											<button class:active={!!part.mesh.sm} onclick={() => !part.mesh?.sm && game.flash(equip.op('shade'))} data-testid="shade-smooth">Smooth</button>
+											<button onclick={() => game.flash(equip.op('recalc'))} title="Recalculate normals outside (Shift+N)">⟳ Normals</button>
+										</div>
+										<div class="hint" data-testid="mesh-stats">Mesh: {part.mesh.v.length / 3} vertices · {part.mesh.f.length} faces · bounds {part.size.map((x) => (x * 100).toFixed(0)).join(' × ')} cm</div>
+									{/if}
+									{#each meshWarn as w (w)}<div class="warn" data-testid="mesh-warn">⚠ {w}</div>{/each}
+								</div>
+							{/if}
+						{/if}
+					</div>
+				{/if}
+			</section>
+
+			<section>
+				<h2>Metadata {#if def.estimate}<i class="est">ESTIMATE</i>{/if}</h2>
+				<div class="form">
+					<label class="w2">Name <input value={def.name} disabled={!editable} onchange={(e) => meta('name', e.currentTarget.value)} /></label>
+					<label>Icon <input value={def.icon} disabled={!editable} maxlength="4" onchange={(e) => meta('icon', e.currentTarget.value)} /></label>
+					<label>Category <input value={def.category} disabled={!editable} onchange={(e) => meta('category', e.currentTarget.value)} /></label>
+					<label>Mass kg <input type="number" value={def.mass} disabled={!editable} onchange={(e) => meta('mass', Number(e.currentTarget.value))} /></label>
+					<label>Power W <input type="number" value={def.power} disabled={!editable} onchange={(e) => meta('power', Number(e.currentTarget.value))} /></label>
+					<label>Cost $ <input type="number" value={def.cost} disabled={!editable} onchange={(e) => meta('cost', Number(e.currentTarget.value))} /></label>
+					<label>Access m <input type="number" step="0.05" value={def.access} disabled={!editable} onchange={(e) => meta('access', Number(e.currentTarget.value))} /></label>
+					<label>Seats <input type="number" min="0" value={def.seats ?? 0} disabled={!editable} onchange={(e) => meta('seats', Number(e.currentTarget.value) || undefined)} /></label>
+					<label title="How many crew can use it at the same moment (strictly enforced by the crew sim)">Capacity <input type="number" min="1" max="24" data-testid="designer-capacity" value={def.capacity ?? (def.affords?.reduce((m, af) => Math.max(m, af.slots?.length ?? 0), 0) || def.seats || 1)} disabled={!editable} onchange={(e) => meta('capacity', Math.max(1, Math.round(Number(e.currentTarget.value) || 1)))} /></label>
+					<label title="Rated service life, hours of use (ESTIMATE)">Life h <input type="number" min="10" data-testid="designer-life" value={def.life?.life ?? lifeBase.life} disabled={!editable} onchange={(e) => setLife('life', Number(e.currentTarget.value))} /></label>
+					<label title="Mean time between failures, hours of use">MTBF h <input type="number" min="10" data-testid="designer-mtbf" value={def.life?.mtbf ?? lifeBase.mtbf} disabled={!editable} onchange={(e) => setLife('mtbf', Number(e.currentTarget.value))} /></label>
+					<label title="Maintenance interval, hours of use">Service h <input type="number" min="1" value={def.life?.service ?? lifeBase.service} disabled={!editable} onchange={(e) => setLife('service', Number(e.currentTarget.value))} /></label>
+					<label title="Repair time, sim minutes (engineer)">Repair min <input type="number" min="5" value={def.life?.repair ?? lifeBase.repair} disabled={!editable} onchange={(e) => setLife('repair', Number(e.currentTarget.value))} /></label>
+					<label title="Spare kits per repair (from Storage Lockers, 6 each)">Spares <input type="number" min="0" max="10" value={def.life?.spares ?? lifeBase.spares} disabled={!editable} onchange={(e) => setLife('spares', Number(e.currentTarget.value))} /></label>
+					<label title="Noise radius m (Comfort debuff nearby while in use); 0 = quiet">Noise m <input type="number" min="0" max="10" step="0.5" value={def.noise?.r ?? 0} disabled={!editable} onchange={(e) => meta('noise', Number(e.currentTarget.value) > 0 ? { r: Number(e.currentTarget.value) } : undefined)} /></label>
+					<label title="Standby / idle draw, W">Standby W <input type="number" min="0" data-testid="designer-standby" value={def.powerSpec?.standby ?? powerBase.standby} disabled={!editable} onchange={(e) => setPow('standby', Number(e.currentTarget.value))} /></label>
+					<label title="Working draw, W">Active W <input type="number" min="0" value={def.powerSpec?.active ?? powerBase.active} disabled={!editable} onchange={(e) => setPow('active', Number(e.currentTarget.value))} /></label>
+					<label title="Start-up surge W (0 = none)">Peak W <input type="number" min="0" value={def.powerSpec?.peak?.w ?? powerBase.peak?.w ?? 0} disabled={!editable} onchange={(e) => setPeak(Number(e.currentTarget.value), def.powerSpec?.peak?.s ?? powerBase.peak?.s ?? 5)} /></label>
+					<label title="Surge duration, s">Peak s <input type="number" min="0" value={def.powerSpec?.peak?.s ?? powerBase.peak?.s ?? 0} disabled={!editable} onchange={(e) => setPeak(def.powerSpec?.peak?.w ?? powerBase.peak?.w ?? 0, Number(e.currentTarget.value))} /></label>
+					<label title="Duty cycle while on (fridge ~0.4)">Duty <input type="number" min="0.05" max="1" step="0.05" value={def.powerSpec?.duty ?? powerBase.duty ?? 1} disabled={!editable} onchange={(e) => setPow('duty', Number(e.currentTarget.value))} /></label>
+					<label>Priority
+						<select value={def.powerSpec?.priority ?? powerBase.priority} disabled={!editable} data-testid="designer-priority" onchange={(e) => setPow('priority', e.currentTarget.value as Priority)}>
+							{#each PRIORITIES as p (p)}<option>{p}</option>{/each}
+						</select>
+					</label>
+					<label>Stowed in
+						<select value={def.stowPhase ?? 'launch'} disabled={!editable} onchange={(e) => meta('stowPhase', e.currentTarget.value as 'launch' | 'surface')}>
+							<option value="launch">Launch/Landing</option>
+							<option value="surface">Surface/Cruise</option>
+						</select>
+					</label>
+					<label class="chk"><input type="checkbox" checked={!!def.stowable} disabled={!editable} onchange={(e) => meta('stowable', e.currentTarget.checked)} /> stowable</label>
+					<label class="chk"><input type="checkbox" checked={!!def.estimate} disabled={!editable} onchange={(e) => meta('estimate', e.currentTarget.checked)} /> ESTIMATE</label>
+					<label class="w2">Description <textarea rows="2" disabled={!editable} onchange={(e) => meta('description', e.currentTarget.value)}>{def.description}</textarea></label>
+				</div>
+				<div class="fp">
+					<b>Footprint</b> {def.w.toFixed(2)} × {def.d.toFixed(2)} × {def.height.toFixed(2)} m (surface)
+					{#if def.launch} · {def.launch.w.toFixed(2)} × {def.launch.d.toFixed(2)} × {def.launch.height.toFixed(2)} m (launch){/if}
+				</div>
+				{#if overhang}<div class="warn">⚠ Parts extend beyond the {overhang} footprint – enable Auto-fit or press Fit now.</div>{/if}
+				{#if editable}
+					<div class="row">
+						<label class="chk"><input type="checkbox" aria-label="Auto-fit footprint" checked={def.autoFit !== false} onchange={(e) => meta('autoFit', e.currentTarget.checked)} /> Auto-fit footprint</label>
+						<button onclick={() => equip.update(equip.selectedId, (e) => Object.assign(e, fitFootprint(e)))}>Fit now</button>
+					</div>
+				{/if}
+				<div class="row">
+					<button class="prim" onclick={placeOnDeck}>➕ Place on {game.deckLabel(game.current)}</button>
+					<span class="hint">{placed} placed{flagged ? ` · ⛔ ${flagged} no longer fit (flagged)` : ''}</span>
+				</div>
+			</section>
+			<AffordanceEditor />
+		{/if}
+	</div>
+</aside>
+
+<style>
+	.panel {
+		width: 100%;
+		min-width: 0;
+		box-sizing: border-box;
+		height: 100%;
+		background: rgba(9, 13, 22, 0.96);
+		color: #e4f0ff;
+		border-right: 1px solid #1f2c40;
+		overflow: hidden;
+		display: flex;
+		flex-direction: column;
+		font: 13px/1.35 system-ui, sans-serif;
+	}
+	.door {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 4px 8px;
+		align-items: center;
+		margin: 6px 0;
+		padding: 5px 6px;
+		border: 1px solid rgba(245, 158, 11, 0.35);
+		border-radius: 6px;
+		font-size: 11px;
+	}
+	.door input[type='number'] {
+		width: 52px;
+	}
+	.comp {
+		margin-top: 8px;
+		padding-top: 8px;
+		border-top: 1px solid #22324a;
+		display: flex;
+		flex-direction: column;
+		gap: 5px;
+	}
+	.comp button.active {
+		background: #ff9a3c;
+		color: #1a0d00;
+		border-color: #ffd7a8;
+	}
+	.content {
+		overflow-y: auto;
+		overflow-x: hidden;
+		padding: 10px 12px 40px;
+		flex: 1;
+	}
+	.hdr {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+	}
+	h1 {
+		font-size: 16px;
+		margin: 4px 0 8px;
+	}
+	h2 {
+		font-size: 11px;
+		text-transform: uppercase;
+		letter-spacing: 0.08em;
+		color: #8fa6c2;
+		margin: 12px 0 6px;
+	}
+	button,
+	select,
+	input,
+	textarea {
+		font: inherit;
+		color: #e4f0ff;
+		background: #142033;
+		border: 1px solid #2c4466;
+		border-radius: 7px;
+		padding: 5px 8px;
+		box-sizing: border-box;
+		min-width: 0;
+	}
+	.form input,
+	.form select,
+	.form textarea {
+		width: 100%;
+	}
+	.form label.chk input,
+	.row label.chk input {
+		width: auto;
+	}
+	button {
+		cursor: pointer;
+	}
+	button:disabled,
+	input:disabled,
+	select:disabled,
+	textarea:disabled {
+		opacity: 0.55;
+		cursor: default;
+	}
+	button.active {
+		border-color: #49a6ff;
+		background: #17406a;
+	}
+	button.prim {
+		border-color: #49a6ff;
+		background: #1d4f86;
+	}
+	button.danger {
+		border-color: #7a2a35;
+	}
+	.lib {
+		display: flex;
+		flex-direction: column;
+		gap: 3px;
+		max-height: 230px;
+		overflow-y: auto;
+		margin-bottom: 6px;
+	}
+	.lib button {
+		display: flex;
+		gap: 6px;
+		align-items: center;
+		text-align: left;
+	}
+	.lib .nm {
+		flex: 1;
+	}
+	.ro,
+	.cu {
+		font-style: normal;
+		font-size: 10px;
+		opacity: 0.8;
+	}
+	.cu {
+		color: #9cf0b8;
+	}
+	.grid2 {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: 5px;
+	}
+	.seg,
+	.row {
+		display: flex;
+		gap: 5px;
+		flex-wrap: wrap;
+		align-items: center;
+		margin-bottom: 5px;
+	}
+	.parts {
+		display: flex;
+		flex-direction: column;
+		gap: 2px;
+		max-height: 190px;
+		overflow-y: auto;
+		margin-bottom: 6px;
+	}
+	.parts button {
+		display: flex;
+		justify-content: space-between;
+		text-align: left;
+		padding: 3px 8px;
+		font-size: 12px;
+	}
+	.parts small {
+		opacity: 0.6;
+	}
+	.sel {
+		background: rgba(255, 255, 255, 0.04);
+		border-radius: 8px;
+		padding: 6px;
+	}
+	.sel .nm {
+		flex: 1 1 100%;
+	}
+	.sel .row select {
+		flex: 1;
+	}
+	.vec {
+		display: grid;
+		grid-template-columns: 76px repeat(3, 1fr);
+		gap: 4px;
+		align-items: center;
+		font-size: 11.5px;
+		margin: 3px 0;
+	}
+	.vec label {
+		display: flex;
+		align-items: center;
+		gap: 2px;
+		opacity: 0.9;
+	}
+	.vec input {
+		width: 100%;
+		min-width: 0;
+		padding: 3px 4px;
+	}
+	.nudge {
+		display: grid;
+		grid-template-columns: 18px 1fr 1fr 18px 1fr 1fr;
+		gap: 4px;
+		align-items: center;
+		margin-top: 6px;
+	}
+	.nudge button {
+		padding: 6px 0;
+	}
+	.form {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: 5px;
+	}
+	.form label {
+		display: flex;
+		flex-direction: column;
+		font-size: 11px;
+		gap: 2px;
+		color: #9fb4cc;
+	}
+	.form label.chk {
+		flex-direction: row;
+		align-items: center;
+		gap: 5px;
+	}
+	.form .w2 {
+		grid-column: 1 / 3;
+	}
+	.fp,
+	.note,
+	.hint {
+		font-size: 11.5px;
+		opacity: 0.85;
+		margin: 6px 0;
+	}
+	.warn {
+		font-size: 11.5px;
+		color: #ffcf7a;
+		margin: 4px 0;
+	}
+	.est {
+		font-style: normal;
+		font-size: 9px;
+		background: #4a3a10;
+		color: #ffd27a;
+		border-radius: 3px;
+		padding: 0 4px;
+		letter-spacing: 0;
+	}
+	/* mobile bottom sheet */
+	.panel.mobile {
+		position: absolute;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		width: 100%;
+		max-width: none;
+		height: auto;
+		max-height: 72vh;
+		border-right: none;
+		border-top: 1px solid #1f2c40;
+		border-radius: 14px 14px 0 0;
+		z-index: 20;
+	}
+	.mobile .content {
+		display: none;
+		max-height: 62vh;
+	}
+	.mobile.open .content {
+		display: block;
+	}
+	.handle {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 4px;
+		background: none;
+		border: none;
+		padding: 8px;
+		font-size: 12px;
+	}
+	.grip {
+		width: 40px;
+		height: 4px;
+		border-radius: 2px;
+		background: #4a6283;
+	}
+	.mobile button {
+		min-height: 36px;
+	}
+</style>

@@ -1,0 +1,49 @@
+SURFACE {
+ "avg": {
+  "energy": 80.4,
+  "hunger": 83.9,
+  "hygiene": 84.9,
+  "bladder": 80,
+  "fitness": 81,
+  "fun": 88,
+  "work": 84.6,
+  "comfort": 91.6
+ },
+ "workShift": 84.8,
+ "overCap": 0,
+ "issues": [
+  "high: Workstation (Deck 2): average wait 17.4 min over 7 waits, max queue 1 – consider a second unit",
+  "high: Exercise Treadmill (Deck 2): average wait 34.5 min over 4 waits, max queue 1 – consider a second unit",
+  "med: Hygiene / Toilet (Deck 1): average wait 5.9 min over 10 waits, max queue 2 – consider a second unit",
+  "med: Hydroponics Rack (Deck 1): average wait 6.5 min over 4 waits, max queue 1 – consider a second unit",
+  "med: Hygiene / Toilet (Deck 3): average wait 6.0 min over 18 waits, max queue 1 – consider a second unit",
+  "med: Ladder L1-2: 309 min of waiting in total (68 climbs) – add a second connection?",
+  "low: Storage Locker (Deck 1) was never used in 2.0 days",
+  "low: Storage Locker (Deck 2) was never used in 2.0 days"
+ ]
+}
+CRUISE {
+ "avg": {
+  "energy": 14.1,
+  "hunger": 6.8,
+  "hygiene": 9.9,
+  "bladder": 4.3,
+  "fitness": 41.9,
+  "fun": 23.9,
+  "work": 10.8,
+  "comfort": 14.2
+ },
+ "workShift": 22.5,
+ "overCap": 0,
+ "issues": [
+  "high: Workstation (Deck 2): average wait 17.4 min over 7 waits, max queue 1 – consider a second unit",
+  "high: Crew Quarters Pod (Deck 2): average wait 1074.6 min over 5 waits, max queue 3 – consider a second unit",
+  "high: Crew Quarters Pod (Deck 2): average wait 1052.6 min over 5 waits, max queue 3 – consider a second unit",
+  "high: Exercise Treadmill (Deck 2): average wait 41.0 min over 8 waits, max queue 2 – consider a second unit",
+  "high: Crew spent 215.4 h (75% of crew time) with critical Energy",
+  "high: Crew spent 246.7 h (86% of crew time) with critical Hunger",
+  "high: Crew spent 226.1 h (78% of crew time) with critical Hygiene",
+  "high: Crew spent 261.0 h (91% of crew time) with critical Bladder"
+ ]
+}
+errors []
