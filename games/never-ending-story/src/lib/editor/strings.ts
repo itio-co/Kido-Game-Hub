@@ -458,6 +458,58 @@ export const MESSAGES = {
     th: 'เส้นประบาง = เส้นที่ตรวจพบ สีตามแกน (สีเทา = ยังไม่มีแกน) จะยังไม่ถูกบันทึกจนกว่าจะกดรับ',
   },
 
+  // --- axis origin (where the world / object origin sits in the mock-up) ----------------------------------------
+  'cameraMatch.axisOrigin.heading': { en: 'Axis origin', th: 'จุดกำเนิดแกน' },
+  'cameraMatch.axisOrigin.headingNote': { en: '(where X, Y and Z meet in the image)', th: '(จุดที่แกน X, Y, Z มาบรรจบกันในภาพ)' },
+  'cameraMatch.axisOrigin.notSet': { en: 'Not set — the model origin keeps its current pixel', th: 'ยังไม่ได้ตั้ง — จุดกำเนิดของโมเดลอยู่ที่พิกเซลเดิม' },
+  'cameraMatch.axisOrigin.setAt': { en: 'Origin at ({x}, {y}) px', th: 'จุดกำเนิดที่ ({x}, {y}) px' },
+  'cameraMatch.axisOrigin.fromOther': {
+    en: 'Using the {group} origin (none set on this view)',
+    th: 'ใช้จุดกำเนิดของ{group} (มุมมองนี้ยังไม่ได้ตั้ง)',
+  },
+  'cameraMatch.axisOrigin.candidates': { en: '{n} corner candidates', th: 'มุมที่เสนอ {n} จุด' },
+  'cameraMatch.axisOrigin.noCandidates': {
+    en: 'No corner where X, Y and Z lines meet yet — draw or accept lines through a corner',
+    th: 'ยังไม่มีมุมที่เส้น X, Y, Z มาบรรจบกัน — วาดหรือรับเส้นที่ผ่านมุม',
+  },
+  'cameraMatch.axisOrigin.useDetected': { en: 'Include detected lines', th: 'รวมเส้นที่ตรวจพบ' },
+  'cameraMatch.axisOrigin.place': { en: 'Set origin', th: 'ตั้งจุดกำเนิด' },
+  'cameraMatch.axisOrigin.placeTitle': {
+    en: 'Origin mode: click a corner marker (or any point — it snaps to line crossings) or drag the ringed handle. Esc ends.',
+    th: 'โหมดจุดกำเนิด: คลิกมุมที่เสนอ (หรือจุดใดก็ได้ — จะดูดเข้าจุดตัดของเส้น) หรือลากวงแหวน กด Esc เพื่อจบ',
+  },
+  'cameraMatch.axisOrigin.modeOn': {
+    en: 'Click a corner (or drag the ringed handle) to set the axis origin · Alt = no snap · Esc to finish',
+    th: 'คลิกมุม (หรือลากวงแหวน) เพื่อตั้งจุดกำเนิดแกน · Alt = ไม่ดูด · Esc เพื่อจบ',
+  },
+  'cameraMatch.axisOrigin.clear': { en: 'Clear origin', th: 'ล้างจุดกำเนิด' },
+  'cameraMatch.axisOrigin.cleared': { en: 'Axis origin cleared', th: 'ล้างจุดกำเนิดแกนแล้ว' },
+  'cameraMatch.axisOrigin.set': { en: 'Axis origin set — the world origin now sits on that pixel', th: 'ตั้งจุดกำเนิดแกนแล้ว — จุดกำเนิดของโลกอยู่ที่พิกเซลนั้น' },
+  'cameraMatch.axisOrigin.setNoCam': {
+    en: 'Axis origin stored; the camera will use it after the next line solve',
+    th: 'เก็บจุดกำเนิดแกนแล้ว กล้องจะใช้หลังคำนวณจากเส้นครั้งถัดไป',
+  },
+  'cameraMatch.axisOrigin.flip': { en: '±{axis}', th: '±{axis}' },
+  'cameraMatch.axisOrigin.flipTitle': {
+    en: 'Flip the {axis} direction (turns {other} with it so the axes stay right-handed)',
+    th: 'กลับทิศแกน {axis} (แกน {other} กลับตามด้วยเพื่อให้ยังเป็นระบบมือขวา)',
+  },
+  'cameraMatch.axisOrigin.flipped': { en: 'Flipped {a} and {b} (180° turn about {c})', th: 'กลับทิศ {a} และ {b} แล้ว (หมุน 180° รอบ {c})' },
+  'cameraMatch.axisOrigin.objectNote': {
+    en: 'Object view: the model origin (its pivot with the default whole-object placement) sits on this corner. Move the object with G afterwards if needed.',
+    th: 'มุมมองวัตถุ: จุดกำเนิดของโมเดล (pivot เมื่อใช้ตำแหน่งวัตถุค่าเริ่มต้น) จะอยู่ที่มุมนี้ ย้ายวัตถุด้วย G ภายหลังได้',
+  },
+  'cameraMatch.axisOrigin.roomNote': {
+    en: 'Room view: the world origin sits on this corner; the object keeps its placement relative to it.',
+    th: 'มุมมองห้อง: จุดกำเนิดของโลกอยู่ที่มุมนี้ วัตถุยังคงตำแหน่งเดิมเทียบกับจุดนี้',
+  },
+  'cameraMatch.axisOrigin.legend': {
+    en: 'Small 3-colour corners = candidates (click to use). Drag the ringed handle to move the origin; it snaps to corners and line crossings, Alt = no snap. Tripod: X red, Y green, Z blue.',
+    th: 'มุมเล็กสามสี = จุดที่เสนอ (คลิกเพื่อใช้) ลากวงแหวน เพื่อย้ายจุดกำเนิด จะดูดเข้ามุมและจุดตัดของเส้น กด Alt = ไม่ดูด ขาตั้งสามแกน: X แดง, Y เขียว, Z น้ำเงิน',
+  },
+  'cameraMatch.axisOrigin.candAria': { en: 'Corner candidate {i}', th: 'มุมที่เสนอ {i}' },
+  'cameraMatch.axisOrigin.handleAria': { en: 'Axis origin handle', th: 'ที่จับจุดกำเนิดแกน' },
+
   // --- edge alignment -------------------------------------------------------------------------------------------
   'cameraMatch.edges.heading': { en: 'Line vs image edges', th: 'เทียบเส้นกับขอบภาพ' },
   'cameraMatch.edges.headingNote': { en: '(guide line ↔ real edges in the mock-up)', th: '(เส้นนำสายตา ↔ ขอบจริงใน Mock-up)' },
@@ -919,6 +971,33 @@ export const T = {
     chooserAria: t('cameraMatch.detect.chooserAria'),
     chooserAccept: (axis: string) => t('cameraMatch.detect.chooserAccept', { axis }),
     legend: t('cameraMatch.detect.legend'),
+  },
+
+  /** Axis origin of the mock-up view (not the part origin, T.origin). */
+  axisOrigin: {
+    heading: t('cameraMatch.axisOrigin.heading'),
+    headingNote: t('cameraMatch.axisOrigin.headingNote'),
+    notSet: t('cameraMatch.axisOrigin.notSet'),
+    setAt: (x: number, y: number) => t('cameraMatch.axisOrigin.setAt', { x, y }),
+    fromOther: (group: string) => t('cameraMatch.axisOrigin.fromOther', { group }),
+    candidates: (n: number) => t('cameraMatch.axisOrigin.candidates', { n }),
+    noCandidates: t('cameraMatch.axisOrigin.noCandidates'),
+    useDetected: t('cameraMatch.axisOrigin.useDetected'),
+    place: t('cameraMatch.axisOrigin.place'),
+    placeTitle: t('cameraMatch.axisOrigin.placeTitle'),
+    modeOn: t('cameraMatch.axisOrigin.modeOn'),
+    clear: t('cameraMatch.axisOrigin.clear'),
+    cleared: t('cameraMatch.axisOrigin.cleared'),
+    set: t('cameraMatch.axisOrigin.set'),
+    setNoCam: t('cameraMatch.axisOrigin.setNoCam'),
+    flip: (axis: string) => t('cameraMatch.axisOrigin.flip', { axis }),
+    flipTitle: (axis: string, other: string) => t('cameraMatch.axisOrigin.flipTitle', { axis, other }),
+    flipped: (a: string, b: string, c: string) => t('cameraMatch.axisOrigin.flipped', { a, b, c }),
+    objectNote: t('cameraMatch.axisOrigin.objectNote'),
+    roomNote: t('cameraMatch.axisOrigin.roomNote'),
+    legend: t('cameraMatch.axisOrigin.legend'),
+    candAria: (i: number) => t('cameraMatch.axisOrigin.candAria', { i }),
+    handleAria: t('cameraMatch.axisOrigin.handleAria'),
   },
 
   edges: {

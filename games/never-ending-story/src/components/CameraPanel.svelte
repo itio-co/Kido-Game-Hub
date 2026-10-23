@@ -332,6 +332,31 @@
     {/if}
     <p class="tip legend">{T.detect.legend}</p>
   </div>
+  <div class="vpbox" data-origin-panel data-origin-group={st.group} data-origin-set={st.axisOrigin ? 'true' : 'false'}>
+    <div class="vphead">{T.axisOrigin.heading} <small>{T.axisOrigin.headingNote}</small>
+      <span class="n" data-origin-count={st.originCands.length}>{st.originCands.length ? T.axisOrigin.candidates(st.originCands.length) : ''}</span>
+    </div>
+    <p class="n" data-origin-status>
+      {#if st.axisOrigin}{T.axisOrigin.setAt(Math.round(st.axisOrigin[0]), Math.round(st.axisOrigin[1]))}
+      {:else if st.anchorGroup}{T.axisOrigin.fromOther(T.groups[st.anchorGroup])}
+      {:else}{T.axisOrigin.notSet}{/if}
+    </p>
+    {#if !st.originCands.length}<p class="tip">{T.axisOrigin.noCandidates}</p>{/if}
+    <div class="actions">
+      <button type="button" data-act="origin-mode" aria-pressed={st.originMode} class:on={st.originMode} title={T.axisOrigin.placeTitle}
+        onclick={() => { st.originMode = !st.originMode; if (st.originMode) say(T.axisOrigin.modeOn); }}>{T.axisOrigin.place}</button>
+      <button type="button" data-act="origin-clear" disabled={!st.axisOrigin} onclick={() => { st.setAxisOrigin(null); onChange(); say(T.axisOrigin.cleared); }}>{T.axisOrigin.clear}</button>
+      <label class="n"><input type="checkbox" data-origin-detected checked={st.originUseDetected} onchange={(e) => { st.originUseDetected = e.currentTarget.checked; onChange(); }} /> {T.axisOrigin.useDetected}</label>
+    </div>
+    <div class="actions">
+      {#each [0, 1, 2] as const as a (a)}
+        <button type="button" data-act="origin-flip" data-axis={a} style="border-color:{AXIS_COLORS[a]}" title={T.axisOrigin.flipTitle(AXIS_NAMES[a], AXIS_NAMES[a === 0 ? 1 : 0])}
+          onclick={() => { st.flipOriginAxis(a); onChange(); if (st.message) say(st.message); }}>{T.axisOrigin.flip(AXIS_NAMES[a])}</button>
+      {/each}
+    </div>
+    <p class="tip">{st.group === 'object' ? T.axisOrigin.objectNote : T.axisOrigin.roomNote}</p>
+    <p class="tip legend">{T.axisOrigin.legend}</p>
+  </div>
   <div class="field" role="radiogroup" aria-label={T.diff.aria}>
     <span>{T.diff.label}</span>
     <div class="seg3">

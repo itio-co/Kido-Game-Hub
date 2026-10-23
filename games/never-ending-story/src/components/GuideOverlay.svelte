@@ -248,7 +248,7 @@
     lock?: { fixed: V2; vp: V3; axis: number };
   };
   type SegDrag = { kind: 'seg'; id: number; p0: V2; a0: V2; b0: V2; ma: EndRef[]; mb: EndRef[]; x: number; y: number; moved: boolean };
-  type Drag = LineDrag | SegDrag | { kind: 'pair'; id: number; off: V2 };
+  type Drag = LineDrag | SegDrag | { kind: 'pair'; id: number; off: V2 } | { kind: 'origin'; off: V2; moved: boolean };
   let drag: Drag | null = null;
   const pointers = new Map<number, { x: number; y: number }>();
   let gesture: { startX: number; startY: number; moved: boolean; pinch: number | null; center: V2; zoom: number } | null = null;
@@ -352,7 +352,7 @@
     if (pressTimer) clearTimeout(pressTimer);
     pressTimer = null;
   }
-  function startHandle(event: PointerEvent, next: Drag): void {
+  function startHandle(event: PointerEvent, next: Exclude<Drag, { kind: 'origin' }>): void {
     event.stopPropagation();
     event.preventDefault();
     svg!.setPointerCapture(event.pointerId);
@@ -447,6 +447,7 @@
   function windowKey(event: KeyboardEvent): void {
     if (menu && event.key === 'Escape') menu = null;
     else if (candMenu && event.key === 'Escape') candMenu = null;
+    else if (st.originMode && event.key === 'Escape') st.originMode = false;
     else if (event.key === 'Escape' && st.candidates.length && !st.pick) {
       st.clearCandidates();
       say?.(T.detect.cleared);
@@ -457,6 +458,49 @@
       st.setCandidateAxis(hoverCand, a);
       say?.(T.detect.axisSet(AXIS_NAMES[a]));
     }
+  }
+
+  // ---------- axis origin (T.axisOrigin) ----------
+  /** Segment (guide line or detected candidate) of an origin junction id. */
+  function originSeg(id: number): { a: V2; b: V2 } | undefined {
+    return id < 0 ? st.candidates.find((c) => c.id === -id) : st.lines.find((l) => l.id === id);
+  }
+  /** Corner markers: from each junction, a short arm along each of its three lines (toward the far end). */
+  const originMarks = $derived(
+    st.originCands.map((c) => ({
+      c,
+      arms: c.ids.map((id, axis) => {
+        const g = originSeg(id);
+        if (!g) return null;
+        const far = Math.hypot(g.a[0] - c.p[0], g.a[1] - c.p[1]) > Math.hypot(g.b[0] - c.p[0], g.b[1] - c.p[1]) ? g.a : g.b;
+        const dx = far[0] - c.p[0];
+        const dy = far[1] - c.p[1];
+        const n = Math.hypot(dx, dy) || 1;
+        return { axis: axis as 0 | 1 | 2, d: [dx / n, dy / n] as V2 };
+      }),
+    })),
+  );
+  const tripod = $derived(st.originTripod);
+  /** Live position of the dragged ⌖ handle (ref px) and how it snapped. */
+  let originSnap = $state<'candidate' | 'cross' | null>(null);
+  function pickOrigin(p: V2): void {
+    st.setAxisOrigin(p);
+    onChange();
+    if (st.message) say?.(st.message);
+  }
+  function originCandDown(event: PointerEvent, p: V2): void {
+    event.stopPropagation();
+    if (event.button !== 0) return;
+    pickOrigin([p[0], p[1]]);
+  }
+  function originHandle(event: PointerEvent): void {
+    if (event.button !== 0 || !tripod) return;
+    event.stopPropagation();
+    event.preventDefault();
+    svg!.setPointerCapture(event.pointerId);
+    const p = toRef(event.clientX, event.clientY);
+    drag = { kind: 'origin', off: [tripod.at[0] - p[0], tripod.at[1] - p[1]], moved: false };
+    originSnap = null;
   }
 
   // ---------- detected line candidates ----------
@@ -535,6 +579,16 @@
 
   function dragMove(event: PointerEvent, d: Drag): void {
     const p = toRef(event.clientX, event.clientY);
+    if (d.kind === 'origin') {
+      const q: V2 = [p[0] + d.off[0], p[1] + d.off[1]];
+      // snaps to corner candidates, then to crossings of two lines; Alt = free
+      const sn = event.altKey ? { p: q, kind: null } : st.snapAxisOrigin(q);
+      originSnap = sn.kind;
+      d.moved = true;
+      st.setAxisOrigin(sn.p, true);
+      showLoupe(event, sn.p);
+      return;
+    }
     if (d.kind === 'pair') {
       const pair = st.pairs.find((x) => x.id === d.id);
       if (pair) pair.image = [p[0] + d.off[0], p[1] + d.off[1]];
@@ -610,6 +664,12 @@
     st.endLive();
   }
   function dragEnd(d: Drag): void {
+    if (d.kind === 'origin') {
+      loupe = null;
+      originSnap = null;
+      if (d.moved && st.axisOrigin) pickOrigin(st.axisOrigin);
+      return;
+    }
     clearPress();
     const t = hint;
     hint = null;
@@ -680,7 +740,11 @@
     if (!g || g.moved) return;
     // a tap
     const pick = st.pick;
-    if (pick?.want === 'image') {
+    if (st.originMode && !pick) {
+      // origin mode: a click anywhere sets the origin (snapped to corners / crossings; Alt = exactly here)
+      const q = toRef(event.clientX, event.clientY);
+      pickOrigin(event.altKey ? q : st.snapAxisOrigin(q).p);
+    } else if (pick?.want === 'image') {
       st.setPairImage(pick.pairId, toRef(event.clientX, event.clientY));
       onChange();
     } else if (pick?.want === 'model') {
@@ -700,6 +764,8 @@
   bind:this={svg}
   class="guides"
   class:picking={!!st.pick}
+  class:originmode={st.originMode}
+  data-origin-mode={st.originMode ? 'true' : null}
   viewBox="{vr.x0} {vr.y0} {vr.w} {vr.h}"
   preserveAspectRatio="none"
   onpointerdown={down}
@@ -909,6 +975,43 @@
       </g>
     {/if}
   {/each}
+
+  <!-- axis origin: corner candidates (3-colour arms) and the tripod / ⌖ handle -->
+  {#each originMarks as m, i (m.c.p.join(','))}
+    <g class="ocand" class:live={st.originMode} data-origin-cand="{m.c.p[0].toFixed(2)},{m.c.p[1].toFixed(2)}" data-origin-score={m.c.score.toFixed(3)}>
+      {#each m.arms as arm (arm?.axis)}
+        {#if arm}
+          <line x1={m.c.p[0]} y1={m.c.p[1]} x2={m.c.p[0] + arm.d[0] * 14 * s} y2={m.c.p[1] + arm.d[1] * 14 * s} stroke={AXIS_COLORS[arm.axis]} class="oarm" />
+        {/if}
+      {/each}
+      <circle cx={m.c.p[0]} cy={m.c.p[1]} r={2.6 * s} class="odot" />
+      {#if st.originMode}
+        <circle cx={m.c.p[0]} cy={m.c.p[1]} r={9 * s} class="ohit" role="button" tabindex="-1" aria-label={T.axisOrigin.candAria(i + 1)}
+          onpointerdown={(e) => originCandDown(e, m.c.p)} />
+      {/if}
+    </g>
+  {/each}
+  {#if tripod}
+    {@const o = tripod.at}
+    <g class="tripod" class:live={st.originMode} class:inherited={!st.axisOrigin} data-origin-tripod="{o[0].toFixed(3)},{o[1].toFixed(3)}"
+      data-origin-proj={tripod.proj ? `${tripod.proj[0].toFixed(3)},${tripod.proj[1].toFixed(3)}` : null} data-origin-snap={originSnap}>
+      {#each tripod.dirs as d, a (a)}
+        {#if d}
+          {@const e = [o[0] + d[0] * 46 * s, o[1] + d[1] * 46 * s]}
+          <line x1={o[0]} y1={o[1]} x2={e[0]} y2={e[1]} stroke={AXIS_COLORS[a]} class="tleg" data-origin-axis={a} />
+          <path d="M {e[0] + d[0] * 9 * s} {e[1] + d[1] * 9 * s} L {e[0] - d[1] * 5 * s} {e[1] + d[0] * 5 * s} L {e[0] + d[1] * 5 * s} {e[1] - d[0] * 5 * s} Z" fill={AXIS_COLORS[a]} />
+          <text x={e[0] + d[0] * 16 * s} y={e[1] + d[1] * 16 * s + 4 * s} font-size={12 * s} fill={AXIS_COLORS[a]} text-anchor="middle" class="tlabel">{AXIS_NAMES[a]}</text>
+        {/if}
+      {/each}
+      <circle cx={o[0]} cy={o[1]} r={6 * s} class="tknob" />
+      <line x1={o[0] - 9 * s} y1={o[1]} x2={o[0] + 9 * s} y2={o[1]} class="tcross" />
+      <line x1={o[0]} y1={o[1] - 9 * s} x2={o[0]} y2={o[1] + 9 * s} class="tcross" />
+      {#if st.originMode}
+        <circle cx={o[0]} cy={o[1]} r={14 * s} class="thit" role="button" tabindex="-1" aria-label={T.axisOrigin.handleAria} data-origin-handle
+          onpointerdown={originHandle} />
+      {/if}
+    </g>
+  {/if}
 </svg>
 
 {#if loupeBox && loupe}
@@ -998,6 +1101,7 @@
 <style>
   .guides { position: absolute; inset: 0; width: 100%; height: 100%; touch-action: none; cursor: grab; z-index: 3; }
   .guides.picking { cursor: crosshair; }
+  .guides.originmode { cursor: crosshair; }
   .guides.picking .handle { pointer-events: none; }
   line, circle, path, rect { vector-effect: non-scaling-stroke; }
   .ext { stroke-width: 1.5; stroke-dasharray: 7 6; opacity: 0.85; }
@@ -1025,6 +1129,20 @@
   .cand.hover .cseg { stroke-width: 3; opacity: 1; }
   .chit { stroke: transparent; stroke-width: 12; stroke-linecap: round; pointer-events: stroke; cursor: copy; }
   .chit:focus { outline: none; }
+  .ocand { pointer-events: none; opacity: 0.75; }
+  .ocand.live { opacity: 1; }
+  .oarm { stroke-width: 2.6; stroke-linecap: round; }
+  .odot { fill: #fff; stroke: #000; stroke-width: 0.6; }
+  .ocand.live .odot { fill: #ffe14d; }
+  .ohit { fill: transparent; stroke: #ffe14d; stroke-width: 1; stroke-dasharray: 2 2; pointer-events: all; cursor: pointer; }
+  .ohit:focus, .thit:focus { outline: none; }
+  .tripod { pointer-events: none; }
+  .tripod.inherited { opacity: 0.55; }
+  .tleg { stroke-width: 2.4; stroke-linecap: round; }
+  .tlabel { font-weight: 800; paint-order: stroke; stroke: rgba(0, 0, 0, 0.85); stroke-width: 3; }
+  .tknob { fill: rgba(255, 255, 255, 0.15); stroke: #fff; stroke-width: 1.6; }
+  .tcross { stroke: #fff; stroke-width: 1.2; }
+  .thit { fill: transparent; pointer-events: all; cursor: move; }
   .cmenu { border-color: #b9c3cc; }
   .gray { stroke-width: 1; opacity: 0.22; }
   .gseg { stroke-width: 2; opacity: 0.45; stroke-dasharray: 8 4; }

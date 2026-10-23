@@ -21,11 +21,13 @@ import {
   type PointPair,
   type V2,
   type V3,
+  type M3,
 } from './camMath';
 import { blenderValues, camFromMatched, camJson, focalFromLens, fullExport, hfovDeg, lensMm, type ViewRect } from './cameraMatch';
 import type { DisplayMode } from './modelEditor';
 import { T } from './strings';
-import { camToObject, camToWorld, type Placement } from './placement';
+import { camToObject, camToWorld, placeToLocal, type Placement } from './placement';
+import { anchorCam, axisScreenDir, depthOf, flipAxisR, keepAnchorAt, originCandidates, snapOrigin, type OriginCandidate, type OriginSeg } from './originMatch';
 import { frameWindow, FOCUS_PAD, type Box2 } from './viewFrame';
 import { jointMembers, linkEnds, removeLineLinks, unlinkEnd, type EndRef } from './guideSnap';
 import { addMasterFlag, applyMasterIds, ensureMasters, master2Of, masterIds, masterOf, masterPairAngle, mastersNearlyParallel, parseMasterMap, promoteMaster, removeMasterFlag, setMaster2Flag, setMasterFlag, type MasterMap } from './masterLine';
@@ -41,6 +43,8 @@ import {
   lineToCrop,
   lineToFull,
   migrateV1Lines,
+  toCrop,
+  toFull,
   pruneLinks,
   rotZ,
   solveJoint,
@@ -86,7 +90,14 @@ type Saved = {
   lockVp?: boolean;
   /** Per-axis VP mode ('auto' | 'parallel'), shared by both groups (optional; default auto). */
   vpModes?: VpModes;
+  /** v2: axis origin per group (FULL px; missing / null = not set). */
+  axisOrigin?: { object?: V2 | null; room?: V2 | null } | null;
+  /** Include detected candidates in the origin corner search (optional; default on). */
+  originUseDetected?: boolean;
 };
+/** Axis origin per line group (crop px). */
+export type AxisOrigins = { object: V2 | null; room: V2 | null };
+const isPt = (p: unknown): p is V2 => Array.isArray(p) && p.length === 2 && p.every((v) => typeof v === 'number' && Number.isFinite(v));
 export type EdgeMode = 'drag' | 'always' | 'off';
 /** A detected straight edge proposed as a guide line (ref px); never saved until accepted. */
 export type Candidate = { id: number; a: V2; b: V2; axis: Axis | null; len: number; score: number };
@@ -207,6 +218,16 @@ export class MatchState {
   detectMinLen = $state(40);
   private detectRun = 0;
   private candId = 1;
+  /**
+   * Axis origin per group (crop px; T.axisOrigin): the pixel the origin is pinned to. The object group pins the
+   * model's origin (pivot), the room group pins the world origin. The line solves keep it on that pixel (it is the
+   * anchor of `keepAnchor`; without one the origin keeps its current pixel). Flips live in the camera itself.
+   */
+  axisOrigins = $state<AxisOrigins>({ object: null, room: null });
+  /** Let detected (not yet accepted) candidates make origin corners too. */
+  originUseDetected = $state(true);
+  /** Origin mode (transient): corner markers and the ⌖ handle take clicks / drags instead of the guide lines. */
+  originMode = $state(false);
   /** Natural size of the current view image (edge map / image px space). */
   private edgeNat = { w: 1, h: 1 };
   private static edgeCache = new Map<string, Promise<{ map: EdgeMap; url: string; w: number; h: number } | null>>();
@@ -292,6 +313,7 @@ export class MatchState {
       lockLens: this.lockLens,
       roomAligned: this.roomAligned,
       roomYaw: this.roomYaw,
+      ...this.axisOriginFile(),
       camera: $state.snapshot(this.cam),
       solved: {
         note: 'derived from camera (crop px) — for reading in review; ignored on load',
@@ -324,6 +346,8 @@ export class MatchState {
       edgeSnap: this.edgeSnap,
       lockVp: f.lockVp === true,
       vpModes: f.vpModes as VpModes,
+      axisOrigin: f.axisOrigin ?? null,
+      originUseDetected: this.originUseDetected,
     };
     if (!this.restoreFrom(d)) return false;
     this.lineUndo = [];
@@ -447,7 +471,10 @@ export class MatchState {
   }
   setImage(next: ImageChoice): void {
     const before = this.group;
-    if (next !== this.image) this.clearCandidates();
+    if (next !== this.image) {
+      this.clearCandidates();
+      this.originMode = false;
+    }
     this.image = next;
     if (this.group !== before) this.swapGroups();
     // the principal point no longer depends on the view (full-image centre), so nothing to move here
@@ -915,7 +942,7 @@ export class MatchState {
       return false;
     }
     let cam = res.cam;
-    if (this.completePairs.length >= 2) cam = solvePosition(cam, this.completePairs) ?? cam;
+    if (this.completePairs.length >= 2) cam = this.pinOrigin(solvePosition(cam, this.completePairs) ?? cam);
     else cam = this.keepAnchor(prior, cam);
     if (!this.saneCam(cam)) {
       // e.g. two nearly parallel masters put the VP near infinity → a degenerate lens / distance
@@ -1143,7 +1170,7 @@ export class MatchState {
     try {
       if (what === 'lines') {
         const res = this.jointSolve(base);
-        if (res.cam) cam = pairs.length >= 2 ? (solvePosition(res.cam, pairs) ?? res.cam) : this.keepAnchor(base, res.cam);
+        if (res.cam) cam = pairs.length >= 2 ? this.pinOrigin(solvePosition(res.cam, pairs) ?? res.cam) : this.keepAnchor(base, res.cam);
         if (res.cam && !this.roomAligned && res.yawSolved) this.roomYaw = res.yaw;
       } else if (pairs.length >= 4) {
         const start = solvePosition(base, pairs) ?? base;
@@ -1164,23 +1191,143 @@ export class MatchState {
     if (![cam.f, cam.cx, cam.cy, ...cam.C, ...cam.R.flat()].every(Number.isFinite)) return false;
     return cam.f > 0.05 * this.width && cam.f < 100 * this.width && Math.hypot(...cam.C) < 1e4;
   }
-  /** Keep the model origin at the same pixel and depth as in `prior`. */
+  /**
+   * Keep the anchor at its pixel after a rotation / focal re-solve. With an axis origin the anchor is that origin
+   * (model pivot for the object group, world origin for the room group) and its pixel is the stored one; without
+   * one it is the model origin at the pixel it had in `prior`. Depth scales with the focal change.
+   */
   private keepAnchor(prior: Cam, cam: Cam): Cam {
-    const o: V3 = [0, 0, 0];
-    const uv = project(prior, o);
-    const depth = mulMV(prior.R, sub(o, prior.C))[2];
-    if (!uv || depth <= 0) return cam;
-    // scale depth with the focal change so the model keeps its on-screen size
-    const d = depth * (cam.f / prior.f);
-    const t: V3 = [((uv[0] - cam.cx) / cam.f) * d, ((uv[1] - cam.cy) / cam.f) * d, d];
-    // C = −Rᵀ t
-    const Rt = [
-      [cam.R[0][0], cam.R[1][0], cam.R[2][0]],
-      [cam.R[0][1], cam.R[1][1], cam.R[2][1]],
-      [cam.R[0][2], cam.R[1][2], cam.R[2][2]],
+    const g = this.anchorGroup;
+    if (!g) return keepAnchorAt(prior, cam, [0, 0, 0], null);
+    return keepAnchorAt(prior, cam, this.anchorPoint(g), this.axisOrigins[g]);
+  }
+  /** After a point-pair position solve: keep its distance, but put the axis origin exactly on its pixel. */
+  private pinOrigin(cam: Cam): Cam {
+    const g = this.anchorGroup;
+    if (!g) return cam;
+    const X = this.anchorPoint(g);
+    const d = depthOf(cam, X);
+    return d > 0 ? anchorCam(cam, X, this.axisOrigins[g]!, d) : cam;
+  }
+
+  // ---------- axis origin (T.axisOrigin) ----------
+  /** Group whose axis origin the solve uses: the active view's, else the other view's, else none. */
+  get anchorGroup(): LineGroup | null {
+    if (this.axisOrigins[this.group]) return this.group;
+    if (this.axisOrigins[this.otherGroup]) return this.otherGroup;
+    return null;
+  }
+  /** Axis origin of the active view (crop px) or null. */
+  get axisOrigin(): V2 | null {
+    return this.axisOrigins[this.group];
+  }
+  /** The object-frame point an origin pins: the model pivot (object group) or the world origin (room group). */
+  anchorPoint(g: LineGroup): V3 {
+    if (g === 'room') return placeToLocal(this.placement, [0, 0, 0]);
+    const o = this.placement?.origin;
+    return o ? [o[0], o[1], o[2]] : [0, 0, 0];
+  }
+  /** Object-frame directions of the frame axes of a group (room axes: X_room = Rz(yaw)·X_obj). */
+  private frameAxes(g: LineGroup): [V3, V3, V3] {
+    const I: [V3, V3, V3] = [[1, 0, 0], [0, 1, 0], [0, 0, 1]];
+    if (g === 'object' || !this.yaw) return I;
+    const Rt = transpose(rotZ(this.yaw));
+    return I.map((e) => mulMV(Rt, e)) as [V3, V3, V3];
+  }
+  /** Line segments the corner search uses (active group; plus axis-tagged detected candidates). */
+  private originSegs(): OriginSeg[] {
+    const segs: OriginSeg[] = this.lines.map((l) => ({ id: l.id, axis: l.axis, a: l.a, b: l.b }));
+    if (this.originUseDetected) for (const c of this.candidates) if (c.axis !== null) segs.push({ id: -c.id, axis: c.axis, a: c.a, b: c.b, detected: true });
+    return segs;
+  }
+  /** Crossing tolerance in ref px: ~6 screen px at the current zoom. */
+  get originTol(): number {
+    return 6 / Math.max(1e-6, this.k);
+  }
+  /** Triple junctions (X, Y and Z lines within ~6 screen px) of the active view, best first. */
+  readonly originCands = $derived.by((): OriginCandidate[] => {
+    try {
+      return originCandidates(this.originSegs(), this.originTol, 6);
+    } catch {
+      return [];
+    }
+  });
+  /** Snap a dragged origin handle to candidates and line crossings (ref px). */
+  snapAxisOrigin(p: V2): { p: V2; kind: 'candidate' | 'cross' | null } {
+    return snapOrigin(p, this.originCands, this.originSegs(), 12 / Math.max(1e-6, this.k), this.originTol);
+  }
+  /**
+   * Tripod of the active view: origin pixel, where the pinned point projects with the current camera, and the
+   * screen direction of each frame axis (toward / away from its VP, or along the parallel direction).
+   */
+  get originTripod(): { at: V2; proj: V2 | null; dirs: (V2 | null)[]; set: boolean } | null {
+    const g = this.anchorGroup ?? this.group;
+    const set = !!this.axisOrigins[g];
+    const cam = this.camObj;
+    const X = this.anchorPoint(g);
+    const proj = project(cam, X);
+    const at = this.axisOrigins[this.group] ?? (set ? proj : null);
+    if (!at) return null;
+    const len = Math.max(1, Math.abs(depthOf(cam, X)) * 0.05);
+    return { at, proj, dirs: this.frameAxes(g).map((d) => axisScreenDir(cam, X, d, len)), set };
+  }
+  /**
+   * Set (or clear with null) the axis origin of the active view and move the camera so the pinned point projects
+   * exactly there (rotation, focal and distance unchanged).
+   */
+  setAxisOrigin(p: V2 | null, quiet = false): boolean {
+    const g = this.group;
+    this.axisOrigins = { ...this.axisOrigins, [g]: p ? ([p[0], p[1]] as V2) : null };
+    if (!p) {
+      if (!quiet) this.say(T.axisOrigin.cleared);
+      return true;
+    }
+    const cam = this.camObj;
+    const X = this.anchorPoint(g);
+    const d = depthOf(cam, X);
+    const next = d > 0 ? anchorCam(cam, X, p, d) : null;
+    if (!next || !this.saneCam(next)) {
+      if (!quiet) this.say(T.axisOrigin.setNoCam);
+      return false;
+    }
+    this.cam = this.toWorld(next);
+    if (!quiet) this.say(T.axisOrigin.set);
+    return true;
+  }
+  /** Flip one axis direction (and a second one, keeping the frame right-handed); the origin stays on its pixel. */
+  flipOriginAxis(axis: Axis): void {
+    const cam = this.camObj;
+    const g = this.anchorGroup ?? this.group;
+    const X = this.anchorPoint(g);
+    const uv = this.axisOrigins[g] ?? project(cam, X);
+    const d = depthOf(cam, X);
+    // flip in the group's frame: R_obj · (A F Aᵀ) with A = the group's axes (yaw only for the room)
+    const A = this.frameAxes(g);
+    const Am: M3 = [
+      [A[0][0], A[1][0], A[2][0]],
+      [A[0][1], A[1][1], A[2][1]],
+      [A[0][2], A[1][2], A[2][2]],
     ];
-    const C = Rt.map((row) => -(row[0]! * t[0] + row[1]! * t[1] + row[2]! * t[2])) as V3;
-    return { ...cam, C };
+    const { R: AF, flipped } = flipAxisR(Am, axis);
+    const R = mulMM(cam.R, mulMM(AF, transpose(Am)));
+    let next: Cam = { ...cam, R };
+    if (uv && d > 0) next = anchorCam(next, X, uv, d);
+    if (!this.saneCam(next)) return;
+    this.cam = this.toWorld(next);
+    const N = ['X', 'Y', 'Z'];
+    const c = [0, 1, 2].find((k) => !flipped.includes(k as Axis))!;
+    this.say(T.axisOrigin.flipped(N[flipped[0]]!, N[flipped[1]]!, N[c]!));
+  }
+  /** Axis origins in FULL px (rounded like the lines). */
+  private axisOriginFull(): { object: V2 | null; room: V2 | null } {
+    const r4 = (v: number) => Math.round(v * 1e4) / 1e4;
+    const f = (p: V2 | null) => (p ? (toFull(p, this.crop).map(r4) as V2) : null);
+    return { object: f(this.axisOrigins.object), room: f(this.axisOrigins.room) };
+  }
+  /** `axisOrigin` block of the source file: only written once an origin is set (older files stay byte-identical). */
+  private axisOriginFile(): { axisOrigin?: { object: V2 | null; room: V2 | null } } {
+    const o = this.axisOriginFull();
+    return o.object || o.room ? { axisOrigin: o } : {};
   }
   solvePosition(): boolean {
     if (this.completePairs.length < 2) {
@@ -1303,6 +1450,8 @@ export class MatchState {
       edgeSnap: this.edgeSnap,
       lockVp: this.lockVp,
       vpModes: [...this.vpModes] as VpModes,
+      axisOrigin: this.axisOriginFull(),
+      originUseDetected: this.originUseDetected,
     };
     try {
       localStorage.setItem(this.storageKey, JSON.stringify(data));
@@ -1341,6 +1490,13 @@ export class MatchState {
         this.rays = d.rays !== false;
         this.roomAligned = d.roomAligned !== false;
         this.roomYaw = Number.isFinite(d.roomYaw) ? d.roomYaw! : 0;
+      }
+      // axis origin: v2 only (full px → crop px with the stored transform); absent = not set
+      {
+        const t = d.v === 2 && d.crop && d.crop.s > 0 ? d.crop : this.crop;
+        const o = d.v === 2 ? d.axisOrigin : null;
+        this.axisOrigins = { object: isPt(o?.object) ? toCrop(o.object, t) : null, room: isPt(o?.room) ? toCrop(o.room, t) : null };
+        this.originUseDetected = d.originUseDetected !== false;
       }
       // masters: the stored map wins, then line flags (drafts), then the default rule (first line per axis)
       const stored = parseMasterMap(d.master);
