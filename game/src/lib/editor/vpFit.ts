@@ -214,12 +214,98 @@ export function fitVP(lines: readonly Seg[], frame: Frame = frameOf(lines), opts
   return { vp, point: vpPoint(vp), resDeg, outlier, rmsDeg, rms: Math.sqrt(px / Math.max(1, inl.length)) };
 }
 
+// ---------- parallel axes (VP at infinity) ----------
+/**
+ * Per-axis VP mode. 'auto' = free best-fit VP (finite or at infinity, whatever the lines say);
+ * 'parallel' = the VP is forced to infinity: the lines share one image direction (e.g. verticals of a level camera).
+ */
+export type VpMode = 'auto' | 'parallel';
+export type VpModes = [VpMode, VpMode, VpMode];
+export const AUTO_MODES: VpModes = ['auto', 'auto', 'auto'];
+
+/** Signed angle (deg, −90…90] of direction θ0 relative to segment direction (sign-free lines). */
+const dAng = (th: number, th0: number): number => {
+  let d = ((th - th0) % 180 + 180) % 180;
+  if (d > 90) d -= 180;
+  return d;
+};
+
+/**
+ * Parallel fit: weighted (by length) mean direction of ≥ 2 segments, by doubled-angle averaging (sign-free),
+ * with the same outlier rejection as fitVP (the worst line is dropped while it is > max(2°, 3 × median) and more
+ * than 3 inliers remain). The VP is [cos θ, sin θ, 0]; residuals are the angular deviations from θ.
+ */
+export function fitParallel(lines: readonly Seg[]): VpFit | null {
+  const th = lines.map((l) => Math.atan2(l.b[1] - l.a[1], l.b[0] - l.a[0]) * D);
+  const len = lines.map((l) => Math.hypot(l.b[0] - l.a[0], l.b[1] - l.a[1]));
+  const ok = len.map((n) => n > 1e-9);
+  if (ok.filter(Boolean).length < 2) return null;
+  const outlier = lines.map(() => false);
+  const mean = (): number => {
+    let sx = 0;
+    let sy = 0;
+    th.forEach((t, i) => {
+      if (!ok[i] || outlier[i]) return;
+      sx += len[i]! * Math.cos((2 * t) / D);
+      sy += len[i]! * Math.sin((2 * t) / D);
+    });
+    return (Math.atan2(sy, sx) * D) / 2;
+  };
+  let t0 = mean();
+  for (;;) {
+    const inl = lines.map((_, i) => i).filter((i) => ok[i] && !outlier[i]);
+    if (inl.length <= 3) break;
+    const r = inl.map((i) => Math.abs(dAng(th[i]!, t0)));
+    const med = Math.max(median(r), 0.25);
+    let wi = 0;
+    for (let k = 1; k < r.length; k++) if (r[k]! > r[wi]!) wi = k;
+    if (r[wi]! <= Math.max(RES_BAD_DEG, 3 * med)) break;
+    outlier[inl[wi]!] = true;
+    t0 = mean();
+  }
+  let vp: V3 = [Math.cos(t0 / D), Math.sin(t0 / D), 0];
+  if (vp[0] < 0 || (vp[0] === 0 && vp[1] < 0)) vp = [-vp[0], -vp[1], 0];
+  const resDeg = th.map((t, i) => (ok[i] ? Math.abs(dAng(t, t0)) : 0));
+  const inl = lines.map((_, i) => i).filter((i) => ok[i] && !outlier[i]);
+  const rmsDeg = Math.sqrt(inl.reduce((s, i) => s + resDeg[i]! ** 2, 0) / Math.max(1, inl.length));
+  // px: distance of endpoint a from the line through the midpoint along θ
+  let px = 0;
+  for (const i of inl) {
+    const l = lines[i]!;
+    const m: V2 = [(l.a[0] + l.b[0]) / 2, (l.a[1] + l.b[1]) / 2];
+    px += ((l.a[0] - m[0]) * vp[1] - (l.a[1] - m[1]) * vp[0]) ** 2;
+  }
+  return { vp, point: null, resDeg, outlier, rmsDeg, rms: Math.sqrt(px / Math.max(1, inl.length)) };
+}
+
+/** fitVP or fitParallel, by mode. */
+export function fitVPMode(lines: readonly Seg[], frame: Frame = frameOf(lines), mode: VpMode = 'auto'): VpFit | null {
+  return mode === 'parallel' ? fitParallel(lines) : fitVP(lines, frame);
+}
+
+/** A suggestion to switch an axis to 'parallel' fires when the free VP is this many image diagonals away … */
+export const PARALLEL_FAR_DIAG = 20;
+/**
+ * … or when forcing parallel costs (almost) nothing: parallel RMS ≤ max(0.25°, 1.5 × free RMS + 0.1°).
+ * Returns null when there aren't ≥ 2 lines.
+ */
+export function parallelSuggestion(lines: readonly Seg[], frame: Frame, diag: number): { suggest: boolean; far: boolean; distDiag: number; autoDeg: number; parDeg: number } | null {
+  const a = fitVP(lines, frame);
+  const p = fitParallel(lines);
+  if (!a || !p) return null;
+  const pt = a.point;
+  const distDiag = pt ? Math.hypot(pt[0] - frame.cx, pt[1] - frame.cy) / Math.max(1e-9, diag) : Infinity;
+  const far = distDiag > PARALLEL_FAR_DIAG;
+  const cheap = p.rmsDeg <= Math.max(0.25, 1.5 * a.rmsDeg + 0.1);
+  return { suggest: far || cheap, far, distDiag, autoDeg: a.rmsDeg, parDeg: p.rmsDeg };
+}
+
 /** Per-axis fits for a set of guide lines (null where an axis has < 2 lines). */
-export function fitAxes(lines: readonly GuideLine[], frame?: Frame): ({ fit: VpFit; ids: number[] } | null)[] {
+export function fitAxes(lines: readonly GuideLine[], frame?: Frame, modes: readonly VpMode[] = AUTO_MODES): ({ fit: VpFit; ids: number[] } | null)[] {
   const f = frame ?? frameOf(lines);
   return ([0, 1, 2] as Axis[]).map((axis) => {
     const ls = lines.filter((l) => l.axis === axis);
-    const fit = fitVP(ls, f);
+    const fit = fitVPMode(ls, f, modes[axis] ?? 'auto');
     return fit ? { fit, ids: ls.map((l) => l.id) } : null;
   });
 }
@@ -253,14 +339,14 @@ export type ConsolidateResult = {
  * corner instead, so the shared corner (and every other line on it) stays put. A line with both ends linked is
  * skipped and reported (turning it would tear a corner apart). Returns new line objects; the input is not changed.
  */
-export function consolidate(lines: readonly GuideLine[], axes: readonly Axis[], frame?: Frame, tolDeg = 1e-6): ConsolidateResult {
+export function consolidate(lines: readonly GuideLine[], axes: readonly Axis[], frame?: Frame, tolDeg = 1e-6, modes: readonly VpMode[] = AUTO_MODES): ConsolidateResult {
   const f = frame ?? frameOf(lines);
   const out: GuideLine[] = lines.map((l) => ({ ...l, a: [...l.a] as V2, b: [...l.b] as V2, ...(l.links ? { links: { ...l.links } } : {}) }));
   const moved: number[] = [];
   const skipped: { id: number; reason: string }[] = [];
   for (const axis of axes) {
     const ls = lines.filter((l) => l.axis === axis);
-    const fit = fitVP(ls, f);
+    const fit = fitVPMode(ls, f, modes[axis] ?? 'auto');
     if (!fit) continue;
     ls.forEach((l, i) => {
       if (fit.resDeg[i]! <= tolDeg) return;
@@ -288,12 +374,20 @@ export function consolidate(lines: readonly GuideLine[], axes: readonly Axis[], 
  * "Lock to VP": the VP fitted from the OTHER lines of `line`'s axis (needs ≥ 2 of them), or null.
  * `exclude` = further lines that move with the drag (they are left out of the fit too).
  */
-export function lockVp(lines: readonly GuideLine[], line: number, frame?: Frame, exclude: readonly number[] = []): V3 | null {
+export function lockVp(lines: readonly GuideLine[], line: number, frame?: Frame, exclude: readonly number[] = [], modes: readonly VpMode[] = AUTO_MODES): V3 | null {
   const me = lines.find((l) => l.id === line);
   if (!me) return null;
   const others = lines.filter((l) => l.axis === me.axis && l.id !== line && !exclude.includes(l.id));
-  if (others.length < 2) return null;
-  return fitVP(others, frame ?? frameOf(lines))?.vp ?? null;
+  const mode = modes[me.axis] ?? 'auto';
+  // parallel: one other line already fixes the direction
+  if (others.length < (mode === 'parallel' ? 1 : 2)) return null;
+  if (mode === 'parallel' && others.length === 1) {
+    const o = others[0]!;
+    const d: V2 = [o.b[0] - o.a[0], o.b[1] - o.a[1]];
+    const n = Math.hypot(d[0], d[1]);
+    return n > 1e-9 ? [d[0] / n, d[1] / n, 0] : null;
+  }
+  return fitVPMode(others, frame ?? frameOf(lines), mode)?.vp ?? null;
 }
 
 /** Project p onto the line through `fixed` and the VP (the dragged endpoint slides along that ray). */

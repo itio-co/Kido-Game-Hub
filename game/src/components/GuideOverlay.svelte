@@ -92,6 +92,78 @@
     return clip(from, [from[0] + (vp[0] * sg * far) / n, from[1] + (vp[1] * sg * far) / n]);
   }
 
+  /**
+   * "เส้นต่อถึงขอบ": the whole line of a guide — from its VP (or where it enters the view when the VP is off
+   * screen), through the drawn segment, on to the view edge. VP at infinity → both directions. Clipped to the view.
+   */
+  function fullRay(l: { a: V2; b: V2 }, vp: V3): [V2, V2] | null {
+    const p = vpPoint(vp);
+    if (!p) return extend(l.a, l.b);
+    const m: V2 = [(l.a[0] + l.b[0]) / 2, (l.a[1] + l.b[1]) / 2];
+    const d: V2 = [m[0] - p[0], m[1] - p[1]];
+    const n = Math.hypot(d[0], d[1]);
+    if (n < 1e-9) return extend(l.a, l.b);
+    const far = Math.max(vr.w, vr.h) * 4 + Math.hypot(m[0] - vr.x0, m[1] - vr.y0);
+    return clip(p, [m[0] + (d[0] / n) * far, m[1] + (d[1] / n) * far]);
+  }
+  /** Ray (full or segment→VP) of one line against a fitted VP. */
+  function rayOf(l: { a: V2; b: V2 }, vp: V3): [V2, V2] | null {
+    if (st.rays) return fullRay(l, vp);
+    // start the ray at the end of the line nearer to the VP
+    const vpP = vpPoint(vp);
+    const da = vpP ? Math.hypot(l.a[0] - vpP[0], l.a[1] - vpP[1]) : 0;
+    const db = vpP ? Math.hypot(l.b[0] - vpP[0], l.b[1] - vpP[1]) : 0;
+    let start: V2 = da < db ? l.a : l.b;
+    if (!vpP) {
+      const mx = (l.a[0] + l.b[0]) / 2;
+      const my = (l.a[1] + l.b[1]) / 2;
+      const sg = Math.sign(vp[2] || 1);
+      start = (l.a[0] - mx) * vp[0] * sg + (l.a[1] - my) * vp[1] * sg > 0 ? l.a : l.b;
+    }
+    return rayTo(start, vp);
+  }
+  /** Ghost (other group) lines with their own faint rays; [] when the ghost is hidden. */
+  const ghostInfo = $derived.by(() => {
+    if (!st.ghost) return [];
+    return st.otherLines.map((l) => {
+      const f = st.ghostFits[l.axis];
+      const ray = f && f.ids.includes(l.id) ? rayOf(l, f.fit.vp) : st.rays ? extend(l.a, l.b) : null;
+      return { line: l, ray };
+    });
+  });
+  const highlighted = $derived(new Set(st.highlight?.ids ?? []));
+
+  // ---------- guide line ↔ mock-up edges ----------
+  $effect(() => {
+    void st.imageRect.src;
+    void st.loadEdges();
+  });
+  /** Line being dragged (for the live edge label / ticks). */
+  let dragId = $state<number | null>(null);
+  /** The dragged line was pulled onto an image edge ("ดูดเข้าขอบภาพ" while dragging). */
+  let edgeSnapped = $state(false);
+  /** Per active line: alignment with the image edges (offset in ref px, band, samples for the ticks). */
+  const edgeInfo = $derived.by(() => {
+    const out = new Map<number, ReturnType<MatchState['edgeAlignOf']>>();
+    if (!st.edgeMap || st.edgeMode === 'off') return out;
+    for (const l of st.lines) out.set(l.id, st.edgeAlignOf(l.a, l.b));
+    return out;
+  });
+  /** Lines whose perpendicular ticks (line → detected edge) are drawn. */
+  const tickIds = $derived.by(() => {
+    if (!st.showEdges) return new Set<number>();
+    if (st.edgeMode === 'always' && dragId === null) return new Set(st.lines.map((l) => l.id));
+    const ids = new Set<number>();
+    if (dragId !== null) ids.add(dragId);
+    else if (st.selectedLine !== null) ids.add(st.selectedLine);
+    return ids;
+  });
+  const fmtPx = (v: number | null | undefined): string => (v === null || v === undefined ? '—' : `${v < 10 ? v.toFixed(1) : Math.round(v)} px`);
+  const tickColor = (off: number | null): string => {
+    const d = Math.abs(off ?? 99) / (st.refPerImg || 1);
+    return d < 1 ? '#3ddc6a' : d <= 2.5 ? '#ffb020' : '#ff3030';
+  };
+
   /** Per line: residual to its axis VP (degrees), colour band, outlier flag and the faint ray to the VP. */
   const lineInfo = $derived.by(() => {
     const out = new Map<number, { deg: number; band: 'good' | 'warn' | 'bad'; outlier: boolean; ray: [V2, V2] | null }>();
@@ -101,18 +173,7 @@
         const l = st.lines.find((x) => x.id === id);
         if (!l) return;
         const deg = f.fit.resDeg[i]!;
-        // start the ray at the end of the line nearer to the VP
-        const vpP = vpPoint(f.fit.vp);
-        const da = vpP ? Math.hypot(l.a[0] - vpP[0], l.a[1] - vpP[1]) : 0;
-        const db = vpP ? Math.hypot(l.b[0] - vpP[0], l.b[1] - vpP[1]) : 0;
-        let start: V2 = da < db ? l.a : l.b;
-        if (!vpP) {
-          const mx = (l.a[0] + l.b[0]) / 2;
-          const my = (l.a[1] + l.b[1]) / 2;
-          const sg = Math.sign(f.fit.vp[2] || 1);
-          start = (l.a[0] - mx) * f.fit.vp[0] * sg + (l.a[1] - my) * f.fit.vp[1] * sg > 0 ? l.a : l.b;
-        }
-        out.set(id, { deg, band: residualBand(deg), outlier: f.fit.outlier[i]!, ray: rayTo(start, f.fit.vp) });
+        out.set(id, { deg, band: residualBand(deg), outlier: f.fit.outlier[i]!, ray: rayOf(l, f.fit.vp) });
       });
     });
     return out;
@@ -123,20 +184,23 @@
 
   /** Measured vanishing points: on-screen marker, or an arrow at the edge pointing to it. */
   const vpMarks = $derived.by(() => {
-    const out: { axis: 0 | 1 | 2; inside: boolean; at: V2; angle: number; dist: number }[] = [];
+    const out: { axis: 0 | 1 | 2; inside: boolean; at: V2; angle: number; dist: number; par: boolean }[] = [];
     const cx = vr.x0 + vr.w / 2;
     const cy = vr.y0 + vr.h / 2;
     st.vps.forEach((fit, axis) => {
       if (!fit) return;
       const [X, Y, W] = fit.vp;
       const finite = Math.abs(W) > 1e-12 * Math.hypot(X, Y);
-      const p: V2 | null = finite ? [X / W, Y / W] : null;
+      const par = st.vpModes[axis] === 'parallel';
+      const p: V2 | null = finite && !par ? [X / W, Y / W] : null;
       const inside = !!p && p[0] > vr.x0 && p[0] < vr.x0 + vr.w && p[1] > vr.y0 && p[1] < vr.y0 + vr.h;
       if (inside && p) {
-        out.push({ axis: axis as 0 | 1 | 2, inside, at: p, angle: 0, dist: 0 });
+        out.push({ axis: axis as 0 | 1 | 2, inside, at: p, angle: 0, dist: 0, par });
         return;
       }
-      const dir: V2 = p ? [p[0] - cx, p[1] - cy] : [X * Math.sign(W || 1), Y * Math.sign(W || 1)];
+      let dir: V2 = p ? [p[0] - cx, p[1] - cy] : [X * Math.sign(W || 1), Y * Math.sign(W || 1)];
+      // parallel: a sign-free direction — put the marker on the top / right side for a stable place
+      if (par && (dir[1] > 1e-9 || (Math.abs(dir[1]) <= 1e-9 && dir[0] < 0))) dir = [-dir[0], -dir[1]];
       const n = Math.hypot(dir[0], dir[1]) || 1;
       const u: V2 = [dir[0] / n, dir[1] / n];
       const pad = 26 * s;
@@ -149,6 +213,7 @@
         at: [cx + u[0] * t, cy + u[1] * t],
         angle: (Math.atan2(u[1], u[0]) * 180) / Math.PI,
         dist: p ? Math.hypot(p[0] - cx, p[1] - cy) : Infinity,
+        par,
       });
     });
     return out;
@@ -283,6 +348,8 @@
     svg!.setPointerCapture(event.pointerId);
     drag = next;
     hint = null;
+    edgeSnapped = false;
+    dragId = next.kind === 'pair' ? null : next.id;
     st.beginLive();
     if (next.kind === 'pair') st.selectedPair = next.id;
     else {
@@ -297,7 +364,7 @@
     const members = st.members({ line: id, end });
     let lock: LineDrag['lock'];
     if (st.lockVp) {
-      const vp = lockVp(st.lines, id, st.vpFrame, members.map((m) => m.line));
+      const vp = lockVp(st.lines, id, st.vpFrame, members.map((m) => m.line), st.vpModes);
       if (vp) lock = { fixed: [...line[end === 'a' ? 'b' : 'a']], vp, axis: line.axis };
     }
     startHandle(event, { kind: 'line', id, end, off: [at[0] - p[0], at[1] - p[1]], members, x: event.clientX, y: event.clientY, moved: false, lock });
@@ -309,6 +376,7 @@
         if (drag?.kind !== 'line' || drag.id !== id || drag.moved) return;
         st.dropLastPush();
         drag = null;
+        dragId = null;
         loupe = null;
         lockRay = null;
         st.endLive();
@@ -369,10 +437,24 @@
       // locked: slide along the ray from the fixed end to the VP of the other lines of this axis
       const lock = d.lock;
       if (lock) q = lockedPoint(lock.fixed, lock.vp, q) ?? q;
-      let t = snapOn(event) ? snapEndpoint(st.lines, { line: d.id, end: d.end }, q, threshold(event), d.members) : null;
+      let t = snapOn(event) ? snapEndpoint(st.snapPool, { line: d.id, end: d.end }, q, threshold(event), d.members) : null;
       // with the lock, a corner still wins when it (nearly) lies on the ray; an intersection is on the ray by construction
       if (t && lock && (t.kind === 'segment' || distToRay(lock.fixed, lock.vp, t.point) > threshold(event))) t = null;
       if (t) q = t.point;
+      // lowest priority: pull the line onto the image edge under it (other end fixed)
+      edgeSnapped = false;
+      if (!t && !lock && st.edgeSnap && !event.altKey && st.edgeMap) {
+        const l = st.lines.find((x) => x.id === d.id);
+        if (l) {
+          const other = d.end === 'a' ? l.b : l.a;
+          const r = d.end === 'a' ? st.edgeFitSegment(q, other, { b: true }, 6) : st.edgeFitSegment(other, q, { a: true }, 6);
+          const nq = r ? (d.end === 'a' ? r.a : r.b) : null;
+          if (nq && Math.hypot(nq[0] - q[0], nq[1] - q[1]) < threshold(event)) {
+            q = nq;
+            edgeSnapped = true;
+          }
+        }
+      }
       lockRay = lock ? { axis: lock.axis, ray: rayTo(lock.fixed, lock.vp) } : null;
       hint = t ? { ...t, from: d.end } : null;
       setEnds(d.members, q);
@@ -383,10 +465,19 @@
       const dy = p[1] - d.p0[1];
       let a: V2 = [d.a0[0] + dx, d.a0[1] + dy];
       let b: V2 = [d.b0[0] + dx, d.b0[1] + dy];
-      const t = snapOn(event) ? snapLine(st.lines, d.id, a, b, threshold(event), [...d.ma, ...d.mb]) : null;
+      const t = snapOn(event) ? snapLine(st.snapPool, d.id, a, b, threshold(event), [...d.ma, ...d.mb]) : null;
       if (t) {
         a = [a[0] + t.delta[0], a[1] + t.delta[1]];
         b = [b[0] + t.delta[0], b[1] + t.delta[1]];
+      }
+      edgeSnapped = false;
+      if (!t && st.edgeSnap && !event.altKey && st.edgeMap) {
+        const r = st.edgeFitSegment(a, b, {}, 6);
+        if (r && Math.max(Math.hypot(r.a[0] - a[0], r.a[1] - a[1]), Math.hypot(r.b[0] - b[0], r.b[1] - b[1])) < threshold(event)) {
+          a = r.a;
+          b = r.b;
+          edgeSnapped = true;
+        }
       }
       hint = t ? { ...t, from: t.moved } : null;
       setEnds(d.ma, a);
@@ -406,12 +497,15 @@
     clearPress();
     const t = hint;
     hint = null;
+    dragId = null;
+    edgeSnapped = false;
     loupe = null;
     lockRay = null;
     finishLive(d);
     if (d.kind === 'pair') return onChange();
     // endpoints that land on another axis's endpoint become one shared corner
-    if (t?.kind === 'endpoint' && t.end && t.from) {
+    // (corners never link across groups: a ghost line is only a snap target)
+    if (t?.kind === 'endpoint' && t.end && t.from && st.isActive(t.line)) {
       st.link({ line: d.id, end: t.from }, { line: t.line, end: t.end });
       say?.('เชื่อมมุมแล้ว — ลากไปด้วยกัน (กดค้างที่มุมเพื่อแยก)');
     }
@@ -500,10 +594,34 @@
   role="application"
   aria-label="เส้นนำสายตา ลากปลายเส้นให้ทับขอบในภาพ"
   data-guides
+  data-edge-mode={st.edgeMode}
+  data-edge-ready={st.edgeMap ? 'true' : null}
 >
+  {#if st.showEdges && st.edgeUrl}
+    {@const img = st.imageRect}
+    <g class="edgelayer" data-edge-overlay>
+      <rect x={vr.x0} y={vr.y0} width={vr.w} height={vr.h} class="edim" />
+      <image href={st.edgeUrl} x={img.x} y={img.y} width={img.w} height={img.h} preserveAspectRatio="none" class="eimg" />
+    </g>
+  {/if}
   {#if horizon}
     <line x1={horizon[0][0]} y1={horizon[0][1]} x2={horizon[1][0]} y2={horizon[1][1]} class="horizon" />
   {/if}
+  {#each ghostInfo as g (g.line.id)}
+    {@const c = AXIS_COLORS[g.line.axis]}
+    <g class="ghost" data-ghost-line={g.line.id} data-group={st.otherGroup}>
+      {#if g.ray}
+        <line x1={g.ray[0][0]} y1={g.ray[0][1]} x2={g.ray[1][0]} y2={g.ray[1][1]} stroke={c} class="gray" data-ray={g.line.id} />
+      {/if}
+      {#if highlighted.has(g.line.id)}
+        <line x1={g.line.a[0]} y1={g.line.a[1]} x2={g.line.b[0]} y2={g.line.b[1]} class="hl" data-hl={g.line.id} />
+      {/if}
+      <line x1={g.line.a[0]} y1={g.line.a[1]} x2={g.line.b[0]} y2={g.line.b[1]} stroke={c} class="gseg" />
+      {#each ['a', 'b'] as const as end (end)}
+        <circle cx={g.line[end][0]} cy={g.line[end][1]} r={4 * s} fill={c} class="gdot" />
+      {/each}
+    </g>
+  {/each}
   {#each st.lines as line (line.id)}
     {@const info = lineInfo.get(line.id)}
     {@const ext = info ? null : extend(line.a, line.b)}
@@ -513,13 +631,40 @@
       <line x1={ext[0][0]} y1={ext[0][1]} x2={ext[1][0]} y2={ext[1][1]} stroke={c} class="ext" />
     {/if}
     {#if info?.ray}
-      <line x1={info.ray[0][0]} y1={info.ray[0][1]} x2={info.ray[1][0]} y2={info.ray[1][1]} stroke={c} class="vray" data-vp-ray={line.id} />
+      <line x1={info.ray[0][0]} y1={info.ray[0][1]} x2={info.ray[1][0]} y2={info.ray[1][1]} stroke={c} class="vray" class:full={st.rays}
+        data-vp-ray={line.id} data-ray={st.rays ? line.id : null} />
+    {/if}
+    {#if highlighted.has(line.id)}
+      <line x1={line.a[0]} y1={line.a[1]} x2={line.b[0]} y2={line.b[1]} class="hl" data-hl={line.id} />
+    {/if}
+    {@const ea = edgeInfo.get(line.id)}
+    {#if ea && st.showEdges}
+      <line x1={line.a[0]} y1={line.a[1]} x2={line.b[0]} y2={line.b[1]} class="ehalo {ea.band}" data-edge-halo={line.id} data-edge-band={ea.band}
+        data-edge-off={ea.meanOff === null ? null : ea.meanOff.toFixed(3)} data-edge-score={ea.score.toFixed(3)} />
     {/if}
     {#if info}
       <line x1={line.a[0]} y1={line.a[1]} x2={line.b[0]} y2={line.b[1]} class="halo {info.band}" class:outlier={info.outlier}
         data-res={line.id} data-band={info.band} data-deg={info.deg.toFixed(4)} data-outlier={info.outlier || null} />
     {/if}
     <line x1={line.a[0]} y1={line.a[1]} x2={line.b[0]} y2={line.b[1]} stroke={c} class="seg" class:sel />
+    {#if ea && tickIds.has(line.id)}
+      <g class="ticks" data-edge-ticks={line.id}>
+        {#each ea.samples as sm, i (i)}
+          {#if sm.q}
+            <line x1={sm.p[0]} y1={sm.p[1]} x2={sm.q[0]} y2={sm.q[1]} stroke={tickColor(sm.off)} class="tick" data-edge-tick />
+            <circle cx={sm.q[0]} cy={sm.q[1]} r={1.8 * s} fill={tickColor(sm.off)} class="tickdot" />
+          {:else}
+            <circle cx={sm.p[0]} cy={sm.p[1]} r={1.5 * s} class="tickmiss" />
+          {/if}
+        {/each}
+      </g>
+    {/if}
+    {#if ea && dragId === line.id && st.showEdges}
+      {@const mx = (line.a[0] + line.b[0]) / 2}
+      {@const my = (line.a[1] + line.b[1]) / 2}
+      <text x={mx + 10 * s} y={my + 22 * s} font-size={13 * s} stroke-width={3 * s} class="elabel {ea.band}" data-edge-label={line.id}
+        >{ea.meanOff === null ? 'ไม่พบขอบภาพใกล้เส้น' : `ห่างขอบภาพ ${fmtPx(ea.meanOff)}`}{edgeSnapped ? ' · ดูดแล้ว' : ''}</text>
+    {/if}
     {#if info && info.band !== 'good'}
       <text x={(line.a[0] + line.b[0]) / 2 + 8 * s} y={(line.a[1] + line.b[1]) / 2 - 8 * s} font-size={12 * s} stroke-width={3 * s} class="rlabel {info.band}"
         data-res-label={line.id}>{info.outlier ? '⚠ ' : ''}{fmtDeg(info.deg)}</text>
@@ -583,6 +728,18 @@
         <line x1={m.at[0]} y1={m.at[1] - 14 * s} x2={m.at[0]} y2={m.at[1] + 14 * s} stroke={AXIS_COLORS[m.axis]} />
         <text x={m.at[0] + 12 * s} y={m.at[1] - 10 * s} font-size={14 * s} fill={AXIS_COLORS[m.axis]}>VP {AXIS_NAMES[m.axis]}</text>
       </g>
+    {:else if m.par}
+      <!-- parallel axis: VP at infinity → a two-headed "∞" direction arrow at the edge -->
+      <g class="vp off par" data-vp={m.axis} data-vp-parallel={m.axis} transform="translate({m.at[0]} {m.at[1]})">
+        <g transform="rotate({m.angle})">
+          <line x1={-16 * s} y1={0} x2={16 * s} y2={0} stroke={AXIS_COLORS[m.axis]} stroke-width={3 * s} />
+          <path d="M {8 * s} {-7 * s} L {20 * s} 0 L {8 * s} {7 * s} Z" fill={AXIS_COLORS[m.axis]} />
+          <path d="M {-8 * s} {-7 * s} L {-20 * s} 0 L {-8 * s} {7 * s} Z" fill={AXIS_COLORS[m.axis]} />
+        </g>
+        <text x={0} y={(m.at[1] > vr.y0 + vr.h / 2 ? -16 : 28) * s} font-size={13 * s} text-anchor="middle" fill={AXIS_COLORS[m.axis]}
+          >∞ {AXIS_NAMES[m.axis]} ขนาน</text
+        >
+      </g>
     {:else}
       <g class="vp off" data-vp={m.axis} transform="translate({m.at[0]} {m.at[1]})">
         <g transform="rotate({m.angle})">
@@ -622,9 +779,21 @@
     <svg viewBox={loupeBox.vb.join(' ')} preserveAspectRatio="none">
       <image href={img.src} x={img.x} y={img.y} width={img.w} height={img.h} preserveAspectRatio="none" />
     </svg>
-    <canvas bind:this={loupeCanvas} class="lmodel" class:diff={st.showDiff} style={st.showDiff ? '' : `opacity:${st.opacity / 100}`} data-loupe-model={st.showDiff ? 'diff' : 'overlay'}></canvas>
+    <canvas bind:this={loupeCanvas} class="lmodel" class:diff={st.showDiff} style={st.showDiff ? '' : `opacity:${st.showEdges ? 0 : st.opacity / 100}`} data-loupe-model={st.showDiff ? 'diff' : 'overlay'}></canvas>
     <svg viewBox={loupeBox.vb.join(' ')} preserveAspectRatio="none">
+      {#if st.showEdges && st.edgeUrl}
+        <g data-loupe-edges>
+          <rect x={loupeBox.vb[0]} y={loupeBox.vb[1]} width={loupeBox.vb[2]} height={loupeBox.vb[3]} class="edim" />
+          <image href={st.edgeUrl} x={img.x} y={img.y} width={img.w} height={img.h} preserveAspectRatio="none" class="eimg" />
+        </g>
+      {/if}
       {#each st.lines as line (line.id)}
+        {@const ea = tickIds.has(line.id) ? edgeInfo.get(line.id) : null}
+        {#if ea}
+          {#each ea.samples as sm, i (i)}
+            {#if sm.q}<line x1={sm.p[0]} y1={sm.p[1]} x2={sm.q[0]} y2={sm.q[1]} stroke={tickColor(sm.off)} class="tick" />{/if}
+          {/each}
+        {/if}
         {@const ext = extend(line.a, line.b)}
         {#if ext}<line x1={ext[0][0]} y1={ext[0][1]} x2={ext[1][0]} y2={ext[1][1]} stroke={AXIS_COLORS[line.axis]} class="ext" />{/if}
         <line x1={line.a[0]} y1={line.a[1]} x2={line.b[0]} y2={line.b[1]} stroke={AXIS_COLORS[line.axis]} class="lseg" />
@@ -646,7 +815,9 @@
         <circle cx={c[0]} cy={c[1]} r={1.4 * ls} class="rdot" />
       </g>
     </svg>
-    {#if hint}<span class="lsnap">{SNAP_LABEL[hint.kind]}</span>{/if}
+    {#if hint}<span class="lsnap">{SNAP_LABEL[hint.kind]}</span>
+    {:else if edgeSnapped}<span class="lsnap" data-loupe-edge-snap>ขอบภาพ</span>
+    {:else if dragId !== null && st.showEdges && edgeInfo.get(dragId)}<span class="lsnap edge" data-loupe-edge-off>ห่างขอบ {fmtPx(edgeInfo.get(dragId)?.meanOff)}</span>{/if}
   </div>
 {/if}
 
@@ -656,8 +827,30 @@
   .guides.picking .handle { pointer-events: none; }
   line, circle, path, rect { vector-effect: non-scaling-stroke; }
   .ext { stroke-width: 1.5; stroke-dasharray: 7 6; opacity: 0.85; }
-  .seg { stroke-width: 3; }
-  .vray { stroke-width: 1; opacity: 0.4; }
+  .seg { stroke-width: 3.5; }
+  .vray { stroke-width: 1; opacity: 0.4; pointer-events: none; }
+  .vray.full { stroke-width: 1.2; opacity: 0.5; }
+  .ghost { pointer-events: none; }
+  .gray { stroke-width: 1; opacity: 0.22; }
+  .gseg { stroke-width: 2; opacity: 0.45; stroke-dasharray: 8 4; }
+  .gdot { opacity: 0.45; }
+  .hl { stroke: #fff; stroke-width: 11; stroke-linecap: round; opacity: 0.9; pointer-events: none; stroke-dasharray: 3 3; filter: drop-shadow(0 0 3px #ff00d4); }
+  .edgelayer { pointer-events: none; }
+  .edim { fill: #000; opacity: 0.62; pointer-events: none; }
+  .eimg { pointer-events: none; image-rendering: auto; }
+  .ehalo { stroke-width: 16; stroke-linecap: round; opacity: 0.32; pointer-events: none; }
+  .ehalo.good { stroke: #3ddc6a; }
+  .ehalo.warn { stroke: #ffb020; }
+  .ehalo.bad { stroke: #ff3030; }
+  .ehalo.none { stroke: #9aa7b4; stroke-dasharray: 4 6; }
+  .ticks { pointer-events: none; }
+  .tick { stroke-width: 1.6; }
+  .tickmiss { fill: #9aa7b4; opacity: 0.7; }
+  .elabel { font-weight: 700; paint-order: stroke; stroke: rgba(0, 0, 0, 0.85); pointer-events: none; fill: #e8f6ff; }
+  .elabel.good { fill: #7dffa0; }
+  .elabel.warn { fill: #ffc65c; }
+  .elabel.bad { fill: #ff8a8a; }
+  .lsnap.edge { color: #9ff; }
   .halo { stroke-width: 9; stroke-linecap: round; opacity: 0.55; pointer-events: none; }
   .halo.good { stroke: #3ddc6a; }
   .halo.warn { stroke: #ffb020; }

@@ -32,8 +32,26 @@
 
   const band = (deg: number): string => (deg < 0.5 ? 'good' : deg <= 2 ? 'warn' : 'bad');
   const fmtDeg = (deg: number): string => `${deg < 0.1 ? deg.toFixed(2) : deg.toFixed(1)}°`;
-  function consolidate(axis?: Axis): void {
-    const r = st.consolidate(axis);
+  /** "รวม X" (mode → auto, converge to the VP) / "ขนาน X" (mode → parallel, exactly parallel) / all axes (keep modes). */
+  function consolidate(axis?: Axis, mode?: 'auto' | 'parallel'): void {
+    const r = st.consolidate(axis, mode);
+    let msg = r.message;
+    if (axis !== undefined && mode && !st.solveLines()) msg += ` · ${st.message}`;
+    onChange();
+    say(msg);
+  }
+  function modeHint(a: Axis): string {
+    const h = st.parallelHints[a];
+    if (!h) return '';
+    return h.far ? `จุดลับตาไกล ${Number.isFinite(h.distDiag) ? `${Math.round(h.distDiag)}×` : '∞ ×'} ทแยงภาพ` : `ขนานแทบไม่เสียความแม่น (${fmtDeg(h.parDeg)})`;
+  }
+  const selEdge = $derived.by(() => {
+    const l = st.lines.find((x) => x.id === st.selectedLine);
+    return l && st.edgeMap && st.edgeMode !== 'off' ? st.edgeAlignOf(l.a, l.b) : null;
+  });
+  function edgeRefine(which: 'selected' | 'all'): void {
+    const r = st.edgeRefine(which);
+    if (r.moved) st.solveLines();
     onChange();
     say(r.message);
   }
@@ -88,9 +106,23 @@
 
   <div class="seg3" role="radiogroup" aria-label="ภาพที่ใช้">
     <button type="button" class:on={st.image === 'crop'} aria-checked={st.image === 'crop'} role="radio" data-image="crop"
-      onclick={() => { st.setImage('crop'); onChange(); }}>ภาพครอป</button>
+      onclick={() => { st.setImage('crop'); onChange(); say('เส้นวัตถุ (ภาพครอป)'); }}>ภาพครอป · วัตถุ</button>
     <button type="button" class:on={st.image === 'wide'} aria-checked={st.image === 'wide'} role="radio" data-image="wide"
-      disabled={!st.asset.ref?.mockup} onclick={() => { st.setImage('wide'); onChange(); }}>Mock-up เต็ม</button>
+      disabled={!st.asset.ref?.mockup} onclick={() => { st.setImage('wide'); onChange(); say('เส้นห้อง (Mock-up เต็ม)'); }}>Mock-up เต็ม · ห้อง</button>
+  </div>
+  {#if st.asset.ref?.mockup}
+    <p class="tip group" data-group={st.group}>
+      กำลังแก้ <b class="gname g-{st.group}">เส้น{st.groupName}</b> ({st.lines.length} เส้น) · เส้น{st.group === 'room' ? 'วัตถุ' : 'ห้อง'} {st.otherLines.length} เส้น
+      {st.group === 'room' ? 'วาดตามผนัง พื้น เพดาน ขอบประตู/หน้าต่าง' : 'วาดตามขอบของวัตถุ'} — ทั้งสองชุดใช้กล้องตัวเดียวกัน
+    </p>
+  {/if}
+  <div class="actions snaprow">
+    {#if st.asset.ref?.mockup}
+      <button type="button" class:on={st.ghost} aria-pressed={st.ghost} data-ghost
+        onclick={() => { st.ghost = !st.ghost; onChange(); }}>👻 เส้น{st.group === 'room' ? 'วัตถุ' : 'ห้อง'}จาง ๆ {st.ghost ? 'เปิด' : 'ปิด'}</button>
+    {/if}
+    <button type="button" class:on={st.rays} aria-pressed={st.rays} data-rays
+      onclick={() => { st.rays = !st.rays; onChange(); }}>↔ เส้นต่อถึงขอบ {st.rays ? 'เปิด' : 'ปิด'}</button>
   </div>
 
   <h3>การแสดงผล</h3>
@@ -136,27 +168,64 @@
     <div class="vphead">จุดลับตารวม <small>(หาจุดที่ดีที่สุดจากทุกเส้นของแกน)</small></div>
     {#each [0, 1, 2] as const as a (a)}
       {@const f = st.vpFits[a]}
-      <div class="vprow" data-vp-row={a}>
+      {@const par = st.vpModes[a] === 'parallel'}
+      <div class="vprow vpm" data-vp-row={a} data-vp-mode={st.vpModes[a]}>
         <b class="ax" style="color:{AXIS_COLORS[a]}">{AXIS_NAMES[a]}</b>
         {#if f}
           {@const nOut = f.fit.outlier.filter(Boolean).length}
-          <span class="rms {band(f.fit.rmsDeg)}" data-vp-rms={a} data-rms={f.fit.rmsDeg.toFixed(4)}>RMS {fmtDeg(f.fit.rmsDeg)}</span>
-          <span class="n">{f.ids.length} เส้น{nOut ? ` · ⚠ ${nOut} เส้นเพี้ยน` : ''}</span>
-          <button type="button" class="small" data-consolidate={a} onclick={() => consolidate(a)}>รวม {AXIS_NAMES[a]}</button>
+          <span class="rms {band(f.fit.rmsDeg)}" data-vp-rms={a} data-rms={f.fit.rmsDeg.toFixed(4)}>{par ? '∠' : 'RMS'} {fmtDeg(f.fit.rmsDeg)}</span>
+          <span class="n">{f.ids.length} เส้น{par ? ' · ∞ ขนาน' : ''}{nOut ? ` · ⚠ ${nOut} เส้นเพี้ยน` : ''}</span>
         {:else}
-          <span class="n">ต้องมีอย่างน้อย 2 เส้น</span>
+          <span class="rms">—</span>
+          <span class="n">ต้องมีอย่างน้อย 2 เส้น{par ? ' · ∞ ขนาน' : ''}</span>
         {/if}
+        <span class="pair">
+          <button type="button" class="small mode" class:on={!par} aria-pressed={!par} data-consolidate={a} data-active={!par}
+            title="รวมทุกเส้นเข้าจุดลับตาเดียว (โหมดอัตโนมัติ)" onclick={() => consolidate(a, 'auto')}>รวม {AXIS_NAMES[a]}</button>
+          <button type="button" class="small mode" class:on={par} aria-pressed={par} data-parallel={a} data-active={par}
+            title="ทำให้ทุกเส้นขนานกันตามทิศเฉลี่ย (จุดลับตาที่ ∞)" onclick={() => consolidate(a, 'parallel')}>ขนาน {AXIS_NAMES[a]}</button>
+        </span>
       </div>
+      {#if st.parallelHints[a]}
+        <button type="button" class="hint" data-parallel-hint={a} onclick={() => consolidate(a, 'parallel')}
+          >💡 แกน {AXIS_NAMES[a]} น่าจะขนาน — {modeHint(a)} · แตะเพื่อใช้ "ขนาน {AXIS_NAMES[a]}"</button>
+      {/if}
     {/each}
     <div class="actions">
       <button type="button" data-act="consolidate" disabled={!st.vpFits.some(Boolean)} onclick={() => consolidate()}>🎯 รวมจุดลับตา</button>
       <button type="button" class:on={st.lockVp} aria-pressed={st.lockVp} data-lock-vp
         onclick={() => { st.lockVp = !st.lockVp; onChange(); say(st.lockVp ? 'ล็อกเข้าจุดลับตา: เปิด (แกนที่มี 3 เส้นขึ้นไป)' : 'ล็อกเข้าจุดลับตา: ปิด'); }}>🔒 ล็อกเข้าจุดลับตา {st.lockVp ? 'เปิด' : 'ปิด'}</button>
     </div>
-    <p class="tip legend">สีขอบเส้น = มุมเพี้ยนจากจุดลับตา: <span class="good">● &lt; 0.5°</span> <span class="warn">● ≤ 2°</span> <span class="bad">● &gt; 2°</span> · ⚠ = เส้นเพี้ยนมาก (ไม่นำมาคิด) · <b>รวมจุดลับตา</b> หมุนทุกเส้นรอบจุดกึ่งกลาง (หรือรอบมุมที่เชื่อม) ให้ผ่านจุดเดียวกัน · <b>ล็อก</b>: ลากปลายเส้นแล้วเส้นยังชี้ไปจุดลับตาของเส้นอื่น</p>
+    <p class="tip legend">สีขอบเส้น = มุมเพี้ยนจากจุดลับตา: <span class="good">● &lt; 0.5°</span> <span class="warn">● ≤ 2°</span> <span class="bad">● &gt; 2°</span> · ⚠ = เส้นเพี้ยนมาก (ไม่นำมาคิด) · <b>รวมจุดลับตา</b> หมุนทุกเส้นรอบจุดกึ่งกลาง (หรือรอบมุมที่เชื่อม) ให้ผ่านจุดเดียวกัน · <b>ล็อก</b>: ลากปลายเส้นแล้วเส้นยังชี้ไปจุดลับตาของเส้นอื่น · <b>ขนาน</b>: จุดลับตาอยู่ที่ ∞ (เช่น แกน Z ของกล้องที่ตั้งตรง ไม่ก้ม/เงย) — กล้องจะถูกบังคับให้แกนนั้นขนานกับภาพ · ขนาน 2 แกน (ทัศนมิติจุดเดียว) ต้องล็อกเลนส์หรือใช้คู่จุด</p>
+  </div>
+  <div class="vpbox" data-edge-panel>
+    <div class="vphead">เทียบเส้นกับขอบภาพ <small>(เส้นนำสายตา ↔ ขอบจริงใน Mock-up)</small>
+      {#if !st.edgeMap}<span class="n" data-edge-loading>กำลังหาขอบภาพ…</span>{/if}
+    </div>
+    <div class="seg3" role="radiogroup" aria-label="แสดงขอบภาพ">
+      {#each [['drag', 'ขณะลาก'], ['always', 'เปิดตลอด'], ['off', 'ปิด']] as const as [id, label] (id)}
+        <button type="button" role="radio" aria-checked={st.edgeMode === id} class:on={st.edgeMode === id} data-edge-mode={id}
+          onclick={() => { st.edgeMode = id; onChange(); }}>{label}</button>
+      {/each}
+    </div>
+    {#if selEdge}
+      <div class="vprow" data-edge-readout={selEdge.band} data-edge-off={selEdge.meanOff === null ? null : selEdge.meanOff.toFixed(3)}>
+        <b class="ax">เส้น</b>
+        <span class="rms {selEdge.band === 'none' ? '' : selEdge.band}">{selEdge.meanOff === null ? 'ไม่พบขอบ' : `ห่างขอบภาพ ${selEdge.meanOff.toFixed(1)} px`}</span>
+        <span class="n">คะแนน {Math.round(selEdge.score * 100)}% · เจอขอบ {Math.round(selEdge.coverage * 100)}%</span>
+        <span></span>
+      </div>
+    {/if}
+    <div class="actions">
+      <button type="button" data-act="edge-refine" disabled={st.selectedLine === null || !st.edgeMap} onclick={() => edgeRefine('selected')}>🧷 ดูดเข้าขอบภาพ (เส้นที่เลือก)</button>
+      <button type="button" data-act="edge-refine-all" disabled={!st.lines.length || !st.edgeMap} onclick={() => edgeRefine('all')}>ทุกเส้น</button>
+      <button type="button" class:on={st.edgeSnap} aria-pressed={st.edgeSnap} data-edge-snap
+        onclick={() => { st.edgeSnap = !st.edgeSnap; onChange(); say(st.edgeSnap ? 'ดูดเข้าขอบภาพขณะลาก: เปิด (Alt = ปิดชั่วคราว)' : 'ดูดเข้าขอบภาพขณะลาก: ปิด'); }}>ดูดขณะลาก {st.edgeSnap ? 'เปิด' : 'ปิด'}</button>
+    </div>
+    <p class="tip legend">ภาพจะมืดลงและขอบที่ตรวจพบเรืองแสง · ขีดสั้น ๆ จากเส้นไปขอบ = ระยะห่างจริง: <span class="good">● &lt; 1 px</span> <span class="warn">● ≤ 2.5 px</span> <span class="bad">● &gt; 2.5 px</span> · <b>ดูดเข้าขอบภาพ</b> ฟิตเส้นเข้ากับขอบในแถบ ±8 px (มุมที่เชื่อมอยู่ไม่ขยับ) ย้อนได้</p>
   </div>
   <div class="field" role="radiogroup" aria-label="โหมดเทียบความต่าง">
-    <span>โหมดเทียบความต่าง (โมเดล ⊖ ภาพ: ตรงกัน = มืด, เพี้ยน = เรืองแสง)</span>
+    <span>โหมดเทียบความต่างกับโมเดล (โมเดล ⊖ ภาพ: ตรงกัน = มืด, เพี้ยน = เรืองแสง) · ค่าเริ่มต้น ปิด</span>
     <div class="seg3">
       {#each [['drag', 'ขณะลาก'], ['always', 'เปิดตลอด'], ['off', 'ปิด']] as const as [id, label] (id)}
         <button type="button" role="radio" aria-checked={st.diff === id} class:on={st.diff === id} data-diff-mode={id}
@@ -185,6 +254,47 @@
   <div class="actions col">
     <button type="button" class="primary" data-act="solve-lines" onclick={() => run(() => st.solveLines())}>คำนวณจากเส้น (มุม + เลนส์)</button>
   </div>
+  {#if st.asset.ref?.mockup}
+    <label class="check"><input type="checkbox" checked={st.roomAligned} data-room-aligned
+      onchange={(e) => { st.roomAligned = e.currentTarget.checked; run(() => st.solveLines()); }} /> วัตถุวางตรงกับห้อง (แกน X/Y เดียวกับผนัง)</label>
+    {#if !st.roomAligned}
+      <p class="tip" data-room-yaw={st.roomYaw.toFixed(3)}>วัตถุหมุนจากแนวห้อง <b>{st.roomYaw.toFixed(1)}°</b> (รอบแกน Z) · ใช้ร่วมกันแค่แนวตั้ง/เส้นขอบฟ้า/เลนส์ · ตอนวางโมเดลในห้องให้หมุน Z {st.roomYaw.toFixed(1)}° (อยู่ในไฟล์ส่งออก)</p>
+    {/if}
+    {@const ag = st.agreement}
+    <div class="vpbox" data-agree-panel data-band={ag?.band ?? null}>
+      <div class="vphead">ความสอดคล้อง วัตถุ↔ห้อง
+        {#if ag?.band}<span class="rms {ag.band}" data-agree-overall={ag.band}>{ag.band === 'good' ? '✔ ตรงกัน' : ag.band === 'warn' ? '≈ ใกล้เคียง' : '✖ ไม่ตรง'}{ag.maxDeg !== null ? ` · สูงสุด ${fmtDeg(ag.maxDeg)}` : ''}</span>{/if}
+      </div>
+      {#if !ag}
+        <p class="tip">วาดเส้นทั้งวัตถุ (ภาพครอป) และห้อง (Mock-up เต็ม) เพื่อตรวจว่าตรงกันไหม</p>
+      {:else}
+        {#each ag.axes as a (a.axis)}
+          <button type="button" class="vprow agree" class:hl={st.highlight?.axis === a.axis} data-agree-axis={a.axis} data-band={a.band}
+            data-deg={a.deg === null ? null : a.deg.toFixed(4)} disabled={!a.worst.length}
+            onclick={() => { st.highlightAxis(a.axis); onChange(); if (st.highlight) say(`ไฮไลต์ ${st.highlight.ids.length} เส้นที่เพี้ยนที่สุดของแกน ${AXIS_NAMES[a.axis]}`); }}>
+            <b class="ax" style="color:{AXIS_COLORS[a.axis]}">{AXIS_NAMES[a.axis]}</b>
+            {#if a.deg !== null}
+              <span class="rms {a.band}">{fmtDeg(a.deg)}</span>
+            {:else}
+              <span class="n">—</span>
+            {/if}
+            <span class="n" data-agree-notpar={a.notParallel.length ? a.notParallel.join(',') : null}
+              >{a.deg === null ? 'ต้องมี ≥ 2 เส้นทั้งสองชุด' : a.mode === 'parallel' ? 'มุมต่างของทิศ ∞' : 'มุมต่างของจุดลับตา'}{a.notParallel.length
+                ? ` · ⚠ เส้น${a.notParallel.map((g) => (g === 'object' ? 'วัตถุ' : 'ห้อง')).join('/')}ไม่ขนาน`
+                : ''}</span>
+            <span class="n">ดูเส้น</span>
+          </button>
+        {/each}
+        <div class="vprow" data-agree-focal={ag.fDiffPct === null ? null : ag.fDiffPct.toFixed(2)}>
+          <b class="ax">f</b>
+          {#if ag.fDiffPct !== null}<span class="rms {ag.fBand}">{ag.fDiffPct.toFixed(1)}%</span>{:else}<span class="n">—</span>{/if}
+          <span class="n">เลนส์ วัตถุ {ag.fObject ? `${r(st.lensOfFull(ag.fObject), 1)} มม.` : '—'} · ห้อง {ag.fRoom ? `${r(st.lensOfFull(ag.fRoom), 1)} มม.` : '—'}</span>
+          <span></span>
+        </div>
+        <p class="tip legend">มุมต่าง: <span class="good">● &lt; 1°</span> <span class="warn">● ≤ 3°</span> <span class="bad">● &gt; 3°</span> · เลนส์ต่าง <span class="good">&lt; 5%</span> <span class="warn">≤ 15%</span> · แตะแกนเพื่อไฮไลต์เส้นที่เพี้ยนที่สุด (ทั้งสองชุด)</p>
+      {/if}
+    </div>
+  {/if}
 
   <h3>คู่จุด (โมเดล ↔ ภาพ) <small>{st.completePairs.length} คู่</small></h3>
   <p class="tip">เลือกมุมที่รู้ขนาดจริง (เช่น สูง 55 ซม.) แล้วแตะจุดเดียวกันบนภาพ · 2 คู่ = ตั้งระยะ/ตำแหน่ง · 4–6 คู่ขึ้นไป = คำนวณทั้งหมด</p>
@@ -273,6 +383,16 @@
   .vphead small { font-weight: 400; color: #9fb4c6; }
   .vprow { display: grid; grid-template-columns: 22px auto 1fr auto; align-items: center; gap: 8px; min-height: 40px; font-size: 15px; color: #c5d7e6; }
   .vprow .ax { font-size: 17px; }
+  .vprow.vpm { grid-template-columns: 22px auto 1fr auto; }
+  .pair { display: inline-flex; gap: 6px; }
+  .small.mode { min-width: 64px; min-height: 44px; border: 1px solid #3a5670; background: #1a2836; color: #c5d7e6; }
+  .small.mode.on { background: #8fd8ff; color: #06202f; border-color: #8fd8ff; }
+  .hint { width: 100%; min-height: 44px; text-align: left; font-size: 14px; font-weight: 400; border: 1px dashed #ffd36b; background: rgba(255, 211, 107, 0.08); color: #ffe7a6; border-radius: 8px; padding: 4px 8px; margin: 2px 0 6px; }
+  button.vprow.agree { width: 100%; border: 1px solid transparent; background: transparent; padding: 0 4px; text-align: left; font-weight: 400; min-height: 44px; }
+  button.vprow.agree.hl { border-color: #ff00d4; background: rgba(255, 0, 212, 0.12); }
+  .n { color: #9fb4c6; }
+  .gname.g-object { color: #ffcf4d; }
+  .gname.g-room { color: #8fdfff; }
   .rms { font-weight: 700; font-variant-numeric: tabular-nums; }
   .good { color: #3ddc6a; }
   .warn { color: #ffb020; }

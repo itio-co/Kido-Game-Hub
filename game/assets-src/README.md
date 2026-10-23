@@ -167,7 +167,7 @@ fSpy-style camera matching inside the editor: line the model up with the mock-up
       Ctrl+Z / Ctrl+Y) ย้อนการแก้เส้นได้
     - ขณะลากมี **แว่นขยาย** (~3.5×) แสดงภาพ + โมเดล + เส้นรอบจุด พร้อมกากบาทตรงจุดที่ลาก (บนมือถืออยู่เหนือนิ้ว)
 11. **โหมดเทียบความต่าง**: ขณะลากเส้น/จุด กล้องจะคำนวณใหม่ทุกเฟรม และโมเดลแสดงแบบ difference กับภาพ
-    (ตรงกัน = มืด, เพี้ยน = เรืองแสง) เลือก **ขณะลาก** (ค่าเริ่ม) / **เปิดตลอด** / **ปิด**;
+    (ตรงกัน = มืด, เพี้ยน = เรืองแสง) เลือก **ขณะลาก** / **เปิดตลอด** / **ปิด** (ค่าเริ่ม = ปิด);
     ถ้าคำนวณไม่ได้จะใช้กล้องล่าสุดและขึ้นป้ายเล็ก ๆ ที่มุมภาพ
 12. **จุดลับตารวม** (v0.2.9): วาดเส้นแกนละกี่เส้นก็ได้ ระบบหา **จุดลับตาจุดเดียวต่อแกน** จากทุกเส้น
     (least-squares แบบทนเส้นเพี้ยน) และใช้จุดนั้นคำนวณกล้อง
@@ -179,6 +179,31 @@ fSpy-style camera matching inside the editor: line the model up with the mock-up
       ให้แยกมุมก่อน; ย้อนได้ด้วย ↶
     - **🔒 ล็อกเข้าจุดลับตา**: เมื่อเปิด ลากปลายเส้นของแกนที่มี 3 เส้นขึ้นไป เส้นจะชี้ไปจุดลับตาของเส้น**อื่น**เสมอ
       (ปลายที่ลากเลื่อนไปตามเส้นประ) แม่เหล็กยังดูดมุม/จุดตัดที่อยู่บนเส้นนั้นได้
+13. **เส้นวัตถุ / เส้นห้อง** (v0.2.9): ภาพ **ภาพครอป · วัตถุ** = แก้เส้นของวัตถุ, **Mock-up เต็ม · ห้อง** = แก้เส้นของห้อง
+    (ผนัง พื้น เพดาน ขอบประตู/หน้าต่าง) ทั้งสองชุดใช้กล้องตัวเดียวกัน (ภาพครอปคือส่วนหนึ่งของ Mock-up ที่ x=368, y=540)
+    - **👻 เส้น…จาง ๆ** = แสดงอีกชุดแบบจาง ๆ ไว้เทียบ; แม่เหล็กดูดข้ามชุดได้ (เช่น ปลายเส้นวัตถุดูดเข้าขอบผนัง)
+    - **คำนวณจากเส้น** ใช้เส้นทั้งสองชุดพร้อมกัน; ถ้าวัตถุวางเฉียงห้อง ให้เอาติ๊ก **วัตถุวางตรงกับห้อง** ออก →
+      ระบบหามุมหมุนรอบแกน Z ของวัตถุ (ใส่ในไฟล์ส่งออกด้วย) โดยใช้ร่วมกันแค่แนวตั้ง/เส้นขอบฟ้า/เลนส์
+    - แผง **ความสอดคล้อง วัตถุ↔ห้อง**: มุมต่างของจุดลับตาแต่ละแกน (เขียว < 1°, เหลือง ≤ 3°, แดง > 3°) และเลนส์ต่าง (%)
+      แตะแกน = ไฮไลต์เส้นที่เพี้ยนที่สุดของทั้งสองชุด
+    - ข้อมูลเก่า (มีแต่เส้นวัตถุ) โหลดได้ตามเดิม
+14. **↔ เส้นต่อถึงขอบ** (ค่าเริ่ม เปิด): ทุกเส้นลากต่อจากจุดลับตา ผ่านเส้น ไปจนสุดขอบภาพ
+    (ถ้าจุดลับตาอยู่ที่ ∞ จะต่อทั้งสองทาง) เส้นของชุดที่จาง ๆ ก็จางลงด้วย
+15. **เทียบเส้นกับขอบภาพ** (เส้นนำสายตา ↔ ขอบจริงใน Mock-up): ระบบหาขอบในภาพ (Sobel) ไว้ล่วงหน้า
+    - **ขณะลาก** (ค่าเริ่ม) / **เปิดตลอด** / **ปิด**: ภาพมืดลง ขอบที่ตรวจพบเรืองแสง มีขีดสั้น ๆ จากเส้นไปขอบที่ใกล้สุด
+      และป้ายบอกระยะห่าง (เขียว < 1 px, เหลือง ≤ 2.5 px, แดง > 2.5 px); แว่นขยายแสดงขอบด้วย
+    - **🧷 ดูดเข้าขอบภาพ** (เส้นที่เลือก / **ทุกเส้น**) = ฟิตเส้นเข้ากับขอบในแถบ ±8 px (มุมที่เชื่อมอยู่ไม่ขยับ) ย้อนได้;
+      **ดูดขณะลาก** = ปล่อยมือแล้วเส้นเข้าขอบเอง (Alt = ปิดชั่วคราว)
+    - โหมดเทียบความต่างกับ **โมเดล** (ข้อ 11) ยังมีอยู่ แต่ค่าเริ่มต้นเป็น ปิด
+16. **รวม / ขนาน ทีละแกน**: ในแผงจุดลับตารวม แต่ละแกนมีสองปุ่มคู่กัน (ปุ่มที่ใช้อยู่เป็นสีฟ้า, สูง ≥ 44 px บนมือถือ)
+    - **รวม X/Y/Z** = โหมดอัตโนมัติ: หาจุดลับตาจุดเดียว แล้วหมุนเส้นเข้าหา
+    - **ขนาน X/Y/Z** = จุดลับตาอยู่ที่ ∞: หมุนทุกเส้นให้ขนานกันตามทิศเฉลี่ย และ **บังคับกล้อง** ให้แกนนั้นขนานกับภาพ
+      เช่น **ขนาน Z** = กล้องตั้งตรง ไม่ก้ม/เงย (เส้นแนวตั้งในภาพตั้งตรง) แผงแสดง ∠ = มุมเพี้ยนจากแนวขนาน และลูกศรสองหัว
+      “∞ Z ขนาน” ที่ขอบภาพแทนจุดลับตา
+    - ถ้าเส้นของแกนเกือบขนานอยู่แล้ว (จุดลับตาไกลมาก) จะมีปุ่ม 💡 แนะนำให้แตะใช้ **ขนาน** ได้ทันที
+    - **ขนาน 2 แกน** = ทัศนมิติจุดเดียว: หาเลนส์จากเส้นไม่ได้ → ต้อง **ล็อกเลนส์** หรือใช้คู่จุด
+    - ใช้กับเส้นทั้งชุดวัตถุและห้อง; ถ้าเส้นชุดใดไม่ขนานจริง แผงความสอดคล้องจะขึ้น ⚠ “เส้น…ไม่ขนาน”
+    - โหมดบันทึกไปกับเส้น (`vpModes`) และอยู่ในไฟล์ส่งออก; ↶ ย้อน คืนตำแหน่งเส้น แต่ไม่คืนโหมด
 
 ### Notes (English)
 
@@ -211,6 +236,32 @@ fSpy-style camera matching inside the editor: line the model up with the mock-up
   both ends linked is skipped and reported. It is one undo step. **ล็อกเข้าจุดลับตา** (saved with the lines as
   `lockVp`) constrains an endpoint drag to the ray from the fixed end to the VP fitted from the *other* lines of
   that axis (needs ≥ 2 others); endpoint/intersection snaps that lie on that ray still win, on-segment snaps are off.
+- Object / room groups (v0.2.9, `src/lib/editor/roomMatch.ts`, tested in `tests/roomMatch.test.ts`): lines carry
+  `group: 'object' | 'room'`; object lines live in crop px, room lines are drawn on the full mock-up and stored in
+  the same crop-px space through the crop transform `T = {x: 368, y: 540, s: 1}` (from `showcaseAssets`
+  `mockup.crop`, pixel-checked against `player-room-wide.jpg`). **คำนวณจากเส้น** solves one camera from both
+  groups. Aligned: the per-axis VPs are fitted from all lines of both groups. Yawed (untick **วัตถุวางตรงกับห้อง**):
+  the room X/Y VPs and the object X/Y VPs share the vertical VP, horizon and focal length, and the yaw ψ
+  (`X_room = Rz(ψ) · X_obj`) is solved jointly; it is exported as `room.yawDeg` in the camera-match file. The
+  agreement panel fits each group alone and compares VP directions per axis (good < 1°, warn ≤ 3°) and focal
+  (< 5 %, ≤ 15 %); tapping an axis highlights the worst lines of both groups. Saved data is `v: 2`; v1 data (crop
+  lines only) migrates to the object group.
+- Full rays: with **เส้นต่อถึงขอบ** on, each line is drawn from its VP through the segment to the view edge
+  (both directions for a VP at infinity), clipped to the visible view.
+- Edge alignment (`src/lib/editor/edgeAlign.ts`, tested in `tests/edgeAlign.test.ts`): one Sobel gradient map
+  per view image (downscaled to ≤ 1400 px, computed in an idle callback). For a line, samples along it search
+  ±8 px along the normal for the strongest gradient whose direction matches the line normal; the offset is
+  refined with a parabola fit. Score / coverage / mean offset give the readout band (< 1 px, ≤ 2.5 px).
+  **ดูดเข้าขอบภาพ** fits a line to the edge samples (iteratively, robust) and keeps linked corners fixed. The
+  model difference view is unchanged but now defaults to **ปิด**.
+- Per-axis VP mode (`vpModes: ['auto' | 'parallel', ×3]`, tested in `tests/parallel.test.ts`): `parallel` fits the
+  common image direction θ (VP = `[cos θ, sin θ, 0]`, robust, residual = angle to θ) and **ขนาน** rotates the
+  lines onto it (same pivots as consolidation). In the solver, a parallel axis adds a stiff penalty on the depth
+  component of that world axis in the camera frame (`R[2] · axis`) so e.g. **ขนาน Z** gives a level camera
+  (zero pitch, verticals vertical). Focal length needs ≥ 2 finite VPs, so with two parallel axes
+  (one-point perspective) lock the lens or use point pairs. Modes are shared by both groups; the agreement panel
+  flags a group whose lines are > 1° RMS from parallel. A suggestion appears when an auto-fitted VP lies
+  > 20× the image diagonal away. Line undo does not revert the mode. There is no separate "finite only" mode.
 - Solver: VPs from the guide lines (the consolidated per-axis VPs above), focal length from two
   orthogonal VPs, rotation from the VP directions (signs from the current camera), then Levenberg–Marquardt on
   line-to-VP and point reprojection error. Position comes from point pairs (linear + LM); with no pairs the
