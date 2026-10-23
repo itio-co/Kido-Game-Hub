@@ -1,0 +1,3 @@
+# Editor source files written by the dev save API (game/assets-src/*/editor/) are LF JSON on every OS.
+game/assets-src/*/editor/*.json text eol=lf
+*.glb binary

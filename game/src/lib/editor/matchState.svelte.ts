@@ -1,4 +1,5 @@
 import type { ShowcaseAsset } from '../showcaseAssets';
+import { FORMAT_MATCH, stableStringify } from './editorFilesCore.mjs';
 import {
   dehom,
   fromBlenderEulerDeg,
@@ -21,7 +22,7 @@ import {
   type V2,
   type V3,
 } from './camMath';
-import { camFromMatched, camJson, focalFromLens, fullExport, hfovDeg, lensMm, type ViewRect } from './cameraMatch';
+import { blenderValues, camFromMatched, camJson, focalFromLens, fullExport, hfovDeg, lensMm, type ViewRect } from './cameraMatch';
 import type { DisplayMode } from './modelEditor';
 import { jointMembers, linkEnds, removeLineLinks, unlinkEnd, type EndRef } from './guideSnap';
 import { alignLine, edgeMapFromRGBA, edgeOverlayRGBA, refineLine, type EdgeAlign, type EdgeMap } from './edgeAlign';
@@ -202,7 +203,12 @@ export class MatchState {
   stageH = $state(1);
   private nextId = 1;
 
-  constructor(asset: ShowcaseAsset) {
+  /** Where this session started: a localStorage draft, the committed source file, or fresh seeded lines. */
+  origin: 'draft' | 'file' | 'seed' = 'seed';
+  /** stableStringify(fileData()) of the untouched default session. */
+  readonly defaultText: string;
+
+  constructor(asset: ShowcaseAsset, baseline?: unknown) {
     const ref = asset.ref!;
     this.asset = asset;
     this.width = ref.width;
@@ -213,7 +219,79 @@ export class MatchState {
     this.full = m ? { w: m.width, h: m.height } : { w: ref.width, h: ref.height };
     this.cam = clone(this.stored);
     this.center = [ref.width / 2, ref.height / 2];
-    if (!this.restore()) this.seedLines();
+    // the untouched default (seeded lines, stored camera): "nothing to save" when there is no file yet
+    this.seedLines();
+    this.defaultText = stableStringify(this.fileData());
+    if (this.restore()) this.origin = 'draft';
+    else if (baseline && this.loadFile(baseline)) this.origin = 'file';
+  }
+
+  // ---------- source file (game/assets-src/<item>/editor/camera-match.json) ----------
+  /**
+   * The work as stored in the committed source file: lines (both groups, FULL-image px), point
+   * pairs, solver settings and the solved camera. UI preferences (image, ghost, rays, snap, diff,
+   * edge view) stay in localStorage only. Coordinates are rounded to 1e-4 px so a save → load →
+   * save round trip is byte-identical.
+   */
+  fileData(): Record<string, unknown> {
+    const r4 = (v: number) => Math.round(v * 1e4) / 1e4;
+    const pt = (p: V2 | null | undefined) => (p ? ([r4(p[0]), r4(p[1])] as V2) : p);
+    return {
+      format: FORMAT_MATCH,
+      asset: this.asset.slug,
+      crop: { ...this.crop },
+      fullImage: [this.full.w, this.full.h],
+      lines: this.groupedFullLines().map((l) => ({ ...l, a: pt(l.a)!, b: pt(l.b)! })),
+      pairs: ($state.snapshot(this.pairs) as PointPair[]).map((p) => ({ ...p, image: pt(p.image) ?? null })),
+      lockVp: this.lockVp,
+      vpModes: [...this.vpModes],
+      principal: this.principal,
+      lockLens: this.lockLens,
+      roomAligned: this.roomAligned,
+      roomYaw: this.roomYaw,
+      camera: $state.snapshot(this.cam),
+      solved: {
+        note: 'derived from camera (crop px) — for reading in review; ignored on load',
+        blender: blenderValues(this.cam, this.width, this.height),
+        roomYawDeg: Math.round(this.yaw * 1e4) / 1e4,
+      },
+    };
+  }
+  /** Load the work from a source file (keeps the UI preferences). */
+  loadFile(data: unknown): boolean {
+    const f = data as Record<string, any> | null;
+    if (!f || f.format !== FORMAT_MATCH || !f.camera?.R) return false;
+    const d: Saved = {
+      v: 2,
+      cam: f.camera as Cam,
+      crop: f.crop as CropT,
+      lines: Array.isArray(f.lines) ? f.lines : [],
+      pairs: Array.isArray(f.pairs) ? f.pairs : [],
+      ghost: this.ghost,
+      rays: this.rays,
+      roomAligned: f.roomAligned,
+      roomYaw: f.roomYaw,
+      image: this.image,
+      principal: f.principal === 'vp3' || f.principal === 'free' ? f.principal : 'center',
+      lockLens: !!f.lockLens,
+      snap: this.snap,
+      modelDiff: this.diff,
+      edgeMode: this.edgeMode,
+      edgeSnap: this.edgeSnap,
+      lockVp: f.lockVp === true,
+      vpModes: f.vpModes as VpModes,
+    };
+    if (!this.restoreFrom(d)) return false;
+    this.lineUndo = [];
+    this.lineRedo = [];
+    this.otherUndo = [];
+    this.otherRedo = [];
+    this.lineUndoCount = 0;
+    this.lineRedoCount = 0;
+    this.selectedLine = null;
+    this.selectedPair = null;
+    this.pick = null;
+    return true;
   }
 
   // ---------- image / view window ----------
@@ -887,12 +965,21 @@ export class MatchState {
     } catch {
       /* storage full or blocked */
     }
+    this.onSave?.();
   }
+  /** Called after every save (the view refreshes its "unsaved to source file" list). */
+  onSave: (() => void) | null = null;
   private restore(): boolean {
     try {
       const raw = localStorage.getItem(this.storageKey);
       if (!raw) return false;
-      const d = JSON.parse(raw) as Saved;
+      return this.restoreFrom(JSON.parse(raw) as Saved);
+    } catch {
+      return false;
+    }
+  }
+  private restoreFrom(d: Saved): boolean {
+    try {
       if ((d.v !== 1 && d.v !== 2) || !d.cam?.R) return false;
       this.cam = d.cam;
       this.image = d.image === 'wide' && this.asset.ref?.mockup ? 'wide' : 'crop';

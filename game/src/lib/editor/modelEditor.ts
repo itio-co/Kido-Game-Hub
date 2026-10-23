@@ -440,6 +440,9 @@ export function createModelEditor(canvas: HTMLCanvasElement, onChange: (snap: Ed
   }
 
   // ---------- persistence ----------
+  function fitsModel(s: EditState | null | undefined): s is EditState {
+    return !!s && Array.isArray(s.parts) && s.parts.length > 0 && s.parts.every((p) => p && typeof p.name === 'string' && bases.has(p.source));
+  }
   function storageKey(): string {
     return `kido-editor:${asset?.slug}:${variant?.id}`;
   }
@@ -569,10 +572,19 @@ export function createModelEditor(canvas: HTMLCanvasElement, onChange: (snap: Ed
   }
 
   return {
-    async load(nextAsset: ShowcaseAsset, nextVariant: ShowcaseVariant): Promise<{ restored: boolean }> {
+    /**
+     * Load a variant. Its local draft (localStorage) wins; otherwise `baseline` (the committed
+     * <variant>.edits.json state) becomes the starting point AND the bottom of the undo history,
+     * so "no draft" always means "same as the source file".
+     */
+    async load(
+      nextAsset: ShowcaseAsset,
+      nextVariant: ShowcaseVariant,
+      baseline?: EditState | null,
+    ): Promise<{ restored: boolean; from: 'draft' | 'file' | null }> {
       const token = ++loadToken;
       const gltf = await new GLTFLoader().loadAsync(nextVariant.url);
-      if (disposed || token !== loadToken) return { restored: false };
+      if (disposed || token !== loadToken) return { restored: false, from: null };
       if (root) {
         gizmo.detach();
         holder.remove(root);
@@ -602,26 +614,46 @@ export function createModelEditor(canvas: HTMLCanvasElement, onChange: (snap: Ed
         objects.set(object.name, object);
       }
       selected = null;
-      const fresh = initialState();
-      history = [JSON.stringify(fresh)];
+      let start = initialState();
+      let from: 'draft' | 'file' | null = null;
+      if (baseline && fitsModel(baseline)) {
+        start = structuredClone(baseline);
+        from = 'file';
+      }
+      history = [JSON.stringify(start)];
       index = 0;
       let restored = false;
       try {
         const saved = localStorage.getItem(storageKey());
         if (saved) {
           const parsed = JSON.parse(saved) as EditState;
-          if (Array.isArray(parsed.parts) && parsed.parts.every((p) => bases.has(p.source))) {
+          if (fitsModel(parsed)) {
             apply(parsed);
             commit();
             restored = true;
+            from = 'draft';
           }
         }
       } catch {
         /* ignore a broken save */
       }
-      if (!restored) apply(fresh);
+      if (!restored) apply(start);
       setView(view);
-      return { restored };
+      return { restored, from };
+    },
+
+    /** Current edit state (plain copy) — what <variant>.edits.json stores. */
+    getState(): EditState {
+      return structuredClone(state);
+    },
+    /** Replace the edit state (e.g. "revert to the source file"); undoable. */
+    loadState(next: EditState): boolean {
+      if (!fitsModel(next)) return false;
+      selected = null;
+      apply(structuredClone(next));
+      commit();
+      attach();
+      return true;
     },
 
     select,

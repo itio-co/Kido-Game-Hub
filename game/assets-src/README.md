@@ -204,6 +204,15 @@ fSpy-style camera matching inside the editor: line the model up with the mock-up
     - **ขนาน 2 แกน** = ทัศนมิติจุดเดียว: หาเลนส์จากเส้นไม่ได้ → ต้อง **ล็อกเลนส์** หรือใช้คู่จุด
     - ใช้กับเส้นทั้งชุดวัตถุและห้อง; ถ้าเส้นชุดใดไม่ขนานจริง แผงความสอดคล้องจะขึ้น ⚠ “เส้น…ไม่ขนาน”
     - โหมดบันทึกไปกับเส้น (`vpModes`) และอยู่ในไฟล์ส่งออก; ↶ ย้อน คืนตำแหน่งเส้น แต่ไม่คืนโหมด
+17. **💾 บันทึกลงไฟล์ต้นฉบับ** (เฉพาะตอนรัน `npm run dev` ในโฟลเดอร์ `game/`): งานที่แก้ถูกเก็บในเครื่อง (localStorage) อัตโนมัติ
+    และกดปุ่มนี้ (หรือ **Ctrl+S**) เพื่อเขียนลงไฟล์ใน `game/assets-src/<item>/editor/` แล้ว commit ได้
+    - `camera-match.json` = เส้นนำสายตา (ทั้งวัตถุและห้อง), คู่จุด, ล็อกจุดลับตา, โหมดรวม/ขนาน, กรอบครอป, กล้องที่คำนวณได้
+    - `<variant>.edits.json` (เช่น `lowpoly.edits.json`) = การแก้โมเดล (ไม่มีประวัติย้อน); ติ๊ก **รวม …-edited.glb** ถ้าต้องการไฟล์โมเดลด้วย
+    - แผง **ไฟล์ต้นฉบับ** บอกว่าไฟล์ไหนจะเปลี่ยน; บันทึกเสร็จจะแสดงที่อยู่ไฟล์และคำสั่ง
+      `git add game/assets-src/nightstand/editor && git commit -m "…"`
+    - ไฟล์ที่ commit แล้วคือค่าเริ่มต้น: เปิดหน้าใหม่ (ไม่มีงานค้าง) จะโหลดจากไฟล์ ถ้างานในเครื่องต่างจากไฟล์ จะขึ้นกรอบเหลือง
+      **“มีงานที่ยังไม่บันทึกลงไฟล์”** — **ใช้งานที่ค้างไว้ต่อ** (ซ่อนกรอบจนปิดหน้า) หรือ **กลับไปใช้ไฟล์** (ทิ้งงานในเครื่อง)
+    - หน้าเว็บที่ build แล้ว (เช่นลิงก์ตัวอย่าง) ไม่มี API: ใช้ปุ่ม **ดาวน์โหลด** แล้ววางไฟล์ไว้ในโฟลเดอร์เดียวกันเอง
 
 ### Notes (English)
 
@@ -262,6 +271,25 @@ fSpy-style camera matching inside the editor: line the model up with the mock-up
   (one-point perspective) lock the lens or use point pairs. Modes are shared by both groups; the agreement panel
   flags a group whose lines are > 1° RMS from parallel. A suggestion appears when an auto-fitted VP lies
   > 20× the image diagonal away. Line undo does not revert the mode. There is no separate "finite only" mode.
+- Source files + dev save API (`scripts/editorFilesPlugin.mjs`, `src/lib/editor/editorFilesCore.mjs`,
+  `src/lib/editor/sourceFiles.svelte.ts`, tested in `tests/editorFiles.test.mjs`): a Vite plugin with
+  `apply: 'serve'` (never in a build) serves `GET /__editor/files?item=<item>` and `POST /__editor/files`
+  (`{item, files: [{name, json} | {name, base64}]}`). It writes only `camera-match.json`, `<variant>.edits.json`
+  and `<variant>-edited.glb` inside an existing `assets-src/<item>/editor/`. Guards: loopback client, `Host`
+  must be localhost (DNS rebinding), `Origin` (if sent) must be the same local origin, `Sec-Fetch-Site`
+  same-origin/none, POST needs `application/json` + `x-kido-editor: 1`, item/variant names
+  `^[a-z0-9][a-z0-9_-]{0,63}$`, resolved paths (and symlinks) must stay in that folder, body ≤ 48 MB / JSON ≤ 2 MB /
+  GLB ≤ 32 MB (glTF magic checked), all entries validated before any write, atomic temp-file + rename (retries on
+  Windows EPERM/EBUSY). JSON is written server-side as stable pretty JSON (sorted keys, 2-space indent, flat number
+  arrays on one line, LF + final newline), so the same data always gives the same bytes; identical files are not
+  rewritten, and CRLF checkouts compare equal (`.gitattributes` also pins LF). `camera-match.json`
+  (`kido-camera-match-source/1`) holds the work only — lines in full-image px rounded to 1e-4, pairs, `lockVp`,
+  `vpModes`, `principal`, `lockLens`, room alignment/yaw, crop, `camera` (crop px) and a derived `solved` block
+  that is ignored on load and in comparisons; UI preferences stay in localStorage. `<variant>.edits.json`
+  (`kido-model-edits-source/1`) is the parts state without timestamps or history. The page uses the API when it
+  answers (dev only); otherwise the committed files bundled at build time (`import.meta.glob`) are the baseline
+  and the panel offers downloads. Load order: local draft → source file → seeded default. Saving does not trigger
+  HMR (`server.watch.ignored` for `assets-src/*/editor/**`).
 - Solver: VPs from the guide lines (the consolidated per-axis VPs above), focal length from two
   orthogonal VPs, rotation from the VP directions (signs from the current camera), then Levenberg–Marquardt on
   line-to-VP and point reprojection error. Position comes from point pairs (linear + LM); with no pairs the
