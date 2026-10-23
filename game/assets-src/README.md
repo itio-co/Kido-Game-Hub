@@ -249,6 +249,10 @@ UI labels are shown in bold as they appear in the (Thai) UI, with an English glo
 - `<slug>-camera-match.json` (`kido-camera-match/1`) also has `blender` (location m, XYZ Euler, lens, shift),
   `three` (hFOV, position, quaternion in the game's Y-up metres + a snippet), `mockup` (lens / hFOV / shift
   for the full mock-up), residuals, and the lines and point pairs.
+- Strings (i18n prep): every UI string added in v0.2.9 lives in `src/lib/editor/strings.ts` — `MESSAGES` maps
+  dotted English keys (e.g. `cameraMatch.vp.consolidateAll`) to `{ en, th }` with `{name}` placeholders,
+  `localeTable('en' | 'th')` gives the flat shape of `src/locales/<locale>.json`, and components use the typed `T`
+  facade (renders Thai today). `tests/strings.test.ts` checks keys, both values and matching placeholders.
 - Snapping (v0.2.9): `src/lib/editor/guideSnap.ts` (pure; `npm test` in `game/` runs `tests/guideSnap.test.ts`
   through `tsc` + node, no test framework needed). Lines may carry optional `links: {a?, b?}` joint ids — endpoints
   with the same id are one shared corner. Older saved/exported line data without `links` loads unchanged.
