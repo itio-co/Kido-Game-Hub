@@ -6,6 +6,24 @@ import { TransformControls } from 'three/addons/controls/TransformControls.js';
 import { type ShowcaseAsset, type ShowcaseVariant } from '../showcaseAssets';
 import type { Cam } from './camMath';
 import { applyToCamera, camFromMatched, type ViewRect } from './cameraMatch';
+import {
+  SNAP_KINDS,
+  ZERO,
+  applyPivot,
+  isZero,
+  localBox,
+  migrateParts,
+  nearestOnScreen,
+  originalGeometry,
+  presetPivot,
+  registerPart,
+  shiftedPosition,
+  snapTargets,
+  type LocalBox,
+  type PivotPreset,
+  type SnapKind,
+  type SnapTargets,
+} from './pivot';
 
 export type Vec3 = [number, number, number];
 export type GizmoMode = 'translate' | 'rotate' | 'scale';
@@ -24,6 +42,12 @@ export type PartState = {
   hidden: boolean;
   deleted: boolean;
   color: string | null;
+  /**
+   * Origin (pivot) offset in the part's local frame, metres, relative to the origin baked in the GLB.
+   * Optional: absent = the GLB origin (edits files written before pivots load unchanged).
+   * `position` is where this pivot sits; the mesh is offset by −pivot so it stays put.
+   */
+  pivot?: Vec3;
 };
 
 export type EditState = { parts: PartState[] };
@@ -39,6 +63,14 @@ export type SelectedInfo = {
   sizeCm: Vec3;
   hidden: boolean;
   color: string;
+  /** Pivot relative to the GLB origin, part-local axes, cm. */
+  pivotLocalCm: Vec3;
+  /** Pivot (= node origin, where the gizmo sits) in world space, glTF axes (x right, y up, z front), cm. */
+  pivotWorldCm: Vec3;
+  /** World-space box centre of the part, glTF axes, cm. */
+  centerWorldCm: Vec3;
+  /** Pivot moved away from the GLB origin. */
+  pivotSet: boolean;
 };
 
 export type EditorSnapshot = {
@@ -48,6 +80,12 @@ export type EditorSnapshot = {
   canUndo: boolean;
   canRedo: boolean;
   dirty: boolean;
+  /** Edit-pivot mode: translate drags move only the selected part's origin. */
+  pivotMode: boolean;
+  /** Waiting for a tap / click on the selected part's surface to set the pivot there. */
+  pivotPicking: boolean;
+  /** What the last pivot drag snapped to (null = free). */
+  pivotSnap: SnapKind | null;
 };
 
 type Base = {
@@ -61,6 +99,12 @@ type Base = {
   materials: Map<THREE.Mesh, THREE.Material | THREE.Material[]>;
   /** Box as loaded, Blender coordinates (cm). */
   before: BlenderBox | null;
+  /** Untouched copy of the part node at the identity transform: source of copies, snap targets and the local box. */
+  template: THREE.Object3D;
+  /** Local box of the part as loaded (metres, node frame): pivot presets. */
+  box: LocalBox;
+  /** Pivot snap targets, built on the first pivot drag. */
+  targets: SnapTargets | null;
 };
 
 export type BlenderBox = { x: [number, number]; y: [number, number]; z: [number, number] };
@@ -127,6 +171,7 @@ export function createModelEditor(canvas: HTMLCanvasElement, onChange: (snap: Ed
   let selected: string | null = null;
   let view: ViewMode = 'orbit';
   let snap = true;
+  let gizmoMode: GizmoMode = 'translate';
   let disposed = false;
   let loadToken = 0;
   // Original (untinted) material per mesh, and which meshes carry a tinted clone.
@@ -139,6 +184,7 @@ export function createModelEditor(canvas: HTMLCanvasElement, onChange: (snap: Ed
       const mesh = node as THREE.Mesh;
       if (!mesh.isMesh) return;
       mesh.geometry.dispose();
+      originalGeometry(mesh)?.dispose();
       const list = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
       const orig = origMat.get(mesh);
       if (orig && orig !== mesh.material) list.push(...(Array.isArray(orig) ? orig : [orig]));
@@ -195,7 +241,7 @@ export function createModelEditor(canvas: HTMLCanvasElement, onChange: (snap: Ed
       renderer.render(scene, camera);
       return;
     }
-    const helpers = [box, gizmoHelper, grid];
+    const helpers = [box, gizmoHelper, grid, marker];
     const shown = helpers.map((h) => h.visible);
     for (const h of helpers) h.visible = false;
     if (display === 'edges') syncEdges();
@@ -248,9 +294,15 @@ export function createModelEditor(canvas: HTMLCanvasElement, onChange: (snap: Ed
   gizmo.addEventListener('change', render);
   gizmo.addEventListener('dragging-changed', (event) => {
     orbit.enabled = view === 'orbit' && !event.value;
-    if (!event.value) readGizmo();
+    if (event.value) {
+      if (pivotMode) beginPivotDrag();
+    } else if (pivotMode) endPivotDrag();
+    else readGizmo();
   });
-  gizmo.addEventListener('objectChange', () => emit());
+  gizmo.addEventListener('objectChange', () => {
+    if (pivotMode && gizmo.dragging) snapPivot();
+    emit();
+  });
   const observer = new ResizeObserver(render);
   observer.observe(canvas);
 
@@ -319,7 +371,13 @@ export function createModelEditor(canvas: HTMLCanvasElement, onChange: (snap: Ed
       const mesh = child as THREE.Mesh;
       if (mesh.isMesh) materials.set(mesh, mesh.material);
     });
-    return { object, position, rotation, scale, size: vec(size), materials, before: null };
+    const template = object.clone(true);
+    template.position.set(0, 0, 0);
+    template.quaternion.identity();
+    template.scale.set(1, 1, 1);
+    template.updateMatrixWorld(true);
+    registerPart(object);
+    return { object, position, rotation, scale, size: vec(size), materials, before: null, template, box: localBox(template), targets: null };
   }
 
   function initialState(): EditState {
@@ -375,13 +433,15 @@ export function createModelEditor(canvas: HTMLCanvasElement, onChange: (snap: Ed
         objects.delete(name);
       }
     }
+    let swapped = false;
     for (const part of state.parts) {
       let obj = objects.get(part.name);
       const base = bases.get(part.source);
       if (!base) continue;
       if (!obj) {
-        obj = base.object.clone(true);
+        obj = base.template.clone(true);
         obj.name = part.name;
+        registerPart(obj);
         // clone() shares materials with the source; point copies at the untinted originals.
         const srcMeshes: THREE.Mesh[] = [];
         base.object.traverse((c) => { if ((c as THREE.Mesh).isMesh) srcMeshes.push(c as THREE.Mesh); });
@@ -402,7 +462,9 @@ export function createModelEditor(canvas: HTMLCanvasElement, onChange: (snap: Ed
       obj.scale.fromArray(part.scale);
       obj.visible = !part.hidden && !part.deleted;
       setColor(obj, base, part.color);
+      if (applyPivot(obj, part.pivot)) swapped = true;
     }
+    if (swapped) clearEdges();
     if (selected && !objects.get(selected)?.visible) selected = null;
     attach();
     save();
@@ -412,9 +474,187 @@ export function createModelEditor(canvas: HTMLCanvasElement, onChange: (snap: Ed
 
   function attach(): void {
     const obj = selected ? objects.get(selected) : undefined;
-    if (obj && obj.visible) gizmo.attach(obj);
-    else gizmo.detach();
+    if (!obj || !obj.visible || pivotPicking) gizmo.detach();
+    else if (pivotMode) {
+      placeHandle(obj);
+      gizmo.attach(handle);
+    } else gizmo.attach(obj);
   }
+
+  // ---------- pivot (origin) editing ----------
+  // In pivot mode the gizmo drives a stand-in at the part's origin (same orientation as the part); on release the
+  // part's pivot moves there and the node position shifts so the mesh stays where it was.
+  const handle = new THREE.Object3D();
+  scene.add(handle);
+  let pivotMode = false;
+  let pivotPicking = false;
+  let pivotSnapKind: SnapKind | null = null;
+  let altDown = false;
+  let lastPointer = 'mouse';
+  let drag: { start: THREE.Vector3; world: Float32Array; screen: Float32Array; kinds: Uint8Array } | null = null;
+  const SNAP_COLORS: Record<SnapKind, string> = { vertex: '#ff4fd8', edge: '#39f3ff', face: '#7dff6a', bbox: '#ffe14d', grid: '#ffffff' };
+  const marker = new THREE.Points(
+    new THREE.BufferGeometry().setAttribute('position', new THREE.Float32BufferAttribute([0, 0, 0], 3)),
+    new THREE.PointsMaterial({ size: 30, sizeAttenuation: false, depthTest: false, transparent: true, map: ringTexture() }),
+  );
+  marker.renderOrder = 12;
+  marker.visible = false;
+  marker.frustumCulled = false;
+  scene.add(marker);
+  function ringTexture(): THREE.Texture | null {
+    if (typeof document === 'undefined') return null;
+    const c = document.createElement('canvas');
+    c.width = c.height = 64;
+    const g = c.getContext('2d');
+    if (!g) return null;
+    g.lineWidth = 9;
+    g.strokeStyle = '#000';
+    g.beginPath();
+    g.arc(32, 32, 24, 0, Math.PI * 2);
+    g.stroke();
+    g.lineWidth = 5;
+    g.strokeStyle = '#fff';
+    g.stroke();
+    g.fillStyle = '#fff';
+    g.beginPath();
+    g.arc(32, 32, 5, 0, Math.PI * 2);
+    g.fill();
+    return new THREE.CanvasTexture(c);
+  }
+  function placeHandle(obj: THREE.Object3D): void {
+    obj.updateWorldMatrix(true, false);
+    obj.matrixWorld.decompose(handle.position, handle.quaternion, new THREE.Vector3());
+    handle.scale.set(1, 1, 1);
+    handle.updateMatrixWorld(true);
+  }
+  function toScreen(v: THREE.Vector3): [number, number] {
+    const p = v.clone().project(camera);
+    return [((p.x + 1) / 2) * canvas.clientWidth, ((1 - p.y) / 2) * canvas.clientHeight];
+  }
+  function syncGridSnap(): void {
+    gizmo.setTranslationSnap(snap && !altDown ? 0.005 : null);
+  }
+  function beginPivotDrag(): void {
+    const part = selected ? current(selected) : undefined;
+    const obj = selected ? objects.get(selected) : undefined;
+    const base = part ? bases.get(part.source) : undefined;
+    if (!part || !obj || !base) return;
+    base.targets ??= snapTargets(base.template);
+    const t = base.targets;
+    obj.updateWorldMatrix(true, false);
+    const pv = part.pivot ?? ZERO;
+    const m = obj.matrixWorld.clone().multiply(new THREE.Matrix4().makeTranslation(-pv[0], -pv[1], -pv[2]));
+    const n = t.kinds.length;
+    const world = new Float32Array(n * 3);
+    const screen = new Float32Array(n * 2);
+    const v = new THREE.Vector3();
+    for (let i = 0; i < n; i++) {
+      v.fromArray(t.points, i * 3).applyMatrix4(m);
+      v.toArray(world, i * 3);
+      const p = v.project(camera);
+      // behind the camera → never matches
+      screen[i * 2] = p.z > 1 ? 1e9 : ((p.x + 1) / 2) * canvas.clientWidth;
+      screen[i * 2 + 1] = ((1 - p.y) / 2) * canvas.clientHeight;
+    }
+    drag = { start: handle.position.clone(), world, screen, kinds: t.kinds };
+    pivotSnapKind = null;
+  }
+  /** During a pivot drag: snap the stand-in to the nearest target on screen (kept on the dragged axis / plane). */
+  function snapPivot(): void {
+    marker.visible = false;
+    if (!drag) return;
+    if (!snap || altDown) {
+      pivotSnapKind = null;
+      return;
+    }
+    const idx = nearestOnScreen(drag.screen, toScreen(handle.position), lastPointer === 'mouse' ? 14 : 24);
+    if (idx < 0) {
+      pivotSnapKind = 'grid';
+      return;
+    }
+    const target = new THREE.Vector3().fromArray(drag.world, idx * 3);
+    const axis = gizmo.axis ?? 'XYZ';
+    const dirs = { X: new THREE.Vector3(1, 0, 0), Y: new THREE.Vector3(0, 1, 0), Z: new THREE.Vector3(0, 0, 1) };
+    const along = (k: 'X' | 'Y' | 'Z') => dirs[k].clone().applyQuaternion(handle.quaternion);
+    const next = target.clone();
+    if (axis === 'X' || axis === 'Y' || axis === 'Z') {
+      const d = along(axis);
+      next.copy(drag.start).addScaledVector(d, target.clone().sub(drag.start).dot(d));
+    } else if (axis === 'XY' || axis === 'YZ' || axis === 'XZ') {
+      const normal = along((['X', 'Y', 'Z'] as const).find((k) => !axis.includes(k))!);
+      next.addScaledVector(normal, -target.clone().sub(drag.start).dot(normal));
+    }
+    handle.position.copy(next);
+    handle.updateMatrixWorld(true);
+    marker.position.copy(target);
+    marker.updateMatrixWorld(true);
+    pivotSnapKind = SNAP_KINDS[drag.kinds[idx]!]!;
+    (marker.material as THREE.PointsMaterial).color.set(SNAP_COLORS[pivotSnapKind]);
+    marker.visible = true;
+  }
+  function endPivotDrag(): void {
+    drag = null;
+    marker.visible = false;
+    const moved = selected ? objects.get(selected) : undefined;
+    if (!moved) return;
+    moved.updateWorldMatrix(true, false);
+    const origin = new THREE.Vector3().setFromMatrixPosition(moved.matrixWorld);
+    if (origin.distanceTo(handle.position) < 1e-7) {
+      emit();
+      return;
+    }
+    setPivotWorld(handle.position.clone());
+  }
+  /** Move the selected part's pivot (local m, GLB frame) keeping its mesh in place. Undoable. */
+  function setPivotLocal(p: Vec3): void {
+    if (!selected || !p.every(Number.isFinite)) return;
+    const name = selected;
+    change((draft) => {
+      const part = draft.parts.find((q) => q.name === name);
+      if (!part) return;
+      const next: Vec3 = [r3(p[0], 6), r3(p[1], 6), r3(p[2], 6)];
+      part.position = shiftedPosition(part.position, part.rotation, part.scale, part.pivot ?? ZERO, next).map((v) => r3(v, 6)) as Vec3;
+      if (isZero(next)) delete part.pivot;
+      else part.pivot = next;
+    });
+  }
+  /** Move the selected part's pivot to a world point. */
+  function setPivotWorld(world: THREE.Vector3): void {
+    const part = selected ? current(selected) : undefined;
+    const obj = selected ? objects.get(selected) : undefined;
+    if (!part || !obj) return;
+    obj.updateWorldMatrix(true, false);
+    const local = obj.worldToLocal(world.clone());
+    const pv = part.pivot ?? ZERO;
+    setPivotLocal([local.x + pv[0], local.y + pv[1], local.z + pv[2]]);
+  }
+  const onKeyAlt = (event: KeyboardEvent) => {
+    if (event.key !== 'Alt' || altDown === (event.type === 'keydown')) return;
+    altDown = event.type === 'keydown';
+    syncGridSnap();
+    if (altDown && drag) {
+      marker.visible = false;
+      pivotSnapKind = null;
+      render();
+    }
+  };
+  const onBlurAlt = () => {
+    altDown = false;
+    syncGridSnap();
+  };
+  window.addEventListener('keydown', onKeyAlt);
+  window.addEventListener('keyup', onKeyAlt);
+  window.addEventListener('blur', onBlurAlt);
+  // Alt state from pointer events too (keyup can be lost when the window loses focus mid-drag)
+  const onPointerAlt = (event: PointerEvent) => {
+    lastPointer = event.pointerType || 'mouse';
+    if (event.altKey !== altDown) {
+      altDown = event.altKey;
+      syncGridSnap();
+    }
+  };
+  canvas.addEventListener('pointerdown', onPointerAlt, { capture: true });
+  canvas.addEventListener('pointermove', onPointerAlt, { capture: true });
 
   function commit(): void {
     history = history.slice(0, index + 1);
@@ -447,6 +687,10 @@ export function createModelEditor(canvas: HTMLCanvasElement, onChange: (snap: Ed
   }
 
   // ---------- persistence ----------
+  /** Old drafts / files: drop malformed pivots (parts without one keep the GLB origin). */
+  function migrate(s: EditState | null | undefined): EditState | null | undefined {
+    return s && Array.isArray(s.parts) ? { ...s, parts: migrateParts(s.parts) } : s;
+  }
   function fitsModel(s: EditState | null | undefined): s is EditState {
     return !!s && Array.isArray(s.parts) && s.parts.length > 0 && s.parts.every((p) => p && typeof p.name === 'string' && bases.has(p.source));
   }
@@ -474,6 +718,7 @@ export function createModelEditor(canvas: HTMLCanvasElement, onChange: (snap: Ed
     }));
     let info: SelectedInfo | null = null;
     const obj = selected ? objects.get(selected) : undefined;
+    obj?.updateWorldMatrix(true, true);
     const part = selected ? current(selected) : undefined;
     if (obj && part) {
       const base = bases.get(part.source)!;
@@ -488,6 +733,10 @@ export function createModelEditor(canvas: HTMLCanvasElement, onChange: (snap: Ed
         ],
         hidden: part.hidden,
         color: part.color ?? baseColor(base),
+        pivotLocalCm: vec(new THREE.Vector3(...(part.pivot ?? ZERO)), 100, 2),
+        pivotWorldCm: vec(new THREE.Vector3().setFromMatrixPosition(obj.matrixWorld), 100, 2),
+        centerWorldCm: vec(new THREE.Box3().setFromObject(obj, true).getCenter(new THREE.Vector3()), 100, 2),
+        pivotSet: !!part.pivot,
       };
     }
     onChange({
@@ -497,6 +746,9 @@ export function createModelEditor(canvas: HTMLCanvasElement, onChange: (snap: Ed
       canUndo: index > 0,
       canRedo: index < history.length - 1,
       dirty: index >= 0 && history[index] !== history[0],
+      pivotMode,
+      pivotPicking,
+      pivotSnap: pivotSnapKind,
     });
   }
 
@@ -523,6 +775,20 @@ export function createModelEditor(canvas: HTMLCanvasElement, onChange: (snap: Ed
       -((event.clientY - rect.top) / rect.height) * 2 + 1,
     );
     ray.setFromCamera(ndc, camera);
+    if (pivotPicking && selected) {
+      // "Pivot to picked point": the next tap on the selected part's surface (same camera / zoomed window as the view)
+      const own = objects.get(selected);
+      root?.updateMatrixWorld(true);
+      const at = own ? ray.intersectObject(own, true)[0] : undefined;
+      if (at) {
+        pivotPicking = false;
+        pivotSnapKind = null;
+        setPivotWorld(at.point.clone());
+        attach();
+        render();
+      }
+      return;
+    }
     const targets = [...objects.values()].filter((o) => o.visible);
     const hit = ray.intersectObjects(targets, true)[0];
     if (!hit) {
@@ -538,6 +804,7 @@ export function createModelEditor(canvas: HTMLCanvasElement, onChange: (snap: Ed
 
   function select(name: string | null): void {
     selected = name && objects.has(name) ? name : null;
+    if (!selected) pivotPicking = false;
     attach();
     emit();
     render();
@@ -545,7 +812,7 @@ export function createModelEditor(canvas: HTMLCanvasElement, onChange: (snap: Ed
 
   function setSnap(on: boolean): void {
     snap = on;
-    gizmo.setTranslationSnap(on ? 0.005 : null);
+    syncGridSnap();
     gizmo.setRotationSnap(on ? THREE.MathUtils.degToRad(15) : null);
     gizmo.setScaleSnap(on ? 0.05 : null);
   }
@@ -621,8 +888,11 @@ export function createModelEditor(canvas: HTMLCanvasElement, onChange: (snap: Ed
         objects.set(object.name, object);
       }
       selected = null;
+      pivotPicking = false;
+      drag = null;
       let start = initialState();
       let from: 'draft' | 'file' | null = null;
+      baseline = migrate(baseline);
       if (baseline && fitsModel(baseline)) {
         start = structuredClone(baseline);
         from = 'file';
@@ -633,7 +903,7 @@ export function createModelEditor(canvas: HTMLCanvasElement, onChange: (snap: Ed
       try {
         const saved = localStorage.getItem(storageKey());
         if (saved) {
-          const parsed = JSON.parse(saved) as EditState;
+          const parsed = migrate(JSON.parse(saved) as EditState);
           if (fitsModel(parsed)) {
             apply(parsed);
             commit();
@@ -655,6 +925,7 @@ export function createModelEditor(canvas: HTMLCanvasElement, onChange: (snap: Ed
     },
     /** Replace the edit state (e.g. "revert to the source file"); undoable. */
     loadState(next: EditState): boolean {
+      next = migrate(next) as EditState;
       if (!fitsModel(next)) return false;
       selected = null;
       apply(structuredClone(next));
@@ -665,8 +936,81 @@ export function createModelEditor(canvas: HTMLCanvasElement, onChange: (snap: Ed
 
     select,
     setMode(mode: GizmoMode): void {
-      gizmo.setMode(mode);
+      gizmoMode = mode;
+      if (!pivotMode) gizmo.setMode(mode);
       render();
+    },
+    /**
+     * Edit-pivot mode: translate drags move only the selected part's origin (the mesh stays put), snapping to the
+     * part's vertices / edge midpoints / face centres / box corners + centre (and the grid) unless Alt is held.
+     * Rotate / scale are not available in this mode.
+     */
+    setPivotMode(on: boolean): void {
+      pivotMode = on;
+      pivotPicking = false;
+      drag = null;
+      marker.visible = false;
+      gizmo.setMode(on ? 'translate' : gizmoMode);
+      attach();
+      emit();
+      render();
+    },
+    get pivotMode(): boolean {
+      return pivotMode;
+    },
+    /** "Pivot to picked point": the next tap / click on the selected part's surface sets its pivot (false = cancel). */
+    pickPivot(on = true): void {
+      pivotPicking = on && !!selected;
+      attach();
+      emit();
+      render();
+    },
+    /** Pivot presets of the selected part: box centre, bottom centre, or back to the GLB origin. */
+    pivotPreset(kind: PivotPreset): void {
+      const part = selected ? current(selected) : undefined;
+      const base = part ? bases.get(part.source) : undefined;
+      if (!part || !base) return;
+      pivotSnapKind = null;
+      setPivotLocal(presetPivot(kind, base.box));
+    },
+    /** Set one pivot coordinate (cm): `local` = part axes relative to the GLB origin, `world` = scene axes. */
+    setPivotValue(space: 'local' | 'world', axis: 0 | 1 | 2, cm: number): void {
+      const part = selected ? current(selected) : undefined;
+      const obj = selected ? objects.get(selected) : undefined;
+      if (!part || !obj || !Number.isFinite(cm)) return;
+      if (space === 'local') {
+        const p = [...(part.pivot ?? ZERO)] as Vec3;
+        p[axis] = cm / 100;
+        setPivotLocal(p);
+      } else {
+        obj.updateWorldMatrix(true, false);
+        const w = new THREE.Vector3().setFromMatrixPosition(obj.matrixWorld);
+        w.setComponent(axis, cm / 100);
+        setPivotWorld(w);
+      }
+    },
+    /** Screen points (canvas px) of the selected part's box centre and nearest-to-camera box corner — test hook. */
+    pivotHints(): { center: [number, number]; corner: [number, number] } | null {
+      const part = selected ? current(selected) : undefined;
+      const obj = selected ? objects.get(selected) : undefined;
+      const base = part ? bases.get(part.source) : undefined;
+      if (!part || !obj || !base) return null;
+      obj.updateWorldMatrix(true, false);
+      const pv = part.pivot ?? ZERO;
+      const m = obj.matrixWorld.clone().multiply(new THREE.Matrix4().makeTranslation(-pv[0], -pv[1], -pv[2]));
+      const { min, max } = base.box;
+      let best: THREE.Vector3 | null = null;
+      let bd = Infinity;
+      for (const x of [min[0], max[0]]) for (const y of [min[1], max[1]]) for (const z of [min[2], max[2]]) {
+        const w = new THREE.Vector3(x, y, z).applyMatrix4(m);
+        const d = w.distanceTo(camera.position);
+        if (d < bd) {
+          bd = d;
+          best = w;
+        }
+      }
+      const c = new THREE.Vector3((min[0] + max[0]) / 2, (min[1] + max[1]) / 2, (min[2] + max[2]) / 2).applyMatrix4(m);
+      return { center: toScreen(c), corner: toScreen(best!) };
     },
     setSnap,
     get snap(): boolean {
@@ -871,6 +1215,7 @@ export function createModelEditor(canvas: HTMLCanvasElement, onChange: (snap: Ed
           part.name !== part.source ||
           part.deleted ||
           part.color !== null ||
+          !!part.pivot ||
           part.position.some((v, i) => Math.abs(v - base.position[i]!) > 1e-6) ||
           part.rotation.some((v, i) => Math.abs(v - base.rotation[i]!) > 1e-3) ||
           part.scale.some((v, i) => Math.abs(v - base.scale[i]!) > 1e-6);
@@ -889,6 +1234,7 @@ export function createModelEditor(canvas: HTMLCanvasElement, onChange: (snap: Ed
           scale: part.scale,
           sizeCm: { before: base.size.map((v) => r3(v * 100, 2)), after: base.size.map((v, i) => r3(v * part.scale[i]! * 100, 2)) },
           color: part.color,
+          ...(part.pivot ? { pivotCm: part.pivot.map((v) => r3(v * 100, 2)) } : {}),
           blenderBoxCm: { after } as Record<string, unknown>,
         };
       });
@@ -901,6 +1247,7 @@ export function createModelEditor(canvas: HTMLCanvasElement, onChange: (snap: Ed
         savedAt: new Date().toISOString(),
         units: {
           positionDeltaCm: 'glTF / Three.js axes: x right, y up, z towards the front',
+          pivotCm: 'origin moved from the GLB origin, part-local axes (the exported GLB already has it baked in)',
           blenderBoxCm: 'Blender axes (Z-up, front = -Y), world cm; maps to box(name, x0, x1, y0, y1, z0, z1) in blender/build_master.py',
         },
         summary: {
@@ -917,6 +1264,14 @@ export function createModelEditor(canvas: HTMLCanvasElement, onChange: (snap: Ed
       observer.disconnect();
       canvas.removeEventListener('pointerdown', pointerDown);
       canvas.removeEventListener('pointerup', pointerUp);
+      canvas.removeEventListener('pointerdown', onPointerAlt, { capture: true });
+      canvas.removeEventListener('pointermove', onPointerAlt, { capture: true });
+      window.removeEventListener('keydown', onKeyAlt);
+      window.removeEventListener('keyup', onKeyAlt);
+      window.removeEventListener('blur', onBlurAlt);
+      marker.geometry.dispose();
+      (marker.material as THREE.PointsMaterial).map?.dispose();
+      (marker.material as THREE.PointsMaterial).dispose();
       gizmo.detach();
       gizmo.dispose();
       orbit.dispose();

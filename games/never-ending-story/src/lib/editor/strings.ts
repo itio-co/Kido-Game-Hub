@@ -48,6 +48,45 @@ export const MESSAGES = {
   },
   'editor.common.mm': { en: '{v} mm', th: '{v} มม.' },
 
+  // --- part origin (pivot) editing -------------------------------------------------------------------------------
+  'editor.pivot.mode': { en: 'Edit pivot', th: 'แก้จุดหมุน' },
+  'editor.pivot.modeTitle': {
+    en: 'Edit pivot (D): the arrows move only the origin, the part stays put · snaps to vertices, edge midpoints, face centres, box corners/centre and the grid · hold Alt for free movement',
+    th: 'แก้จุดหมุน (ปุ่ม D): ลูกศรย้ายเฉพาะจุดหมุน ชิ้นส่วนอยู่ที่เดิม · ดูดเข้าจุดยอด กึ่งกลางขอบ กลางหน้า มุม/กลางกล่อง และกริด · กด Alt ค้างเพื่อย้ายอิสระ',
+  },
+  'editor.pivot.heading': { en: 'Pivot (origin)', th: 'จุดหมุน (Origin)' },
+  'editor.pivot.center': { en: 'Pivot to center', th: 'จุดหมุนไปกลางชิ้น' },
+  'editor.pivot.bottom': { en: 'Pivot to bottom center', th: 'จุดหมุนไปกลางฐาน' },
+  'editor.pivot.pick': { en: 'Pivot to picked point', th: 'จุดหมุนไปจุดที่แตะ' },
+  'editor.pivot.pickCancel': { en: 'Cancel picking', th: 'ยกเลิกการแตะเลือก' },
+  'editor.pivot.reset': { en: 'Reset pivot', th: 'คืนจุดหมุนเดิม' },
+  'editor.pivot.pickHint': {
+    en: 'Tap / click a point on the selected part to put its pivot there (Esc cancels)',
+    th: 'แตะ / คลิกจุดบนชิ้นที่เลือกเพื่อย้ายจุดหมุนไปที่นั่น (Esc ยกเลิก)',
+  },
+  'editor.pivot.local': { en: 'Local', th: 'ในชิ้น' },
+  'editor.pivot.world': { en: 'World', th: 'ในฉาก' },
+  'editor.pivot.localSub': {
+    en: 'Pivot, cm · local: part axes, from the original GLB origin',
+    th: 'จุดหมุน (ซม.) · ในชิ้น: แกนของชิ้นส่วน วัดจากจุดหมุนเดิมใน GLB',
+  },
+  'editor.pivot.worldSub': {
+    en: 'Pivot, cm · world: scene axes (X right, Y up, Z front)',
+    th: 'จุดหมุน (ซม.) · ในฉาก: แกนของฉาก (X ขวา, Y ขึ้น, Z หน้า)',
+  },
+  'editor.pivot.spaceAria': { en: 'Pivot coordinates', th: 'พิกัดจุดหมุน' },
+  'editor.pivot.modeOnly': {
+    en: 'Edit pivot: drag the arrows to move the origin (rotate / scale are off in this mode)',
+    th: 'แก้จุดหมุน: ลากลูกศรเพื่อย้ายจุดหมุน (หมุน / ย่อขยายใช้ไม่ได้ในโหมดนี้)',
+  },
+  'editor.pivot.toast': { en: 'Edit pivot {state}', th: 'แก้จุดหมุน {state}' },
+  'editor.pivot.snapped': { en: 'Pivot snapped to {what}', th: 'จุดหมุนดูดเข้า{what}' },
+  'editor.pivot.kind.vertex': { en: 'a vertex', th: 'จุดยอด' },
+  'editor.pivot.kind.edge': { en: 'an edge midpoint', th: 'กึ่งกลางขอบ' },
+  'editor.pivot.kind.face': { en: 'a face centre', th: 'กลางหน้า' },
+  'editor.pivot.kind.bbox': { en: 'the box', th: 'มุม/กลางกล่อง' },
+  'editor.pivot.kind.grid': { en: 'the grid', th: 'กริด' },
+
   // --- master guide line (one per axis per group) ----------------------------------------------------------------
   'cameraMatch.master.set': { en: '★ Set as master', th: '★ ตั้งเป็นเส้นหลัก' },
   'cameraMatch.master.setTitle': {
@@ -442,6 +481,27 @@ export const T = {
     cropTitle: t('editor.stage.cropTitle'),
     follow: t('editor.stage.follow'),
     followTitle: t('editor.stage.followTitle'),
+  },
+
+  /** Part origin (pivot) editing. */
+  pivot: {
+    mode: t('editor.pivot.mode'),
+    modeTitle: t('editor.pivot.modeTitle'),
+    heading: t('editor.pivot.heading'),
+    center: t('editor.pivot.center'),
+    bottom: t('editor.pivot.bottom'),
+    pick: t('editor.pivot.pick'),
+    pickCancel: t('editor.pivot.pickCancel'),
+    reset: t('editor.pivot.reset'),
+    pickHint: t('editor.pivot.pickHint'),
+    local: t('editor.pivot.local'),
+    world: t('editor.pivot.world'),
+    localSub: t('editor.pivot.localSub'),
+    worldSub: t('editor.pivot.worldSub'),
+    spaceAria: t('editor.pivot.spaceAria'),
+    modeOnly: t('editor.pivot.modeOnly'),
+    toast: (on: boolean) => t('editor.pivot.toast', st(on)),
+    snapped: (kind: 'vertex' | 'edge' | 'face' | 'bbox' | 'grid') => t('editor.pivot.snapped', { what: t(`editor.pivot.kind.${kind}`) }),
   },
 
   /** Showing an overlay: while dragging / always / never. */

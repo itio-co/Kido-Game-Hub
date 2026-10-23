@@ -11,6 +11,7 @@
 import { withDefaultMasters } from './masterLine';
 import type { ShowcaseAsset } from '../showcaseAssets';
 import type { EditState } from './modelEditor';
+import { migrateParts } from './pivot';
 import {
   API_HEADER,
   API_PATH,
@@ -60,7 +61,8 @@ export function editsFileData(asset: ShowcaseAsset, variant: string, state: Edit
 export function editsStateOf(file: unknown): EditState | null {
   const f = file as { format?: string; parts?: unknown } | null;
   if (!f || f.format !== FORMAT_EDITS || !Array.isArray(f.parts)) return null;
-  return { parts: structuredClone(f.parts) as EditState['parts'] };
+  // `pivot` is optional: files written before pivots existed load with the GLB origins.
+  return { parts: migrateParts(structuredClone(f.parts) as EditState['parts']) };
 }
 
 function bundledFor(item: string): Record<string, unknown> {
