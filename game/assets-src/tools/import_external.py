@@ -109,6 +109,8 @@ def place(yaw_deg):
 # camera + light (same as the asset's render.py)
 R = Matrix(cam['R']); C = Vector(cam['C']) * 0.01
 cd = bpy.data.cameras.new('MatchCam'); cd.sensor_fit = 'HORIZONTAL'; cd.sensor_width = 36; cd.lens = F / IW * 36
+# principal point from a camera-match export (cx/cy px); Blender shift is in units of the image width
+cd.shift_x = (IW / 2 - cam.get('cx', IW / 2)) / IW; cd.shift_y = (cam.get('cy', IH / 2) - IH / 2) / IW
 cd.clip_start = 0.1; cd.clip_end = 100
 co = bpy.data.objects.new('MatchCam', cd); sc.collection.objects.link(co)
 co.matrix_world = Matrix.Translation(C) @ (R.transposed() @ Matrix(((1, 0, 0), (0, -1, 0), (0, 0, -1)))).to_4x4()

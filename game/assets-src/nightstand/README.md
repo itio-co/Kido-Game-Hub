@@ -46,6 +46,11 @@ BLENDER=/path/to/blender PYTHON=python3 ./render_all.sh    # → ../compare (nee
 | `export/nightstand.glb` | 212 | flat-shaded vertex colours (top #e0995a, front #c47d42, side #a8652f), no texture |
 | `export/nightstand-master.glb` | 948 | bevelled, smooth-by-angle, 2048² baked wood base colour |
 
+Both GLBs have a root node (`Nightstand_Master` / `Nightstand_LowPoly`) with one mesh node per part (15:
+`TopSlab`, `Leg_LF/RF/LB/RB`, `Apron_L/R/B`, `Rail_Top/Bot`, `Drawer_Face`, `Drawer_Cavity`, `Knob`,
+`Stretcher_L/R`), origins at each part's centre, so `#/editor` can pick and move parts (since v0.2.5;
+same triangles, texture and vertex colours as the earlier single mesh). The `.blend` keeps the joined meshes.
+
 Size 61 × 40.5 × 55 cm (W × D × H), origin at the floor centre, front = −Y in Blender / +Z in glTF.
 Width comes from the camera solve against the 55 cm height.
 
@@ -69,3 +74,9 @@ Image 252 × 284 px, focal 1134.8 px, principal point at the centre.
   0.925 / 0.923 vs the refined mask, which is biased because that mask used the earlier master render as a prior.
 - v0.2.4: side stretchers enlarged from 3 × 5 cm to 4.5 × 7 cm (z 11–18 cm); the drawer-bottom board that showed
   under the back apron in the orbit view was removed. Before: IoU 0.748 / 0.745 (rembg), 0.922 / 0.921 (refined).
+- v0.2.5: GLBs split into one node per part for the 3D editor; geometry unchanged (IoU unchanged).
+
+## Editing
+
+Small fixes can be made in the game at `#/editor` and brought back with `import_external.py --fit none --yaw 0`;
+see `../README.md` → 3D editor.

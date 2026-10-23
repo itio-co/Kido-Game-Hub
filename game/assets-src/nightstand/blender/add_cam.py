@@ -6,6 +6,8 @@ for o in [o for o in sc.objects if o.type in ('CAMERA','LIGHT')]: bpy.data.objec
 for i in [i for i in bpy.data.images if i.name.startswith('nightstand-ref')]: bpy.data.images.remove(i)
 c=json.load(open(HERE+'cam.json')); R=Matrix(c['R']); C=Vector(c['C'])*0.01; f=c['p'][5]
 cd=bpy.data.cameras.new('MatchCam'); cd.sensor_fit='HORIZONTAL'; cd.sensor_width=36; cd.lens=f/252*36
+# principal point (camera-match export may carry cx/cy); Blender shift is in units of the image width (sensor_fit HORIZONTAL)
+cd.shift_x=(126-c.get('cx',126))/252; cd.shift_y=(c.get('cy',142)-142)/252
 cam=bpy.data.objects.new('MatchCam',cd); sc.collection.objects.link(cam)
 cam.matrix_world=Matrix.Translation(C)@(R.transposed()@Matrix(((1,0,0),(0,-1,0),(0,0,-1)))).to_4x4(); sc.camera=cam
 img=bpy.data.images.load(HERE+'../ref/nightstand-ref.png'); cd.show_background_images=True

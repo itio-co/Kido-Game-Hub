@@ -58,3 +58,127 @@ blender -b --python game/assets-src/tools/import_external.py -- game/assets-src/
 ```
 
 See `nightstand/external/README.md` for the options and outputs.
+
+## 3D editor (`#/editor`)
+
+For small fixes without Blender: move, resize, rotate, duplicate, hide or delete parts and check them against the
+mock-up. Open the game at `#/editor` (or the **✎ แก้โมเดลนี้** button in `#/showcase`).
+
+### วิธีใช้ (ไทย)
+
+1. เปิด `#/editor` → เลือกโมเดลที่ช่อง **โมเดล** (Low-poly สำหรับเกม หรือ Master)
+2. แตะชิ้นส่วนในภาพ 3D หรือแตะชื่อในรายการ **ชิ้นส่วน** → ชิ้นที่เลือกจะมีกรอบสีเหลือง
+3. แก้ได้ 2 แบบ
+   - ลากลูกศร/วงแหวนบนตัวโมเดล: ปุ่ม **ย้าย / หมุน / ขนาด** ด้านล่างภาพ
+   - พิมพ์ตัวเลข หรือกด − / + : ตำแหน่งและขนาดเป็น **ซม.** การหมุนเป็น **องศา**
+4. **แม่เหล็ก เปิด** = ขยับทีละ 0.5 ซม. / หมุนทีละ 15° (กดอีกครั้งเพื่อปิด)
+5. **ทำสำเนา / ซ่อน / ลบ** ชิ้นที่เลือก; ชิ้นที่ลบแล้วกด **คืน** ในรายการได้
+6. **↶ ย้อน / ↷ ทำต่อ** (คีย์บอร์ด Ctrl+Z / Ctrl+Shift+Z หรือ Ctrl+Y)
+7. **มุม Mock-up** = กล้องเดียวกับภาพ mock-up พร้อมภาพซ้อน ปรับความเข้มด้วยแถบเลื่อน;
+   **หมุนดูอิสระ** = ลากหมุน/ซูมได้
+8. งานบันทึกในเครื่องนี้อัตโนมัติ (localStorage); **ล้างการแก้ทั้งหมด** เพื่อเริ่มใหม่
+9. **ดาวน์โหลด GLB ที่แก้แล้ว** และ **ดาวน์โหลดรายการแก้ (JSON)**
+
+เอากลับเข้าโปรเจกต์:
+
+- คัดลอก GLB ไปไว้ที่ `game/assets-src/<item>/external/editor/model.glb` แล้วรัน
+  `import_external.py` (คำสั่งด้านล่าง) เพื่อเรนเดอร์เทียบกับ ref และดูค่า IoU
+- ถ้าจะให้แก้ถาวรใน Blender: ใช้ค่า `blenderBoxCm.after` ในไฟล์ JSON แก้ `blender/dims.json` /
+  `build_master.py` แล้ว build ใหม่ (ดูด้านล่าง)
+- ถ้าจะใช้ GLB ตรงๆ ในเกม: คัดลอกไปทับ `game/public/models/<slug>.glb`
+
+### How to use (English)
+
+1. Open `#/editor`, pick the model (low-poly = in-game, or master).
+2. Tap a part in the viewport or in the part list; the selection gets a yellow box.
+3. Edit with the gizmo (**ย้าย** move / **หมุน** rotate / **ขนาด** scale) or type numbers: position and size in cm,
+   rotation in degrees. Sizes are the part's real size; the GLB stores them as node scale.
+4. **แม่เหล็ก** (snap) = 0.5 cm / 15° steps. Undo / redo: header buttons, Ctrl+Z, Ctrl+Shift+Z / Ctrl+Y.
+   Keys W/G move, E/R rotate, S scale, Delete removes the part, Esc deselects.
+5. **มุม Mock-up** uses the matched camera with the reference over the model (opacity slider);
+   **หมุนดูอิสระ** is free orbit.
+6. Edits autosave per model in localStorage (`kido-editor:<slug>:<variant>`); **ล้างการแก้ทั้งหมด** resets.
+7. Export:
+   - **GLB**: binary glTF of the edited model, one node per part. Deleted parts are dropped, hidden parts are
+     exported (hiding is only for working). A recoloured part gets a flat colour (no texture / vertex colours).
+   - **JSON** (`kido-model-edits/1`): per part `changed`, `deleted`, `copyOf`, `positionDeltaCm`, `rotationDeg`,
+     `scale`, `sizeCm.before/after`, `color`, and `blenderBoxCm.before/after` = the part's axis-aligned box in
+     Blender coordinates and cm (X width, Y depth with front = −Y, Z up), the same numbers `box(name, x0, x1, y0,
+     y1, z0, z1)` takes in `build_master.py`. `summary` lists deleted / added / changed parts.
+
+Bringing it back:
+
+```sh
+mkdir -p game/assets-src/<item>/external/editor
+cp ~/Downloads/<item>-lowpoly-edited.glb game/assets-src/<item>/external/editor/model.glb
+blender -b --python game/assets-src/tools/import_external.py -- \
+    game/assets-src/<item> game/assets-src/<item>/external/editor/model.glb --fit none --yaw 0
+```
+
+Use `--fit none --yaw 0`: the editor keeps real size and orientation, while the defaults (`--fit box`,
+`--yaw auto`) would stretch it back to `asset.json` and may turn it. The script joins the parts, renders at the
+matched camera and writes `external/editor/compare/` (side-by-side, overlay, IoU in `model-report.json`).
+To keep the change in the Blender source, copy the `blenderBoxCm.after` numbers into `blender/dims.json` /
+`build_master.py`, rebuild (`build_all.sh`, `render_all.sh`) and copy the GLBs to `game/public/models/`.
+Rotations and recolours are not in `dims.json`; port them by hand.
+
+### Adding an asset to the editor
+
+1. Export GLBs with **one named node per part** (see `nightstand/blender/finalize.py`, `split_parts`): a root
+   empty, then a mesh per part with its origin at the part centre. A single joined mesh shows as one part.
+2. Add an entry to `SHOWCASE_ASSETS` in `game/src/lib/showcaseAssets.ts` (slug, title, variant URLs, `ref` image +
+   matched camera for the mock-up view, orbit framing). The editor's model menu reads that list.
+3. Optional: Thai part names in `game/src/lib/editor/partLabels.ts`.
+4. Optional, for camera match: `ref.mockup` (full mock-up + crop offset) and `ref.keyPoints` (named model
+   corners in Blender cm) and `ref.camParams` (the first five `p` values of `cam.json`).
+
+## Camera match (`#/editor` → **จับมุมกล้อง**, v0.2.8)
+
+fSpy-style camera matching inside the editor: line the model up with the mock-up and export a camera that
+`add_cam.py` / `render.py` / `import_external.py` and Three.js can use.
+
+### วิธีใช้ (ไทย)
+
+1. เปิด `#/editor` → กด **จับมุมกล้อง** (ต้องเป็นโมเดลที่มีภาพ mock-up)
+2. เลือกภาพ **ภาพครอป** (ref ของโมเดล) หรือ **Mock-up เต็ม** (`player-room-wide.jpg`, ครอปอยู่ที่ x=368, y=540)
+3. **เส้นนำสายตา**: กด **+ เส้น X** (แดง = ด้านกว้าง) **+ เส้น Y** (เขียว = ด้านลึก) **+ เส้น Z** (น้ำเงิน = แนวตั้ง)
+   แล้วลากจุดปลายเส้นให้ทับขอบที่ขนานกันในภาพ แกนละอย่างน้อย 2 เส้น (มากกว่า 2 เส้นจะหาจุดลับตาแบบ least-squares)
+   - เส้นประยาวต่อไปจนสุดภาพ จุดลับตา (VP) แสดงเป็นวงกลม/ลูกศรที่ขอบภาพ เส้นประสีเหลือง = เส้นขอบฟ้า
+   - **วางเส้นตามกล้องปัจจุบัน** = วางเส้นตามขอบโมเดลให้เริ่มง่าย; ซูม ＋ / － / ⤢ ที่มุมภาพ, ลากพื้นหลัง = เลื่อน,
+     สองนิ้ว/ล้อเมาส์ = ซูม
+4. กด **คำนวณจากเส้น** → ได้มุมกล้องและเลนส์ (ติ๊ก **ล็อกเลนส์** ถ้ารู้เลนส์แล้ว)
+   จุดกึ่งกลางภาพ: **กลางภาพ** (ค่าเริ่ม), **จาก 3 จุดลับตา**, หรือ **ปรับเอง/จากคู่จุด**
+5. **คู่จุด**: เลือกมุมที่รู้ขนาดจากรายการ (เช่น มุมหน้าซ้ายบน สูง 55 ซม.) หรือ **+ แตะจุดบนโมเดล**
+   แล้วแตะจุดเดียวกันบนภาพ
+   - 2 คู่ขึ้นไป → **ตั้งระยะจากคู่จุด** (ตำแหน่ง/ขนาด)
+   - 4–6 คู่ขึ้นไป → **คำนวณละเอียด** (PnP: มุม + ตำแหน่ง + เลนส์ พร้อมกัน)
+   - ค่าคลาดเคลื่อนเป็น px แสดงทั้งของเส้นและคู่จุด
+6. **ค่ากล้อง**: เลนส์ (มม., เซ็นเซอร์ 36 มม.), FOV, ตำแหน่ง (ซม.), การหมุน (องศา, XYZ แบบ Blender), cx/cy
+   พิมพ์แก้ได้ทันที; **กลับเป็นกล้องเดิม** = ใช้ cam.json ที่มากับโมเดล; **กลับด้าน 180°** ถ้ากล้องหันผิดด้าน
+7. **การแสดงผล**: ทึบ / โครงลวด / เส้นขอบ, แถบความทึบโมเดล, แถบ **เลื่อนเทียบ ก่อน|หลัง**
+8. บันทึกอัตโนมัติในเครื่อง (`kido-cam:<slug>`) และ **มุม Mock-up** จะใช้กล้องที่จับไว้
+9. **ดาวน์โหลด cam.json** (รูปแบบเดียวกับ `blender/cam.json`) หรือ **ดาวน์โหลดค่าทั้งหมด** (Blender + Three.js)
+
+### Notes (English)
+
+- Coordinates: world = Blender cm (Z up, front = −Y). Image points are crop ("ref") pixels; the full mock-up is
+  the same space shifted by the crop offset, so the principal point of the crop centre (126, 142) is
+  (494, 682) on `player-room-wide.jpg` (−8, +100 px from that image's centre).
+- `<slug>-cam.json` = `{p: [W, D, T, O, L, f, rvec(3), tvec(3)], R, C, IW, IH, H, cx, cy}` — OpenCV
+  `x = K R (X − C)`, `C` in cm, `f` in crop px. Copy it over `assets-src/<item>/blender/cam.json` and run
+  `add_cam.py` / `render.py`. `cx`/`cy` are new and optional: the scripts turn them into Blender lens shift
+  (`shift_x = (IW/2 − cx)/IW`, `shift_y = (cy − IH/2)/IW`; Blender's shift is in units of the fitted sensor
+  side, i.e. the width with `sensor_fit = HORIZONTAL` — checked against `world_to_camera_view` in Blender 4.5).
+- `<slug>-camera-match.json` (`kido-camera-match/1`) also has `blender` (location m, XYZ Euler, lens, shift),
+  `three` (hFOV, position, quaternion in the game's Y-up metres + a snippet), `mockup` (lens / hFOV / shift
+  for the full mock-up), residuals, and the lines and point pairs.
+- Solver: VPs from the guide lines (least squares over normalised homogeneous lines), focal length from two
+  orthogonal VPs, rotation from the VP directions (signs from the current camera), then Levenberg–Marquardt on
+  line-to-VP and point reprojection error. Position comes from point pairs (linear + LM); with no pairs the
+  model origin stays where the previous camera put it.
+- Accuracy on the nightstand (known camera 162.1 mm / 12.7° hFOV, rot 73.6°, 0.5°, 26.9°, pos 151.7, −304.1,
+  136.5 cm): synthetic lines with 0.5 px noise → 160 mm and < 0.1°; on the AI mock-up, 11 hand-placed lines alone
+  are ill-conditioned (the art is not perfectly perspective-consistent and a 162 mm lens puts the VPs ~2000 px
+  away, so the free lens drifts to ~840 mm); with the lens locked the rotation is within ~1.4–1.9°; 12 point
+  pairs + **คำนวณละเอียด** give ≈158 mm, rotation within 0.2° and position within ~7 cm. For long-lens shots,
+  lock the lens or use point pairs.
