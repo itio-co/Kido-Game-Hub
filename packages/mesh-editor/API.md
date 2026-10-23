@@ -1,17 +1,17 @@
-# @itio/mesh-editor: API contract v0.0.1
+# @itio/mesh-editor: API contract v1
 
 This is the contract that GamesBuilder and Never Ending Game both code against. The TypeScript in `src/` is the source of truth for names and signatures. This file explains the rules that types cannot express. To change the contract, open a PR that edits both this file and `src/` together, and get a review from the other owner (§13).
 
-Status: **draft for review.** Items marked **[confirm]** are decisions to check with GamesBuilder before implementation.
+Status: **Agreed v1 (Never Ending Game + GamesBuilder, 2026-10-23).** Package version 0.0.1. Contract changes from now on need a PR that edits this file and `src/` together, reviewed by both owners.
 
 | Subpath | Contents | Depends on |
 |---|---|---|
 | `@itio/mesh-editor` | core: EditMesh, document, edits.json, selection, host, viewport, transform, snap, history | `three` (peer) |
 | `@itio/mesh-editor/svelte` | optional UI panels | core, `svelte` 5 (optional peer) |
-| `@itio/mesh-editor/threlte` | Threlte adapter | core, `@threlte/core` (peer, to be added) |
+| `@itio/mesh-editor/threlte` | Threlte adapter | core, `@threlte/core` (optional peer) |
 | `@itio/mesh-editor/camera-match` | camera matching to a reference image, Blender and three.js export | `three` |
 
-The core never imports Svelte, Threlte, or DOM UI. It touches the DOM only through `EditorViewport` pointer listeners on `domElement`.
+Peer dependencies: `three` is required. `svelte` and `@threlte/core` are **optional** (`peerDependenciesMeta`) and needed only for the subpath that uses them. The core never imports Svelte, Threlte, or DOM UI. It touches the DOM only through `EditorViewport` pointer listeners on `domElement`.
 
 ---
 
@@ -42,7 +42,7 @@ Rules:
 - **Operations are pure.** They never mutate their input and always return a new mesh, plus the new element indices where useful (`extrude` → new cap faces, `merge` → surviving vertex). The full list is in `EditMeshOps` (`src/core/mesh.ts`): `edgesOf, faceNormal, centroid, quantize, transformVerts, extrude, inset, bevel, merge, weld, deleteFaces, flip, fromBufferGeometry, toBufferGeometry`.
 - `toBufferGeometry` fan-triangulates each face and makes one geometry group per distinct `fm` value, in first-appearance order. Flat normals duplicate vertices per face. Smooth normals are area-weighted.
 - `fromBufferGeometry` (GLB import) welds vertices at 1e-5 by default and rebuilds quads from coplanar triangle pairs (≤ 1°). It also maps `geometry.groups[].materialIndex` to `fm` through `groupMaterialIds`.
-- **[confirm]** Per-face UVs are out of scope for v1. Low-poly assets use flat material colours, and textured master GLBs are not edited at the vertex level. A later version can add `uv?: number[][]` (per face-corner, parallel to `f`).
+- **v1 scope (agreed): no UVs.** Per-face UVs are out of scope for v1. Low-poly assets use flat material colours, and textured master GLBs are not edited at the vertex level. A later version can add `uv?: number[][]` (per face-corner, parallel to `f`).
 
 ## 3. `EditObject` and `EditDocument`
 
@@ -54,7 +54,7 @@ interface EditDocument { version: 1; objects: EditObject[]; camera?: CameraMatch
 
 - `id` is stable across sessions. Kido authored entities use their UUID v4 (see `game/README.md` › Scene objects). GLB parts without an id get a fresh UUID on import, and their name is kept in `name`.
 - `name` matches the GLB node name and `parts[].name` in edits.json.
-- `transform` is relative to the document root. The hierarchy is flat in v1. **[confirm]** No parent/child nesting yet. The Kido editor already flattens a GLB to its top-level parts (`partsOf()`).
+- `transform` is relative to the document root. **v1 scope (agreed): flat objects.** There is no parent/child nesting. The Kido editor already flattens a GLB to its top-level parts (`partsOf()`).
 - The document is plain JSON (`JSON.parse(JSON.stringify(doc))` deep-equals `doc`).
 
 ## 4. edits.json (`kido-model-edits/1`)
@@ -95,9 +95,9 @@ This is the file the editor exports so a human or an agent can port changes back
 
 Rules:
 - `summary.added` lists copies, as today, and also `created` objects.
-- **Per-object delta:** `positionDeltaCm` is the transform delta. `mesh` is the geometry delta, written as the full after-state because a mesh diff is hard to port by hand. **[confirm]** If size becomes a problem, a later version can add `meshDelta` (moved verts plus added and removed faces).
+- **Per-object delta:** `positionDeltaCm` is the transform delta. `mesh` is the geometry delta, written as the **full after-state `EditMesh`** (agreed). A mesh diff is hard to port by hand. An optional `meshDelta` (moved verts plus added and removed faces) may be added later if file size becomes a problem. It would be additive, and `mesh` would stay authoritative.
 - **Bounding box:** `blenderBoxCm` maps 1:1 to `box(name, x0, x1, y0, y1, z0, z1)` in `build_master.py`. For an edited mesh, `after` is computed from the new geometry.
-- **[confirm]** `rotationDeg` and `scale` stay absolute (not deltas) because that is what the current editor writes. The name `positionDeltaCm` makes the asymmetry explicit.
+- `rotationDeg` and `scale` stay absolute (not deltas) because that is what the current editor writes. The name `positionDeltaCm` makes the asymmetry explicit.
 - Types: `KidoModelEdits` and `KidoPartEdit` in `src/core/edits.ts`.
 
 ## 5. Host interface
@@ -112,12 +112,13 @@ interface EditorHost {
   setNavigationEnabled(enabled: boolean): void;
   requestRender(): void;
   resolveMaterial(id: string | null): THREE.Material;
-  // proposed additions [confirm]
+  // agreed additions
   listObjects(): string[];
   getObject3D(objId: string): THREE.Object3D | null;
   commitTransform(objId: string, transform: Transform, opts: { live: boolean }): void;
   addObject?(object: EditObject, index?: number): void;
   removeObject?(objId: string): void;
+  canEdit?(objId: string): boolean | string;
 }
 ```
 
@@ -126,7 +127,14 @@ interface EditorHost {
 - `setNavigationEnabled(false)` is called when the editor owns a gesture (gizmo drag, box select), and `true` is called again on release or cancel. The host maps this to OrbitControls `enabled`, or the equivalent.
 - `requestRender()` should be coalesced by the host (one rAF). The editor may call it many times per frame.
 - `resolveMaterial(null)` returns the host default. The editor uses this for preview overlays of faces with `fm` ids.
-- **[confirm] Additions:** object mode needs `listObjects`, `getObject3D` (raycast, matrixWorld, gizmo attach), and `commitTransform`. Duplicate and delete, and their undo, need `addObject` and `removeObject`. Without the last two, those commands are disabled.
+- **Additions (agreed):** object mode needs `listObjects`, `getObject3D` (raycast, matrixWorld, gizmo attach), and `commitTransform`. Duplicate and delete, and their undo, need `addObject` and `removeObject`. If the host doesn't implement those two, the commands are disabled.
+- **`getMesh(objId) === null`:** the object can be picked and selected in **object mode** (and transformed, unless it is locked) but **not edited at the element level**. Switching to vertex, edge, or face mode skips it, and element picks ignore it.
+- **`canEdit?(objId)`:** optional lock. If it is absent, every object is editable.
+  - `true` means editable.
+  - `false` or a **string** means locked. A string is the reason, and the UI shows it (Thai or English is the host's choice).
+  - A locked object can still be **selected**, so it highlights and shows in panels. It **refuses** picks-for-transform: no gizmo is attached, a drag doesn't start a session, and typed values are rejected. The reason is shown instead.
+  - In a mixed selection, the locked objects are dropped from the session, and the gizmo appears only if at least one object stays editable.
+  - The editor calls `canEdit` at the start of each session and each typed value, so the host can change locks at any time.
 
 ## 6. `EditorViewport`
 
@@ -142,12 +150,17 @@ viewport.dispose();
 - **No render loop:** every visible change calls `host.requestRender()`.
 - **Overlays** (gizmo, vertex dots, edge lines, selection box) live in one `Group` that is added on attach and removed on detach. They are never exported, and they are excluded from picking and from `Box3` computations.
 - **Select mode:** `object | vertex | edge | face` (`setSelectMode`).
-- **Picking:** raycast for objects and faces. Vertices and edges use screen-space distance within `pickRadiusPx`, with occlusion tested against a depth raycast. `xray` turns occlusion off.
+- **Picking:** raycast for objects and faces. Vertices use screen-space distance within `pickRadiusPx`. Edges use the distance to the projected segment within **`0.7 × pickRadiusPx`**, which is 15.4 px at the 22 px default. Occlusion is tested against a depth raycast, and `xray` turns it off.
 - **Multi select:** on desktop, Shift adds and Ctrl/Cmd toggles. On touch, the `multiSelect` flag makes taps toggle.
-- **Box select:** Alt+drag on desktop, or the `boxSelect` flag on touch, where a drag on empty space draws a box. `selectBox(rect, op)` does the same programmatically.
+- **Box select:** a drag that **starts on empty space** draws a box when any of these is true:
+  - **Alt** is held. The op is `replace`.
+  - **Shift** is held. The op is `add`.
+  - The **`boxSelect` flag** is on. It works on desktop and touch alike. The op is `replace`, or `add` when Shift is held or `multiSelect` is on.
+
+  A drag that starts on geometry or on the gizmo never boxes. Without one of these triggers, a drag on empty space goes to camera navigation. `selectBox(rect, op)` does the same programmatically.
 - **Transform mode:** `translate | rotate | scale | null` (`null` means no gizmo), and `space: 'local' | 'world'`.
 - **Events:** `on('selectionchange' | 'modechange' | 'transform' | 'history', cb)` returns an unsubscribe function.
-- **[confirm]** Gizmo implementation: wrap `three/addons` `TransformControls`, which the current Kido editor already uses, and drive a proxy `Object3D` at the pivot. The editor reads its matrix as the session delta.
+- **Gizmo (agreed):** wrap `three/addons` `TransformControls`, which the current Kido editor already uses, around a proxy `Object3D` placed at the pivot. The selection is never attached directly. On each change, the editor turns the proxy's motion since session start into the session delta matrix (§7, §8).
 
 ## 7. Selection and transform session
 
@@ -159,8 +172,8 @@ interface Selection { mode: SelectMode; objects: string[]; active: string | null
 - Selection is an immutable value. In object mode `elements` is `{}`. In element modes only the current mode's array is filled, and multi-object edit is allowed.
 - Switching mode converts the selection: vertices become the edges and faces they fully enclose, and faces become their vertices and edges.
 - `active` is the last-picked object. Local gizmo space and typed values use it.
-- **Pivot:** the centroid of the selected vertices in world space (or of the object origins in object mode), fixed at session start. **[confirm]** Median versus bounding-box centre: v1 uses the plain vertex mean.
-- **Session:** start → `update(matrix)` on each gizmo change → snap → apply to the **start snapshot**, never incrementally, so there is no drift → `commit(..., { live: true })` → `requestRender()`. On release, `end()` sends one `live: false` commit per object and pushes **one** history command. `cancel()` restores the snapshot and pushes nothing.
+- **Pivot:** the plain mean of the selected vertices in world space (or of the object origins in object mode), fixed at session start. It is not the bounding-box centre.
+- **Session:** start → `update(matrix)` on each gizmo change → snap → apply to the **start snapshot**, never incrementally, so there is no drift. Each start position is mapped world → local with `inverse(object.matrixWorld)`, so `p_local' = inverse(W) · matrix · W · p_local_start`, where `W` is the object's `matrixWorld` at session start. In object mode, the object's world matrix becomes `matrix · W_start`, and it is decomposed back to a parent-relative `Transform` → `commit(..., { live: true })` → `requestRender()`. On release, `end()` sends one `live: false` commit per object and pushes **one** history command. `cancel()` restores the snapshot and pushes nothing.
 - **Typed values** (`applyTyped({ kind, axis, value, space })`) build the candidate matrix for that absolute value and go through the same snap → apply → commit → one-command path. Units: position and size in metres (the UI shows cm), rotation in degrees, scale unitless.
 
 ## 8. Snapping
@@ -170,8 +183,17 @@ type SnapFn = (c: { matrix: THREE.Matrix4; pivot: THREE.Vector3; selection: Sele
                     mode?; source?: 'drag' | 'typed'; axis?; space?; ray?; invert? }) => THREE.Matrix4;
 ```
 
-- `matrix` is the proposed **world-space delta since session start**, about the pivot. A selected point `p` moves to `matrix · p_start`. The function returns the adjusted delta. It is called on **every gizmo change and every typed value**, and must be pure and allocation-light.
-- **Providers** (`SnapProvider { kind, enabled, snap }`), composed with `composeSnaps([...])`:
+- `matrix` is the proposed **world-space delta since session start**. The pivot is **already conjugated in**:
+
+  ```
+  matrix = T(t) · T(pivot) · R · S · T(−pivot)      // = T(pivot + t) · L · T(−pivot), L = R·S
+  p'     = matrix · p_start                         // world space, for every selected point
+         = L · (p_start − pivot) + pivot + t
+  ```
+
+  `t` is the **pivot displacement** (where the pivot goes is `pivot + t`). `L` is the linear part (rotation × scale about the pivot). Snap functions return a matrix of the same form, and consumers never re-apply the pivot. The session maps results to object-local through `inverse(object.matrixWorld)` (§7). Helpers: `splitDelta(matrix, pivot) → { t, linear }` and `makeDelta(pivot, t, linear)`.
+- It is called on **every gizmo change and every typed value**, and must be pure and allocation-light.
+- **Providers** (`SnapProvider { kind, enabled, snap(c): Matrix4 | null }`; returning `null` means no target), composed with `composeSnaps([...])`, which ships as runtime code in 0.0.1:
 
 | kind | does | Kido default |
 |---|---|---|
@@ -179,10 +201,15 @@ type SnapFn = (c: { matrix: THREE.Matrix4; pivot: THREE.Vector3; selection: Sele
 | `angle` | rounds rotation to `stepDeg` and scale to `scaleStep` | 15°, 0.05 |
 | `vertex` | moves the pivot onto the nearest unselected vertex within `radiusPx` | 16 px |
 | `edge` | moves the pivot to the closest point on the nearest edge | 16 px |
-| `face` | moves the pivot to the ray hit on the face under the pointer | — |
+| `face` | moves the pivot to the ray hit on the face under the pointer | n/a |
 | `alignNormal` | with `face`, also rotates the selection's +Y onto the hit normal | off |
 
-- Order: grid and angle first, then the geometric providers. The first geometric provider that finds a target wins. `invert` (Ctrl, or a touch toggle) flips the enabled state for that gesture.
+- **Order (`composeSnaps`, implemented in `src/core/snap.ts` and unit-tested):**
+  1. **Grid and angle first**, in list order. Grid rounds `t`, and angle rounds `L`'s rotation (and scale).
+  2. **Then the geometric providers** (`vertex`, `edge`, `face`, `alignNormal`), in list order. Each returns a matrix, or `null` for "no target". The **first** non-null result wins, and the rest are skipped.
+  3. With a geometric hit, its `t` **replaces** the grid-rounded `t` and is **not re-rounded**. The angle-snapped rotation from step 1 is kept. The one exception is `alignNormal`: the face-aligned rotation is the snap result, so its linear part is used as-is.
+  4. Without a hit, the step-1 result stands.
+- `invert` (Ctrl, or a touch toggle) flips every provider's enabled state for that gesture.
 - The defaults match the current Kido editor (`setSnap`: 5 mm, 15°, 0.05).
 
 ## 9. History
@@ -253,7 +280,7 @@ Conversions, checked against the nightstand files:
 
 ## 12. Testing
 
-- **Core:** Vitest in Node (`npm -w @itio/mesh-editor test`). Pure ops get table tests (cube → extrude → expected `v`/`f`). Picking gets tests with a fixed camera and synthetic pointer coordinates. Snapping gets matrix-in/matrix-out tests. Camera match is tested against `nightstand/blender/cam.json`, round-tripping the numbers in §10.
+- **Core:** Vitest in Node (`npm -w @itio/mesh-editor test`). Pure ops get table tests (cube → extrude → expected `v`/`f`). Picking gets tests with a fixed camera and synthetic pointer coordinates. Snapping gets matrix-in/matrix-out tests; the composition order (§8) is already covered by `test/snap.test.ts`. Camera match is tested against `nightstand/blender/cam.json`, round-tripping the numbers in §10.
 - **Later:** a Playwright demo page (`packages/mesh-editor/demo/`) at 390×844 covering tap select, box select, a gizmo drag giving one undo step, a typed value, and export of edits.json.
 - CI runs build, typecheck, and test for the package, plus `npm run build` for every game.
 
@@ -271,6 +298,15 @@ Conversions, checked against the nightstand files:
 | GLB import and weld (`fromBufferGeometry` caller, part flattening, edits.json export) | Never Ending Game |
 | Svelte UI panels (`./svelte`), theme, i18n | Never Ending Game |
 | Kido integration (`game/` → `games/never-ending-story/` editor route) | Never Ending Game |
-| `EditorViewport` shell, `History`, `EditorHost` contract | shared: changes need both reviews |
+| `EditorViewport` shell, `History`, `EditorHost` contract | shared (agreed): changes need both reviews |
 
 `weld` itself lives in `EditMeshOps` (GamesBuilder). The GLB import pipeline that calls it belongs to Never Ending Game.
+
+## 14. Workspace layout
+
+The root `package.json` workspaces are `["packages/*", "games/*", "game"]`. **Every directory directly under `games/` that has a `package.json` becomes a workspace**, and so does `game/` until it moves to `games/never-ending-story/`.
+
+- Don't put a stray `package.json` under `games/`, such as a scratch folder, a copied template, or a nested app. It would be installed and hoisted by the root `npm install`.
+- A nested SvelteKit app keeps exactly one `package.json`, at `games/<name>/package.json`.
+- There is one lockfile, the root `package-lock.json`.
+- When `game/` moves, remove `"game"` from the workspaces list in the same PR.

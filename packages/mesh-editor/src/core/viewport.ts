@@ -17,7 +17,7 @@ export interface EditorViewportOptions {
   history?: History;
   /** Tap vs drag threshold in CSS px. Default 8 (same as the Kido editor). */
   tapSlopPx?: number;
-  /** Screen-space pick radius for vertices / edges in CSS px. Default 22 (touch). */
+  /** Screen-space pick radius for vertices in CSS px. Default 22 (touch). Edges use 0.7 × this. */
   pickRadiusPx?: number;
 }
 
@@ -68,7 +68,10 @@ export interface EditorViewport {
    * Tap pick. Desktop: Shift = add, Ctrl/Cmd = toggle. Touch: `multiSelect` makes taps toggle.
    */
   multiSelect: boolean;
-  /** When on, a drag on empty space draws a box (touch has no modifier keys). Desktop: Alt+drag always boxes. */
+  /**
+   * When on, a drag that starts on empty space draws a box (desktop and touch). Regardless of
+   * this flag, Alt+drag (replace) and Shift+drag (add) on empty space also box-select.
+   */
   boxSelect: boolean;
   /** Programmatic box select in CSS px relative to domElement. Occluded elements are skipped unless `xray`. */
   selectBox(rect: { x: number; y: number; width: number; height: number }, op?: SelectOp): void;

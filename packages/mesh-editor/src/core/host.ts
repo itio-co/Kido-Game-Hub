@@ -18,7 +18,10 @@ export interface CommitOptions {
  * the THREE objects, persistence and the render loop; the editor never renders by itself.
  */
 export interface EditorHost {
-  /** Current mesh of an object, or null if unknown / not editable. */
+  /**
+   * Current mesh of an object. `null` = the object can be selected (and transformed, unless
+   * locked) in object mode, but cannot be edited at the element level (vertex / edge / face).
+   */
   getMesh(objId: string): EditMesh | null;
   /** Replace an object's mesh. The host rebuilds geometry (see EditMeshOps.toBufferGeometry). */
   commit(objId: string, mesh: EditMesh, opts: CommitOptions): void;
@@ -31,7 +34,7 @@ export interface EditorHost {
   /** Material for an id from `EditMesh.fm` / `EditObject.materialId`. `null` = host default. */
   resolveMaterial(id: string | null): THREE.Material;
 
-  // ---- Proposed additions (see API.md §5, to confirm) ----
+  // ---- Agreed additions (API.md §5) ----
 
   /** Pickable object ids, in list order. Default: none (editor picks nothing). */
   listObjects(): string[];
@@ -42,4 +45,10 @@ export interface EditorHost {
   /** Optional: create / remove objects (duplicate, delete, undo of those). */
   addObject?(object: EditObject, index?: number): void;
   removeObject?(objId: string): void;
+  /**
+   * Optional lock. Absent or `true` = editable. `false` or a string = locked: the object can be
+   * selected, but gets no gizmo, starts no transform session and rejects typed values. A string
+   * is the reason shown in the UI. Called at each session start and each typed value.
+   */
+  canEdit?(objId: string): boolean | string;
 }

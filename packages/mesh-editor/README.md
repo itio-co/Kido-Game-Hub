@@ -2,7 +2,7 @@
 
 A touch-friendly polygon mesh editor for three.js. It is shared by the games in this repo.
 
-> **Status: 0.0.1, skeleton only.** `src/` exports TypeScript types only. The contract is in [API.md](API.md). Implementations land in follow-up PRs from GamesBuilder and Never Ending Game (ownership is in API.md §13).
+> **Status: 0.0.1, skeleton only.** `src/` exports TypeScript types, plus one runtime piece: the snap composition helpers (`composeSnaps`, `splitDelta`, `makeDelta`, `GEOMETRIC_SNAP_KINDS`). The contract is in [API.md](API.md). Implementations land in follow-up PRs from GamesBuilder and Never Ending Game (ownership is in API.md §13).
 
 ## Entry points
 
@@ -36,7 +36,7 @@ Add `"@itio/mesh-editor": "*"` to the game's `dependencies`, then run `npm insta
 
 ตัวแก้ไขโมเดล 3 มิติแบบโพลิกอนสำหรับ three.js ใช้นิ้วแตะบนมือถือได้ เกมทุกเกมใน repo นี้ใช้ร่วมกัน
 
-> **สถานะ: 0.0.1 มีแค่โครง** ไฟล์ใน `src/` ส่งออกเฉพาะ type ของ TypeScript สัญญา API ทั้งหมดอยู่ใน [API.md](API.md) โค้ดจริงจะตามมาใน PR ถัดไปจาก GamesBuilder และ Never Ending Game (ดูตารางผู้รับผิดชอบใน API.md ข้อ 13)
+> **สถานะ: 0.0.1 มีแค่โครง** ไฟล์ใน `src/` ส่งออก type ของ TypeScript เป็นหลัก ส่วนที่เป็นโค้ดรันจริงมีแค่ตัวช่วยรวม snap (`composeSnaps`, `splitDelta`, `makeDelta`, `GEOMETRIC_SNAP_KINDS`) สัญญา API ทั้งหมดอยู่ใน [API.md](API.md) โค้ดจริงจะตามมาใน PR ถัดไปจาก GamesBuilder และ Never Ending Game (ดูตารางผู้รับผิดชอบใน API.md ข้อ 13)
 
 ## จุด import
 

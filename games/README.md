@@ -9,6 +9,8 @@ Planned layout:
 | `games/never-ending-story/` | Never Ending Story Game (Svelte + three.js, Vite) | Still at [`../game/`](../game/). It moves here after the open editor PRs that touch `game/` are merged. Until then the root workspace list includes `game`. |
 | `games/starship-interior/` | Starship Interior (SvelteKit) | GamesBuilder will import the SvelteKit app here. |
 
+Root `workspaces` is `["packages/*", "games/*", "game"]`. Every direct subfolder of `games/` that has a `package.json` becomes a workspace, so don't put a stray `package.json` (scratch, experiment, copied template) directly under `games/<name>/` unless it is meant to be a game. When `game/` moves to `games/never-ending-story/`, drop `"game"` from the list.
+
 Rules for a game folder:
 
 - Its `package.json` has a unique `name` and the usual `dev`, `build`, and `preview` scripts. `build` writes to the game's own `dist/` (or `build/` for SvelteKit static output).
