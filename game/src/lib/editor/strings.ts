@@ -51,6 +51,7 @@ export const MESSAGES = {
   'cameraMatch.master.menuAria': { en: 'Line actions', th: 'คำสั่งของเส้น' },
   'cameraMatch.master.menuClose': { en: 'Close', th: 'ปิด' },
   'cameraMatch.master.legend': { en: '★ Master', th: '★ เส้นหลัก' },
+  'cameraMatch.master.deleteSelected': { en: 'Delete selected line', th: 'ลบเส้นที่เลือก' },
   'cameraMatch.master.legendText': {
     en: ': the reference line of its axis — the vanishing point lies on it (parallel: its direction), Merge / Parallel align the other lines to it and never move it · set it here, or long-press / right-click a line',
     th: ': เส้นอ้างอิงของแกน — จุดลับตาอยู่บนแนวเส้นนี้ (ขนาน: ใช้ทิศของมัน) ปุ่มรวม/ขนานจัดเส้นอื่นตามมันและไม่ขยับมัน · ตั้งได้ที่นี่ หรือกดค้าง/คลิกขวาที่เส้น',
@@ -474,6 +475,7 @@ export const T = {
     menuClose: t('cameraMatch.master.menuClose'),
     legend: t('cameraMatch.master.legend'),
     legendText: t('cameraMatch.master.legendText'),
+    deleteSelected: t('cameraMatch.master.deleteSelected'),
   },
 
   vp: {

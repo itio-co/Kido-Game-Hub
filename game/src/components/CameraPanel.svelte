@@ -174,7 +174,7 @@
   </div>
   <div class="actions">
     <button type="button" class="danger" disabled={st.selectedLine === null} data-act="del-line"
-      onclick={() => { const m = st.removeLine(st.selectedLine); if (m) st.solveLines(); onChange(); if (m) say(m); }}>ลบเส้นที่เลือก</button>
+      onclick={() => { const m = st.removeLine(st.selectedLine); if (m) st.solveLines(); onChange(); if (m) say(m); }}>{T.master.deleteSelected}</button>
     <button type="button" data-act="seed-lines" onclick={() => { st.seedLines(); onChange(); }}>วางเส้นตามกล้องปัจจุบัน</button>
     <button type="button" data-act="clear-lines" onclick={() => { st.clearLines(); onChange(); }}>ล้างเส้น</button>
   </div>
