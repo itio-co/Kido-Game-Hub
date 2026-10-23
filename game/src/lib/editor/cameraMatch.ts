@@ -104,6 +104,8 @@ export type MatchExtras = {
   pairs: PointPair[];
   residual: { lines: number | null; points: number | null };
   image: string;
+  /** Object ↔ room block (crop transform, yaw, agreement, grouped lines in full px). */
+  room?: object;
 };
 
 /** Same layout as game/assets-src/<item>/blender/cam.json (+ cx, cy when the principal point is off-centre). */
@@ -171,5 +173,6 @@ export function fullExport(cam: Cam, x: MatchExtras) {
     image: x.image,
     lines: x.lines,
     pairs: x.pairs,
+    room: x.room ?? null,
   };
 }

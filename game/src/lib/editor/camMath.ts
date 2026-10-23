@@ -9,13 +9,22 @@
  *   are mapped into ref px with their crop offset, so lines and intrinsics never depend on what is shown.
  * - u = f · x/z + cx, v = f · y/z + cy.
  */
+import { fitVPMode, type Frame, type VpMode } from './vpFit.ts';
+import { T } from './strings.ts';
+export { smallestEigenvector } from './vpFit.ts';
+export type { Frame } from './vpFit.ts';
+
 export type V2 = [number, number];
 export type V3 = [number, number, number];
 export type M3 = [V3, V3, V3];
 
 export type Cam = { f: number; cx: number; cy: number; R: M3; C: V3 };
 export type Axis = 0 | 1 | 2;
-export type GuideLine = { id: number; axis: Axis; a: V2; b: V2 };
+/**
+ * `links` (optional): joint id per endpoint; endpoints with the same id are a shared corner and move together.
+ * `master` (optional): the authoritative line of its axis (see vpFit.ts / masterLine.ts); one per axis per group.
+ */
+export type GuideLine = { id: number; axis: Axis; a: V2; b: V2; links?: { a?: number; b?: number }; master?: boolean };
 export type PointPair = { id: number; world: V3 | null; image: V2 | null; label?: string };
 
 // ---------- small linear algebra ----------
@@ -40,8 +49,8 @@ export const mulMM = (a: M3, b: M3): M3 => {
     [dot(a[2], bt[0]), dot(a[2], bt[1]), dot(a[2], bt[2])],
   ];
 };
-const col = (m: M3, j: number): V3 => [m[0][j]!, m[1][j]!, m[2][j]!];
-const fromCols = (a: V3, b: V3, c: V3): M3 => [
+export const col = (m: M3, j: number): V3 => [m[0][j]!, m[1][j]!, m[2][j]!];
+export const fromCols = (a: V3, b: V3, c: V3): M3 => [
   [a[0], b[0], c[0]],
   [a[1], b[1], c[1]],
   [a[2], b[2], c[2]],
@@ -85,51 +94,6 @@ export function solveLinear(A: number[][], b: number[]): number[] | null {
     }
   }
   return M.map((row, i) => row[n]! / row[i]!);
-}
-
-/** Eigenvector of the smallest eigenvalue of a symmetric 3×3 matrix (Jacobi). */
-export function smallestEigenvector(S: M3): V3 {
-  const a = S.map((r) => [...r]);
-  const v = [
-    [1, 0, 0],
-    [0, 1, 0],
-    [0, 0, 1],
-  ];
-  for (let sweep = 0; sweep < 50; sweep++) {
-    let off = 0;
-    for (let p = 0; p < 3; p++) for (let q = p + 1; q < 3; q++) off += a[p]![q]! ** 2;
-    if (off < 1e-24) break;
-    for (let p = 0; p < 3; p++) {
-      for (let q = p + 1; q < 3; q++) {
-        if (Math.abs(a[p]![q]!) < 1e-30) continue;
-        const theta = (a[q]![q]! - a[p]![p]!) / (2 * a[p]![q]!);
-        const t = Math.sign(theta || 1) / (Math.abs(theta) + Math.sqrt(theta * theta + 1));
-        const c = 1 / Math.sqrt(t * t + 1);
-        const s = t * c;
-        for (let k = 0; k < 3; k++) {
-          const akp = a[k]![p]!;
-          const akq = a[k]![q]!;
-          a[k]![p] = c * akp - s * akq;
-          a[k]![q] = s * akp + c * akq;
-        }
-        for (let k = 0; k < 3; k++) {
-          const apk = a[p]![k]!;
-          const aqk = a[q]![k]!;
-          a[p]![k] = c * apk - s * aqk;
-          a[q]![k] = s * apk + c * aqk;
-        }
-        for (let k = 0; k < 3; k++) {
-          const vkp = v[k]![p]!;
-          const vkq = v[k]![q]!;
-          v[k]![p] = c * vkp - s * vkq;
-          v[k]![q] = s * vkp + c * vkq;
-        }
-      }
-    }
-  }
-  let best = 0;
-  for (let i = 1; i < 3; i++) if (a[i]![i]! < a[best]![best]!) best = i;
-  return [v[0]![best]!, v[1]![best]!, v[2]![best]!];
 }
 
 // ---------- rotations ----------
@@ -238,7 +202,7 @@ export function dehom(p: V3, limit = 1e7): V2 | null {
 }
 
 /** Perpendicular distance (px) of point q from the line through m and the homogeneous point vp. */
-function lineResidual(m: V2, vp: V3, q: V2): number {
+export function lineResidual(m: V2, vp: V3, q: V2): number {
   const L = cross([m[0], m[1], 1], vp);
   const n = Math.hypot(L[0], L[1]);
   if (n < 1e-12) return 0;
@@ -246,33 +210,14 @@ function lineResidual(m: V2, vp: V3, q: V2): number {
 }
 
 // ---------- vanishing points from lines ----------
-export type Frame = { cx: number; cy: number; s: number };
 
-/** Least-squares vanishing point of ≥2 lines (homogeneous, ref px). */
-export function fitVanishingPoint(lines: GuideLine[], frame: Frame): { vp: V3; rms: number } | null {
-  if (lines.length < 2) return null;
-  const S: M3 = [
-    [0, 0, 0],
-    [0, 0, 0],
-    [0, 0, 0],
-  ];
-  const nrm = (p: V2): V3 => [(p[0] - frame.cx) / frame.s, (p[1] - frame.cy) / frame.s, 1];
-  for (const line of lines) {
-    let l = cross(nrm(line.a), nrm(line.b));
-    const n = Math.hypot(l[0], l[1]);
-    if (n < 1e-12) continue;
-    l = scale(l, 1 / n);
-    for (let i = 0; i < 3; i++) for (let j = 0; j < 3; j++) S[i]![j]! += l[i]! * l[j]!;
-  }
-  const v = smallestEigenvector(S);
-  // back to pixels: x = s·x' + c·w
-  const vp: V3 = [frame.s * v[0] + frame.cx * v[2], frame.s * v[1] + frame.cy * v[2], v[2]];
-  let sum = 0;
-  for (const line of lines) {
-    const m: V2 = [(line.a[0] + line.b[0]) / 2, (line.a[1] + line.b[1]) / 2];
-    sum += lineResidual(m, vp, line.a) ** 2;
-  }
-  return { vp, rms: Math.sqrt(sum / lines.length) };
+/**
+ * Consolidated vanishing point of ≥2 lines (homogeneous, ref px): robust total-least-squares fit over ALL lines
+ * of the axis (Huber IRLS + outlier rejection, see vpFit.ts). `rms` = px residual of the inlier lines.
+ */
+export function fitVanishingPoint(lines: GuideLine[], frame: Frame, mode: VpMode = 'auto'): { vp: V3; rms: number } | null {
+  const fit = fitVPMode(lines, frame, mode);
+  return fit ? { vp: fit.vp, rms: fit.rms } : null;
 }
 
 /** Principal point from three finite vanishing points (orthocentre of their triangle). */
@@ -312,12 +257,14 @@ export type VpSolve = {
 export function solveFromLines(
   lines: GuideLine[],
   prior: Cam,
-  opts: { frame: Frame; fixedF?: boolean; principal?: 'fixed' | 'vp3' },
+  opts: { frame: Frame; fixedF?: boolean; principal?: 'fixed' | 'vp3'; modes?: readonly VpMode[] },
 ): VpSolve {
   const vps: (V3 | null)[] = [null, null, null];
   const vpRms: (number | null)[] = [null, null, null];
+  const modes = opts.modes ?? ['auto', 'auto', 'auto'];
+  const parallel = ([0, 1, 2] as Axis[]).filter((a) => modes[a] === 'parallel');
   for (const axis of [0, 1, 2] as Axis[]) {
-    const fit = fitVanishingPoint(lines.filter((l) => l.axis === axis), opts.frame);
+    const fit = fitVanishingPoint(lines.filter((l) => l.axis === axis), opts.frame, modes[axis]);
     if (fit) {
       vps[axis] = fit.vp;
       vpRms[axis] = fit.rms;
@@ -327,7 +274,21 @@ export function solveFromLines(
   if (have.length < 2) return { ok: false, message: 'ต้องมีเส้นอย่างน้อย 2 เส้น ใน 2 แกน', vps, vpRms };
 
   let { cx, cy } = prior;
+  const finite = have.filter((a) => modes[a] !== 'parallel');
+  if (!opts.fixedF && finite.length < 2) {
+    // one-point perspective (or a parallel axis + one finite VP): no orthogonal finite pair → no focal from lines
+    return {
+      ok: false,
+      message:
+        parallel.length >= 2
+          ? T.vp.onePointNoLens
+          : T.vp.oneRealVpNoLens,
+      vps,
+      vpRms,
+    };
+  }
   if (opts.principal === 'vp3') {
+    if (parallel.length) return { ok: false, message: T.vp.principalNeedsThree, vps, vpRms };
     if (have.length < 3) return { ok: false, message: 'หาจุดกึ่งกลางภาพต้องใช้ครบ 3 แกน', vps, vpRms };
     const p = vps.map((v) => (v ? dehom(v) : null));
     const o = p[0] && p[1] && p[2] ? orthocentre(p[0], p[1], p[2]) : null;
@@ -377,7 +338,7 @@ export function solveFromLines(
     cols[j] = scale(cols[j]!, -1);
   }
   let cam: Cam = { f, cx, cy, R: orthonormalize(fromCols(cols[0]!, cols[1]!, cols[2]!)), C: prior.C };
-  cam = refine(cam, lines, [], { f: !opts.fixedF, rotation: true, position: false, principal: false }).cam;
+  cam = refine(cam, lines, [], { f: !opts.fixedF, rotation: true, position: false, principal: false, parallel }).cam;
   return { ok: true, cam, vps, vpRms };
 }
 
@@ -416,11 +377,26 @@ export function solvePosition(cam: Cam, pairs: PointPair[]): Cam | null {
 }
 
 // ---------- non-linear refinement ----------
-export type RefineFlags = { f: boolean; rotation: boolean; position: boolean; principal: boolean };
+/**
+ * `parallel` = axes forced parallel to the image plane (their VP at infinity): a stiff penalty keeps the axis'
+ * camera-space depth component at 0 (e.g. Z parallel → level camera, zero pitch).
+ */
+export type RefineFlags = { f: boolean; rotation: boolean; position: boolean; principal: boolean; parallel?: readonly Axis[] };
 
-function residuals(cam: Cam, lines: GuideLine[], pairs: PointPair[]): { line: number[]; point: number[] } {
+/** Penalty residual(s) for axes forced parallel: f · (camera-space z of the axis) × weight — px-like, stiff. */
+export const PARALLEL_WEIGHT = 50;
+export function parallelPenalty(cam: Cam, axes: readonly Axis[] | undefined, dirs?: readonly V3[]): number[] {
+  if (!axes?.length) return [];
+  return axes.map((a) => {
+    const d = dirs?.[a] ?? ([a === 0 ? 1 : 0, a === 1 ? 1 : 0, a === 2 ? 1 : 0] as V3);
+    return PARALLEL_WEIGHT * cam.f * dot(cam.R[2], d);
+  });
+}
+
+function residuals(cam: Cam, lines: GuideLine[], pairs: PointPair[], parallel?: readonly Axis[]): { line: number[]; point: number[] } {
   const vps = [0, 1, 2].map((a) => vanishingPoint(cam, a as Axis));
   const line = lines.map((l) => lineResidual([(l.a[0] + l.b[0]) / 2, (l.a[1] + l.b[1]) / 2], vps[l.axis]!, l.a));
+  line.push(...parallelPenalty(cam, parallel));
   const point: number[] = [];
   for (const p of pairs) {
     if (!p.world || !p.image) continue;
@@ -461,7 +437,7 @@ export function refine(start: Cam, lines: GuideLine[], pairs: PointPair[], flags
   const n = (flags.rotation ? 3 : 0) + (flags.f ? 1 : 0) + (flags.position ? 3 : 0) + (flags.principal ? 2 : 0);
   if (n === 0) return { cam: start, cost: 0 };
   const resid = (x: number[]) => {
-    const r = residuals(build(x), lines, usePairs);
+    const r = residuals(build(x), lines, usePairs, flags.parallel);
     return [...r.line, ...r.point];
   };
   let x = new Array(n).fill(0) as number[];
@@ -513,10 +489,11 @@ export function refine(start: Cam, lines: GuideLine[], pairs: PointPair[], flags
 }
 
 /** Full point-pair solve (PnP-style): rotation, position and focal (and optionally principal point). */
-export function solveFull(start: Cam, lines: GuideLine[], pairs: PointPair[], opts: { fixedF: boolean; principal: boolean }): Cam {
-  let cam = refine(start, lines, pairs, { f: false, rotation: true, position: true, principal: false }, 80).cam;
-  cam = refine(cam, lines, pairs, { f: !opts.fixedF, rotation: true, position: true, principal: false }, 120).cam;
-  if (opts.principal) cam = refine(cam, lines, pairs, { f: !opts.fixedF, rotation: true, position: true, principal: true }, 120).cam;
+export function solveFull(start: Cam, lines: GuideLine[], pairs: PointPair[], opts: { fixedF: boolean; principal: boolean; parallel?: readonly Axis[] }): Cam {
+  const parallel = opts.parallel;
+  let cam = refine(start, lines, pairs, { f: false, rotation: true, position: true, principal: false, parallel }, 80).cam;
+  cam = refine(cam, lines, pairs, { f: !opts.fixedF, rotation: true, position: true, principal: false, parallel }, 120).cam;
+  if (opts.principal) cam = refine(cam, lines, pairs, { f: !opts.fixedF, rotation: true, position: true, principal: true, parallel }, 120).cam;
   return cam;
 }
 

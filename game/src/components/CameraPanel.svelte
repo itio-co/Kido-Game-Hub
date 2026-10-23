@@ -2,6 +2,7 @@
   import type { Axis, V3 } from '../lib/editor/camMath';
   import type { DisplayMode } from '../lib/editor/modelEditor';
   import { AXIS_COLORS, AXIS_NAMES, type MatchState, type PrincipalMode } from '../lib/editor/matchState.svelte';
+  import { T } from '../lib/editor/strings';
 
   type Props = {
     st: MatchState;
@@ -30,6 +31,54 @@
     { id: 'free', label: 'ปรับเอง/จากคู่จุด' },
   ];
 
+  const band = (deg: number): string => (deg < 0.5 ? 'good' : deg <= 2 ? 'warn' : 'bad');
+  const fmtDeg = (deg: number): string => `${deg < 0.1 ? deg.toFixed(2) : deg.toFixed(1)}°`;
+  const otherGroupName = $derived(T.groups[st.group === 'room' ? 'object' : 'room']);
+  /** Per-axis "consolidate" (mode → auto, converge to the VP) / "parallel" (mode → parallel, exactly parallel) / all axes (keep modes). */
+  function consolidate(axis?: Axis, mode?: 'auto' | 'parallel'): void {
+    const r = st.consolidate(axis, mode);
+    let msg = r.message;
+    if (axis !== undefined && mode && !st.solveLines()) msg += ` · ${st.message}`;
+    onChange();
+    say(msg);
+  }
+  /** Make a line its axis master, re-solve from the master-constrained VPs, and toast. */
+  function setMaster(id: number | null): void {
+    const msg = st.setMaster(id);
+    if (msg === null) return;
+    st.solveLines();
+    onChange();
+    say(msg);
+  }
+  function cycleMaster(a: Axis): void {
+    const msg = st.cycleMaster(a);
+    if (msg === null) return;
+    st.solveLines();
+    onChange();
+    say(msg);
+  }
+  const selLine = $derived(st.lines.find((l) => l.id === st.selectedLine));
+  /** Residual (deg) of a line against its axis fit, for the master picker. */
+  function resOf(a: Axis, id: number): string {
+    const f = st.vpFits[a];
+    const i = f ? f.ids.indexOf(id) : -1;
+    return f && i >= 0 ? ` · ${fmtDeg(f.fit.resDeg[i]!)}` : '';
+  }
+  function modeHint(a: Axis): string {
+    const h = st.parallelHints[a];
+    if (!h) return '';
+    return h.far ? T.vp.hintFar(Number.isFinite(h.distDiag) ? `${Math.round(h.distDiag)}×` : '∞ ×') : T.vp.hintCheap(fmtDeg(h.parDeg));
+  }
+  const selEdge = $derived.by(() => {
+    const l = st.lines.find((x) => x.id === st.selectedLine);
+    return l && st.edgeMap && st.edgeMode !== 'off' ? st.edgeAlignOf(l.a, l.b) : null;
+  });
+  function edgeRefine(which: 'selected' | 'all'): void {
+    const r = st.edgeRefine(which);
+    if (r.moved) st.solveLines();
+    onChange();
+    say(r.message);
+  }
   function run(fn: () => boolean): void {
     fn();
     onChange();
@@ -81,9 +130,23 @@
 
   <div class="seg3" role="radiogroup" aria-label="ภาพที่ใช้">
     <button type="button" class:on={st.image === 'crop'} aria-checked={st.image === 'crop'} role="radio" data-image="crop"
-      onclick={() => { st.setImage('crop'); onChange(); }}>ภาพครอป</button>
+      onclick={() => { st.setImage('crop'); onChange(); say(T.groups.cropToast); }}>{T.groups.cropButton}</button>
     <button type="button" class:on={st.image === 'wide'} aria-checked={st.image === 'wide'} role="radio" data-image="wide"
-      disabled={!st.asset.ref?.mockup} onclick={() => { st.setImage('wide'); onChange(); }}>Mock-up เต็ม</button>
+      disabled={!st.asset.ref?.mockup} onclick={() => { st.setImage('wide'); onChange(); say(T.groups.wideToast); }}>{T.groups.wideButton}</button>
+  </div>
+  {#if st.asset.ref?.mockup}
+    <p class="tip group" data-group={st.group}>
+      {T.groups.editing} <b class="gname g-{st.group}">{T.groups.lineOf(st.groupName)}</b> {T.groups.count(st.lines.length)} · {T.groups.otherCount(otherGroupName, st.otherLines.length)}
+      {st.group === 'room' ? T.groups.roomHowTo : T.groups.objectHowTo} — {T.groups.sharedCamera}
+    </p>
+  {/if}
+  <div class="actions snaprow">
+    {#if st.asset.ref?.mockup}
+      <button type="button" class:on={st.ghost} aria-pressed={st.ghost} data-ghost
+        onclick={() => { st.ghost = !st.ghost; onChange(); }}>{T.groups.ghost(otherGroupName, st.ghost)}</button>
+    {/if}
+    <button type="button" class:on={st.rays} aria-pressed={st.rays} data-rays
+      onclick={() => { st.rays = !st.rays; onChange(); }}>{T.groups.rays(st.rays)}</button>
   </div>
 
   <h3>การแสดงผล</h3>
@@ -111,10 +174,108 @@
   </div>
   <div class="actions">
     <button type="button" class="danger" disabled={st.selectedLine === null} data-act="del-line"
-      onclick={() => { st.removeLine(st.selectedLine); onChange(); }}>ลบเส้นที่เลือก</button>
+      onclick={() => { const m = st.removeLine(st.selectedLine); if (m) st.solveLines(); onChange(); if (m) say(m); }}>{T.master.deleteSelected}</button>
     <button type="button" data-act="seed-lines" onclick={() => { st.seedLines(); onChange(); }}>วางเส้นตามกล้องปัจจุบัน</button>
     <button type="button" data-act="clear-lines" onclick={() => { st.clearLines(); onChange(); }}>ล้างเส้น</button>
   </div>
+  <div class="actions snaprow">
+    <button type="button" class:on={st.snap} aria-pressed={st.snap} data-line-snap
+      onclick={() => { st.snap = !st.snap; onChange(); say(T.snap.toast(st.snap)); }}>{T.snap.button(st.snap)}</button>
+    <button type="button" disabled={!st.lines.find((l) => l.id === st.selectedLine)?.links} data-act="unlink-line"
+      onclick={() => { const n = st.unlinkLine(st.selectedLine); onChange(); if (n) say(T.snap.unlinked); }}>{T.snap.unlink}</button>
+    <button type="button" class="small" aria-label={T.snap.undoLinesAria} disabled={st.lineUndoCount === 0} data-act="undo-lines"
+      onclick={() => { st.undoLines(); onChange(); }}>{T.common.undo}</button>
+    <button type="button" class="small" aria-label={T.snap.redoLinesAria} disabled={st.lineRedoCount === 0} data-act="redo-lines"
+      onclick={() => { st.redoLines(); onChange(); }}>{T.common.redo}</button>
+  </div>
+  <div class="vpbox" data-vp-panel>
+    <div class="vphead">{T.vp.heading} <small>{T.vp.headingNote}</small></div>
+    {#each [0, 1, 2] as const as a (a)}
+      {@const f = st.vpFits[a]}
+      {@const par = st.vpModes[a] === 'parallel'}
+      <div class="vprow vpm" data-vp-row={a} data-vp-mode={st.vpModes[a]}>
+        <b class="ax" style="color:{AXIS_COLORS[a]}">{AXIS_NAMES[a]}</b>
+        {#if f}
+          {@const nOut = f.fit.outlier.filter(Boolean).length}
+          <span class="rms {band(f.fit.rmsDeg)}" data-vp-rms={a} data-rms={f.fit.rmsDeg.toFixed(4)}>{par ? '∠' : 'RMS'} {fmtDeg(f.fit.rmsDeg)}</span>
+          <span class="n">{T.common.lines(f.ids.length)}{par ? T.vp.parallelTag : ''}{nOut ? T.vp.outliers(nOut) : ''}</span>
+        {:else}
+          <span class="rms">—</span>
+          <span class="n">{T.vp.needTwo}{par ? T.vp.parallelTag : ''}</span>
+        {/if}
+        <span class="pair">
+          <button type="button" class="small mode" class:on={!par} aria-pressed={!par} data-consolidate={a} data-active={!par}
+            title={T.vp.consolidateTitle} onclick={() => consolidate(a, 'auto')}>{T.vp.consolidateAxis(AXIS_NAMES[a])}</button>
+          <button type="button" class="small mode" class:on={par} aria-pressed={par} data-parallel={a} data-active={par}
+            title={T.vp.parallelTitle} onclick={() => consolidate(a, 'parallel')}>{T.vp.parallelAxis(AXIS_NAMES[a])}</button>
+        </span>
+      </div>
+      {#if st.parallelHints[a]}
+        <button type="button" class="hint" data-parallel-hint={a} onclick={() => consolidate(a, 'parallel')}
+          >{T.vp.hint(AXIS_NAMES[a], modeHint(a))}</button>
+      {/if}
+      {@const axLines = st.lines.filter((l) => l.axis === a)}
+      {#if axLines.length}
+        {@const mid = st.masterId(a)}
+        <div class="mrow" data-master-row={a} data-master-id={mid}>
+          <span class="mlabel" style="color:{AXIS_COLORS[a]}">{T.master.label(AXIS_NAMES[a])}</span>
+          <select data-master-select={a} aria-label={T.master.selectAria(AXIS_NAMES[a])} value={mid ?? ''}
+            onchange={(e) => setMaster(Number(e.currentTarget.value))}>
+            {#each axLines as l (l.id)}
+              <option value={l.id}>{T.master.option(st.lineLabel(l.id))}{resOf(a, l.id)}</option>
+            {/each}
+          </select>
+          <button type="button" class="small" data-master-cycle={a} disabled={axLines.length < 2}
+            aria-label={T.master.cycleAria(AXIS_NAMES[a])} title={T.master.cycleAria(AXIS_NAMES[a])} onclick={() => cycleMaster(a)}>{T.master.cycle}</button>
+          <button type="button" class="small" data-set-master={a} disabled={!selLine || selLine.axis !== a || !!selLine.master}
+            title={T.master.setTitle(AXIS_NAMES[a])} onclick={() => setMaster(st.selectedLine)}>{T.master.set}</button>
+        </div>
+        {#if axLines.length === 1 && !f}<p class="tip mtip" data-master-only={a}>{T.master.onlyMaster(AXIS_NAMES[a])}</p>{/if}
+      {/if}
+    {/each}
+    <div class="actions">
+      <button type="button" data-act="consolidate" disabled={!st.vpFits.some(Boolean)} onclick={() => consolidate()}>{T.vp.consolidateAll}</button>
+      <button type="button" class:on={st.lockVp} aria-pressed={st.lockVp} data-lock-vp
+        onclick={() => { st.lockVp = !st.lockVp; onChange(); say(T.vp.lockToast(st.lockVp)); }}>{T.vp.lock(st.lockVp)}</button>
+    </div>
+    <p class="tip legend">{T.vp.legendColor} <span class="good">● &lt; 0.5°</span> <span class="warn">● ≤ 2°</span> <span class="bad">● &gt; 2°</span> · {T.vp.legendOutlier} · <b>{T.vp.legendConsolidate}</b> {T.vp.legendConsolidateText} · <b>{T.vp.legendLock}</b>{T.vp.legendLockText} · <b>{T.vp.legendParallel}</b>{T.vp.legendParallelText} · <b>{T.master.legend}</b>{T.master.legendText}</p>
+  </div>
+  <div class="vpbox" data-edge-panel>
+    <div class="vphead">{T.edges.heading} <small>{T.edges.headingNote}</small>
+      {#if !st.edgeMap}<span class="n" data-edge-loading>{T.edges.loading}</span>{/if}
+    </div>
+    <div class="seg3" role="radiogroup" aria-label={T.edges.showAria}>
+      {#each (['drag', 'always', 'off'] as const).map((id) => [id, T.showModes[id]] as const) as [id, label] (id)}
+        <button type="button" role="radio" aria-checked={st.edgeMode === id} class:on={st.edgeMode === id} data-edge-mode={id}
+          onclick={() => { st.edgeMode = id; onChange(); }}>{label}</button>
+      {/each}
+    </div>
+    {#if selEdge}
+      <div class="vprow" data-edge-readout={selEdge.band} data-edge-off={selEdge.meanOff === null ? null : selEdge.meanOff.toFixed(3)}>
+        <b class="ax">{T.edges.line}</b>
+        <span class="rms {selEdge.band === 'none' ? '' : selEdge.band}">{selEdge.meanOff === null ? T.edges.none : T.edges.offBy(`${selEdge.meanOff.toFixed(1)} px`)}</span>
+        <span class="n">{T.edges.score(Math.round(selEdge.score * 100), Math.round(selEdge.coverage * 100))}</span>
+        <span></span>
+      </div>
+    {/if}
+    <div class="actions">
+      <button type="button" data-act="edge-refine" disabled={st.selectedLine === null || !st.edgeMap} onclick={() => edgeRefine('selected')}>{T.edges.refineSelected}</button>
+      <button type="button" data-act="edge-refine-all" disabled={!st.lines.length || !st.edgeMap} onclick={() => edgeRefine('all')}>{T.edges.refineAll}</button>
+      <button type="button" class:on={st.edgeSnap} aria-pressed={st.edgeSnap} data-edge-snap
+        onclick={() => { st.edgeSnap = !st.edgeSnap; onChange(); say(T.edges.snapWhileDragToast(st.edgeSnap)); }}>{T.edges.snapWhileDrag(st.edgeSnap)}</button>
+    </div>
+    <p class="tip legend">{T.edges.legendLead} <span class="good">● &lt; 1 px</span> <span class="warn">● ≤ 2.5 px</span> <span class="bad">● &gt; 2.5 px</span> · <b>{T.edges.legendRefine}</b> {T.edges.legendRefineText}</p>
+  </div>
+  <div class="field" role="radiogroup" aria-label={T.diff.aria}>
+    <span>{T.diff.label}</span>
+    <div class="seg3">
+      {#each (['drag', 'always', 'off'] as const).map((id) => [id, T.showModes[id]] as const) as [id, label] (id)}
+        <button type="button" role="radio" aria-checked={st.diff === id} class:on={st.diff === id} data-diff-mode={id}
+          onclick={() => { st.diff = id; onChange(); }}>{label}</button>
+      {/each}
+    </div>
+  </div>
+  <p class="tip">{T.snap.tipDrag}<b>{T.snap.tipLinked}</b>{T.snap.tipLinkedRest}<b>{T.snap.tipHold}</b>{T.snap.tipHoldRest}{st.linkedEnds ? T.snap.tipLinkedEnds(st.linkedEnds) : ''}</p>
   <div class="zoom">
     <button type="button" aria-label="ซูมเข้า" data-zoom="in" onclick={() => st.zoomAt(1.4)}>＋</button>
     <button type="button" aria-label="ซูมออก" data-zoom="out" onclick={() => st.zoomAt(1 / 1.4)}>－</button>
@@ -135,6 +296,47 @@
   <div class="actions col">
     <button type="button" class="primary" data-act="solve-lines" onclick={() => run(() => st.solveLines())}>คำนวณจากเส้น (มุม + เลนส์)</button>
   </div>
+  {#if st.asset.ref?.mockup}
+    <label class="check"><input type="checkbox" checked={st.roomAligned} data-room-aligned
+      onchange={(e) => { st.roomAligned = e.currentTarget.checked; run(() => st.solveLines()); }} /> {T.room.aligned}</label>
+    {#if !st.roomAligned}
+      <p class="tip" data-room-yaw={st.roomYaw.toFixed(3)}>{T.room.yawLead} <b>{st.roomYaw.toFixed(1)}°</b> {T.room.yawRest(st.roomYaw.toFixed(1))}</p>
+    {/if}
+    {@const ag = st.agreement}
+    <div class="vpbox" data-agree-panel data-band={ag?.band ?? null}>
+      <div class="vphead">{T.room.agreement}
+        {#if ag?.band}<span class="rms {ag.band}" data-agree-overall={ag.band}>{ag.band === 'good' ? T.room.bandGood : ag.band === 'warn' ? T.room.bandWarn : T.room.bandBad}{ag.maxDeg !== null ? T.room.max(fmtDeg(ag.maxDeg)) : ''}</span>{/if}
+      </div>
+      {#if !ag}
+        <p class="tip">{T.room.drawBoth}</p>
+      {:else}
+        {#each ag.axes as a (a.axis)}
+          <button type="button" class="vprow agree" class:hl={st.highlight?.axis === a.axis} data-agree-axis={a.axis} data-band={a.band}
+            data-deg={a.deg === null ? null : a.deg.toFixed(4)} disabled={!a.worst.length}
+            onclick={() => { st.highlightAxis(a.axis); onChange(); if (st.highlight) say(T.room.highlighted(st.highlight.ids.length, AXIS_NAMES[a.axis])); }}>
+            <b class="ax" style="color:{AXIS_COLORS[a.axis]}">{AXIS_NAMES[a.axis]}</b>
+            {#if a.deg !== null}
+              <span class="rms {a.band}">{fmtDeg(a.deg)}</span>
+            {:else}
+              <span class="n">—</span>
+            {/if}
+            <span class="n" data-agree-notpar={a.notParallel.length ? a.notParallel.join(',') : null}
+              >{a.deg === null ? T.room.needTwoBoth : a.mode === 'parallel' ? T.room.diffParallel : T.room.diffVp}{a.notParallel.length
+                ? T.room.notParallel(a.notParallel.map((g) => T.groups[g]).join('/'))
+                : ''}</span>
+            <span class="n">{T.room.showLines}</span>
+          </button>
+        {/each}
+        <div class="vprow" data-agree-focal={ag.fDiffPct === null ? null : ag.fDiffPct.toFixed(2)}>
+          <b class="ax">f</b>
+          {#if ag.fDiffPct !== null}<span class="rms {ag.fBand}">{ag.fDiffPct.toFixed(1)}%</span>{:else}<span class="n">—</span>{/if}
+          <span class="n">{T.room.lenses(ag.fObject ? T.common.mm(r(st.lensOfFull(ag.fObject), 1)) : '—', ag.fRoom ? T.common.mm(r(st.lensOfFull(ag.fRoom), 1)) : '—')}</span>
+          <span></span>
+        </div>
+        <p class="tip legend">{T.room.legendAngle} <span class="good">● &lt; 1°</span> <span class="warn">● ≤ 3°</span> <span class="bad">● &gt; 3°</span> · {T.room.legendLens} <span class="good">&lt; 5%</span> <span class="warn">≤ 15%</span> · {T.room.legendTap}</p>
+      {/if}
+    </div>
+  {/if}
 
   <h3>คู่จุด (โมเดล ↔ ภาพ) <small>{st.completePairs.length} คู่</small></h3>
   <p class="tip">เลือกมุมที่รู้ขนาดจริง (เช่น สูง 55 ซม.) แล้วแตะจุดเดียวกันบนภาพ · 2 คู่ = ตั้งระยะ/ตำแหน่ง · 4–6 คู่ขึ้นไป = คำนวณทั้งหมด</p>
@@ -218,6 +420,30 @@
   button.primary { background: #ffcf4d; border-color: #ffcf4d; color: #2a1a00; }
   button.danger { border-color: #a5484a; color: #ffb3b3; }
   .small { min-height: 40px; font-size: 15px; padding: 0 10px; }
+  .vpbox { border: 1px solid #2c4256; border-radius: 10px; padding: 8px 10px; margin: 10px 0; background: rgba(255, 255, 255, 0.03); }
+  .vphead { font-size: 15px; color: #e6f0f8; font-weight: 700; margin-bottom: 4px; }
+  .vphead small { font-weight: 400; color: #9fb4c6; }
+  .vprow { display: grid; grid-template-columns: 22px auto 1fr auto; align-items: center; gap: 8px; min-height: 40px; font-size: 15px; color: #c5d7e6; }
+  .vprow .ax { font-size: 17px; }
+  .vprow.vpm { grid-template-columns: 22px auto 1fr auto; }
+  .pair { display: inline-flex; gap: 6px; }
+  .mrow { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 2px 0 8px 30px; font-size: 14px; }
+  .mrow .mlabel { font-weight: 700; white-space: nowrap; }
+  .mrow select { flex: 1 1 96px; min-height: 40px; min-width: 96px; padding: 0 6px; background: #1a2836; color: #e6f1fa; border: 1px solid #3a5670; border-radius: 6px; font-size: 14px; }
+  .mtip { margin: -4px 0 8px 30px; }
+  .small.mode { min-width: 64px; min-height: 44px; border: 1px solid #3a5670; background: #1a2836; color: #c5d7e6; }
+  .small.mode.on { background: #8fd8ff; color: #06202f; border-color: #8fd8ff; }
+  .hint { width: 100%; min-height: 44px; text-align: left; font-size: 14px; font-weight: 400; border: 1px dashed #ffd36b; background: rgba(255, 211, 107, 0.08); color: #ffe7a6; border-radius: 8px; padding: 4px 8px; margin: 2px 0 6px; }
+  button.vprow.agree { width: 100%; border: 1px solid transparent; background: transparent; padding: 0 4px; text-align: left; font-weight: 400; min-height: 44px; }
+  button.vprow.agree.hl { border-color: #ff00d4; background: rgba(255, 0, 212, 0.12); }
+  .n { color: #9fb4c6; }
+  .gname.g-object { color: #ffcf4d; }
+  .gname.g-room { color: #8fdfff; }
+  .rms { font-weight: 700; font-variant-numeric: tabular-nums; }
+  .good { color: #3ddc6a; }
+  .warn { color: #ffb020; }
+  .bad { color: #ff4d4d; }
+  .legend span { white-space: nowrap; font-weight: 700; }
   .actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
   .actions button { flex: 1 1 auto; }
   .actions.col { flex-direction: column; }

@@ -1,14 +1,15 @@
 import type { ShowcaseAsset } from '../showcaseAssets';
+import { FORMAT_MATCH, stableStringify } from './editorFilesCore.mjs';
 import {
   dehom,
-  fitVanishingPoint,
   fromBlenderEulerDeg,
+  mulMM,
+  transpose,
   blenderEulerDeg,
   mulMV,
   project,
   refine,
   rmsErrors,
-  solveFromLines,
   solveFull,
   solvePosition,
   sub,
@@ -21,22 +22,109 @@ import {
   type V2,
   type V3,
 } from './camMath';
-import { camFromMatched, camJson, focalFromLens, fullExport, hfovDeg, lensMm, type ViewRect } from './cameraMatch';
+import { blenderValues, camFromMatched, camJson, focalFromLens, fullExport, hfovDeg, lensMm, type ViewRect } from './cameraMatch';
 import type { DisplayMode } from './modelEditor';
+import { T } from './strings';
+import { jointMembers, linkEnds, removeLineLinks, unlinkEnd, type EndRef } from './guideSnap';
+import { applyMasterIds, ensureMasters, masterIds, masterOf, parseMasterMap, promoteMaster, setMasterFlag, type MasterMap } from './masterLine';
+import { alignLine, edgeMapFromRGBA, edgeOverlayRGBA, refineLine, type EdgeAlign, type EdgeMap } from './edgeAlign';
+import { consolidate as consolidateLines, fitAxes, parallelSuggestion, type Frame, type VpFit, type VpMode, type VpModes } from './vpFit';
+import {
+  agreement as agreementOf,
+  camToCrop,
+  camToFull,
+  fullCentreInCrop,
+  GROUP_NAMES,
+  lineToCrop,
+  lineToFull,
+  migrateV1Lines,
+  pruneLinks,
+  rotZ,
+  solveJoint,
+  type Agreement,
+  type CropT,
+  type GroupedLine,
+  type LineGroup,
+} from './roomMatch';
 
 export type ImageChoice = 'crop' | 'wide';
 export type PrincipalMode = 'center' | 'vp3' | 'free';
 export type PickStep = { pairId: number; want: 'model' | 'image' } | null;
 
 type Saved = {
-  v: 1;
+  /** 1 = one list of lines in crop px; 2 = grouped lines in FULL-image px (+ crop transform). */
+  v: 1 | 2;
   cam: Cam;
-  lines: GuideLine[];
+  lines: (GuideLine & { group?: LineGroup })[];
+  /** v2: crop → full transform the lines were stored with. */
+  crop?: CropT;
+  /** Master line id per axis per group (missing → first line of the axis; see masterLine.ts). */
+  master?: Partial<MasterMap> | null;
+  /** v2: faint other-group lines shown. */
+  ghost?: boolean;
+  /** v2: full rays (T.groups.rays). */
+  rays?: boolean;
+  /** v2: object square to the room (T.room.aligned). */
+  roomAligned?: boolean;
+  /** v2: object yaw vs the room (deg). */
+  roomYaw?: number;
   pairs: PointPair[];
   image: ImageChoice;
   principal: PrincipalMode;
   lockLens: boolean;
+  /** Guide-line snapping on/off (optional; default on). */
+  snap?: boolean;
+  /** Difference view of model vs mock-up (optional; default 'drag'). */
+  diff?: DiffMode;
+  modelDiff?: DiffMode;
+  edgeMode?: EdgeMode;
+  edgeSnap?: boolean;
+  /** Lock to VP (T.vp.lock; optional; default off). */
+  lockVp?: boolean;
+  /** Per-axis VP mode ('auto' | 'parallel'), shared by both groups (optional; default auto). */
+  vpModes?: VpModes;
 };
+export type EdgeMode = 'drag' | 'always' | 'off';
+
+/** Load an image, build its edge map in an idle callback and paint the overlay (null when it can't be read). */
+async function computeEdges(src: string): Promise<{ map: EdgeMap; url: string; w: number; h: number } | null> {
+  if (typeof document === 'undefined') return null;
+  try {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.decoding = 'async';
+    img.src = src;
+    await img.decode();
+    await new Promise<void>((res) => {
+      const ric = (globalThis as { requestIdleCallback?: (cb: () => void, o?: object) => number }).requestIdleCallback;
+      if (ric) ric(() => res(), { timeout: 600 });
+      else setTimeout(res, 30);
+    });
+    const w = img.naturalWidth;
+    const h = img.naturalHeight;
+    const c = document.createElement('canvas');
+    c.width = w;
+    c.height = h;
+    const ctx = c.getContext('2d', { willReadFrequently: true })!;
+    ctx.drawImage(img, 0, 0);
+    const map = edgeMapFromRGBA(ctx.getImageData(0, 0, w, h).data, w, h);
+    const o = document.createElement('canvas');
+    o.width = map.w;
+    o.height = map.h;
+    const octx = o.getContext('2d')!;
+    const data = new ImageData(map.w, map.h);
+    data.data.set(edgeOverlayRGBA(map));
+    octx.putImageData(data, 0, 0);
+    const blob = await new Promise<Blob | null>((res) => o.toBlob(res, 'image/png'));
+    if (!blob) return null;
+    return { map, url: URL.createObjectURL(blob), w, h };
+  } catch {
+    return null;
+  }
+}
+
+/** 'drag' = difference view only while a guide/point is dragged, 'always' = left on, 'off' = normal overlay. */
+export type DiffMode = 'drag' | 'always' | 'off';
 
 export const AXIS_COLORS = ['#ff4d4d', '#3ddc6a', '#4d8dff'] as const;
 export const AXIS_NAMES = ['X', 'Y', 'Z'] as const;
@@ -49,13 +137,62 @@ export class MatchState {
   readonly width: number;
   readonly height: number;
   readonly stored: Cam;
+  /** Crop → full-image transform (identity when the asset has no mock-up). */
+  readonly crop: CropT;
+  /** Full image size in its own px. */
+  readonly full: { w: number; h: number };
 
   cam = $state.raw<Cam>(null as unknown as Cam);
+  /** Guide lines of the ACTIVE group (the one drawn on the current view); crop px. */
   lines = $state<GuideLine[]>([]);
+  /** Lines of the other group (crop px), shown as a faint ghost. */
+  otherLines = $state<GuideLine[]>([]);
+  /** Show the other group's lines faintly (and let lines snap to them). */
+  ghost = $state(true);
+  /** Full rays (T.groups.rays): draw every guide line as a ray from its VP, through the segment, on to the view edge. */
+  rays = $state(true);
+  /** Object square to the room (T.room.aligned): object axes = room axes (X/Y/Z VPs shared). Off: only the vertical is shared. */
+  roomAligned = $state(true);
+  /** Object yaw relative to the room (deg, Blender Z): X_room = Rz(yaw)·X_obj. Solved when not aligned. */
+  roomYaw = $state(0);
+  /** Lines to outline after tapping a disagreeing axis in the agreement panel. */
+  highlight = $state<{ axis: Axis; ids: number[] } | null>(null);
   pairs = $state<PointPair[]>([]);
   image = $state<ImageChoice>('crop');
   principal = $state<PrincipalMode>('center');
   lockLens = $state(false);
+  /** Line magnet (T.snap.label): snap dragged guide lines to lines of other axes. */
+  snap = $state(true);
+  /** Model difference-blend (T.diff): off by default — line editing compares lines with image edges. */
+  diff = $state<DiffMode>('off');
+  /** Guide line ↔ mock-up edges: 'drag' = edge overlay while dragging, 'always', 'off'. */
+  edgeMode = $state<EdgeMode>('drag');
+  /** Snap to image edges while dragging (below corner/axis snap; Alt disables). */
+  edgeSnap = $state(false);
+  /** Edge map of the current view image (null while computing / unavailable). */
+  edgeMap = $state.raw<EdgeMap | null>(null);
+  /** Blob URL of the painted edge overlay of the current view image. */
+  edgeUrl = $state<string | null>(null);
+  /** Natural size of the current view image (edge map / image px space). */
+  private edgeNat = { w: 1, h: 1 };
+  private static edgeCache = new Map<string, Promise<{ map: EdgeMap; url: string; w: number; h: number } | null>>();
+  /** Lock to VP (T.vp.lock): a dragged endpoint keeps its line aimed at the VP of the other lines of its axis. */
+  lockVp = $state(false);
+  /** Per-axis VP mode: 'auto' (free VP) or 'parallel' (VP at infinity), shared by both groups. */
+  vpModes = $state<VpModes>(['auto', 'auto', 'auto']);
+  /** A guide line / point is being dragged (live solve + diff view). */
+  dragging = $state(false);
+  /** The last live solve failed; the camera stays at the last good solve. */
+  liveFail = $state(false);
+  private liveBase: Cam | null = null;
+  /** Undo/redo stacks for guide-line edits (snapshots of `lines`). */
+  private lineUndo: GuideLine[][] = [];
+  private lineRedo: GuideLine[][] = [];
+  /** Undo/redo of the inactive group (swapped in with its lines). */
+  private otherUndo: GuideLine[][] = [];
+  private otherRedo: GuideLine[][] = [];
+  lineUndoCount = $state(0);
+  lineRedoCount = $state(0);
   display = $state<DisplayMode>('solid');
   opacity = $state(70);
   split = $state(0);
@@ -70,15 +207,97 @@ export class MatchState {
   stageH = $state(1);
   private nextId = 1;
 
-  constructor(asset: ShowcaseAsset) {
+  /** Where this session started: a localStorage draft, the committed source file, or fresh seeded lines. */
+  origin: 'draft' | 'file' | 'seed' = 'seed';
+  /** stableStringify(fileData()) of the untouched default session. */
+  readonly defaultText: string;
+
+  constructor(asset: ShowcaseAsset, baseline?: unknown) {
     const ref = asset.ref!;
     this.asset = asset;
     this.width = ref.width;
     this.height = ref.height;
     this.stored = camFromMatched(ref.camera, ref.width, ref.height);
+    const m = ref.mockup;
+    this.crop = m ? { x: m.crop.x, y: m.crop.y, s: m.scale ?? 1 } : { x: 0, y: 0, s: 1 };
+    this.full = m ? { w: m.width, h: m.height } : { w: ref.width, h: ref.height };
     this.cam = clone(this.stored);
     this.center = [ref.width / 2, ref.height / 2];
-    if (!this.restore()) this.seedLines();
+    // the untouched default (seeded lines, stored camera): "nothing to save" when there is no file yet
+    this.seedLines();
+    this.defaultText = stableStringify(this.fileData());
+    if (this.restore()) this.origin = 'draft';
+    else if (baseline && this.loadFile(baseline)) this.origin = 'file';
+  }
+
+  // ---------- source file (game/assets-src/<item>/editor/camera-match.json) ----------
+  /**
+   * The work as stored in the committed source file: lines (both groups, FULL-image px), point
+   * pairs, solver settings and the solved camera. UI preferences (image, ghost, rays, snap, diff,
+   * edge view) stay in localStorage only. Coordinates are rounded to 1e-4 px so a save → load →
+   * save round trip is byte-identical.
+   */
+  fileData(): Record<string, unknown> {
+    const r4 = (v: number) => Math.round(v * 1e4) / 1e4;
+    const pt = (p: V2 | null | undefined) => (p ? ([r4(p[0]), r4(p[1])] as V2) : p);
+    return {
+      format: FORMAT_MATCH,
+      asset: this.asset.slug,
+      crop: { ...this.crop },
+      fullImage: [this.full.w, this.full.h],
+      lines: this.groupedFullLines().map(({ master: _m, ...l }) => ({ ...l, a: pt(l.a)!, b: pt(l.b)! })),
+      master: this.masterMap(),
+      pairs: ($state.snapshot(this.pairs) as PointPair[]).map((p) => ({ ...p, image: pt(p.image) ?? null })),
+      lockVp: this.lockVp,
+      vpModes: [...this.vpModes],
+      principal: this.principal,
+      lockLens: this.lockLens,
+      roomAligned: this.roomAligned,
+      roomYaw: this.roomYaw,
+      camera: $state.snapshot(this.cam),
+      solved: {
+        note: 'derived from camera (crop px) — for reading in review; ignored on load',
+        blender: blenderValues(this.cam, this.width, this.height),
+        roomYawDeg: Math.round(this.yaw * 1e4) / 1e4,
+      },
+    };
+  }
+  /** Load the work from a source file (keeps the UI preferences). */
+  loadFile(data: unknown): boolean {
+    const f = data as Record<string, any> | null;
+    if (!f || f.format !== FORMAT_MATCH || !f.camera?.R) return false;
+    const d: Saved = {
+      v: 2,
+      cam: f.camera as Cam,
+      crop: f.crop as CropT,
+      lines: Array.isArray(f.lines) ? f.lines : [],
+      master: parseMasterMap(f.master),
+      pairs: Array.isArray(f.pairs) ? f.pairs : [],
+      ghost: this.ghost,
+      rays: this.rays,
+      roomAligned: f.roomAligned,
+      roomYaw: f.roomYaw,
+      image: this.image,
+      principal: f.principal === 'vp3' || f.principal === 'free' ? f.principal : 'center',
+      lockLens: !!f.lockLens,
+      snap: this.snap,
+      modelDiff: this.diff,
+      edgeMode: this.edgeMode,
+      edgeSnap: this.edgeSnap,
+      lockVp: f.lockVp === true,
+      vpModes: f.vpModes as VpModes,
+    };
+    if (!this.restoreFrom(d)) return false;
+    this.lineUndo = [];
+    this.lineRedo = [];
+    this.otherUndo = [];
+    this.otherRedo = [];
+    this.lineUndoCount = 0;
+    this.lineRedoCount = 0;
+    this.selectedLine = null;
+    this.selectedPair = null;
+    this.pick = null;
+    return true;
   }
 
   // ---------- image / view window ----------
@@ -86,14 +305,16 @@ export class MatchState {
   get imageRect(): { x: number; y: number; w: number; h: number; src: string } {
     const ref = this.asset.ref!;
     if (this.image === 'wide' && ref.mockup) {
-      const m = ref.mockup;
-      return { x: -m.crop.x, y: -m.crop.y, w: m.width, h: m.height, src: m.src };
+      const t = this.crop;
+      return { x: -t.x / t.s, y: -t.y / t.s, w: this.full.w / t.s, h: this.full.h / t.s, src: ref.mockup.src };
     }
     return { x: 0, y: 0, w: ref.width, h: ref.height, src: ref.src };
   }
+  /** Strip kept free under the image at fit, so the zoom buttons never cover it (phones). */
+  static readonly PAD_BOTTOM = 60;
   get fitScale(): number {
     const r = this.imageRect;
-    return Math.min(this.stageW / r.w, this.stageH / r.h);
+    return Math.min(this.stageW / r.w, Math.max(this.stageH * 0.5, this.stageH - MatchState.PAD_BOTTOM) / r.h);
   }
   /** Screen px per ref px. */
   get k(): number {
@@ -107,7 +328,8 @@ export class MatchState {
   fit(): void {
     const r = this.imageRect;
     this.zoom = 1;
-    this.center = [r.x + r.w / 2, r.y + r.h / 2];
+    const pad = Math.min(MatchState.PAD_BOTTOM, this.stageH * 0.5);
+    this.center = [r.x + r.w / 2, r.y + r.h / 2 + pad / 2 / this.fitScale];
   }
   zoomAt(factor: number, at?: V2): void {
     const z = Math.min(40, Math.max(0.5, this.zoom * factor));
@@ -117,22 +339,230 @@ export class MatchState {
     this.zoom = z;
   }
   setImage(next: ImageChoice): void {
+    const before = this.group;
     this.image = next;
-    if (this.principal === 'center') this.applyPrincipalCentre();
+    if (this.group !== before) this.swapGroups();
+    // the principal point no longer depends on the view (full-image centre), so nothing to move here
     this.fit();
   }
-  /** Principal point at the centre of the displayed image (crop centre or full mock-up centre). */
+  /**
+   * Principal point at the centre of the FULL image (the photo the crop was cut from), in crop px —
+   * the crop centre is not the optical centre. Same in both views.
+   */
   applyPrincipalCentre(): void {
-    const r = this.imageRect;
-    this.cam = { ...this.cam, cx: r.x + r.w / 2, cy: r.y + r.h / 2 };
+    const [cx, cy] = fullCentreInCrop(this.full, this.crop);
+    this.cam = { ...this.cam, cx, cy };
+  }
+
+  // ---------- object / room groups ----------
+  /** Group edited on the current view: crop = object, full mock-up = room. */
+  get group(): LineGroup {
+    return this.image === 'wide' ? 'room' : 'object';
+  }
+  get otherGroup(): LineGroup {
+    return this.group === 'room' ? 'object' : 'room';
+  }
+  get groupName(): string {
+    return GROUP_NAMES[this.group];
+  }
+  get objectLines(): GuideLine[] {
+    return this.group === 'object' ? this.lines : this.otherLines;
+  }
+  get roomLines(): GuideLine[] {
+    return this.group === 'room' ? this.lines : this.otherLines;
+  }
+  /** Lines lines snap to: the active group, plus the ghost group when it is shown. */
+  get snapPool(): GuideLine[] {
+    return this.ghost ? [...this.lines, ...this.otherLines] : this.lines;
+  }
+  isActive(id: number): boolean {
+    return this.lines.some((l) => l.id === id);
+  }
+  private swapGroups(): void {
+    const l = $state.snapshot(this.lines) as GuideLine[];
+    this.lines = $state.snapshot(this.otherLines) as GuideLine[];
+    this.otherLines = l;
+    [this.lineUndo, this.otherUndo] = [this.otherUndo, this.lineUndo];
+    [this.lineRedo, this.otherRedo] = [this.otherRedo, this.lineRedo];
+    this.lineUndoCount = this.lineUndo.length;
+    this.lineRedoCount = this.lineRedo.length;
+    this.selectedLine = null;
+  }
+  /** Yaw actually used: 0 when the object is square to the room. */
+  get yaw(): number {
+    return this.roomAligned ? 0 : this.roomYaw;
+  }
+  /** Normalisation frame of the joint solve (FULL px): full-image principal point, max(W, H). */
+  private fullFrame(cam: Cam): Frame {
+    const c = camToFull(cam, this.crop);
+    return { cx: c.cx, cy: c.cy, s: Math.max(this.full.w, this.full.h) };
+  }
+  private fullLines(ls: readonly GuideLine[]): GuideLine[] {
+    return (($state.snapshot(ls) as GuideLine[]) ?? []).map((l) => lineToFull(l, this.crop));
+  }
+  /** Object ↔ room agreement (T.room.agreement); null until both groups have lines. */
+  readonly agreement = $derived.by((): Agreement | null => {
+    const o = this.objectLines;
+    const r = this.roomLines;
+    if (!o.length || !r.length) return null;
+    try {
+      return agreementOf(this.fullLines(o), this.fullLines(r), camToFull(this.cam, this.crop), this.yaw, this.fullFrame(this.cam), 3, this.vpModes);
+    } catch {
+      return null;
+    }
+  });
+  /** Tap on an axis of the agreement panel: outline its worst lines (and show the other group). */
+  highlightAxis(axis: Axis | null): void {
+    const a = axis === null ? null : this.agreement?.axes[axis];
+    if (!a || this.highlight?.axis === axis) {
+      this.highlight = null;
+      return;
+    }
+    this.highlight = { axis: axis!, ids: a.worst.map((w) => w.id) };
+    this.ghost = true;
+  }
+  /** Lines both groups contribute to a rotation-only refine in the object frame. */
+  private refineLines(): GuideLine[] {
+    if (this.roomAligned) return [...this.objectLines, ...this.roomLines];
+    return [...this.objectLines, ...this.roomLines.filter((l) => l.axis === 2)];
   }
 
   // ---------- guide lines ----------
+  /** Normalisation frame of the VP fits (same as the camera solve). */
+  get vpFrame(): Frame {
+    return { cx: this.cam.cx, cy: this.cam.cy, s: Math.max(this.width, this.height) };
+  }
+  /** Consolidated (robust least-squares) VP per axis, with per-line residuals; null with < 2 lines. */
+  readonly vpFits = $derived.by((): ({ fit: VpFit; ids: number[] } | null)[] => fitAxes(this.lines, this.vpFrame, this.vpModes));
+  /** Same for the ghost (other) group — its lines draw their own faint rays. */
+  readonly ghostFits = $derived.by((): ({ fit: VpFit; ids: number[] } | null)[] => fitAxes(this.otherLines, this.vpFrame, this.vpModes));
+  /**
+   * One-tap suggestion per axis to switch to parallel mode: the free VP is > 20 image diagonals away, or forcing parallel
+   * costs (almost) nothing. Only for 'auto' axes with ≥ 2 lines in the active group; null otherwise.
+   */
+  readonly parallelHints = $derived.by(() =>
+    ([0, 1, 2] as Axis[]).map((a) => {
+      if (this.vpModes[a] !== 'auto') return null;
+      const ls = this.lines.filter((l) => l.axis === a);
+      const s = parallelSuggestion(ls, this.vpFrame, Math.hypot(this.width, this.height));
+      return s?.suggest ? s : null;
+    }),
+  );
+  /** Axes currently forced parallel. */
+  get parallelAxes(): Axis[] {
+    return ([0, 1, 2] as Axis[]).filter((a) => this.vpModes[a] === 'parallel');
+  }
+  setVpMode(axis: Axis, mode: VpMode): void {
+    if (this.vpModes[axis] === mode) return;
+    const m = [...this.vpModes] as VpModes;
+    m[axis] = mode;
+    this.vpModes = m;
+  }
   get vps(): ({ vp: V3; rms: number } | null)[] {
-    const frame = { cx: this.cam.cx, cy: this.cam.cy, s: Math.max(this.width, this.height) };
-    return ([0, 1, 2] as Axis[]).map((a) => fitVanishingPoint(this.lines.filter((l) => l.axis === a), frame));
+    return this.vpFits.map((f) => (f ? { vp: f.fit.vp, rms: f.fit.rms } : null));
+  }
+  /** Residual (degrees) + outlier flag of one line against its axis VP; null when the axis has < 2 lines. */
+  lineResidual(id: number): { deg: number; outlier: boolean } | null {
+    for (const f of this.vpFits) {
+      const i = f ? f.ids.indexOf(id) : -1;
+      if (f && i >= 0) return { deg: f.fit.resDeg[i]!, outlier: f.fit.outlier[i]! };
+    }
+    return null;
+  }
+  /**
+   * Consolidate VPs (T.vp.consolidateAll): turn every line of `axis` (or of all axes) so it passes exactly through the consolidated VP.
+   * Undoable; lines with both ends linked are skipped and reported.
+   */
+  consolidate(axis?: Axis, mode?: VpMode): { moved: number; skipped: number; message: string } {
+    // per-axis "consolidate" → back to a free (finite) VP; per-axis "parallel" → parallel; all axes keeps each axis' mode
+    if (axis !== undefined && mode) this.setVpMode(axis, mode);
+    const axes = axis === undefined ? ([0, 1, 2] as Axis[]) : [axis];
+    const ready = axes.filter((a) => this.vpFits[a]);
+    const name = axis === undefined ? '' : T.vp.axisName(axis);
+    const par = axis !== undefined && this.vpModes[axis] === 'parallel';
+    if (!ready.length) {
+      return { moved: 0, skipped: 0, message: T.vp.needTwoBefore(name, par) };
+    }
+    this.pushLines();
+    const r = consolidateLines($state.snapshot(this.lines) as GuideLine[], ready, this.vpFrame, 1e-6, this.vpModes);
+    if (!r.moved.length) this.dropLastPush();
+    else this.lines = r.lines;
+    let message = par
+      ? r.moved.length
+        ? T.vp.madeParallel(name, r.moved.length)
+        : T.vp.alreadyParallel(name)
+      : r.moved.length
+        ? T.vp.consolidated(name, r.moved.length)
+        : T.vp.alreadyConsolidated(name);
+    if (r.skipped.length) message += T.vp.skippedLinked(r.skipped.length);
+    return { moved: r.moved.length, skipped: r.skipped.length, message };
+  }
+  /** Remember the current lines before an edit (for undo). */
+  pushLines(): void {
+    this.lineUndo.push($state.snapshot(this.lines) as GuideLine[]);
+    if (this.lineUndo.length > 100) this.lineUndo.shift();
+    this.lineRedo = [];
+    this.lineUndoCount = this.lineUndo.length;
+    this.lineRedoCount = 0;
+  }
+  /** Drop the last snapshot when an edit turned out to change nothing (e.g. a tap on a handle). */
+  dropLastPush(): void {
+    const last = this.lineUndo.at(-1);
+    if (last && JSON.stringify(last) === JSON.stringify($state.snapshot(this.lines))) {
+      this.lineUndo.pop();
+      this.lineUndoCount = this.lineUndo.length;
+    }
+  }
+  undoLines(): boolean {
+    const prev = this.lineUndo.pop();
+    if (!prev) return false;
+    this.lineRedo.push($state.snapshot(this.lines) as GuideLine[]);
+    this.lines = prev;
+    this.afterHistory();
+    return true;
+  }
+  redoLines(): boolean {
+    const next = this.lineRedo.pop();
+    if (!next) return false;
+    this.lineUndo.push($state.snapshot(this.lines) as GuideLine[]);
+    this.lines = next;
+    this.afterHistory();
+    return true;
+  }
+  private afterHistory(): void {
+    this.lineUndoCount = this.lineUndo.length;
+    this.lineRedoCount = this.lineRedo.length;
+    if (this.selectedLine !== null && !this.lines.some((l) => l.id === this.selectedLine)) this.selectedLine = null;
+    this.nextId = Math.max(this.nextId, 1 + Math.max(0, ...this.lines.map((l) => l.id), ...this.otherLines.map((l) => l.id)));
+  }
+  /** Endpoints that move with `ref` (its shared corner). */
+  members(ref: EndRef): EndRef[] {
+    return jointMembers(this.lines, ref);
+  }
+  link(p: EndRef, q: EndRef): void {
+    linkEnds(this.lines, p, q);
+  }
+  /** Unlink one endpoint from its corner. */
+  unlink(ref: EndRef): boolean {
+    if (this.members(ref).length < 2) return false;
+    this.pushLines();
+    unlinkEnd(this.lines, ref);
+    return true;
+  }
+  /** Unlink both ends of a line; returns how many ends were linked. */
+  unlinkLine(id: number | null): number {
+    const line = this.lines.find((l) => l.id === id);
+    if (!line?.links) return 0;
+    this.pushLines();
+    const n = Object.keys(line.links).length;
+    removeLineLinks(this.lines, line.id);
+    return n;
+  }
+  get linkedEnds(): number {
+    return this.lines.reduce((n, l) => n + (l.links ? Object.keys(l.links).length : 0), 0);
   }
   addLine(axis: Axis): void {
+    this.pushLines();
     const r = this.viewRect;
     const n = this.lines.filter((l) => l.axis === axis).length;
     const cx = r.x0 + r.w * (0.3 + 0.12 * axis + 0.05 * n);
@@ -140,20 +570,70 @@ export class MatchState {
     const len = Math.min(r.w, r.h) * 0.3;
     const dir = axis === 2 ? [0, 1] : axis === 0 ? [1, 0.15] : [0.8, -0.6];
     const id = this.nextId++;
-    this.lines.push({ id, axis, a: [cx - dir[0]! * len * 0.5, cy - dir[1]! * len * 0.5], b: [cx + dir[0]! * len * 0.5, cy + dir[1]! * len * 0.5] });
+    // the first line drawn on an axis becomes its master
+    this.lines.push({ id, axis, a: [cx - dir[0]! * len * 0.5, cy - dir[1]! * len * 0.5], b: [cx + dir[0]! * len * 0.5, cy + dir[1]! * len * 0.5], ...(n ? {} : { master: true }) });
     this.selectedLine = id;
   }
-  removeLine(id: number | null): void {
-    if (id === null) return;
+  /** Delete a line. Deleting a master promotes the remaining line with the lowest residual; returns that message. */
+  removeLine(id: number | null): string | null {
+    if (id === null) return null;
+    const gone = this.lines.find((l) => l.id === id);
+    if (!gone) return null;
+    this.pushLines();
+    removeLineLinks(this.lines, id);
     this.lines = this.lines.filter((l) => l.id !== id);
     if (this.selectedLine === id) this.selectedLine = null;
+    if (!gone.master) return null;
+    const next = promoteMaster(this.lines, gone.axis, this.vpFrame, this.vpModes[gone.axis]);
+    if (next === null) return null;
+    const msg = T.master.promoted(this.lineLabel(next), AXIS_NAMES[gone.axis]);
+    this.say(msg);
+    return msg;
+  }
+
+  // ---------- master line per axis ----------
+  /** "X2" = the 2nd X line of the active group (drawing order). */
+  lineLabel(id: number): string {
+    const l = this.lines.find((x) => x.id === id);
+    if (!l) return '?';
+    return `${AXIS_NAMES[l.axis]}${this.lines.filter((x) => x.axis === l.axis).indexOf(l) + 1}`;
+  }
+  /** Master line id of an axis in the active group. */
+  masterId(axis: Axis): number | null {
+    return masterOf(this.lines, axis)?.id ?? null;
+  }
+  /** Master ids per axis of both groups (what camera-match.json stores). */
+  masterMap(): MasterMap {
+    return { object: masterIds(this.objectLines), room: masterIds(this.roomLines) };
+  }
+  /** Make a line the master of its axis (undoable); returns the toast, or null when nothing changed. */
+  setMaster(id: number | null): string | null {
+    const l = this.lines.find((x) => x.id === id);
+    if (!l || l.master) return null;
+    this.pushLines();
+    setMasterFlag(this.lines, l.id);
+    const msg = T.master.setToast(this.lineLabel(l.id), AXIS_NAMES[l.axis]);
+    this.say(msg);
+    return msg;
+  }
+  /** Move the master of `axis` to the next line of that axis (drawing order, wrapping). */
+  cycleMaster(axis: Axis): string | null {
+    const ls = this.lines.filter((l) => l.axis === axis);
+    if (ls.length < 2) return null;
+    const i = ls.findIndex((l) => l.master);
+    return this.setMaster(ls[(i + 1) % ls.length]!.id);
   }
   clearLines(): void {
+    this.pushLines();
     this.lines = [];
     this.selectedLine = null;
   }
   /** Two guide lines per axis along the model's box edges, as seen by the current camera. */
-  seedLines(): void {
+  seedLines(): boolean {
+    if (this.group === 'room') {
+      this.say(T.groups.roomSeedNote);
+      return false;
+    }
     const kp = this.keyPoints();
     const by = (id: string) => kp.find((p) => p.id === id)?.p;
     const edges: [Axis, string, string][] = [
@@ -164,16 +644,26 @@ export class MatchState {
       [2, 'FLlegTL', 'FLfoot'],
       [2, 'FRlegTR', 'FRfoot'],
     ];
+    if (this.lines.length) this.pushLines();
     const lines: GuideLine[] = [];
+    const at = new Map<string, EndRef[]>();
     for (const [axis, a, b] of edges) {
       const A = by(a);
       const Bp = by(b);
       const pa = A && project(this.cam, A);
       const pb = Bp && project(this.cam, Bp);
-      if (pa && pb) lines.push({ id: this.nextId++, axis, a: pa, b: pb });
+      if (!pa || !pb) continue;
+      const id = this.nextId++;
+      lines.push({ id, axis, a: pa, b: pb });
+      at.set(a, [...(at.get(a) ?? []), { line: id, end: 'a' }]);
+      at.set(b, [...(at.get(b) ?? []), { line: id, end: 'b' }]);
     }
+    // box corners shared by lines of different axes start as linked corners
+    for (const ends of at.values()) for (let i = 1; i < ends.length; i++) linkEnds(lines, ends[0]!, ends[i]!);
+    ensureMasters(lines);
     this.lines = lines;
     this.selectedLine = null;
+    return true;
   }
 
   // ---------- point pairs ----------
@@ -218,15 +708,30 @@ export class MatchState {
     this.message = msg;
   }
   /** Focal length (unless locked) + rotation from the guide lines. Keeps the model origin where it was on screen. */
-  solveLines(): boolean {
-    const prior = this.cam;
-    const frame = { cx: prior.cx, cy: prior.cy, s: Math.max(this.width, this.height) };
-    const res = solveFromLines(this.lines, prior, {
-      frame,
+  /**
+   * One camera from BOTH groups (object + room), solved in full-image px (full-image principal point and
+   * focal), returned in crop px. Aligned: shared X/Y/Z VPs; otherwise shared vertical + the object's yaw.
+   */
+  private jointSolve(prior: Cam): { cam: Cam | null; message?: string; yaw: number; yawSolved: boolean } {
+    if (this.principal === 'center') {
+      const [cx, cy] = fullCentreInCrop(this.full, this.crop);
+      prior = { ...prior, cx, cy };
+    }
+    const priorF = camToFull(prior, this.crop);
+    const res = solveJoint(this.fullLines(this.objectLines), this.fullLines(this.roomLines), priorF, {
+      frame: this.fullFrame(prior),
       fixedF: this.lockLens,
       principal: this.principal === 'vp3' ? 'vp3' : 'fixed',
+      aligned: this.roomAligned,
+      yaw0: this.roomYaw,
+      modes: this.vpModes,
     });
-    if (!res.ok || !res.cam) {
+    return { cam: res.ok && res.cam ? camToCrop(res.cam, this.crop) : null, message: res.message, yaw: res.yaw, yawSolved: res.yawSolved };
+  }
+  solveLines(): boolean {
+    const prior = this.cam;
+    const res = this.jointSolve(prior);
+    if (!res.cam) {
       this.say(res.message ?? 'คำนวณไม่สำเร็จ');
       return false;
     }
@@ -234,8 +739,139 @@ export class MatchState {
     if (this.completePairs.length >= 2) cam = solvePosition(cam, this.completePairs) ?? cam;
     else cam = this.keepAnchor(prior, cam);
     this.cam = cam;
-    this.say(`คำนวณจากเส้นแล้ว · เลนส์ ${lensMm(cam.f, this.width).toFixed(1)} มม.`);
+    if (!this.roomAligned && res.yawSolved) this.roomYaw = res.yaw;
+    const both = !!(this.objectLines.length && this.roomLines.length);
+    const yaw = this.roomAligned ? null : this.roomYaw.toFixed(1);
+    this.say(T.room.solvedFromLines(both, lensMm(cam.f, this.width).toFixed(1), yaw, res.message ?? null));
     return true;
+  }
+  // ---------- guide line ↔ mock-up edges ----------
+  /** Build (once per image, cached) the edge map of the current view image, in an idle callback. */
+  async loadEdges(): Promise<void> {
+    const src = this.imageRect.src;
+    let job = MatchState.edgeCache.get(src);
+    if (!job) {
+      job = computeEdges(src);
+      MatchState.edgeCache.set(src, job);
+    }
+    const r = await job;
+    if (this.imageRect.src !== src) return; // view switched meanwhile
+    this.edgeMap = r?.map ?? null;
+    this.edgeUrl = r?.url ?? null;
+    if (r) this.edgeNat = { w: r.w, h: r.h };
+  }
+  get showEdges(): boolean {
+    return !!this.edgeMap && (this.edgeMode === 'always' || (this.edgeMode === 'drag' && this.dragging));
+  }
+  /** Ref px → current view image px. */
+  refToImg(p: V2): V2 {
+    const r = this.imageRect;
+    return [((p[0] - r.x) * this.edgeNat.w) / r.w, ((p[1] - r.y) * this.edgeNat.h) / r.h];
+  }
+  imgToRef(p: V2): V2 {
+    const r = this.imageRect;
+    return [r.x + (p[0] * r.w) / this.edgeNat.w, r.y + (p[1] * r.h) / this.edgeNat.h];
+  }
+  /** Ref px per image px of the current view. */
+  get refPerImg(): number {
+    return this.imageRect.w / this.edgeNat.w;
+  }
+  /** Alignment of a segment (ref px) with the image edges; samples / offsets back in ref px. */
+  edgeAlignOf(a: V2, b: V2): EdgeAlign | null {
+    const m = this.edgeMap;
+    if (!m) return null;
+    const k = this.refPerImg;
+    const r = alignLine(m, this.refToImg(a), this.refToImg(b), { band: 8 / k });
+    return {
+      ...r,
+      meanOff: r.meanOff === null ? null : r.meanOff * k,
+      samples: r.samples.map((x) => ({ ...x, p: this.imgToRef(x.p), q: x.q ? this.imgToRef(x.q) : null, off: x.off === null ? null : x.off * k })),
+    };
+  }
+  /** Fit a segment (ref px) to the edges in its band; null when nothing better was found. */
+  edgeFitSegment(a: V2, b: V2, fixed: { a?: boolean; b?: boolean }, band = 8): { a: V2; b: V2; before: number | null; after: number | null } | null {
+    const m = this.edgeMap;
+    if (!m) return null;
+    const k = this.refPerImg;
+    const r = refineLine(m, this.refToImg(a), this.refToImg(b), fixed, { band: band / k });
+    if (!r.moved) return null;
+    return { a: this.imgToRef(r.a), b: this.imgToRef(r.b), before: r.before.meanOff === null ? null : r.before.meanOff * k, after: r.after.meanOff === null ? null : r.after.meanOff * k };
+  }
+  /**
+   * Snap to image edges (T.edges.refineSelected): refine the selected line (or all lines) onto the image edges. Linked corners stay fixed
+   * (the line pivots about them). Undoable as one step.
+   */
+  edgeRefine(which: 'selected' | 'all'): { moved: number; message: string } {
+    if (!this.edgeMap) return { moved: 0, message: T.edges.preparing };
+    const ids = which === 'all' ? this.lines.map((l) => l.id) : this.selectedLine !== null ? [this.selectedLine] : [];
+    if (!ids.length) return { moved: 0, message: T.edges.selectFirst };
+    this.pushLines();
+    let moved = 0;
+    let fixedBoth = 0;
+    const before: number[] = [];
+    const after: number[] = [];
+    for (const id of ids) {
+      const l = this.lines.find((x) => x.id === id);
+      if (!l) continue;
+      const fixed = { a: l.links?.a !== undefined, b: l.links?.b !== undefined };
+      if (fixed.a && fixed.b) {
+        fixedBoth++;
+        continue;
+      }
+      const r = this.edgeFitSegment([...l.a] as V2, [...l.b] as V2, fixed);
+      if (!r) continue;
+      l.a = r.a;
+      l.b = r.b;
+      moved++;
+      if (r.before !== null) before.push(r.before);
+      if (r.after !== null) after.push(r.after);
+    }
+    if (!moved) this.dropLastPush();
+    const avg = (v: number[]) => (v.length ? v.reduce((x, y) => x + y, 0) / v.length : 0);
+    let message = moved
+      ? T.edges.refinedMany(moved, avg(before).toFixed(1), avg(after).toFixed(1))
+      : T.edges.nothingToRefine;
+    if (fixedBoth) message += T.edges.skippedLinked(fixedBoth);
+    return { moved, message };
+  }
+  get showDiff(): boolean {
+    return this.diff === 'always' || (this.diff === 'drag' && this.dragging);
+  }
+  beginLive(): void {
+    this.dragging = true;
+    this.liveFail = false;
+    this.liveBase = this.cam;
+  }
+  endLive(): void {
+    this.dragging = false;
+    this.liveBase = null;
+  }
+  /**
+   * Re-solve while dragging (called at most once per frame). Starts from the camera at drag start so the
+   * result doesn't drift; on failure keeps the last good camera and flags `liveFail`.
+   */
+  solveLive(what: 'lines' | 'pairs'): boolean {
+    const base = this.liveBase ?? this.cam;
+    const pairs = this.completePairs;
+    let cam: Cam | null = null;
+    try {
+      if (what === 'lines') {
+        const res = this.jointSolve(base);
+        if (res.cam) cam = pairs.length >= 2 ? (solvePosition(res.cam, pairs) ?? res.cam) : this.keepAnchor(base, res.cam);
+        if (res.cam && !this.roomAligned && res.yawSolved) this.roomYaw = res.yaw;
+      } else if (pairs.length >= 4) {
+        const start = solvePosition(base, pairs) ?? base;
+        cam = solveFull(start, this.refineLines(), pairs, { fixedF: this.lockLens, principal: this.principal === 'free' && pairs.length >= 6, parallel: this.parallelAxes });
+      } else if (pairs.length >= 2) {
+        cam = solvePosition(base, pairs);
+      } else return true; // nothing to solve from yet
+    } catch {
+      cam = null;
+    }
+    const finite = !!cam && [cam.f, cam.cx, cam.cy, ...cam.C, ...cam.R.flat()].every(Number.isFinite) && cam.f > 0;
+    this.liveFail = !finite;
+    if (finite) this.cam = cam!;
+    return finite;
   }
   /** Keep the model origin at the same pixel and depth as in `prior`. */
   private keepAnchor(prior: Cam, cam: Cam): Cam {
@@ -279,21 +915,22 @@ export class MatchState {
     let start = this.cam;
     // start from a sane position if the camera is far off
     start = solvePosition(start, this.completePairs) ?? start;
-    const cam = solveFull(start, this.lines, this.completePairs, { fixedF: this.lockLens, principal: usePrincipal });
+    const cam = solveFull(start, this.refineLines(), this.completePairs, { fixedF: this.lockLens, principal: usePrincipal, parallel: this.parallelAxes });
     this.cam = cam;
     this.say(`ปรับละเอียดแล้ว (${n} คู่${usePrincipal ? ' + จุดกึ่งกลางภาพ' : ''})`);
     return true;
   }
   /** Only the selected parameters, keeping the rest (used after numeric edits). */
   refineRotation(): void {
-    this.cam = refine(this.cam, this.lines, this.completePairs, { f: false, rotation: true, position: false, principal: false }).cam;
+    this.cam = refine(this.cam, this.refineLines(), this.completePairs, { f: false, rotation: true, position: false, principal: false, parallel: this.parallelAxes }).cam;
   }
   flip(): void {
     this.cam = turnAround(this.cam);
   }
   resetCamera(): void {
+    // the stored Blender camera is crop-centred (its own fit); the next line solve moves cx/cy to the
+    // full-image centre when the principal mode is 'center'
     this.cam = clone(this.stored);
-    if (this.principal === 'center') this.applyPrincipalCentre();
     this.say('กลับเป็นกล้องที่บันทึกไว้กับโมเดล');
   }
 
@@ -306,11 +943,15 @@ export class MatchState {
   }
   get wideLens(): number | null {
     const m = this.asset.ref?.mockup;
-    return m ? lensMm(this.cam.f, m.width) : null;
+    return m ? lensMm(this.cam.f * this.crop.s, m.width) : null;
   }
   get wideHfov(): number | null {
     const m = this.asset.ref?.mockup;
-    return m ? hfovDeg(this.cam.f, m.width) : null;
+    return m ? hfovDeg(this.cam.f * this.crop.s, m.width) : null;
+  }
+  /** Lens (mm, crop-width convention like `lens`) of a focal given in full-image px. */
+  lensOfFull(fFull: number): number {
+    return lensMm(fFull / this.crop.s, this.width);
   }
   get euler(): V3 {
     return blenderEulerDeg(this.cam.R);
@@ -350,33 +991,81 @@ export class MatchState {
   }
   save(): void {
     const data: Saved = {
-      v: 1,
+      v: 2,
       cam: this.cam,
-      lines: $state.snapshot(this.lines),
+      crop: { ...this.crop },
+      lines: this.groupedFullLines(),
+      master: this.masterMap(),
+      ghost: this.ghost,
+      rays: this.rays,
+      roomAligned: this.roomAligned,
+      roomYaw: this.roomYaw,
       pairs: $state.snapshot(this.pairs) as PointPair[],
       image: this.image,
       principal: this.principal,
       lockLens: this.lockLens,
+      snap: this.snap,
+      modelDiff: this.diff,
+      edgeMode: this.edgeMode,
+      edgeSnap: this.edgeSnap,
+      lockVp: this.lockVp,
+      vpModes: [...this.vpModes] as VpModes,
     };
     try {
       localStorage.setItem(this.storageKey, JSON.stringify(data));
     } catch {
       /* storage full or blocked */
     }
+    this.onSave?.();
   }
+  /** Called after every save (the view refreshes its "unsaved to source file" list). */
+  onSave: (() => void) | null = null;
   private restore(): boolean {
     try {
       const raw = localStorage.getItem(this.storageKey);
       if (!raw) return false;
-      const d = JSON.parse(raw) as Saved;
-      if (d.v !== 1 || !d.cam?.R) return false;
+      return this.restoreFrom(JSON.parse(raw) as Saved);
+    } catch {
+      return false;
+    }
+  }
+  private restoreFrom(d: Saved): boolean {
+    try {
+      if ((d.v !== 1 && d.v !== 2) || !d.cam?.R) return false;
       this.cam = d.cam;
-      this.lines = d.lines ?? [];
-      this.pairs = d.pairs ?? [];
       this.image = d.image === 'wide' && this.asset.ref?.mockup ? 'wide' : 'crop';
+      let groups: { object: GuideLine[]; room: GuideLine[] };
+      if (d.v === 1) {
+        // v1: one list in crop px, drawn on the view that was open → split by view / crop bounds
+        groups = migrateV1Lines(d.lines ?? [], this.image, { w: this.width, h: this.height });
+      } else {
+        // v2: full px with the crop transform they were saved with (falls back to the asset's)
+        const t = d.crop && d.crop.s > 0 ? d.crop : this.crop;
+        const back = (g: LineGroup) =>
+          pruneLinks((d.lines ?? []).filter((l) => (l.group ?? 'object') === g).map(({ group: _g, ...l }) => lineToCrop(l as GuideLine, t)));
+        groups = { object: back('object'), room: back('room') };
+        this.ghost = d.ghost !== false;
+        this.rays = d.rays !== false;
+        this.roomAligned = d.roomAligned !== false;
+        this.roomYaw = Number.isFinite(d.roomYaw) ? d.roomYaw! : 0;
+      }
+      // masters: the stored map wins, then line flags (drafts), then the default rule (first line per axis)
+      const stored = parseMasterMap(d.master);
+      applyMasterIds(groups.object, stored?.object);
+      applyMasterIds(groups.room, stored?.room);
+      this.lines = this.group === 'room' ? groups.room : groups.object;
+      this.otherLines = this.group === 'room' ? groups.object : groups.room;
+      this.pairs = d.pairs ?? [];
       this.principal = d.principal ?? 'center';
       this.lockLens = !!d.lockLens;
-      this.nextId = 1 + Math.max(0, ...this.lines.map((l) => l.id), ...this.pairs.map((p) => p.id));
+      this.snap = d.snap !== false;
+      // the model diff used to default to 'drag'; it is now opt-in (saved as modelDiff)
+      this.diff = d.modelDiff === 'always' || d.modelDiff === 'drag' ? d.modelDiff : 'off';
+      this.edgeMode = d.edgeMode === 'always' || d.edgeMode === 'off' ? d.edgeMode : 'drag';
+      this.edgeSnap = d.edgeSnap === true;
+      this.lockVp = d.lockVp === true;
+      this.vpModes = [0, 1, 2].map((a) => (d.vpModes?.[a] === 'parallel' ? 'parallel' : 'auto')) as VpModes;
+      this.nextId = 1 + Math.max(0, ...this.lines.map((l) => l.id), ...this.otherLines.map((l) => l.id), ...this.pairs.map((p) => p.id));
       return true;
     } catch {
       return false;
@@ -396,6 +1085,46 @@ export class MatchState {
       /* ignore */
     }
   }
+  /** Both groups, tagged, in FULL-image px. */
+  groupedFullLines(): GroupedLine[] {
+    return [
+      ...this.fullLines(this.objectLines).map((l) => ({ ...l, group: 'object' as const })),
+      ...this.fullLines(this.roomLines).map((l) => ({ ...l, group: 'room' as const })),
+    ];
+  }
+  /** Room block of the export: crop transform, yaw, and the room-frame camera / model placement. */
+  private roomExport(): object {
+    const yaw = this.yaw;
+    const camRoom = { ...this.cam, R: mulMM(this.cam.R, transpose(rotZ(yaw))), C: mulMV(rotZ(yaw), this.cam.C) };
+    const ag = this.agreement;
+    const r = (v: number | null | undefined, k = 3) => (v === null || v === undefined ? null : Math.round(v * 10 ** k) / 10 ** k);
+    const full = camToFull(this.cam, this.crop);
+    return {
+      crop: { ...this.crop, note: 'full px = (x + s·u, y + s·v) for crop px (u, v)' },
+      fullImage: [this.full.w, this.full.h],
+      intrinsicsFullPx: { f: r(full.f), cx: r(full.cx), cy: r(full.cy) },
+      aligned: this.roomAligned,
+      vpModes: [...this.vpModes],
+      yawDeg: r(yaw, 4),
+      yawConvention: 'X_room = Rz(yaw)·X_obj (Blender Z up); the model is rotated by yaw about Z when placed in the room',
+      modelPlacement: {
+        blenderRotationEulerDeg: [0, 0, r(yaw, 4)],
+        threeRotationYDeg: r(yaw, 4),
+      },
+      roomCamera: { R: camRoom.R, C: camRoom.C, blenderEulerDeg: blenderEulerDeg(camRoom.R).map((v) => r(v, 4)) },
+      agreement: ag
+        ? {
+            axesDeg: ag.axes.map((a) => r(a.deg, 4)),
+            bands: ag.axes.map((a) => a.band),
+            focalObjectPx: r(ag.fObject),
+            focalRoomPx: r(ag.fRoom),
+            focalDiffPct: r(ag.fDiffPct, 2),
+            overall: ag.band,
+          }
+        : null,
+      linesFullPx: this.groupedFullLines(),
+    };
+  }
   camJson(dims: V3): object {
     return camJson(this.cam, this.width, this.height, dims, this.asset.ref?.camParams);
   }
@@ -403,10 +1132,14 @@ export class MatchState {
     return fullExport(this.cam, {
       asset: this.asset,
       dims,
-      lines: $state.snapshot(this.lines),
+      lines: [
+        ...($state.snapshot(this.objectLines) as GuideLine[]).map((l) => ({ ...l, group: 'object' })),
+        ...($state.snapshot(this.roomLines) as GuideLine[]).map((l) => ({ ...l, group: 'room' })),
+      ],
       pairs: $state.snapshot(this.pairs) as PointPair[],
       residual: this.residual,
       image: this.image === 'wide' ? 'mockup (full)' : 'crop',
+      room: this.roomExport(),
     });
   }
 }

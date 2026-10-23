@@ -1,5 +1,6 @@
 import { defineConfig, type Plugin } from 'vite';
 import { svelte } from '@sveltejs/vite-plugin-svelte';
+import { editorFilesPlugin } from './scripts/editorFilesPlugin.mjs';
 
 function precachePlugin(): Plugin {
   let outDir = '';
@@ -20,7 +21,7 @@ function precachePlugin(): Plugin {
 }
 
 export default defineConfig({
-  plugins: [svelte(), precachePlugin()],
+  plugins: [svelte(), precachePlugin(), editorFilesPlugin()],
   base: './',
   server: { host: true, port: 5173 },
   preview: { host: true, port: 4173 },

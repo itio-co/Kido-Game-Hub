@@ -35,7 +35,12 @@ export type ShowcaseAsset = {
     /** Full mock-up the crop was cut from; `crop` = top-left of the crop inside it (px). */
     /** First five cam.json `p` values (W, D, T, O, L) from the asset's solve_cam.py fit, echoed on export. */
     camParams?: readonly number[];
-    mockup?: { src: string; width: number; height: number; crop: { x: number; y: number } };
+    /**
+     * Full mock-up the crop was cut from. `crop` = top-left of the crop inside it (mock-up px) and `scale` =
+     * mock-up px per crop px (default 1): full = (x + scale·u, y + scale·v). The nightstand crop was verified
+     * by pixel match (mean abs diff 0 at (368, 540), scale 1).
+     */
+    mockup?: { src: string; width: number; height: number; crop: { x: number; y: number }; scale?: number };
     /** Named 3D points (Blender cm: X right, Y back, Z up) for camera-match point pairs. */
     keyPoints?: { id: string; label: string; p: [number, number, number] }[];
   };

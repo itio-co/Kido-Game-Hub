@@ -132,7 +132,7 @@ Rotations and recolours are not in `dims.json`; port them by hand.
 4. Optional, for camera match: `ref.mockup` (full mock-up + crop offset) and `ref.keyPoints` (named model
    corners in Blender cm) and `ref.camParams` (the first five `p` values of `cam.json`).
 
-## Camera match (`#/editor` → **จับมุมกล้อง**, v0.2.8)
+## Camera match (`#/editor` → **จับมุมกล้อง**, v0.2.8–0.2.9)
 
 fSpy-style camera matching inside the editor: line the model up with the mock-up and export a camera that
 `add_cam.py` / `render.py` / `import_external.py` and Three.js can use.
@@ -159,6 +159,96 @@ fSpy-style camera matching inside the editor: line the model up with the mock-up
 8. บันทึกอัตโนมัติในเครื่อง (`kido-cam:<slug>`) และ **มุม Mock-up** จะใช้กล้องที่จับไว้
 9. **ดาวน์โหลด cam.json** (รูปแบบเดียวกับ `blender/cam.json`) หรือ **ดาวน์โหลดค่าทั้งหมด** (Blender + Three.js)
 
+### v0.2.9 additions (English)
+
+UI labels are shown in bold as they appear in the (Thai) UI, with an English gloss.
+
+1. **Line snapping** (🧲 button on the view or in the panel): drag a line end (or grab the middle to move the
+   whole line) near a line of **another axis** and it snaps, in priority order, to that line's endpoint → the
+   intersection with that line's extension → the nearest point on the segment. Snap radius is ~12 px (mouse) /
+   ~22 px (touch) on screen, independent of zoom; a yellow ring + cross marks the snap target.
+   - An end snapped onto another line's end becomes **one shared corner** (dashed yellow box) and drags together;
+     **long-press** the corner to split it, or use **แยกมุมที่เชื่อม** (unlink corners, selected line); hold
+     **Alt** while dragging to disable snapping temporarily.
+   - **วางเส้นตามกล้องปัจจุบัน** (place lines from the current camera) links shared box corners automatically;
+     **↶ / ↷** (panel or header, Ctrl+Z / Ctrl+Y) undo / redo line edits.
+   - While dragging, a **loupe** (~3.5×) shows image + model + lines around the point with a crosshair
+     (above the finger on phones).
+2. **Difference view**: while dragging lines/points the camera is re-solved every frame and the model is drawn
+   in `difference` blend over the image (match = dark, mismatch = bright). Modes **ขณะลาก** (while dragging) /
+   **เปิดตลอด** (always) / **ปิด** (off, default). If a solve fails the last camera is kept and a small badge shows.
+3. **Consolidated vanishing points**: draw any number of lines per axis; one VP per axis is fitted from all of them
+   (robust least squares) and used for the solve.
+   - Axis-coloured circle = VP (an arrow at the view edge + distance in px when off-image, ∞ = parallel lines);
+     faint rays run from every line to it.
+   - Line outline = angular error to the VP: **green < 0.5°**, **amber 0.5–2°**, **red > 2°** (degrees next to the
+     line; ⚠ + dashed outline = outlier excluded from the fit). The panel shows per-axis RMS (°) and outlier count.
+   - **🎯 รวมจุดลับตา** (consolidate all, or **รวม X / Y / Z** per axis) rotates every line onto the shared VP,
+     keeping length and midpoint; a line with one linked corner pivots about that corner (corners never move); a
+     line with both ends linked is skipped — unlink it first. Undoable with ↶.
+   - **🔒 ล็อกเข้าจุดลับตา** (lock to VP): when on, dragging an endpoint on an axis with ≥ 3 lines keeps the line
+     pointing at the VP of the *other* lines (the end slides along the dashed ray); snaps on that ray still apply.
+4. **Object / room lines**: the **ภาพครอป · วัตถุ** (crop · object) view edits object lines, **Mock-up เต็ม · ห้อง**
+   (full mock-up · room) edits room lines (walls, floor, ceiling, door/window frames). Both share one camera (the
+   crop is the part of the mock-up at x = 368, y = 540).
+   - **👻** shows the other group faintly for reference; snapping works across groups (e.g. an object corner onto
+     a wall edge).
+   - **คำนวณจากเส้น** (solve from lines) uses both groups. If the object is rotated relative to the room, untick
+     **วัตถุวางตรงกับห้อง** (object aligned with room) → the object's yaw about Z is solved (and exported), sharing
+     only the vertical, horizon and lens.
+   - The **วัตถุ↔ห้อง** agreement panel shows per-axis VP angle difference (green < 1°, amber ≤ 3°, red > 3°) and
+     lens difference (%); tapping an axis highlights the worst lines of both groups.
+   - Older data (object lines only) loads unchanged.
+5. **↔ เส้นต่อถึงขอบ** (full rays, default on): every line is extended from its VP through the segment to the view
+   edge (both directions for a VP at ∞); faint-group rays are faint too.
+6. **Edge alignment** (guide line ↔ real edges in the mock-up): image edges are precomputed (Sobel).
+   - **ขณะลาก** (default) / **เปิดตลอด** / **ปิด**: the image dims, detected edges glow, short ticks join the line
+     to the nearest edge and a label shows the offset (green < 1 px, amber ≤ 2.5 px, red > 2.5 px); the loupe
+     shows edges too.
+   - **🧷 ดูดเข้าขอบภาพ** (snap to image edge; selected line / **ทุกเส้น** all lines) fits the line to edges within
+     ±8 px (linked corners stay fixed), undoable; **ดูดขณะลาก** snaps on release (Alt = off temporarily).
+   - The model difference view (item 2) is still available but defaults to off.
+7. **Consolidate / parallel per axis**: each axis in the VP panel has a pair of buttons (active one is blue,
+   ≥ 44 px tall on phones).
+   - **รวม X/Y/Z** (consolidate) = auto mode: fit one finite VP and rotate lines onto it.
+   - **ขนาน X/Y/Z** (parallel) = VP at ∞: rotate all lines parallel to their mean direction and **constrain the
+     camera** so that axis is parallel to the image plane — e.g. **ขนาน Z** = level camera (no pitch, verticals
+     vertical). The panel shows ∠ = deviation from parallel, and a "∞ Z ขนาน" double arrow at the view edge
+     replaces the VP marker.
+   - If an axis is already nearly parallel (VP very far away), a 💡 button suggests switching to parallel.
+   - **Two parallel axes** = one-point perspective: the lens cannot be found from lines → lock the lens
+     (**ล็อกเลนส์**) or use point pairs.
+   - Applies to both object and room lines; if a group's lines are not actually parallel the agreement panel
+     shows ⚠.
+   - The mode is saved with the lines (`vpModes`) and exported; ↶ restores line positions but not the mode.
+8. **💾 บันทึกลงไฟล์ต้นฉบับ** (save to source files; only under `npm run dev` in `game/`): work is autosaved to
+   localStorage; press this button (or **Ctrl+S**) to write the files in `game/assets-src/<item>/editor/`, then
+   commit them.
+   - `camera-match.json` = guide lines (object + room), point pairs, VP lock, consolidate/parallel modes, crop and
+     the solved camera.
+   - `<variant>.edits.json` (e.g. `lowpoly.edits.json`) = model edits (no undo history); tick
+     **รวม …-edited.glb** to also write the model file.
+   - The **ไฟล์ต้นฉบับ** (source files) panel lists which files will change; after saving it shows the paths and
+     `git add game/assets-src/nightstand/editor && git commit -m "…"`.
+   - Committed files are the baseline: a fresh page (no local draft) loads from them. If the local draft differs
+     from the files, a **"มีงานที่ยังไม่บันทึกลงไฟล์"** (unsaved work) banner offers **ใช้งานที่ค้างไว้ต่อ** (keep the
+     draft; hidden until the page is closed) or **กลับไปใช้ไฟล์** (revert to the files, discarding the draft).
+   - Built pages (e.g. the preview link) have no API: use the **ดาวน์โหลด** (download) buttons and put the files in
+     that folder yourself.
+
+9. **★ Master line per axis**: each axis of each group (object, room) has exactly one master line — the
+   reference the other lines of that axis follow.
+   - The first line drawn on an axis is its master. Change it with **★ ตั้งเป็นเส้นหลัก** (★ set as master, the
+     selected line) or the **★ เส้นหลัก X/Y/Z** picker / **⟳ ถัดไป** (next) in the VP panel, or right-click /
+     long-press a line → **★ ตั้งเป็นเส้นหลัก**. Setting a new master demotes the old one (undoable with ↶).
+   - Deleting the master promotes the remaining line with the lowest residual and says so in a toast.
+   - The master is drawn thicker with a ★ badge at its midpoint (axis colour), its ray is brighter and it is
+     highlighted in the loupe.
+   - Meaning: the VP is constrained to the master's infinite line (fitted from the other lines; the master alone
+     gives no VP); in parallel mode the direction is the master's; **รวม / ขนาน** align the other lines and never
+     move the master; residual colours and the VP lock are relative to that VP (the master shows 0°). Edge
+     refine may still adjust the master.
+
 ### Notes (English)
 
 - Coordinates: world = Blender cm (Z up, front = −Y). Image points are crop ("ref") pixels; the full mock-up is
@@ -172,7 +262,88 @@ fSpy-style camera matching inside the editor: line the model up with the mock-up
 - `<slug>-camera-match.json` (`kido-camera-match/1`) also has `blender` (location m, XYZ Euler, lens, shift),
   `three` (hFOV, position, quaternion in the game's Y-up metres + a snippet), `mockup` (lens / hFOV / shift
   for the full mock-up), residuals, and the lines and point pairs.
-- Solver: VPs from the guide lines (least squares over normalised homogeneous lines), focal length from two
+- Strings (i18n prep): every UI string added in v0.2.9 lives in `src/lib/editor/strings.ts` — `MESSAGES` maps
+  dotted English keys (e.g. `cameraMatch.vp.consolidateAll`) to `{ en, th }` with `{name}` placeholders,
+  `localeTable('en' | 'th')` gives the flat shape of `src/locales/<locale>.json`, and components use the typed `T`
+  facade (renders Thai today). `tests/strings.test.ts` checks keys, both values and matching placeholders.
+- Snapping (v0.2.9): `src/lib/editor/guideSnap.ts` (pure; `npm test` in `game/` runs `tests/guideSnap.test.ts`
+  through `tsc` + node, no test framework needed). Lines may carry optional `links: {a?, b?}` joint ids — endpoints
+  with the same id are one shared corner. Older saved/exported line data without `links` loads unchanged.
+- Live solve while dragging: guide-line drags re-run the line solve, point drags re-run PnP (≥4 pairs) or position
+  (≥2), at most once per animation frame, always starting from the camera at drag start. The difference view is
+  CSS `mix-blend-mode: difference` of the WebGL canvas over the mock-up `<img>`; the loupe copies the same patch of
+  the (preserveDrawingBuffer) canvas into a small 2D canvas with the same blend. Line undo restores lines only, not
+  the camera — press **คำนวณจากเส้น** again after an undo.
+- VP consolidation (v0.2.9, `src/lib/editor/vpFit.ts`, pure, tested in `tests/vpFit.test.ts`): each axis gets one
+  VP from all its lines — homogeneous lines `l = a × b` in a normalised frame (centre = principal point, scale =
+  max(W, H)), smallest eigenvector of `Σ wᵢ lᵢ lᵢᵀ` (works for VPs at infinity: w → 0), then IRLS with Huber
+  weights on the angular residual (δ = 1°) and rejection of one gross outlier per pass (> max(2°, 3 × median),
+  keeping ≥ 3 lines). The residual of a line is the angle between it and the direction from its midpoint to the VP.
+  Line colours: green < 0.5°, amber 0.5–2°, red > 2°. **รวมจุดลับตา** rotates each line about its midpoint (same
+  length) onto the VP; a line with one linked corner pivots about that corner so joints never move; a line with
+  both ends linked is skipped and reported. It is one undo step. **ล็อกเข้าจุดลับตา** (saved with the lines as
+  `lockVp`) constrains an endpoint drag to the ray from the fixed end to the VP fitted from the *other* lines of
+  that axis (needs ≥ 2 others); endpoint/intersection snaps that lie on that ray still win, on-segment snaps are off.
+- Object / room groups (v0.2.9, `src/lib/editor/roomMatch.ts`, tested in `tests/roomMatch.test.ts`): lines carry
+  `group: 'object' | 'room'`; object lines live in crop px, room lines are drawn on the full mock-up and stored in
+  the same crop-px space through the crop transform `T = {x: 368, y: 540, s: 1}` (from `showcaseAssets`
+  `mockup.crop`, pixel-checked against `player-room-wide.jpg`). **คำนวณจากเส้น** solves one camera from both
+  groups. Aligned: the per-axis VPs are fitted from all lines of both groups. Yawed (untick **วัตถุวางตรงกับห้อง**):
+  the room X/Y VPs and the object X/Y VPs share the vertical VP, horizon and focal length, and the yaw ψ
+  (`X_room = Rz(ψ) · X_obj`) is solved jointly; it is exported as `room.yawDeg` in the camera-match file. The
+  agreement panel fits each group alone and compares VP directions per axis (good < 1°, warn ≤ 3°) and focal
+  (< 5 %, ≤ 15 %); tapping an axis highlights the worst lines of both groups. Saved data is `v: 2`; v1 data (crop
+  lines only) migrates to the object group.
+- Full rays: with **เส้นต่อถึงขอบ** on, each line is drawn from its VP through the segment to the view edge
+  (both directions for a VP at infinity), clipped to the visible view.
+- Edge alignment (`src/lib/editor/edgeAlign.ts`, tested in `tests/edgeAlign.test.ts`): one Sobel gradient map
+  per view image (downscaled to ≤ 1400 px, computed in an idle callback). For a line, samples along it search
+  ±8 px along the normal for the strongest gradient whose direction matches the line normal; the offset is
+  refined with a parabola fit. Score / coverage / mean offset give the readout band (< 1 px, ≤ 2.5 px).
+  **ดูดเข้าขอบภาพ** fits a line to the edge samples (iteratively, robust) and keeps linked corners fixed. The
+  model difference view is unchanged but now defaults to **ปิด**.
+- Per-axis VP mode (`vpModes: ['auto' | 'parallel', ×3]`, tested in `tests/parallel.test.ts`): `parallel` fits the
+  common image direction θ (VP = `[cos θ, sin θ, 0]`, robust, residual = angle to θ) and **ขนาน** rotates the
+  lines onto it (same pivots as consolidation). In the solver, a parallel axis adds a stiff penalty on the depth
+  component of that world axis in the camera frame (`R[2] · axis`) so e.g. **ขนาน Z** gives a level camera
+  (zero pitch, verticals vertical). Focal length needs ≥ 2 finite VPs, so with two parallel axes
+  (one-point perspective) lock the lens or use point pairs. Modes are shared by both groups; the agreement panel
+  flags a group whose lines are > 1° RMS from parallel. A suggestion appears when an auto-fitted VP lies
+  > 20× the image diagonal away. Line undo does not revert the mode. There is no separate "finite only" mode.
+- Master lines (v0.2.9, `src/lib/editor/masterLine.ts` + `vpFit.ts`, tested in `tests/master.test.ts`): a line
+  carries `master: true` (so undo and the local draft keep it); `camera-match.json` stores
+  `master: { object: [x, y, z], room: [x, y, z] }` (line ids, `null` = axis without lines). A missing map (older
+  files) or an id that does not match a line of that axis falls back to the default rule (first line of the axis
+  in file order), and such a file does not show as modified. Constrained fit: with the master's homogeneous line
+  m, the VP is the smallest eigenvector of `Σ wᵢ lᵢ lᵢᵀ` restricted to the plane `m · v = 0` (the master gets
+  weight 0 and is never an outlier); parallel mode takes θ = the master's angle. Lock-to-VP is off while dragging
+  the master itself (it is the reference). Deletion promotes the lowest residual against the *free* fit of the
+  remaining lines.
+  **Joint rule** (one fit that mixes both groups — every axis when the object is aligned with the room, only Z
+  when yawed): the **room master is authoritative** — the object's master on that axis becomes an ordinary line
+  of the joint fit (`roomAuthoritative`), and in the yawed refinement master residuals are weighted ×10
+  (`MASTER_WEIGHT`). An object master only governs the joint fit on an axis where the room has no lines. The
+  per-group fits (overlay colours, the object↔room agreement panel) always use each group's own master.
+- Source files + dev save API (`scripts/editorFilesPlugin.mjs`, `src/lib/editor/editorFilesCore.mjs`,
+  `src/lib/editor/sourceFiles.svelte.ts`, tested in `tests/editorFiles.test.mjs`): a Vite plugin with
+  `apply: 'serve'` (never in a build) serves `GET /__editor/files?item=<item>` and `POST /__editor/files`
+  (`{item, files: [{name, json} | {name, base64}]}`). It writes only `camera-match.json`, `<variant>.edits.json`
+  and `<variant>-edited.glb` inside an existing `assets-src/<item>/editor/`. Guards: loopback client, `Host`
+  must be localhost (DNS rebinding), `Origin` (if sent) must be the same local origin, `Sec-Fetch-Site`
+  same-origin/none, POST needs `application/json` + `x-kido-editor: 1`, item/variant names
+  `^[a-z0-9][a-z0-9_-]{0,63}$`, resolved paths (and symlinks) must stay in that folder, body ≤ 48 MB / JSON ≤ 2 MB /
+  GLB ≤ 32 MB (glTF magic checked), all entries validated before any write, atomic temp-file + rename (retries on
+  Windows EPERM/EBUSY). JSON is written server-side as stable pretty JSON (sorted keys, 2-space indent, flat number
+  arrays on one line, LF + final newline), so the same data always gives the same bytes; identical files are not
+  rewritten, and CRLF checkouts compare equal (`.gitattributes` also pins LF). `camera-match.json`
+  (`kido-camera-match-source/1`) holds the work only — lines in full-image px rounded to 1e-4, pairs, `lockVp`,
+  `vpModes`, `principal`, `lockLens`, room alignment/yaw, crop, `camera` (crop px) and a derived `solved` block
+  that is ignored on load and in comparisons; UI preferences stay in localStorage. `<variant>.edits.json`
+  (`kido-model-edits-source/1`) is the parts state without timestamps or history. The page uses the API when it
+  answers (dev only); otherwise the committed files bundled at build time (`import.meta.glob`) are the baseline
+  and the panel offers downloads. Load order: local draft → source file → seeded default. Saving does not trigger
+  HMR (`server.watch.ignored` for `assets-src/*/editor/**`).
+- Solver: VPs from the guide lines (the consolidated per-axis VPs above), focal length from two
   orthogonal VPs, rotation from the VP directions (signs from the current camera), then Levenberg–Marquardt on
   line-to-VP and point reprojection error. Position comes from point pairs (linear + LM); with no pairs the
   model origin stays where the previous camera put it.

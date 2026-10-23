@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount, untrack } from 'svelte';
+  import { onMount, tick, untrack } from 'svelte';
   import { MatchState } from '../lib/editor/matchState.svelte';
   import type { V3 } from '../lib/editor/camMath';
   import GuideOverlay from './GuideOverlay.svelte';
@@ -14,6 +14,10 @@
     type DisplayMode,
   } from '../lib/editor/modelEditor';
   import { partLabel } from '../lib/editor/partLabels';
+  import { SourceFiles, editsStorageKey, type FileChange } from '../lib/editor/sourceFiles.svelte';
+  import { glbFileName, stableStringify } from '../lib/editor/editorFilesCore.mjs';
+  import { withDefaultMasters } from '../lib/editor/masterLine';
+  import { T } from '../lib/editor/strings';
 
   const options = SHOWCASE_ASSETS.flatMap((asset) =>
     asset.variants.map((variant) => ({ key: `${asset.slug}|${variant.id}`, asset, variant })),
@@ -43,12 +47,37 @@
   const ref = $derived(option.asset.ref);
   /** Camera-match session of the current asset (also drives the mock-up view's camera). */
   let match = $state.raw<MatchState | null>(null);
+  /** Source files (game/assets-src/<item>/editor/) of the current asset + the dev save API. */
+  let files = $state.raw<SourceFiles | null>(null);
   let matchFor = '';
   $effect(() => {
     const asset = option.asset;
     if (matchFor === asset.slug) return;
     matchFor = asset.slug;
-    match = asset.ref ? new MatchState(asset) : null;
+    const sf = new SourceFiles(asset);
+    const m = asset.ref ? new MatchState(asset, sf.matchFile) : null;
+    files = sf;
+    match = m;
+    if (m) m.onSave = () => refreshFiles();
+    untrack(() => refreshFiles());
+    // dev API: the files on disk may be newer than the copy bundled into this page
+    void sf.ready.then(() => {
+      if (files !== sf) return;
+      const disk = sf.matchFile;
+      if (m && m.origin !== 'draft' && disk && stableStringify(withDefaultMasters(disk)) !== stableStringify(m.fileData()) && m.loadFile(disk)) {
+        m.origin = 'file';
+        m.save();
+      }
+      refreshFiles();
+    });
+  });
+  function refreshFiles(): void {
+    files?.refresh(match);
+  }
+  // model edits change → recompute the unsaved list
+  $effect(() => {
+    void snap;
+    untrack(() => refreshFiles());
   });
   const staged = $derived(view !== 'orbit' && !!match);
   $effect(() => {
@@ -56,9 +85,10 @@
     match.stageW = Math.max(1, vw);
     match.stageH = Math.max(1, vh);
   });
-  // In the plain mock-up view the image always fits the viewport.
+  // In the plain mock-up view the image always fits the viewport; camera-match fits on entry / resize
+  // (fit keeps a strip under the image for the zoom buttons).
   $effect(() => {
-    if (match && view === 'mock') {
+    if (match && (view === 'mock' || view === 'match')) {
       void match.stageW;
       void match.stageH;
       void match.image;
@@ -98,8 +128,12 @@
     const k = match.k;
     return `left:${(r.x - v.x0) * k}px;top:${(r.y - v.y0) * k}px;width:${r.w * k}px;height:${r.h * k}px;`;
   });
+  // Difference view: model render ⊖ mock-up (aligned areas go dark, misalignment glows).
+  const diffOn = $derived(view === 'match' && !!match?.showDiff);
   const canvasStyle = $derived(
-    staged && match ? `opacity:${match.opacity / 100};clip-path:inset(0 0 0 ${match.split}%);` : '',
+    staged && match
+      ? `${diffOn ? 'mix-blend-mode:difference;opacity:1' : `opacity:${match.opacity / 100}`};clip-path:inset(0 0 0 ${match.split}%);`
+      : '',
   );
   function modelTap(clientX: number, clientY: number): boolean {
     if (!editor || !match?.pick) return false;
@@ -121,6 +155,18 @@
   const posStep = $derived(snapOn ? 0.5 : 0.1);
   const rotStep = $derived(snapOn ? 15 : 1);
 
+  /** In camera-match view, undo/redo act on the guide lines; otherwise on the model. */
+  const lineHistory = $derived(view === 'match' ? match : null);
+  function undo(): void {
+    if (lineHistory) {
+      if (lineHistory.undoLines()) lineHistory.save();
+    } else editor?.undo();
+  }
+  function redo(): void {
+    if (lineHistory) {
+      if (lineHistory.redoLines()) lineHistory.save();
+    } else editor?.redo();
+  }
   function say(message: string): void {
     toast = message;
     window.clearTimeout(toastTimer);
@@ -131,8 +177,13 @@
     if (!editor) return;
     loading = true;
     try {
-      const { restored } = await editor.load(option.asset, option.variant);
-      if (restored) say('เปิดงานที่แก้ค้างไว้ (บันทึกในเครื่องนี้)');
+      await tick(); // let the asset effect create this asset's SourceFiles first
+      const sf = files?.asset === option.asset ? files : null;
+      if (sf) await sf.ready;
+      const { from } = await editor.load(option.asset, option.variant, sf?.editsFile(option.variant.id) ?? null);
+      if (from === 'draft') say(T.files.openedDraft);
+      else if (from === 'file') say(T.files.openedFile);
+      refreshFiles();
     } catch (err) {
       console.warn('editor load failed', err);
       say('เปิดโมเดลไม่ได้');
@@ -150,13 +201,16 @@
       const target = event.target as HTMLElement;
       if (target.tagName === 'INPUT' || target.tagName === 'SELECT') return;
       const mod = event.ctrlKey || event.metaKey;
-      if (mod && event.key.toLowerCase() === 'z') {
+      if (mod && event.key.toLowerCase() === 's') {
         event.preventDefault();
-        if (event.shiftKey) editor?.redo();
-        else editor?.undo();
+        void saveFiles();
+      } else if (mod && event.key.toLowerCase() === 'z') {
+        event.preventDefault();
+        if (event.shiftKey) redo();
+        else undo();
       } else if (mod && event.key.toLowerCase() === 'y') {
         event.preventDefault();
-        editor?.redo();
+        redo();
       } else if (event.key === 'Delete' || event.key === 'Backspace') {
         if (snap.selected) editor?.remove(snap.selected.name);
       } else if (event.key === 'Escape') editor?.select(null);
@@ -223,7 +277,7 @@
       say(`ดาวน์โหลด ${fileBase}.glb แล้ว`);
     } catch (err) {
       console.warn('export failed', err);
-      say('ส่งออก GLB ไม่สำเร็จ');
+      say(T.files.glbFailed);
     }
   }
   function exportEdits(): void {
@@ -237,6 +291,81 @@
     if (!confirm('ล้างการแก้ทั้งหมดของโมเดลนี้? (กด “ย้อน” เพื่อกลับมาได้)')) return;
     editor?.reset();
     say('กลับเป็นโมเดลเดิมแล้ว');
+  }
+
+  // ---------- source files (dev save API) ----------
+  let withGlb = $state(false);
+  let copied = $state(false);
+  const changeLabel = (c: FileChange) => (c.status === 'new' ? T.files.statusNew : T.files.statusModified);
+  async function saveFiles(): Promise<void> {
+    const sf = files;
+    if (!sf) return;
+    if (sf.api !== 'on') {
+      say(T.files.noApi);
+      return;
+    }
+    if (sf.saving) return;
+    refreshFiles();
+    let glb: { name: string; blob: Blob } | null = null;
+    if (withGlb && editor && snap.ready) {
+      try {
+        glb = { name: glbFileName(option.variant.id), blob: await editor.exportGlb() };
+      } catch (err) {
+        console.warn('export failed', err);
+        say(T.files.glbFailed);
+        return;
+      }
+    }
+    if (!sf.changes.length && !glb) {
+      say(T.files.nothingToSave);
+      return;
+    }
+    const res = await sf.save(sf.changes, glb);
+    if (!res.ok) {
+      say(T.files.saveFailed(res.error));
+      return;
+    }
+    copied = false;
+    refreshFiles();
+    say(T.files.saved(res.paths.length));
+  }
+  function keepDraft(): void {
+    if (files) files.dismissed = true;
+  }
+  function revertToFile(): void {
+    const sf = files;
+    if (!sf || !sf.canRevert) return;
+    if (!confirm(T.files.revertConfirm)) return;
+    for (const c of sf.changes) {
+      if (c.status !== 'modified') continue;
+      if (c.kind === 'match' && match) {
+        if (match.loadFile(sf.matchFile)) match.save();
+      } else if (c.kind === 'edits' && c.variant) {
+        const state = sf.editsFile(c.variant);
+        if (c.variant === option.variant.id && editor && state) editor.loadState(state);
+        else {
+          try {
+            localStorage.removeItem(editsStorageKey(option.asset.slug, c.variant));
+          } catch {
+            /* ignore */
+          }
+        }
+      }
+    }
+    refreshFiles();
+    say(T.files.reverted);
+  }
+  function downloadSource(c: FileChange): void {
+    download(new Blob([stableStringify(c.data)], { type: 'application/json' }), c.name);
+    say(T.files.downloaded(c.name, files?.dir ?? ''));
+  }
+  async function copyGit(text: string): Promise<void> {
+    try {
+      await navigator.clipboard.writeText(text);
+      copied = true;
+    } catch {
+      say(T.files.copyFailed);
+    }
   }
 
   const axes = [0, 1, 2] as const;
@@ -255,8 +384,8 @@
     <a class="e-back" href="#/showcase" aria-label="กลับไปมุมออกแบบ">‹ กลับ</a>
     <h1>แก้โมเดล 3D</h1>
     <div class="hist">
-      <button type="button" class="e-hist" onclick={() => editor?.undo()} disabled={!snap.canUndo} aria-label="ย้อน (Undo)">↶ ย้อน</button>
-      <button type="button" class="e-hist" onclick={() => editor?.redo()} disabled={!snap.canRedo} aria-label="ทำซ้ำ (Redo)">↷ ทำต่อ</button>
+      <button type="button" class="e-hist" onclick={undo} disabled={lineHistory ? lineHistory.lineUndoCount === 0 : !snap.canUndo} aria-label={T.common.undoAria}>{T.common.undo}</button>
+      <button type="button" class="e-hist" onclick={redo} disabled={lineHistory ? lineHistory.lineRedoCount === 0 : !snap.canRedo} aria-label={T.common.redoAria}>{T.common.redoNext}</button>
     </div>
   </header>
 
@@ -270,12 +399,20 @@
         <div class="divider" style="left:{match.split}%"><span>ภาพ | โมเดล</span></div>
       {/if}
       {#if view === 'match' && match}
-        <GuideOverlay st={match} onModelTap={modelTap} onChange={() => match?.save()} />
+        <GuideOverlay st={match} onModelTap={modelTap} onChange={() => match?.save()} {say} modelCanvas={canvas} />
         <div class="stage-tools">
           <button type="button" aria-label="ซูมเข้า" onclick={() => match?.zoomAt(1.4)}>＋</button>
           <button type="button" aria-label="ซูมออก" onclick={() => match?.zoomAt(1 / 1.4)}>－</button>
           <button type="button" aria-label="พอดีจอ" onclick={() => match?.fit()}>⤢</button>
+          <button type="button" aria-label={T.snap.label} title={T.snap.title} class="snap" class:on={match.snap} aria-pressed={match.snap} data-stage-snap
+            onclick={() => { if (match) { match.snap = !match.snap; match.save(); say(T.snap.toast(match.snap)); } }}>🧲</button>
         </div>
+        {#if diffOn || (match.dragging && match.liveFail)}
+          <div class="live-badges">
+            {#if diffOn}<span class="badge diff" data-diff-badge>{T.diff.badge}</span>{/if}
+            {#if match.dragging && match.liveFail}<span class="badge fail" data-solve-fail>{T.diff.solveFailed}</span>{/if}
+          </div>
+        {/if}
         {#if match.pick}
           <p class="pick-hint">{match.pick.want === 'model' ? 'แตะจุดบนโมเดล' : 'แตะจุดเดียวกันบนภาพ'}</p>
         {/if}
@@ -294,6 +431,25 @@
     </div>
 
     <div class="panel">
+      {#if files?.showBadge}
+        <div class="unsaved" role="status" data-unsaved>
+          <b>{T.files.unsaved}</b>
+          <ul>
+            {#each files.changes as c (c.name)}
+              <li><code>{c.name}</code> · {changeLabel(c)}</li>
+            {/each}
+          </ul>
+          <div class="actions">
+            {#if files.api === 'on'}
+              <button type="button" class="primary" onclick={saveFiles} disabled={files.saving} data-act="save-files-badge">{T.files.saveButton}</button>
+            {/if}
+            <button type="button" onclick={keepDraft} data-act="keep-draft">{T.files.keepDraft}</button>
+            {#if files.canRevert}
+              <button type="button" class="danger" onclick={revertToFile} data-act="revert-file">{T.files.revert}</button>
+            {/if}
+          </div>
+        </div>
+      {/if}
       <label class="field">
         <span>โมเดล</span>
         <select value={modelKey} onchange={(e) => changeModel(e.currentTarget.value)} data-model>
@@ -424,6 +580,54 @@
           <button type="button" class="danger" onclick={reset} disabled={!snap.dirty}>ล้างการแก้ทั้งหมด</button>
         </div>
       </section>
+
+      {#if files}
+        <section class="source" data-source-files={files.api}>
+          <h2>{T.files.heading}</h2>
+          <p class="tip"><code>{files.dir}/</code></p>
+          {#if files.changes.length}
+            <ul class="changes">
+              {#each files.changes as c (c.name)}
+                <li data-change={c.name}>
+                  <code>{c.name}</code> · {changeLabel(c)}
+                  {#if files.api !== 'on'}
+                    <button type="button" class="small" onclick={() => downloadSource(c)} data-act="download-source">{T.files.download}</button>
+                  {/if}
+                </li>
+              {/each}
+            </ul>
+          {:else if files.api !== 'probing'}
+            <p class="tip ok" data-in-sync>{T.files.inSync}{files.hasFiles ? '' : T.files.noFilesYet}</p>
+          {/if}
+          {#if files.api === 'on'}
+            <label class="check">
+              <input type="checkbox" bind:checked={withGlb} data-with-glb />
+              <span>{T.files.includeGlb} <code>{glbFileName(option.variant.id)}</code> {T.files.includeGlbNote}</span>
+            </label>
+            <div class="actions col">
+              <button type="button" class="primary" onclick={saveFiles} disabled={files.saving || (!files.changes.length && !withGlb)} data-act="save-files"
+                >{files.saving ? T.files.saving : T.files.saveButton} <small>Ctrl+S</small></button
+              >
+            </div>
+            {#if files.lastSave}
+              <div class="saved" data-saved>
+                <p>{T.files.savedList}</p>
+                <ul>
+                  {#each files.lastSave.paths as path (path)}<li><code>{path}</code></li>{/each}
+                </ul>
+                <p>{T.files.thenCommit}</p>
+                <pre data-git>{files.lastSave.git}</pre>
+                <button type="button" class="small" onclick={() => copyGit(files!.lastSave!.git)}>{copied ? T.files.copied : T.files.copyCommand}</button>
+              </div>
+            {/if}
+          {:else if files.api === 'off'}
+            <p class="tip" data-dev-hint>
+              {T.files.devHintLead} <code>npm run dev</code> {T.files.devHintIn} <code>game/</code>{T.files.devHintThen}
+              <code>{files.dir}/</code> {T.files.devHintTail}
+            </p>
+          {/if}
+        </section>
+      {/if}
     </div>
   </div>
 
@@ -480,7 +684,11 @@
   .viewport { position: relative; flex: 0 0 48%; min-height: 240px; background: #22303d; overflow: hidden; }
   canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
   .ref { position: absolute; display: block; pointer-events: none; object-fit: fill; max-width: none; }
-  .viewport.matching { flex-basis: 60%; }
+  .viewport.matching { flex-basis: 60%; isolation: isolate; }
+  .live-badges { position: absolute; left: 8px; top: 8px; display: flex; flex-direction: column; gap: 4px; z-index: 4; pointer-events: none; }
+  .badge { font-size: 12px; font-weight: 700; padding: 2px 8px; border-radius: 8px; background: rgba(0, 0, 0, 0.6); width: max-content; }
+  .badge.diff { color: #8fdfff; }
+  .badge.fail { color: #ffb3b3; opacity: 0.9; }
   .divider {
     position: absolute; top: 0; bottom: 0; width: 0; border-left: 2px solid #ffe14d; pointer-events: none; z-index: 2;
   }
@@ -488,8 +696,11 @@
     position: absolute; top: 6px; left: 0; transform: translateX(-50%); background: rgba(0, 0, 0, 0.65);
     color: #ffe14d; font-size: 13px; padding: 2px 8px; border-radius: 8px; white-space: nowrap;
   }
-  .stage-tools { position: absolute; right: 8px; bottom: 8px; display: flex; flex-direction: column; gap: 6px; z-index: 4; }
-  .stage-tools button { width: 48px; min-height: 48px; padding: 0; font-size: 22px; background: rgba(16, 32, 46, 0.88); }
+  /* a row along the bottom strip that MatchState.fit() keeps free under the image */
+  .stage-tools { position: absolute; right: 8px; bottom: 6px; display: flex; flex-direction: row; gap: 6px; z-index: 4; }
+  .stage-tools button { width: 46px; min-height: 46px; padding: 0; font-size: 21px; background: rgba(16, 32, 46, 0.88); }
+  .stage-tools button.snap { opacity: 0.55; }
+  .stage-tools button.snap.on { opacity: 1; border-color: #ffe14d; box-shadow: 0 0 0 2px rgba(255, 225, 77, 0.35) inset; }
   .pick-hint {
     position: absolute; left: 50%; top: 8px; transform: translateX(-50%); margin: 0; z-index: 4; pointer-events: none;
     background: rgba(58, 29, 58, 0.92); border: 2px solid #ff4dd8; border-radius: 10px; padding: 6px 12px; font-weight: 700;
@@ -533,6 +744,29 @@
   .actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
   .actions button { flex: 1 1 auto; }
   .actions.col { flex-direction: column; }
+  .unsaved {
+    margin: 0 0 12px;
+    padding: 10px 12px;
+    border: 2px solid #ffcf4d;
+    border-radius: 12px;
+    background: #2b2a1a;
+    color: #fff3c4;
+    font-size: 15px;
+  }
+  .unsaved ul,
+  .source ul { margin: 6px 0 0; padding-left: 20px; }
+  .unsaved .actions button,
+  .source button { min-height: 44px; }
+  .source code,
+  .unsaved code { font-size: 13px; overflow-wrap: anywhere; }
+  .source .changes li { margin: 0 0 6px; }
+  .source .changes button { margin-left: 6px; min-height: 36px; }
+  .tip.ok { color: #9fe6a0; }
+  .check { display: flex; gap: 8px; align-items: center; margin: 10px 0 0; font-size: 15px; min-height: 44px; }
+  .check input { width: 22px; height: 22px; }
+  .saved { margin-top: 10px; padding: 8px 10px; border-radius: 10px; background: #12301f; color: #c9f5d2; font-size: 14px; }
+  .saved p { margin: 4px 0; }
+  .saved pre { margin: 4px 0 8px; padding: 6px 8px; background: #0b1a12; border-radius: 6px; white-space: pre-wrap; overflow-wrap: anywhere; font-size: 13px; user-select: all; }
   .parts { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
   .parts li { display: flex; gap: 6px; align-items: stretch; }
   .parts li.sel .pick { border-color: #ffe14d; background: #2b3a22; }
