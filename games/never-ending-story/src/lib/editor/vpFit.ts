@@ -13,14 +13,16 @@
  * line's fixed end to the VP of the OTHER lines of its axis.
  * Image (ref) px throughout; homogeneous VPs are in px too (third component 0 = at infinity).
  *
- * Master line: a segment flagged `master` is authoritative for its axis. The VP is constrained to lie on the master's
- * infinite extension (a 1-D fit along it from the other lines; master alone = no VP yet), parallel mode uses the
- * master's direction, the master's residual is 0 by definition, it is never an outlier and `consolidate` never moves it.
+ * Master lines: a segment flagged `master` (★1: `true`, ★2: `2`) is authoritative for its axis. With ONE master the
+ * VP is constrained to lie on the master's infinite extension (a 1-D fit along it from the other lines; master alone
+ * = no VP yet). With TWO masters the VP is exactly their intersection (a hard constraint): the other lines only get
+ * residuals and no longer move it. Parallel mode uses ★1's direction (a ★2 is ignored there). A master's residual
+ * is 0 by definition, it is never an outlier and `consolidate` never moves it.
  */
 import type { Axis, GuideLine, M3, V2, V3 } from './camMath';
 import { T } from './strings.ts';
 
-export type Seg = { a: V2; b: V2; master?: boolean };
+export type Seg = { a: V2; b: V2; master?: boolean | 2 };
 export type Frame = { cx: number; cy: number; s: number };
 export type VpFit = {
   /** Homogeneous VP in px (w ≈ 0 → at infinity). */
@@ -35,6 +37,8 @@ export type VpFit = {
   rmsDeg: number;
   /** RMS perpendicular distance (px) of the inlier endpoints from their line re-aimed at the VP. */
   rms: number;
+  /** True when the VP is the intersection of two master lines (the other lines do not move it). */
+  twoMasters?: boolean;
 };
 
 /** Residual colour bands (degrees). */
@@ -138,9 +142,14 @@ function homLine(l: Seg, f: Frame): V3 | null {
   return n < 1e-12 ? null : [L[0] / n, L[1] / n, L[2] / n];
 }
 
-/** Index of the (first) segment flagged `master`, or -1. */
+/** Index of the ★1 segment (flag `true`; a lone ★2 counts as ★1), or -1. */
 export function masterIndex(lines: readonly Seg[]): number {
-  return lines.findIndex((l) => l.master === true);
+  const i = lines.findIndex((l) => l.master === true);
+  return i >= 0 ? i : lines.findIndex((l) => l.master === 2);
+}
+/** Index of the ★2 segment (flag `2`, only alongside a ★1), or -1. */
+export function master2Index(lines: readonly Seg[]): number {
+  return lines.some((l) => l.master === true) ? lines.findIndex((l) => l.master === 2) : -1;
 }
 
 /**
@@ -198,8 +207,10 @@ const median = (xs: number[]): number => {
  * Returns null with fewer than 2 usable (non-degenerate) segments.
  * With a master (`opts.master` index, default: the segment flagged `master`) the VP is constrained to the master's
  * line and fitted from the others (≥ 1 other usable segment needed); a degenerate master is ignored.
+ * With a second master (`opts.master2`, default: the segment flagged `master: 2`) the VP is the intersection of the
+ * two masters — no fit; the other lines only report residuals (and outlier flags, for display).
  */
-export function fitVP(lines: readonly Seg[], frame: Frame = frameOf(lines), opts: { robust?: boolean; huberDeg?: number; master?: number } = {}): VpFit | null {
+export function fitVP(lines: readonly Seg[], frame: Frame = frameOf(lines), opts: { robust?: boolean; huberDeg?: number; master?: number; master2?: number } = {}): VpFit | null {
   const robust = opts.robust ?? true;
   const huber = opts.huberDeg ?? 1;
   const hl = lines.map((l) => homLine(l, frame));
@@ -208,6 +219,9 @@ export function fitVP(lines: readonly Seg[], frame: Frame = frameOf(lines), opts
   let mi = opts.master ?? masterIndex(lines);
   if (mi < 0 || !hl[mi]) mi = -1;
   const mLine = mi >= 0 ? hl[mi]! : null;
+  let m2 = opts.master2 ?? (opts.master === undefined ? master2Index(lines) : -1);
+  if (mi < 0 || m2 < 0 || m2 === mi || !hl[m2]) m2 = -1;
+  if (m2 >= 0) return fitTwoMasters(lines, hl, frame, mi, m2, robust);
   const outlier = lines.map(() => false);
   const w: number[] = hl.map((l, i) => (l && i !== mi ? 1 : 0));
   let vp = solveWeighted(hl, w, frame, mLine);
@@ -258,6 +272,33 @@ export function fitVP(lines: readonly Seg[], frame: Frame = frameOf(lines), opts
   return { vp, point: vpPoint(vp), resDeg, outlier, rmsDeg, rms: Math.sqrt(px / Math.max(1, inl.length)) };
 }
 
+/** Two masters: the VP is their intersection (hard constraint); the others only get residuals. */
+function fitTwoMasters(lines: readonly Seg[], hl: (V3 | null)[], f: Frame, mi: number, m2: number, robust: boolean): VpFit {
+  const v = cross3(hl[mi]!, hl[m2]!);
+  let vp: V3 = [f.s * v[0] + f.cx * v[2], f.s * v[1] + f.cy * v[2], v[2]];
+  if (vp[2] < 0 || (vp[2] === 0 && vp[0] < 0)) vp = [-vp[0], -vp[1], -vp[2]];
+  const isM = (i: number): boolean => i === mi || i === m2;
+  const resDeg = lines.map((l, i) => (isM(i) || !hl[i] ? 0 : angleToVp(l, vp)));
+  // outliers are only flagged (same rule as the fit: > max(2°, 3 × median)); they cannot move the VP anyway
+  const outlier = lines.map(() => false);
+  const cand = lines.map((_, i) => i).filter((i) => hl[i] && !isM(i));
+  if (robust && cand.length >= 2) {
+    const med = Math.max(median(cand.map((i) => resDeg[i]!)), 0.25);
+    for (const i of cand) if (resDeg[i]! > Math.max(RES_BAD_DEG, 3 * med)) outlier[i] = true;
+  }
+  const inl = lines.map((_, i) => i).filter((i) => hl[i] && !outlier[i]);
+  const rmsDeg = Math.sqrt(inl.reduce((s, i) => s + resDeg[i]! ** 2, 0) / Math.max(1, inl.length));
+  let px = 0;
+  for (const i of inl) {
+    const l = lines[i]!;
+    const m: V2 = [(l.a[0] + l.b[0]) / 2, (l.a[1] + l.b[1]) / 2];
+    const L = cross3([m[0], m[1], 1], vp);
+    const n = Math.hypot(L[0], L[1]);
+    if (n > 1e-12) px += (dot3(L, [l.a[0], l.a[1], 1]) / n) ** 2;
+  }
+  return { vp, point: vpPoint(vp), resDeg, outlier, rmsDeg, rms: Math.sqrt(px / Math.max(1, inl.length)), twoMasters: true };
+}
+
 // ---------- parallel axes (VP at infinity) ----------
 /**
  * Per-axis VP mode. 'auto' = free best-fit VP (finite or at infinity, whatever the lines say);
@@ -278,7 +319,8 @@ const dAng = (th: number, th0: number): number => {
  * Parallel fit: weighted (by length) mean direction of ≥ 2 segments, by doubled-angle averaging (sign-free),
  * with the same outlier rejection as fitVP (the worst line is dropped while it is > max(2°, 3 × median) and more
  * than 3 inliers remain). The VP is [cos θ, sin θ, 0]; residuals are the angular deviations from θ.
- * With a master (`master` index, default: the segment flagged `master`) θ is the master's direction.
+ * With a master (`master` index, default: the ★1 segment) θ is the master's direction; a ★2 is an ordinary line here
+ * (one master defines a parallel axis).
  */
 export function fitParallel(lines: readonly Seg[], master: number = masterIndex(lines)): VpFit | null {
   const th = lines.map((l) => Math.atan2(l.b[1] - l.a[1], l.b[0] - l.a[0]) * D);

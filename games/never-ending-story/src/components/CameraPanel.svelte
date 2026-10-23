@@ -50,6 +50,21 @@
     onChange();
     say(msg);
   }
+  /** ★ toggle on the selected line (converging axes may have two masters). */
+  function toggleMaster(id: number | null): void {
+    const msg = st.toggleMaster(id);
+    if (msg === null) return;
+    st.solveLines();
+    onChange();
+    say(msg);
+  }
+  function setMaster2(a: Axis, v: string): void {
+    const msg = st.setMaster2(a, v === '' ? null : Number(v));
+    if (msg === null) return;
+    st.solveLines();
+    onChange();
+    say(msg);
+  }
   function cycleMaster(a: Axis): void {
     const msg = st.cycleMaster(a);
     if (msg === null) return;
@@ -217,7 +232,9 @@
       {@const axLines = st.lines.filter((l) => l.axis === a)}
       {#if axLines.length}
         {@const mid = st.masterId(a)}
-        <div class="mrow" data-master-row={a} data-master-id={mid}>
+        {@const mid2 = st.master2Id(a)}
+        {@const mwarn = st.masterWarning(a)}
+        <div class="mrow" data-master-row={a} data-master-id={mid} data-master2-id={mid2}>
           <span class="mlabel" style="color:{AXIS_COLORS[a]}">{T.master.label(AXIS_NAMES[a])}</span>
           <select data-master-select={a} aria-label={T.master.selectAria(AXIS_NAMES[a])} value={mid ?? ''}
             onchange={(e) => setMaster(Number(e.currentTarget.value))}>
@@ -227,9 +244,25 @@
           </select>
           <button type="button" class="small" data-master-cycle={a} disabled={axLines.length < 2}
             aria-label={T.master.cycleAria(AXIS_NAMES[a])} title={T.master.cycleAria(AXIS_NAMES[a])} onclick={() => cycleMaster(a)}>{T.master.cycle}</button>
-          <button type="button" class="small" data-set-master={a} disabled={!selLine || selLine.axis !== a || !!selLine.master}
-            title={T.master.setTitle(AXIS_NAMES[a])} onclick={() => setMaster(st.selectedLine)}>{T.master.set}</button>
+          <button type="button" class="small" class:on={!!selLine?.master && selLine.axis === a} data-set-master={a} disabled={!selLine || selLine.axis !== a}
+            aria-pressed={!!selLine?.master && selLine.axis === a}
+            title={T.master.toggleTitle(AXIS_NAMES[a])} onclick={() => toggleMaster(st.selectedLine)}
+            >{selLine?.master && selLine.axis === a ? T.master.toggleUnset : T.master.toggleSet}</button>
         </div>
+        {#if !par && axLines.length >= 2}
+          <div class="mrow" data-master2-row={a}>
+            <span class="mlabel" style="color:{AXIS_COLORS[a]}">{T.master.label2(AXIS_NAMES[a])}</span>
+            <select data-master2-select={a} aria-label={T.master.select2Aria(AXIS_NAMES[a])} value={mid2 === null ? '' : String(mid2)}
+              onchange={(e) => setMaster2(a, e.currentTarget.value)}>
+              <option value="">{T.master.none}</option>
+              {#each axLines.filter((l) => l.id !== mid) as l (l.id)}
+                <option value={String(l.id)}>{T.master.option(st.lineLabel(l.id))}{resOf(a, l.id)}</option>
+              {/each}
+            </select>
+          </div>
+        {/if}
+        {#if par && mid2 !== null}<p class="tip mtip" data-master-parallel-ignored={a}>{T.master.parallelIgnored(st.lineLabel(mid2))}</p>{/if}
+        {#if mwarn}<p class="tip mtip mwarn" data-master-warn={a}>{mwarn}</p>{/if}
         {#if axLines.length === 1 && !f}<p class="tip mtip" data-master-only={a}>{T.master.onlyMaster(AXIS_NAMES[a])}</p>{/if}
       {/if}
     {/each}
@@ -431,6 +464,7 @@
   .mrow .mlabel { font-weight: 700; white-space: nowrap; }
   .mrow select { flex: 1 1 96px; min-height: 40px; min-width: 96px; padding: 0 6px; background: #1a2836; color: #e6f1fa; border: 1px solid #3a5670; border-radius: 6px; font-size: 14px; }
   .mtip { margin: -4px 0 8px 30px; }
+  .mwarn { color: #ffcf6e; }
   .small.mode { min-width: 64px; min-height: 44px; border: 1px solid #3a5670; background: #1a2836; color: #c5d7e6; }
   .small.mode.on { background: #8fd8ff; color: #06202f; border-color: #8fd8ff; }
   .hint { width: 100%; min-height: 44px; text-align: left; font-size: 14px; font-weight: 400; border: 1px dashed #ffd36b; background: rgba(255, 211, 107, 0.08); color: #ffe7a6; border-radius: 8px; padding: 4px 8px; margin: 2px 0 6px; }

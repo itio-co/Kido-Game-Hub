@@ -133,6 +133,8 @@
     });
   });
   const highlighted = $derived(new Set(st.highlight?.ids ?? []));
+  /** Masters per axis (two → the badges show ★1 / ★2). */
+  const masterCount = $derived([0, 1, 2].map((a) => st.lines.filter((l) => l.axis === a && l.master).length));
 
   // ---------- guide line ↔ mock-up edges ----------
   $effect(() => {
@@ -184,6 +186,12 @@
   const fmtDeg = (deg: number): string => `${deg < 10 ? deg.toFixed(1) : Math.round(deg)}°`;
 
   /** Measured vanishing points: on-screen marker, or an arrow at the edge pointing to it. */
+  /** Exact VP (ref px, 'x,y'; '' at infinity) — exposed as data-vp-point for checks. */
+  function vpAttr(axis: number): string {
+    const fit = st.vps[axis];
+    if (!fit || Math.abs(fit.vp[2]) < 1e-12) return '';
+    return `${fit.vp[0] / fit.vp[2]},${fit.vp[1] / fit.vp[2]}`;
+  }
   const vpMarks = $derived.by(() => {
     const out: { axis: 0 | 1 | 2; inside: boolean; at: V2; angle: number; dist: number; par: boolean }[] = [];
     const cx = vr.x0 + vr.w / 2;
@@ -416,7 +424,7 @@
     st.endLive();
   }
   function menuSetMaster(): void {
-    const msg = menu ? st.setMaster(menu.id) : null;
+    const msg = menu ? st.toggleMaster(menu.id) : null;
     menu = null;
     if (msg === null) return;
     st.solveLines();
@@ -511,7 +519,8 @@
       edgeSnapped = false;
       if (!t && !lock && st.edgeSnap && !event.altKey && st.edgeMap) {
         const l = st.lines.find((x) => x.id === d.id);
-        if (l) {
+        // masters are references: edge snapping never moves them
+        if (l && !l.master) {
           const other = d.end === 'a' ? l.b : l.a;
           const r = d.end === 'a' ? st.edgeFitSegment(q, other, { b: true }, 6) : st.edgeFitSegment(other, q, { a: true }, 6);
           const nq = r ? (d.end === 'a' ? r.a : r.b) : null;
@@ -537,7 +546,7 @@
         b = [b[0] + t.delta[0], b[1] + t.delta[1]];
       }
       edgeSnapped = false;
-      if (!t && st.edgeSnap && !event.altKey && st.edgeMap) {
+      if (!t && st.edgeSnap && !event.altKey && st.edgeMap && !st.lines.find((x) => x.id === d.id)?.master) {
         const r = st.edgeFitSegment(a, b, {}, 6);
         if (r && Math.max(Math.hypot(r.a[0] - a[0], r.a[1] - a[1]), Math.hypot(r.b[0] - b[0], r.b[1] - b[1])) < threshold(event)) {
           a = r.a;
@@ -698,7 +707,7 @@
     {/if}
     {#if info?.ray}
       <line x1={info.ray[0][0]} y1={info.ray[0][1]} x2={info.ray[1][0]} y2={info.ray[1][1]} stroke={c} class="vray" class:full={st.rays}
-        class:master={line.master} data-vp-ray={line.id} data-ray={st.rays ? line.id : null} data-master-ray={line.master ? line.axis : null} />
+        class:master={!!line.master} data-vp-ray={line.id} data-ray={st.rays ? line.id : null} data-master-ray={line.master ? line.axis : null} />
     {/if}
     {#if highlighted.has(line.id)}
       <line x1={line.a[0]} y1={line.a[1]} x2={line.b[0]} y2={line.b[1]} class="hl" data-hl={line.id} />
@@ -712,7 +721,7 @@
       <line x1={line.a[0]} y1={line.a[1]} x2={line.b[0]} y2={line.b[1]} class="halo {info.band}" class:outlier={info.outlier}
         data-res={line.id} data-band={info.band} data-deg={info.deg.toFixed(4)} data-outlier={info.outlier || null} />
     {/if}
-    <line x1={line.a[0]} y1={line.a[1]} x2={line.b[0]} y2={line.b[1]} stroke={c} class="seg" class:sel class:master={line.master}
+    <line x1={line.a[0]} y1={line.a[1]} x2={line.b[0]} y2={line.b[1]} stroke={c} class="seg" class:sel class:master={!!line.master}
       data-line={line.id} data-master={line.master ? line.axis : null} />
     {#if ea && tickIds.has(line.id)}
       <g class="ticks" data-edge-ticks={line.id}>
@@ -739,9 +748,12 @@
     {#if line.master}
       {@const mx = (line.a[0] + line.b[0]) / 2}
       {@const my = (line.a[1] + line.b[1]) / 2}
-      <g class="mbadge" data-master-badge={line.id} data-axis={line.axis} transform="translate({mx} {my})">
-        <circle r={11 * s} stroke={c} stroke-width={2} />
-        <text y={5.5 * s} font-size={16 * s} text-anchor="middle" fill={c}>★</text>
+      {@const rank = line.master === 2 ? 2 : 1}
+      {@const two = masterCount[line.axis] === 2}
+      <g class="mbadge" class:m2={rank === 2} data-master-badge={line.id} data-master-rank={rank} data-axis={line.axis} transform="translate({mx} {my})">
+        <circle r={(two ? 13 : 11) * s} stroke={c} stroke-width={2} stroke-dasharray={rank === 2 ? `${4 * s} ${2.5 * s}` : null} />
+        <text x={two ? -3 * s : 0} y={5.5 * s} font-size={16 * s} text-anchor="middle" fill={c}>★</text>
+        {#if two}<text x={8 * s} y={8 * s} font-size={11 * s} text-anchor="middle" fill={c} class="mnum">{rank}</text>{/if}
       </g>
     {/if}
     <line
@@ -798,7 +810,7 @@
 
   {#each vpMarks as m (m.axis)}
     {#if m.inside}
-      <g class="vp" data-vp={m.axis}>
+      <g class="vp" data-vp={m.axis} data-vp-point={vpAttr(m.axis)}>
         <circle cx={m.at[0]} cy={m.at[1]} r={9 * s} fill="none" stroke={AXIS_COLORS[m.axis]} />
         <line x1={m.at[0] - 14 * s} y1={m.at[1]} x2={m.at[0] + 14 * s} y2={m.at[1]} stroke={AXIS_COLORS[m.axis]} />
         <line x1={m.at[0]} y1={m.at[1] - 14 * s} x2={m.at[0]} y2={m.at[1] + 14 * s} stroke={AXIS_COLORS[m.axis]} />
@@ -806,7 +818,7 @@
       </g>
     {:else if m.par}
       <!-- parallel axis: VP at infinity → a two-headed "∞" direction arrow at the edge -->
-      <g class="vp off par" data-vp={m.axis} data-vp-parallel={m.axis} transform="translate({m.at[0]} {m.at[1]})">
+      <g class="vp off par" data-vp={m.axis} data-vp-point={vpAttr(m.axis)} data-vp-parallel={m.axis} transform="translate({m.at[0]} {m.at[1]})">
         <g transform="rotate({m.angle})">
           <line x1={-16 * s} y1={0} x2={16 * s} y2={0} stroke={AXIS_COLORS[m.axis]} stroke-width={3 * s} />
           <path d="M {8 * s} {-7 * s} L {20 * s} 0 L {8 * s} {7 * s} Z" fill={AXIS_COLORS[m.axis]} />
@@ -817,7 +829,7 @@
         >
       </g>
     {:else}
-      <g class="vp off" data-vp={m.axis} transform="translate({m.at[0]} {m.at[1]})">
+      <g class="vp off" data-vp={m.axis} data-vp-point={vpAttr(m.axis)} transform="translate({m.at[0]} {m.at[1]})">
         <g transform="rotate({m.angle})">
           <path d="M {-10 * s} {-9 * s} L {12 * s} 0 L {-10 * s} {9 * s} Z" fill={AXIS_COLORS[m.axis]} />
         </g>
@@ -873,7 +885,7 @@
         {@const ext = extend(line.a, line.b)}
         {#if ext}<line x1={ext[0][0]} y1={ext[0][1]} x2={ext[1][0]} y2={ext[1][1]} stroke={AXIS_COLORS[line.axis]} class="ext" />{/if}
         {#if line.master}<line x1={line.a[0]} y1={line.a[1]} x2={line.b[0]} y2={line.b[1]} stroke={AXIS_COLORS[line.axis]} class="lmaster" data-loupe-master={line.id} />{/if}
-        <line x1={line.a[0]} y1={line.a[1]} x2={line.b[0]} y2={line.b[1]} stroke={AXIS_COLORS[line.axis]} class="lseg" class:master={line.master} />
+        <line x1={line.a[0]} y1={line.a[1]} x2={line.b[0]} y2={line.b[1]} stroke={AXIS_COLORS[line.axis]} class="lseg" class:master={!!line.master} />
         {#each ['a', 'b'] as const as end (end)}
           <circle cx={line[end][0]} cy={line[end][1]} r={7 * ls} fill="none" stroke={AXIS_COLORS[line.axis]} class="lend" />
         {/each}
@@ -900,13 +912,20 @@
 
 {#if menu && menuLine}
   {@const ax = AXIS_NAMES[menuLine.axis]}
+  {@const ms = st.lines.filter((l) => l.axis === menuLine.axis && l.master)}
+  {@const par = st.vpModes[menuLine.axis] === 'parallel'}
   <div class="lmenu" bind:this={menuEl} role="menu" aria-label={T.master.menuAria} style="left:{menu.left}px;top:{menu.top}px;border-color:{AXIS_COLORS[menuLine.axis]}"
     data-line-menu={menuLine.id}>
     <div class="mtitle" style="color:{AXIS_COLORS[menuLine.axis]}">{T.master.option(st.lineLabel(menuLine.id))}</div>
     {#if menuLine.master}
-      <div class="mitem done" data-menu-is-master>{T.master.isMaster(ax)}</div>
+      <div class="mitem done" data-menu-is-master={menuLine.master === 2 ? 2 : 1}>{ms.length === 2 ? (menuLine.master === 2 ? T.master.isMaster2(ax) : T.master.isMaster1(ax)) : T.master.isMaster(ax)}</div>
+      {#if ms.length === 2}
+        <button type="button" role="menuitem" class="mitem" data-menu-unset-master onclick={menuSetMaster}>{T.master.toggleUnset}</button>
+      {/if}
     {:else}
-      <button type="button" role="menuitem" class="mitem" data-menu-set-master onclick={menuSetMaster}>{T.master.set}</button>
+      {@const oldest = ms.find((l) => l.master === true)}
+      <button type="button" role="menuitem" class="mitem" data-menu-set-master onclick={menuSetMaster}
+        >{par || !ms.length ? T.master.set : ms.length === 1 ? T.master.addSecond : T.master.replaceOldest(st.lineLabel(oldest?.id ?? -1))}</button>
     {/if}
     <button type="button" role="menuitem" class="mitem close" data-menu-close onclick={() => (menu = null)}>{T.master.menuClose}</button>
   </div>
@@ -928,6 +947,7 @@
   .mbadge { pointer-events: none; }
   .mbadge circle { fill: rgba(6, 16, 24, 0.85); }
   .mbadge text { font-weight: 700; }
+  .mbadge .mnum { font-weight: 800; }
   .lmaster { stroke-width: 9; opacity: 0.35; stroke-linecap: round; }
   .lseg.master { stroke-width: 4; }
   .lmenu { position: absolute; z-index: 6; width: 220px; display: grid; gap: 4px; padding: 8px; border: 2px solid; border-radius: 10px; background: rgba(10, 20, 30, 0.96); box-shadow: 0 6px 24px rgba(0, 0, 0, 0.5); }

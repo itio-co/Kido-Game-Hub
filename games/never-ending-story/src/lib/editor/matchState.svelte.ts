@@ -28,7 +28,7 @@ import { T } from './strings';
 import { camToObject, camToWorld, type Placement } from './placement';
 import { frameWindow, FOCUS_PAD, type Box2 } from './viewFrame';
 import { jointMembers, linkEnds, removeLineLinks, unlinkEnd, type EndRef } from './guideSnap';
-import { applyMasterIds, ensureMasters, masterIds, masterOf, parseMasterMap, promoteMaster, setMasterFlag, type MasterMap } from './masterLine';
+import { addMasterFlag, applyMasterIds, ensureMasters, master2Of, masterIds, masterOf, masterPairAngle, mastersNearlyParallel, parseMasterMap, promoteMaster, removeMasterFlag, setMaster2Flag, setMasterFlag, type MasterMap } from './masterLine';
 import { alignLine, edgeMapFromRGBA, edgeOverlayRGBA, refineLine, type EdgeAlign, type EdgeMap } from './edgeAlign';
 import { consolidate as consolidateLines, fitAxes, parallelSuggestion, type Frame, type VpFit, type VpMode, type VpModes } from './vpFit';
 import {
@@ -694,9 +694,79 @@ export class MatchState {
     if (!l) return '?';
     return `${AXIS_NAMES[l.axis]}${this.lines.filter((x) => x.axis === l.axis).indexOf(l) + 1}`;
   }
-  /** Master line id of an axis in the active group. */
+  /** Master (★1) line id of an axis in the active group. */
   masterId(axis: Axis): number | null {
     return masterOf(this.lines, axis)?.id ?? null;
+  }
+  /** Second master (★2) line id of an axis in the active group. */
+  master2Id(axis: Axis): number | null {
+    return master2Of(this.lines, axis)?.id ?? null;
+  }
+  /** Warning text when the two masters of `axis` are nearly parallel (unstable VP), else null. */
+  masterWarning(axis: Axis): string | null {
+    if (this.vpModes[axis] === 'parallel' || !mastersNearlyParallel(this.lines, axis)) return null;
+    const d = masterPairAngle(this.lines, axis)!;
+    return T.master.nearParallel(AXIS_NAMES[axis], `${d.toFixed(2)}°`);
+  }
+  /**
+   * ★ toggle on a line (undoable): a master is unset (the last master of an axis stays); another line becomes ★1, or
+   * ★2 on a converging axis (two masters already: the oldest is replaced), or the only master of a parallel axis.
+   * Returns the toast (with the near-parallel warning appended), or null when nothing changed.
+   */
+  toggleMaster(id: number | null): string | null {
+    const l = this.lines.find((x) => x.id === id);
+    if (!l) return null;
+    const ax = AXIS_NAMES[l.axis];
+    let msg: string;
+    if (l.master) {
+      this.pushLines();
+      if (!removeMasterFlag(this.lines, l.id)) {
+        this.dropLastPush();
+        msg = T.master.keepOne(ax);
+        this.say(msg);
+        return msg;
+      }
+      msg = T.master.unsetToast(this.lineLabel(l.id), ax);
+    } else {
+      this.pushLines();
+      const r = addMasterFlag(this.lines, l.id, this.vpModes[l.axis] === 'parallel');
+      if (!r) {
+        this.dropLastPush();
+        return null;
+      }
+      const name = this.lineLabel(l.id);
+      msg =
+        r.kind === 'second'
+          ? T.master.secondToast(name, ax)
+          : r.kind === 'replacedOldest'
+            ? T.master.replacedOldestToast(this.lineLabel(r.dropped), this.lineLabel(this.masterId(l.axis)!), name, ax)
+            : r.kind === 'parallelReplaced'
+              ? T.master.parallelOne(name, ax)
+              : T.master.setToast(name, ax);
+    }
+    const w = this.masterWarning(l.axis);
+    if (w) msg += ` · ${w}`;
+    this.say(msg);
+    return msg;
+  }
+  /** Set / clear (null) the second master of an axis directly (undoable). */
+  setMaster2(axis: Axis, id: number | null): string | null {
+    if (this.vpModes[axis] === 'parallel' && id !== null) {
+      const msg = T.master.parallelIgnored(this.lineLabel(id));
+      this.say(msg);
+      return msg;
+    }
+    const old = this.master2Id(axis);
+    this.pushLines();
+    if (!setMaster2Flag(this.lines, axis, id)) {
+      this.dropLastPush();
+      return null;
+    }
+    let msg = id === null ? T.master.unsetToast(this.lineLabel(old!), AXIS_NAMES[axis]) : T.master.secondToast(this.lineLabel(id), AXIS_NAMES[axis]);
+    const w = this.masterWarning(axis);
+    if (w) msg += ` · ${w}`;
+    this.say(msg);
+    return msg;
   }
   /** Master ids per axis of both groups (what camera-match.json stores). */
   masterMap(): MasterMap {
@@ -714,7 +784,8 @@ export class MatchState {
   }
   /** Move the master of `axis` to the next line of that axis (drawing order, wrapping). */
   cycleMaster(axis: Axis): string | null {
-    const ls = this.lines.filter((l) => l.axis === axis);
+    // ★1 moves over the lines that are not ★2
+    const ls = this.lines.filter((l) => l.axis === axis && l.master !== 2);
     if (ls.length < 2) return null;
     const i = ls.findIndex((l) => l.master);
     return this.setMaster(ls[(i + 1) % ls.length]!.id);
@@ -834,6 +905,11 @@ export class MatchState {
     let cam = res.cam;
     if (this.completePairs.length >= 2) cam = solvePosition(cam, this.completePairs) ?? cam;
     else cam = this.keepAnchor(prior, cam);
+    if (!this.saneCam(cam)) {
+      // e.g. two nearly parallel masters put the VP near infinity → a degenerate lens / distance
+      this.say(T.master.degenerate);
+      return false;
+    }
     this.cam = this.toWorld(cam);
     if (!this.roomAligned && res.yawSolved) this.roomYaw = res.yaw;
     const both = !!(this.objectLines.length && this.roomLines.length);
@@ -904,11 +980,17 @@ export class MatchState {
     this.pushLines();
     let moved = 0;
     let fixedBoth = 0;
+    let keptMasters = 0;
     const before: number[] = [];
     const after: number[] = [];
     for (const id of ids) {
       const l = this.lines.find((x) => x.id === id);
       if (!l) continue;
+      // masters are references: edge snapping never moves them
+      if (l.master) {
+        keptMasters++;
+        continue;
+      }
       const fixed = { a: l.links?.a !== undefined, b: l.links?.b !== undefined };
       if (fixed.a && fixed.b) {
         fixedBoth++;
@@ -928,6 +1010,7 @@ export class MatchState {
       ? T.edges.refinedMany(moved, avg(before).toFixed(1), avg(after).toFixed(1))
       : T.edges.nothingToRefine;
     if (fixedBoth) message += T.edges.skippedLinked(fixedBoth);
+    if (keptMasters) message += T.master.edgeKept(keptMasters);
     return { moved, message };
   }
   get showDiff(): boolean {
@@ -964,10 +1047,15 @@ export class MatchState {
     } catch {
       cam = null;
     }
-    const finite = !!cam && [cam.f, cam.cx, cam.cy, ...cam.C, ...cam.R.flat()].every(Number.isFinite) && cam.f > 0;
+    const finite = !!cam && this.saneCam(cam);
     this.liveFail = !finite;
     if (finite) this.cam = this.toWorld(cam!);
     return finite;
+  }
+  /** Finite, positive focal within a sane range, camera not absurdly far (guards degenerate VPs). */
+  saneCam(cam: Cam): boolean {
+    if (![cam.f, cam.cx, cam.cy, ...cam.C, ...cam.R.flat()].every(Number.isFinite)) return false;
+    return cam.f > 0.05 * this.width && cam.f < 100 * this.width && Math.hypot(...cam.C) < 1e4;
   }
   /** Keep the model origin at the same pixel and depth as in `prior`. */
   private keepAnchor(prior: Cam, cam: Cam): Cam {

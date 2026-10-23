@@ -193,7 +193,7 @@ export const MESSAGES = {
   'editor.part.rotY': { en: '−Y', th: '−Y' },
   'editor.sidebar.toast': { en: 'Sidebar {state}', th: 'แถบข้าง (Sidebar) {state}' },
 
-  // --- master guide line (one per axis per group) ----------------------------------------------------------------
+  // --- master guide lines (one or two per axis per group) --------------------------------------------------------
   'cameraMatch.master.set': { en: '★ Set as master', th: '★ ตั้งเป็นเส้นหลัก' },
   'cameraMatch.master.setTitle': {
     en: 'Make the selected {axis} line the master of its axis',
@@ -222,9 +222,52 @@ export const MESSAGES = {
   'cameraMatch.master.legend': { en: '★ Master', th: '★ เส้นหลัก' },
   'cameraMatch.master.deleteSelected': { en: 'Delete selected line', th: 'ลบเส้นที่เลือก' },
   'cameraMatch.master.legendText': {
-    en: ': the reference line of its axis — the vanishing point lies on it (parallel: its direction), Merge / Parallel align the other lines to it and never move it · set it here, or long-press / right-click a line',
-    th: ': เส้นอ้างอิงของแกน — จุดลับตาอยู่บนแนวเส้นนี้ (ขนาน: ใช้ทิศของมัน) ปุ่มรวม/ขนานจัดเส้นอื่นตามมันและไม่ขยับมัน · ตั้งได้ที่นี่ หรือกดค้าง/คลิกขวาที่เส้น',
+    en: ': the reference line of its axis — the vanishing point lies on it (parallel: its direction); a converging axis may have two (★1 ★2): the VP is then exactly their intersection and the other lines only show residuals · Merge / Parallel / edge snapping never move a master · ★ toggles it here, or long-press / right-click a line',
+    th: ': เส้นอ้างอิงของแกน — จุดลับตาอยู่บนแนวเส้นนี้ (ขนาน: ใช้ทิศของมัน) แกนที่มีจุดลับตาตั้งได้ 2 เส้น (★1 ★2): จุดลับตาคือจุดตัดของสองเส้นนี้พอดี เส้นอื่นแค่แสดงค่าคลาด · ปุ่มรวม/ขนาน/ดูดเข้าขอบภาพไม่ขยับเส้นหลัก · กด ★ เพื่อเปิด/ปิดได้ที่นี่ หรือกดค้าง/คลิกขวาที่เส้น',
   },
+  'cameraMatch.master.label2': { en: '★2 {axis}', th: '★2 {axis}' },
+  'cameraMatch.master.select2Aria': { en: 'Second master line of axis {axis}', th: 'เส้นหลักเส้นที่ 2 ของแกน {axis}' },
+  'cameraMatch.master.none': { en: '— none', th: '— ไม่มี' },
+  'cameraMatch.master.toggleSet': { en: '★ Master', th: '★ เส้นหลัก' },
+  'cameraMatch.master.toggleUnset': { en: '☆ Unset master', th: '☆ เลิกเป็นเส้นหลัก' },
+  'cameraMatch.master.toggleTitle': {
+    en: 'Toggle the selected {axis} line as a master (a converging axis can have two: the VP is their intersection)',
+    th: 'เปิด/ปิดเส้น {axis} ที่เลือกเป็นเส้นหลัก (แกนที่มีจุดลับตาตั้งได้ 2 เส้น: จุดลับตาคือจุดตัด)',
+  },
+  'cameraMatch.master.isMaster1': { en: '★1 Master of axis {axis}', th: '★1 เส้นหลักของแกน {axis}' },
+  'cameraMatch.master.isMaster2': { en: '★2 Second master of axis {axis}', th: '★2 เส้นหลักเส้นที่ 2 ของแกน {axis}' },
+  'cameraMatch.master.addSecond': { en: '★ Add as second master', th: '★ เพิ่มเป็นเส้นหลักเส้นที่ 2' },
+  'cameraMatch.master.replaceOldest': { en: '★ Set as master (replaces {name})', th: '★ ตั้งเป็นเส้นหลัก (แทน {name})' },
+  'cameraMatch.master.secondToast': {
+    en: '★2 Line {name} is the second master of axis {axis} — the vanishing point is now exactly where the two masters cross',
+    th: '★2 เส้น {name} เป็นเส้นหลักเส้นที่ 2 ของแกน {axis} — จุดลับตาคือจุดตัดของเส้นหลักทั้งสองพอดี',
+  },
+  'cameraMatch.master.replacedOldestToast': {
+    en: 'Axis {axis} already had two masters — {old} (the oldest) is a normal line again; masters are now {m1} and {m2}',
+    th: 'แกน {axis} มีเส้นหลักครบ 2 เส้นแล้ว — {old} (เก่าสุด) กลับเป็นเส้นธรรมดา ตอนนี้เส้นหลักคือ {m1} และ {m2}',
+  },
+  'cameraMatch.master.parallelOne': {
+    en: 'Parallel axis {axis}: one master defines the direction — line {name} is now its only master',
+    th: 'แกน {axis} แบบขนาน: ใช้เส้นหลักเส้นเดียวกำหนดทิศ — เส้น {name} เป็นเส้นหลักเส้นเดียวของแกนนี้',
+  },
+  'cameraMatch.master.parallelIgnored': {
+    en: 'Parallel axis: only ★1 sets the direction — ★2 ({name}) is ignored until the axis converges again',
+    th: 'แกนขนาน: ใช้แค่ ★1 กำหนดทิศ — ★2 ({name}) ไม่ถูกใช้จนกว่าแกนจะกลับเป็นแบบมีจุดลับตา',
+  },
+  'cameraMatch.master.unsetToast': { en: 'Line {name} is no longer a master of axis {axis}', th: 'เส้น {name} ไม่ใช่เส้นหลักของแกน {axis} แล้ว' },
+  'cameraMatch.master.keepOne': {
+    en: 'Axis {axis} needs a master — make another line the master first',
+    th: 'แกน {axis} ต้องมีเส้นหลัก — ตั้งเส้นอื่นเป็นเส้นหลักก่อน',
+  },
+  'cameraMatch.master.degenerate': {
+    en: 'Solve skipped: the vanishing points give a degenerate camera (nearly parallel masters?) — the camera is kept',
+    th: 'ไม่คำนวณกล้อง: จุดลับตาทำให้กล้องผิดรูป (เส้นหลักเกือบขนานกัน?) — คงกล้องเดิมไว้',
+  },
+  'cameraMatch.master.nearParallel': {
+    en: '⚠ The two masters of axis {axis} are nearly parallel ({deg}) — their crossing point (the VP) is unstable',
+    th: '⚠ เส้นหลักสองเส้นของแกน {axis} เกือบขนานกัน ({deg}) — จุดตัด (จุดลับตา) ไม่นิ่ง',
+  },
+  'cameraMatch.master.edgeKept': { en: ' · {n} master lines kept (masters never move)', th: ' · คงเส้นหลักไว้ {n} เส้น (เส้นหลักไม่ถูกขยับ)' },
 
   // --- overlay show modes ---------------------------------------------------------------------------------------
   'cameraMatch.showModes.drag': { en: 'While dragging', th: 'ขณะลาก' },
@@ -759,6 +802,25 @@ export const T = {
     legend: t('cameraMatch.master.legend'),
     legendText: t('cameraMatch.master.legendText'),
     deleteSelected: t('cameraMatch.master.deleteSelected'),
+    label2: (axis: string) => t('cameraMatch.master.label2', { axis }),
+    select2Aria: (axis: string) => t('cameraMatch.master.select2Aria', { axis }),
+    none: t('cameraMatch.master.none'),
+    toggleSet: t('cameraMatch.master.toggleSet'),
+    toggleUnset: t('cameraMatch.master.toggleUnset'),
+    toggleTitle: (axis: string) => t('cameraMatch.master.toggleTitle', { axis }),
+    isMaster1: (axis: string) => t('cameraMatch.master.isMaster1', { axis }),
+    isMaster2: (axis: string) => t('cameraMatch.master.isMaster2', { axis }),
+    addSecond: t('cameraMatch.master.addSecond'),
+    replaceOldest: (name: string) => t('cameraMatch.master.replaceOldest', { name }),
+    secondToast: (name: string, axis: string) => t('cameraMatch.master.secondToast', { name, axis }),
+    replacedOldestToast: (old: string, m1: string, m2: string, axis: string) => t('cameraMatch.master.replacedOldestToast', { old, m1, m2, axis }),
+    parallelOne: (name: string, axis: string) => t('cameraMatch.master.parallelOne', { name, axis }),
+    parallelIgnored: (name: string) => t('cameraMatch.master.parallelIgnored', { name }),
+    unsetToast: (name: string, axis: string) => t('cameraMatch.master.unsetToast', { name, axis }),
+    keepOne: (axis: string) => t('cameraMatch.master.keepOne', { axis }),
+    nearParallel: (axis: string, deg: string) => t('cameraMatch.master.nearParallel', { axis, deg }),
+    degenerate: t('cameraMatch.master.degenerate'),
+    edgeKept: (n: number) => t('cameraMatch.master.edgeKept', { n }),
   },
 
   vp: {
