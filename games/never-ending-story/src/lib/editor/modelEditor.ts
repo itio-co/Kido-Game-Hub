@@ -418,15 +418,45 @@ export function createModelEditor(canvas: HTMLCanvasElement, onChange: (snap: Ed
   const observer = new ResizeObserver(render);
   observer.observe(canvas);
 
+  /** World box of the visible parts (one part, or the whole object with its placement). */
+  function visibleBox(name: string | null): THREE.Box3 {
+    const bb = new THREE.Box3();
+    root?.updateMatrixWorld(true);
+    const list = name ? [objects.get(name)] : [...objects.values()];
+    for (const o of list) if (o?.visible) bb.union(new THREE.Box3().setFromObject(o, true));
+    return bb;
+  }
+  /** Aim the orbit at the box centre and back off along `dir` until its bounding sphere fits the view. */
+  function fitOrbit(bb: THREE.Box3, dir: THREE.Vector3, margin = 1.1): void {
+    const sphere = bb.getBoundingSphere(new THREE.Sphere());
+    const dist = Math.max(0.15, (sphere.radius / Math.sin(THREE.MathUtils.degToRad(camera.fov) / 2)) * margin);
+    orbit.target.copy(sphere.center);
+    camera.position.copy(sphere.center).addScaledVector(dir.clone().normalize(), dist);
+    camera.lookAt(orbit.target);
+    orbit.update();
+  }
+  /**
+   * Default orbit camera: the asset's preset viewing direction, aimed at the centre of the whole (placed) object and
+   * fitted to its size. The preset alone aims at the world origin, so a moved object (placement) ended up off-centre.
+   * Only the view changes; the placement and the mock-up / match camera are untouched.
+   */
   function setOrbitCamera(): void {
     const o = asset?.orbit ?? { target: 0.3, distance: 1.7, height: 0.9 };
     const yaw = 0.7;
     camera.fov = 32;
     camera.up.set(0, 1, 0);
+    // drop the mock-up's off-axis projection now (not on the next frame) so picking / screen hooks see the orbit view
+    camera.aspect = (canvas.clientWidth || 1) / (canvas.clientHeight || 1);
+    camera.updateProjectionMatrix();
     camera.position.set(Math.sin(yaw) * o.distance, o.height, Math.cos(yaw) * o.distance);
     orbit.target.set(0, o.target, 0);
-    camera.lookAt(orbit.target);
-    orbit.update();
+    const bb = visibleBox(null);
+    // a little more room than Home / Frame Selected, so the toolbar over the bottom of the view does not cover it
+    if (!bb.isEmpty()) fitOrbit(bb, camera.position.clone().sub(orbit.target), 1.3);
+    else {
+      camera.lookAt(orbit.target);
+      orbit.update();
+    }
   }
 
   function setView(next: ViewMode): void {
@@ -446,6 +476,7 @@ export function createModelEditor(canvas: HTMLCanvasElement, onChange: (snap: Ed
       setOrbitCamera();
     }
     render();
+    emit();
   }
 
   // ---------- state ----------
@@ -1740,18 +1771,9 @@ export function createModelEditor(canvas: HTMLCanvasElement, onChange: (snap: Ed
     frameOrbit(name: string | null): void {
       if (view !== 'orbit') return;
       if (rootSel) name = null;
-      const list = name ? [objects.get(name)].filter((o): o is THREE.Object3D => !!o?.visible) : [...objects.values()].filter((o) => o.visible);
-      if (!list.length) return;
-      const bb = new THREE.Box3();
-      for (const o of list) bb.union(new THREE.Box3().setFromObject(o, true));
+      const bb = visibleBox(name);
       if (bb.isEmpty()) return;
-      const sphere = bb.getBoundingSphere(new THREE.Sphere());
-      const dist = Math.max(0.15, (sphere.radius / Math.sin(THREE.MathUtils.degToRad(camera.fov) / 2)) * 1.1);
-      const dir = camera.position.clone().sub(orbit.target).normalize();
-      orbit.target.copy(sphere.center);
-      camera.position.copy(sphere.center).addScaledVector(dir, dist);
-      camera.lookAt(orbit.target);
-      orbit.update();
+      fitOrbit(bb, camera.position.clone().sub(orbit.target));
       render();
     },
     /** Orbit camera pose (test hook). */
@@ -1916,6 +1938,14 @@ export function createModelEditor(canvas: HTMLCanvasElement, onChange: (snap: Ed
       return node ? node.name : null;
     },
     /** Screen point (canvas px from its top-left) of the selected part's origin = where the gizmo sits; null if none. */
+    /** Canvas point of the whole visible object's box centre (null = behind the camera / nothing shown; test hook). */
+    objectScreen(): [number, number] | null {
+      const bb = visibleBox(null);
+      if (bb.isEmpty()) return null;
+      const q = bb.getCenter(new THREE.Vector3()).project(camera);
+      if (q.z > 1) return null;
+      return [((q.x + 1) / 2) * canvas.clientWidth, ((1 - q.y) / 2) * canvas.clientHeight];
+    },
     selectedScreen(): [number, number] | null {
       if (rootSel && root) {
         place.updateMatrixWorld(true);

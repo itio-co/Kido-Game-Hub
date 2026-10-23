@@ -304,6 +304,8 @@
 
   /** Screen point of the selected part's origin (gizmo) — test hook. */
   let selAnchor = $state<string | null>(null);
+  /** Screen point of the whole object's box centre — test hook. */
+  let objCenter = $state<string | null>(null);
   /** Screen points of the selected part's box centre / nearest box corner while editing its pivot — test hook. */
   let pivotHints = $state<string | null>(null);
   /** Client points of the gizmo's X / Y / Z handles (move / scale) — test hook for touch drags. */
@@ -321,6 +323,8 @@
       editor!.setDisplay(display);
       const a = editor!.selectedScreen();
       selAnchor = a ? `${a[0].toFixed(1)},${a[1].toFixed(1)}` : null;
+      const oc = editor!.objectScreen();
+      objCenter = oc ? `${oc[0].toFixed(1)},${oc[1].toFixed(1)}` : null;
       const h = snap.pivotMode ? editor!.pivotHints() : null;
       pivotHints = h ? JSON.stringify(h) : null;
       const gh = (['X', 'Y', 'Z'] as const).map((a) => editor!.gizmoHandle(a));
@@ -832,6 +836,7 @@
       data-view-rect={match && staged ? [match.viewRect.x0, match.viewRect.y0, match.viewRect.w, match.viewRect.h].map((v) => v.toFixed(2)).join(',') : null}
       data-focus-box={match?.focusBox ? [match.focusBox.x0, match.focusBox.y0, match.focusBox.x1, match.focusBox.y1].map((v) => v.toFixed(2)).join(',') : null}
       data-sel-anchor={selAnchor}
+      data-object-center={objCenter}
       data-pivot={sel ? JSON.stringify({ local: sel.pivotLocalCm, world: sel.pivotWorldCm, center: sel.centerWorldCm }) : null}
       data-pivot-mode={snap.pivotMode ? 'on' : null}
       data-cursor={snap.cursorCm.join(',')}
