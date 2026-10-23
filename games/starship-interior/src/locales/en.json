@@ -1,0 +1,5 @@
+{
+  "designer.builtinReadOnly": "Built-in designs are read-only",
+  "designer.glbNotEditable": "GLB parts cannot be edited vertex by vertex",
+  "designer.editMesh": "Edit mesh"
+}

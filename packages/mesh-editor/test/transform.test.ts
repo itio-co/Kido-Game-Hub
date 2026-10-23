@@ -182,7 +182,7 @@ describe('transform session', () => {
     const h = setup({ second: true });
     const notices: unknown[] = [];
     h.vp.on('notice', (n) => notices.push(n));
-    h.state.locked.b = 'ล็อกโดยครู';
+    h.state.locked.b = 'locked by teacher';
     h.vp.setSelectMode('vertex');
     h.vp.setSelection({
       mode: 'vertex',
@@ -194,7 +194,7 @@ describe('transform session', () => {
       },
     });
     h.vp.setTransformMode('translate');
-    expect(notices.at(-1)).toMatchObject({ kind: 'locked-skipped', count: 1, allLocked: false, reasons: [{ objId: 'b', reason: 'ล็อกโดยครู' }] });
+    expect(notices.at(-1)).toMatchObject({ kind: 'locked-skipped', count: 1, allLocked: false, reasons: [{ objId: 'b', reason: 'locked by teacher' }] });
     const bBefore = h.meshes.get('b')!.v.slice();
     h.vp.applyTyped({ kind: 'position', axis: 0, value: 2, space: 'world' });
     expect(h.state.mesh.v[3]).toBeCloseTo(2, 4);

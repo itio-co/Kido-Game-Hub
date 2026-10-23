@@ -8,6 +8,7 @@ import { CATALOG, CATALOG_BY_ID, isBuiltin, setCustomLookup } from './catalog';
 import { EQUIP_FORMAT, EQUIP_VERSION, fitFootprint, mirrorPart, sanitizeEquip, toModuleDef, uidPart, type EquipDef, type EquipPart } from './equipment';
 import type { ModuleDef } from './types';
 import { cloneMesh, deleteEdges, deleteFaces, deleteVerts, edgesOf, emptySel, meshBounds, primitiveToMesh, recalcNormals, selVerts, setFaceMat, vcount, type CompMode, type CompSel, type EditMesh } from './editMesh';
+import { t } from '$lib/i18n';
 import { mat as libMat, type MatName } from '$lib/three/materials';
 
 const KEY = 'starship-equipment-v1';
@@ -165,9 +166,9 @@ class EquipStore {
 			this.setPose(id, { pos: [tr.position[0], tr.position[1], tr.position[2]], rot: [eu.x * D, eu.y * D, eu.z * D] });
 		},
 		canEdit: (id) => {
-			if (!this.editable) return 'Built-in designs are read-only';
+			if (!this.editable) return t('designer.builtinReadOnly');
 			const p = id === this.partId ? this.part : (this.selected?.parts.find((x) => x.id === id) ?? null);
-			if (!p || p.shape === 'glb') return 'GLB parts cannot be edited vertex by vertex';
+			if (!p || p.shape === 'glb') return t('designer.glbNotEditable');
 			return true;
 		}
 	};
@@ -204,7 +205,7 @@ class EquipStore {
 		const transform = this.partTransform();
 		this.history.push(
 			createSnapshotCommand({
-				label: 'Edit mesh',
+				label: t('designer.editMesh'),
 				before: { [pid]: { mesh: before, transform } },
 				after: { [pid]: { mesh: m, transform } },
 				selectionBefore: this.packageSelection(),
