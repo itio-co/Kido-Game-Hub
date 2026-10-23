@@ -2,7 +2,7 @@
 
 This is the contract that GamesBuilder and Never Ending Game both code against. The TypeScript in `src/` is the source of truth for names and signatures. This file explains the rules that types cannot express. To change the contract, open a PR that edits both this file and `src/` together, and get a review from the other owner (§13).
 
-Status: **Agreed v1 (Never Ending Game + GamesBuilder, 2026-10-23).** Package version 0.0.1. Contract changes from now on need a PR that edits this file and `src/` together, reviewed by both owners.
+Status: **Agreed v1 (Never Ending Game + GamesBuilder, 2026-10-23).** Package version 0.1.0. Contract changes from now on need a PR that edits this file and `src/` together, reviewed by both owners.
 
 | Subpath | Contents | Depends on |
 |---|---|---|

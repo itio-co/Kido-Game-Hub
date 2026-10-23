@@ -1,6 +1,6 @@
 {
   "name": "@itio/mesh-editor",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "Touch-friendly polygon mesh editor core for three.js, with optional Svelte UI, Threlte adapter and camera matching.",
   "type": "module",
   "license": "SEE LICENSE IN ../../LICENSE",
