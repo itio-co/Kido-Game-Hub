@@ -12,6 +12,8 @@ npm install
 npm run dev
 ```
 
+This folder is an npm workspace of the repo root. `npm install` here installs into the root `node_modules` and updates the root `package-lock.json`. There is no `game/package-lock.json`. Running `npm install` at the repo root does the same.
+
 Open the URL Vite prints (default `http://localhost:5173`) on a phone, or use a narrow portrait window such as 390×844.
 
 ## Build a static preview

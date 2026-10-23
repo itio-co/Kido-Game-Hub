@@ -1,0 +1,66 @@
+{
+  "name": "@itio/mesh-editor",
+  "version": "0.0.1",
+  "description": "Touch-friendly polygon mesh editor core for three.js, with optional Svelte UI, Threlte adapter and camera matching.",
+  "type": "module",
+  "license": "SEE LICENSE IN ../../LICENSE",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/itio-co/Kido-Game-Hub.git",
+    "directory": "packages/mesh-editor"
+  },
+  "sideEffects": false,
+  "files": [
+    "dist",
+    "API.md",
+    "README.md"
+  ],
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./svelte": {
+      "types": "./dist/svelte/index.d.ts",
+      "svelte": "./dist/svelte/index.js",
+      "import": "./dist/svelte/index.js"
+    },
+    "./threlte": {
+      "types": "./dist/threlte/index.d.ts",
+      "import": "./dist/threlte/index.js"
+    },
+    "./camera-match": {
+      "types": "./dist/camera-match/index.d.ts",
+      "import": "./dist/camera-match/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\""
+  },
+  "peerDependencies": {
+    "three": "^0.186.0",
+    "svelte": "^5.0.0",
+    "@threlte/core": "^8.0.0"
+  },
+  "peerDependenciesMeta": {
+    "svelte": {
+      "optional": true
+    },
+    "@threlte/core": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@types/three": "^0.186.0",
+    "three": "^0.186.1",
+    "typescript": "~5.9.3",
+    "vitest": "^4.1.12"
+  }
+}
