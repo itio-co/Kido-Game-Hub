@@ -8,7 +8,7 @@ c=json.load(open(HERE+'cam.json')); R=Matrix(c['R']); C=Vector(c['C'])*0.01; f=c
 cd=bpy.data.cameras.new('MatchCam'); cd.sensor_fit='HORIZONTAL'; cd.sensor_width=36; cd.lens=f/252*36
 cam=bpy.data.objects.new('MatchCam',cd); sc.collection.objects.link(cam)
 cam.matrix_world=Matrix.Translation(C)@(R.transposed()@Matrix(((1,0,0),(0,-1,0),(0,0,-1)))).to_4x4(); sc.camera=cam
-img=bpy.data.images.load(HERE+'nightstand-ref.png'); cd.show_background_images=True
+img=bpy.data.images.load(HERE+'../ref/nightstand-ref.png'); cd.show_background_images=True
 bg=cd.background_images.new(); bg.image=img; bg.alpha=0.5; bg.display_depth='FRONT'
 sc.render.resolution_x=1008; sc.render.resolution_y=1136
 sd=bpy.data.lights.new('Key','SUN'); sd.energy=4; sd.color=(1,0.86,0.7); s=bpy.data.objects.new('Key',sd); sc.collection.objects.link(s)

@@ -9,4 +9,4 @@ for name,out in [('master','turntable-master.png'),('lowpoly','turntable.png')]:
         bg=Image.new('RGBA',r.size,(236,214,190,255)); bg.alpha_composite(r); d=ImageDraw.Draw(bg); d.text((8,8),f'{a} deg',fill=(0,0,0)); ims.append(bg)
     s=Image.new('RGB',(sum(i.width for i in ims)+30,ims[0].height),(255,255,255)); x=0
     for i in ims: s.paste(i.convert('RGB'),(x,0)); x+=i.width+10
-    s.save(HERE+out)
+    s.save(HERE+'../compare/'+out)

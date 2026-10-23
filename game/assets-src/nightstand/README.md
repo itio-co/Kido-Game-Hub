@@ -1,38 +1,53 @@
-# Nightstand (source assets)
+# Nightstand: `player-room/nightstand`
 
-Source for `game/public/models/nightstand.glb` (low-poly, used in-game) and
-`game/public/models/nightstand-master.glb` (detailed master). Built by script in
-Blender 4.5 LTS from `nightstand-ref.png` (the same crop as `public/showcase/nightstand-ref.png`).
+ตู้ข้างเตียง (`3a07eebc-03c1-421c-87a7-7e6d0037ceae`). A self-contained package: everything needed to rebuild
+the model in Blender, or to send the reference to an image-to-3D tool and check the result.
+Metadata (dimensions, colours, crop box, camera, notes) is in [`asset.json`](asset.json).
 
-| file | what |
-| --- | --- |
-| `nightstand-master.blend` | master + low-poly + `MatchCam` (ref as camera background) + `Key` sun |
-| `nightstand-master_basecolor.png` | 2048² baked wood albedo used by the master GLB |
-| `dims.json` | measured dimensions (cm) and colours |
-| `cam.json` | solved camera (OpenCV convention, cm) |
-| `solve_cam.py` | camera + dimension solve from 12 hand-picked landmarks (numpy, scipy, opencv) |
-| `build_master.py` → `finalize.py` → `add_cam.py` | Blender build: parts, bake, GLB export, matched camera |
-| `render.py`, `compare.py`, `make_previews.py` | matched renders, side-by-side / overlay vs ref, turntables |
-| `nightstand-ref-mask.png` | rembg (isnet-general-use) silhouette of the ref, for the IoU check |
+```
+nightstand/
+├── asset.json        id / kind / title / slug, size in cm, colours, status, source crop, camera, notes
+├── prompt.md         prompt + settings for Meshy / Tripo / Rodin / Hunyuan3D / TRELLIS, Thai how-to
+├── ref/              reference images
+│   ├── nightstand-ref.png               original crop from game/public/img/player-room-wide.jpg (252×284)
+│   ├── nightstand-isolated.png          same crop, background removed (RGBA)
+│   ├── nightstand-isolated-1024.png     1024² square, transparent, padded — input for image-to-3D
+│   ├── nightstand-isolated-1024-white.png  the same on white
+│   ├── nightstand-ref-mask.png          refined silhouette (GrabCut, 4×)
+│   ├── nightstand-ref-mask-rembg.png    rembg silhouette (independent; misses stretchers)
+│   └── make_isolated.py                 how the isolated images and refined mask were made
+├── blender/          Blender 4.5 source
+│   ├── nightstand-master.blend   master + low-poly + MatchCam (ref as camera background) + Key sun
+│   ├── dims.json, cam.json       part dimensions (cm) and solved camera (OpenCV, cm)
+│   ├── build_all.sh              build_master.py → finalize.py → add_cam.py
+│   ├── render_all.sh             render.py → compare.py → make_previews.py
+│   └── solve_cam.py              camera + dimension solve from 12 hand-picked landmarks
+├── export/           nightstand-master.glb (960 tris, 2048² texture), nightstand.glb (224 tris), texture
+├── compare/          side-by-side / overlay vs ref and 4-angle turntables for master and low-poly
+└── external/         drop results from outside tools here (see external/README.md)
+```
 
 ## Rebuild
 
 ```sh
-cd game/assets-src/nightstand
-BLENDER=/path/to/blender ./build_all.sh       # writes nightstand-master.glb, nightstand.glb, .blend
-cp nightstand.glb nightstand-master.glb ../../public/models/
-BLENDER=/path/to/blender PYTHON=python3 ./render_all.sh   # optional: renders + comparisons (pillow, numpy)
+cd game/assets-src/nightstand/blender
+BLENDER=/path/to/blender ./build_all.sh                    # → ../export/*.glb, .blend
+cp ../export/nightstand.glb ../export/nightstand-master.glb ../../../public/models/
+BLENDER=/path/to/blender PYTHON=python3 ./render_all.sh    # → ../compare (needs pillow + numpy)
 ```
+
+`ref/make_isolated.py` needs opencv + pillow + numpy and reads `blender/render/master_000.png`
+(made by `render_all.sh`) as a shape prior, so run it after a render.
 
 ## Models
 
 | | triangles | material |
 | --- | --- | --- |
-| `nightstand.glb` | 224 | flat-shaded vertex colours (top #e0995a, front #c47d42, side #a8652f), no textures |
-| `nightstand-master.glb` | 960 | bevelled, smooth-by-angle, 2048² baked wood base colour |
+| `export/nightstand.glb` | 224 | flat-shaded vertex colours (top #e0995a, front #c47d42, side #a8652f), no texture |
+| `export/nightstand-master.glb` | 960 | bevelled, smooth-by-angle, 2048² baked wood base colour |
 
-Size: 61 × 40.5 × 55 cm (W × D × H), origin at the floor centre, front = −Y in Blender / +Z in glTF.
-Width comes from the camera solve against the 55 cm height; it is wider than the 50 cm first guessed.
+Size 61 × 40.5 × 55 cm (W × D × H), origin at the floor centre, front = −Y in Blender / +Z in glTF.
+Width comes from the camera solve against the 55 cm height.
 
 ## Matched camera
 
@@ -42,7 +57,13 @@ Image 252 × 284 px, focal 1134.8 px, principal point at the centre.
   rotation XYZ (73.63°, 0.54°, 26.89°). HFOV 12.67°, VFOV 14.26° at 252:284.
 - Three.js (Y-up, `(x, y, z)_three = (x, z, −y)_blender`): position (1.51665, 1.36477, 3.04096),
   quaternion (x −0.139571, y 0.230806, z 0.028608, w 0.962512); vertical FOV
-  `2·atan(tan(12.67°/2) / aspect)` so the horizontal framing matches the crop. See `src/lib/nightstandStage.ts`.
+  `2·atan(tan(12.67°/2) / aspect)`. See `game/src/lib/nightstandStage.ts`.
+- Lighting: sun towards (−1.3, −0.7, 1.9) i.e. from the upper left, colour (1, 0.86, 0.7), strength 4;
+  world (1, 0.85, 0.7) × 0.35; view transform Standard.
 
-Silhouette IoU vs the rembg mask is ~0.75; most of the gap is the mask (it misses the stretchers).
-Not modelled: the painted plank band on the top. Side stretcher height is estimated.
+## Known differences from the reference
+
+- The painted lighter band on the top is not modelled.
+- In the ref the side apron looks deeper and the side stretcher sits a little differently; heights are estimates.
+- Silhouette IoU: ~0.75 vs the rembg mask (it misses the stretchers and back legs). The IoU vs the refined mask
+  is higher (~0.92) but biased, because that mask used the master render as a prior.

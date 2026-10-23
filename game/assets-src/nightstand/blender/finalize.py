@@ -26,7 +26,7 @@ sc.render.engine='CYCLES'; sc.cycles.device='CPU'; sc.cycles.samples=4
 sc.render.bake.use_pass_direct=False; sc.render.bake.use_pass_indirect=False; sc.render.bake.margin=8
 bpy.ops.object.select_all(action='DESELECT'); M.select_set(True); bpy.context.view_layer.objects.active=M
 bpy.ops.object.bake(type='DIFFUSE',pass_filter={'COLOR'})
-img.filepath_raw=HERE+'nightstand-master_basecolor.png'; img.file_format='PNG'; img.save()
+img.filepath_raw=HERE+'../export/nightstand-master_basecolor.png'; img.file_format='PNG'; img.save()
 bm_mat=bpy.data.materials.new('Wood_Baked'); bm_mat.use_nodes=True; nt=bm_mat.node_tree
 t=nt.nodes.new('ShaderNodeTexImage'); t.image=img; b=nt.nodes['Principled BSDF']; b.inputs['Roughness'].default_value=0.55
 nt.links.new(t.outputs['Color'],b.inputs['Base Color'])
@@ -36,7 +36,7 @@ for p in M.data.polygons: p.use_smooth=True
 mod=M.modifiers.new('Smooth by Angle','NODES') if False else None
 bpy.ops.object.shade_smooth_by_angle(angle=math.radians(35))
 bpy.ops.object.select_all(action='DESELECT'); M.select_set(True)
-bpy.ops.export_scene.gltf(filepath=HERE+'nightstand-master.glb',use_selection=True,export_format='GLB',export_apply=True)
+bpy.ops.export_scene.gltf(filepath=HERE+'../export/nightstand-master.glb',use_selection=True,export_format='GLB',export_apply=True)
 print('MASTER tris',sum(len(p.vertices)-2 for p in M.data.polygons))
 mcol.hide_render=True; mcol.hide_viewport=True
 bpy.ops.wm.save_as_mainfile(filepath=HERE+'nightstand-master.blend')
@@ -76,7 +76,7 @@ a=nt.nodes.new('ShaderNodeVertexColor'); a.layer_name='Col'; b=nt.nodes['Princip
 nt.links.new(a.outputs['Color'],b.inputs['Base Color'])
 me.materials.clear(); me.materials.append(lm)
 bpy.ops.object.select_all(action='DESELECT'); Lo.select_set(True)
-bpy.ops.export_scene.gltf(filepath=HERE+'nightstand.glb',use_selection=True,export_format='GLB',export_vertex_color='ACTIVE' if bpy.app.version>=(4,2,0) else 'MATERIAL')
+bpy.ops.export_scene.gltf(filepath=HERE+'../export/nightstand.glb',use_selection=True,export_format='GLB',export_vertex_color='ACTIVE' if bpy.app.version>=(4,2,0) else 'MATERIAL')
 print('LOWPOLY tris',sum(len(p.vertices)-2 for p in me.polygons))
 lcol.hide_render=True
 bpy.ops.wm.save_as_mainfile(filepath=HERE+'nightstand-master.blend')
