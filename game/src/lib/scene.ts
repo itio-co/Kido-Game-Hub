@@ -39,7 +39,7 @@ export function mountRoom(canvas: HTMLCanvasElement, room: PlayerRoom): RoomView
   );
   const sun = new THREE.DirectionalLight(room.lighting.sun.color, room.lighting.sun.intensity);
   sun.position.set(room.lighting.sun.position[0], room.lighting.sun.position[1], room.lighting.sun.position[2]);
-  sun.target.position.set(-0.2, 0.6, -0.4);
+  sun.target.position.set(0.15, 0.05, 0.05);
   sun.castShadow = true;
   sun.shadow.mapSize.set(2048, 2048);
   sun.shadow.camera.near = 0.4;
@@ -48,11 +48,19 @@ export function mountRoom(canvas: HTMLCanvasElement, room: PlayerRoom): RoomView
   sun.shadow.camera.right = 5;
   sun.shadow.camera.top = 5;
   sun.shadow.camera.bottom = -5;
-  sun.shadow.bias = -0.0004;
-  sun.shadow.normalBias = 0.03;
+  sun.shadow.bias = -0.001;
+  sun.shadow.normalBias = 0.04;
+  sun.shadow.radius = 6;
+  sun.shadow.blurSamples = 16;
+  const patch = new THREE.SpotLight(room.lighting.sun.color, room.lighting.sun.intensity * 5, 8, 0.62, 0.9, 1.2);
+  patch.position.set(room.lighting.sun.position[0], room.lighting.sun.position[1], room.lighting.sun.position[2]);
+  patch.target.position.set(-0.1, 0.02, 0.35);
   const fill = new THREE.DirectionalLight(room.lighting.fill.color, room.lighting.fill.intensity);
   fill.position.set(room.lighting.fill.position[0], room.lighting.fill.position[1], room.lighting.fill.position[2]);
-  scene.add(amb, hemi, sun, sun.target, fill);
+  const foreground = new THREE.SpotLight('#ffe6c4', 8, 2.6, 0.4, 0.8, 2);
+  foreground.position.set(0.05, 1.45, 2.05);
+  foreground.target.position.set(0.02, 0, 1.25);
+  scene.add(amb, hemi, sun, sun.target, patch, patch.target, fill, foreground, foreground.target);
 
   const build: Build = { geos: [], mats: [], textures: [], matCache: new Map() };
   const root = new THREE.Group();

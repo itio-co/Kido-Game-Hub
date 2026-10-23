@@ -33,33 +33,33 @@
       "fov": 40
     }
   },
-  "background": "#e7c9a4",
+  "background": "#f4eadc",
   "lighting": {
     "ambient": {
       "color": "#ffe6cc",
-      "intensity": 1.05
+      "intensity": 0.58
     },
     "hemisphere": {
-      "sky": "#fff0dc",
-      "ground": "#e8b080",
-      "intensity": 0.42
+      "sky": "#fff3e2",
+      "ground": "#c9a27a",
+      "intensity": 0.4
     },
     "sun": {
-      "color": "#ffd2a4",
-      "intensity": 0.95,
+      "color": "#ffd8aa",
+      "intensity": 1.45,
       "position": [
-        -1.8,
-        4.4,
-        1.6
+        -2.15,
+        2.05,
+        -0.55
       ]
     },
     "fill": {
-      "color": "#ffe8cc",
-      "intensity": 0.45,
+      "color": "#fff0dc",
+      "intensity": 0.48,
       "position": [
-        2.0,
-        2.6,
-        2.6
+        0.3,
+        2.1,
+        2.5
       ]
     }
   },
@@ -81,11 +81,13 @@
         5.05
       ],
       "colors": [
-        "#e8b06a",
-        "#f0c080",
-        "#d49858",
-        "#f6c888",
-        "#c48448"
+        "#d4a36e",
+        "#a56b40",
+        "#e0b07a",
+        "#b07a4a",
+        "#c89260",
+        "#966238",
+        "#6b4428"
       ]
     },
     {
@@ -104,7 +106,7 @@
         2.5,
         5.05
       ],
-      "color": "#f0b070",
+      "color": "#f6e3c8",
       "shadow": "receive"
     },
     {
@@ -123,7 +125,7 @@
         2.5,
         5.05
       ],
-      "color": "#f0b070",
+      "color": "#f6e3c8",
       "shadow": "receive"
     },
     {
@@ -142,7 +144,7 @@
         2.5,
         0.1
       ],
-      "color": "#f0b070",
+      "color": "#f6e3c8",
       "shadow": "receive"
     },
     {
@@ -161,7 +163,7 @@
         0.08,
         5.05
       ],
-      "color": "#f8e6d0",
+      "color": "#fbf6ee",
       "shadow": "none"
     },
     {
@@ -180,7 +182,7 @@
         0.09,
         4.85
       ],
-      "color": "#d7b48a",
+      "color": "#e6d3b4",
       "shadow": "none"
     },
     {
@@ -199,7 +201,7 @@
         0.09,
         4.85
       ],
-      "color": "#d7b48a",
+      "color": "#e6d3b4",
       "shadow": "none"
     },
     {
@@ -218,7 +220,64 @@
         0.09,
         0.035
       ],
-      "color": "#d7b48a",
+      "color": "#e6d3b4",
+      "shadow": "none"
+    },
+    {
+      "id": "ef0b42f2-94c2-45af-8135-c2349fbc7061",
+      "kind": "box",
+      "title": "บัวเพดานซ้าย",
+      "titleEn": "Left ceiling moulding",
+      "slug": "player-room/crown-left",
+      "position": [
+        -0.86,
+        2.45,
+        0.7
+      ],
+      "size": [
+        0.045,
+        0.05,
+        4.6
+      ],
+      "color": "#ead9bc",
+      "shadow": "none"
+    },
+    {
+      "id": "c3475ab6-bc7c-4e21-93b1-f3ff37da0fd3",
+      "kind": "box",
+      "title": "บัวเพดานขวา",
+      "titleEn": "Right ceiling moulding",
+      "slug": "player-room/crown-right",
+      "position": [
+        0.93,
+        2.45,
+        0.7
+      ],
+      "size": [
+        0.045,
+        0.05,
+        4.6
+      ],
+      "color": "#ead9bc",
+      "shadow": "none"
+    },
+    {
+      "id": "c03adcde-d884-475d-9f39-da7543144545",
+      "kind": "box",
+      "title": "บัวเพดานหลัง",
+      "titleEn": "Back ceiling moulding",
+      "slug": "player-room/crown-back",
+      "position": [
+        0,
+        2.45,
+        -1.52
+      ],
+      "size": [
+        2.55,
+        0.05,
+        0.045
+      ],
+      "color": "#ead9bc",
       "shadow": "none"
     },
     {
@@ -244,10 +303,10 @@
       "colors": {
         "frame": "#f4efe6",
         "glass": "#d7f1fb",
-        "curtain": "#b7def6",
+        "curtain": "#7eb6ea",
         "rod": "#c4925c",
-        "sky": "#7ec8ea",
-        "tree": "#6f9a48",
+        "sky": "#79c4ef",
+        "tree": "#4f8a38",
         "sun": "#ffe08a"
       }
     },
@@ -619,15 +678,15 @@
         1.32
       ],
       "colors": {
-        "edge": "#c47a48",
-        "fill": "#f8ead4",
+        "edge": "#e7d4b6",
+        "fill": "#f7f1e6",
         "patches": [
-          "#e8b0a0",
-          "#f0d080",
-          "#b7d0c4",
-          "#a8c8dc",
-          "#e8c090",
-          "#e8c0c8"
+          "#e25d6a",
+          "#f0c043",
+          "#6aaf62",
+          "#6eb0e0",
+          "#f08a55",
+          "#d48bb8"
         ]
       }
     }
