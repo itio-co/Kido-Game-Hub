@@ -152,6 +152,8 @@ class GameState {
 	clearance = $state(true);
 	guides = $state(true);
 	quality = $state<Quality>('high');
+	/** real-time shadows (only with High quality); Options → Graphics */
+	shadows = $state(true);
 	/** render every deck regardless of view (used for GLB export) */
 	exportAll = $state(false);
 
@@ -191,6 +193,17 @@ class GameState {
 	ctxProvider: (() => CtxAction[]) | null = null;
 	/** set by WalkControls while walk mode is active */
 	travel: ((dir: 1 | -1) => void) | undefined = undefined;
+	/** interior (walk / possessed) light colour temperature */
+	interiorTone = $state<'warm' | 'cool'>(typeof localStorage !== 'undefined' && localStorage.getItem('starship-interior:tone') === 'cool' ? 'cool' : 'warm');
+	toggleTone() {
+		this.interiorTone = this.interiorTone === 'warm' ? 'cool' : 'warm';
+		try {
+			localStorage.setItem('starship-interior:tone', this.interiorTone);
+		} catch {
+			/* private mode */
+		}
+		this.flash(`Interior lights: ${this.interiorTone === 'warm' ? 'warm white (3000 K)' : 'cool white (5000 K)'}`);
+	}
 	/** new ladders / hatches start locked (persisted in the layout) */
 	lockStructural = $state(false);
 	/** lock-change history (Ctrl+Z / Ctrl+Shift+Z in build mode) */

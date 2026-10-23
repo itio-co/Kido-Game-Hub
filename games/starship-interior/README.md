@@ -186,6 +186,13 @@ Open it with **📐 Design** (sidebar Mode row, or the top-right button; also on
   - Numeric fields: position and size in cm, rotation in °.
   - Nudge buttons (±1 cm per axis, ±5° yaw).
   - Add, duplicate (`D`), mirror across X (`M`), delete (`Del`); `Esc` deselects.
+  - **Use points (slot editor):** in each crew-sim action, **👁 Use points** shows its places as ghost avatars in
+    their exact pose in the 3D view. Edit X / Z / Y (cm), facing (°) and the pose per place, nudge ±1 cm / ±15°, add or
+    remove places (up to 8 = capacity). The crew blend into exactly these transforms.
+  - **🚪 Door part:** tick it on a part to make it a door. Choose hinge (axis Y side hinge / X top or bottom / Z,
+    open angle, hinge pivot in cm) or slide (offset in cm), the duration, **private** (closes behind the user) and
+    **walk-in** (the user steps inside). **▶ Test door** plays open → hold → close. Placed copies animate the part when crew
+    use the item, and a hinged door adds its swing as a keep-out zone.
   - The **Deployed / Stowed** toggle previews and edits either pose. *Stowed in* says which phase uses the stowed pose:
     Launch/Landing for tables and the treadmill, Surface/Cruise for couches.
 - **Metadata form:** name, icon, category, mass, power, cost, access depth, seats, stowable, ESTIMATE flag, description.
@@ -341,6 +348,40 @@ Cabin and Surface Habitat modes, runs on top of build mode, and replans live whe
   Unpowered items aren't used by the AI. A possessed crew member gets "Unavailable (no power …)".
 - **HUD power meter** (load / supply, battery %, sparkline). Click it for the power panel: settings, per-item draw and
   priority, 24 h chart and alerts. Deficits are design issues, and the CSV has a POWER section.
+
+### Use poses: exact transform per place
+- Every affordance place (slot) is an exact **use transform** relative to the item: `[x, z, y, yaw°, pose?]` – body
+  origin (seat point when sitting, mattress point when lying, feet when standing), height, facing (0 = front +Z) and
+  an optional per-place body pose (default: the affordance's pose). Built-ins live in `src/lib/game/affordances.ts`.
+- Crew (AI and your avatar) blend from the approach point into it over **0.7 s**: position and height ease in,
+  the body turns along the shortest arc, and the body pose blends joint by joint from standing into the use pose
+  (sit, eat, sleep, work, exercise, wash…). At the end it snaps exactly onto the transform (tested within 5 cm / 10°).
+  On exit (finished, or move / `E` / `X`) the same blend runs in reverse to the approach point before they're released.
+- Multi-seat items (tables, couch rows, consoles) use the transform of the reserved place; group tables use their chairs.
+  Each affordance of an item can define its own transforms (e.g. the hygiene compartment: seated on the bowl facing the
+  door vs. standing at the basin on the side wall).
+- Doors combine with this: the blend waits at the approach point while the door opens.
+- `E` while climbing a ladder now says so ("Climbing – wait until you are off the ladder…") instead of doing nothing.
+
+### Doors (equipment with a door / curtain)
+- Every item with a door animates it: **crew quarters pod** and **hygiene / toilet compartment** (hinged door; both are
+  now hollow compartments with a sleeping bag / toilet + basin inside), **bunk** and **zero-g toilet** (privacy
+  curtain), **storage locker** (double doors), **fridge** (side-hinged), **food warmer / oven** (drop-down door),
+  **pantry** (top-hinged locker flaps). Designer items open any part marked as a door (see the Equipment Designer).
+  The specs (hinge pivot / side, open angle or slide offset, duration, private / walk-in) are in `src/lib/game/doors.ts`.
+- Sequence for any crew member (AI or your avatar): walk to the approach point → reach pose while the door **opens** →
+  **move inside** to the use point → the door **closes behind them** for private items (quarters, hygiene, bunk/sleep,
+  zero-g toilet). Fridge / oven / lockers: open → take / put → close. When done (or stopped with move / `E` / `X`):
+  door opens → step out → door closes. The use timer runs only once inside with the door settled.
+- An occupied private item with the door closed shows **🔒 occupied** on its badge and `Queue for … – occupied` in the
+  prompt; others queue outside. A closed door is part of the item's footprint, so it blocks navigation.
+- A **broken** item's door is jammed and an **unpowered** fridge / oven door won't open: the crew gives up, and your
+  avatar gets the reason ("Crew Quarters Pod: door jammed (broken)", "fridge: door won't open (no power)").
+  Repair / maintenance crews open it by hand.
+- While a hinged door swings, its arc is reserved: anyone standing in it steps aside. The swing arc and keep-out zone
+  are drawn in the clearance overlay (📐), and the selection card shows `🚪 Hinged door · private · ✓ swing clear`
+  (or which items block the swing).
+- Cruise (micro-g): the crew floats in and the door closes behind them, the same sequence.
 
 ### Couch egress and clearances
 - With a couch selected (or **📐 Clearances** on in the top bar) the planner draws the couch's stowed and deployed
@@ -612,6 +653,8 @@ scripts/need-curves.mjs     working rates, status effects, trend symbols (2 days
 scripts/couch-egress-test.mjs couch envelopes, egress blockers, nudge, Show clearances
 scripts/power-test.mjs      power bus, shedding order, brownout, deficit issues
 scripts/designer-edit-test.mjs designer vertex/edge/face editing, ops, validation, undo, exports
+scripts/use-pose-test.mjs   use transforms: snap ≤ 5 cm / 10°, smooth blend in + reverse out, multi-seat, avatar, E while climbing, designer use points
+scripts/door-test.mjs       doors: opens before entry, inside bounds, closed while occupied (queue), exit; fridge; no power / broken; swing arc; cruise
 scripts/interact-test.mjs   E in walk (avatar walks to the use point, pose, needs, ladder walk+climb), possessed crew, cruise, mobile
 scripts/interact-real-test.mjs E like a real user: pointer lock, focus on HUD buttons, Thai keys, lost key-ups, frame stalls, empty code, F9 overlay
 scripts/interior-test.mjs   interior view: walls/ceilings, no clipping, lights, camera containment, mobile budget
