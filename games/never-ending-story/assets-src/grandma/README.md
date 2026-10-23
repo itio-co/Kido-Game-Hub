@@ -22,8 +22,10 @@ grandma/
 │   └── raw/                  git-ignored: raw Meshy downloads (~4.5 MB each) + task JSON
 ├── build/
 │   ├── texture.py            2048 → 1024 JPEG base colour (q85)
-│   ├── build.mjs             raw GLBs → public/models/grandma-mali.glb
-│   └── package.json          glTF Transform (offline only, not part of the game build)
+│   ├── build.mjs             raw GLBs → public/models/grandma-mali.glb (+ low-poly LODs with --tris)
+│   ├── bake.py               LOD texture re-bake (xatlas unwrap + sampling the 2048 texture)
+│   ├── requirements.txt      python deps of bake.py
+│   └── package.json          glTF Transform + meshoptimizer (offline only, not part of the game build)
 └── preview/                  turnaround, contact sheets, seated check (JPEG, small)
 ```
 
@@ -89,6 +91,46 @@ The hips are ~0.05 m above the seat top. `#/showcase` draws a simple seat block 
 
 Generated on a **Meshy Pro** plan. Meshy's terms give paid-plan users ownership and commercial-use rights for
 their generated assets, so the model can ship in the game. The source art is the project's own mock-up.
+
+## Low-poly LODs (comparison only)
+
+`public/models/grandma-mali-{6k,3k,1k5}.glb` are QEM-simplified copies for the showcase's *Mesh detail* switch.
+The game still loads `grandma-mali.glb`. No Meshy credits: everything runs offline from `meshy/raw/`.
+
+```sh
+cd build
+python -m venv .venv && .venv/bin/pip install -r requirements.txt   # numpy, scipy, xatlas, pillow
+npm i && PYTHON=.venv/bin/python npm run lods
+```
+
+| File | Triangles | Vertices | Bytes | Simplifier error |
+| --- | ---: | ---: | ---: | ---: |
+| grandma-mali.glb (original, game) | 19,416 | 20,929 | 1,255,116 | – |
+| grandma-mali-6k.glb | 5,999 | 5,084 | 733,344 | 0.5 % |
+| grandma-mali-3k.glb | 3,000 | 2,656 | 635,424 | 1.2 % |
+| grandma-mali-1k5.glb | 1,500 | 1,492 | 593,032 | 2.8 % |
+
+How `node build.mjs --tris N --bake out.glb` works:
+
+1. Same build as the original (rig, clips, seat anchors), then before compression:
+2. **Weld by position** (one vertex per position). Meshy's UV atlas is very fragmented (17k of 21k vertices
+   sit on a UV seam), which otherwise stops meshoptimizer at ~6.5k triangles (UV-aware) or ~12k (welded).
+3. **meshoptimizer `simplifyWithAttributes`** (QEM, flags `Permissive` + `RegularizeLight`, light normal
+   weight). Surviving vertices keep their own JOINTS_0 / WEIGHTS_0, so the 24-joint skin and every clip work
+   unchanged.
+4. **`bake.py`**: xatlas unwraps the low-poly mesh (1024², 4 px padding), each texel finds the nearest point on
+   the original surface (KD-tree over 4M samples, normal-checked) and samples Meshy's 2048 texture there; empty
+   texels are padded. Writes a 1024 JPEG (q85). Deterministic for the same inputs.
+
+Without `--bake` the original UVs and texture are kept (UV-aware simplification), but collapses across the many
+UV seams leave small wrong-coloured specks, so the committed LODs all use `--bake`.
+
+About 0.45 MB of every file is the six clips (~0.27 MB) and the 1024 texture (~0.17 MB), so fewer triangles save little
+size. Flat shading is a runtime toggle in the showcase (`material.flatShading`), not a separate file.
+
+Visual result (comparison sheets in the PR / `pr-shots/v0212-grandma-lod-compare-*.jpg` on the preview):
+6k is very close to the original (fewer face wrinkles, slightly softer texture); 3k flattens the face and loses
+the button and wrinkle detail; 1.5k has a visibly faceted head, smeared eyes/mouth and blocky hands.
 
 ## Known issues
 

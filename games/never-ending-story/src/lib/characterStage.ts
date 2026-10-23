@@ -14,6 +14,9 @@ export type CharacterSnapshot = {
   playing: boolean;
   loop: boolean;
   seat: boolean;
+  /** Id of the loaded mesh variant (LOD). */
+  variant: string;
+  flat: boolean;
 };
 
 export type CharacterStage = {
@@ -22,6 +25,10 @@ export type CharacterStage = {
   setLoop: (loop: boolean) => void;
   /** Show the seat and sit down (SitDown, then the idle sitting clip), or stand up again. */
   setSeat: (on: boolean) => void;
+  /** Swap the mesh variant (e.g. a simplified LOD); the clip, its time and the seat are kept. */
+  setVariant: (id: string) => void;
+  /** Flat shading (faceted low-poly look); the texture is kept. */
+  setFlat: (flat: boolean) => void;
   dispose: () => void;
 };
 
@@ -44,6 +51,16 @@ export type CharacterDebug = {
   yaw: number;
   distance: number;
   frames: number;
+  variant: string;
+  flat: boolean;
+  /** Triangles / joints of the loaded skinned mesh(es). */
+  tris: number;
+  joints: number;
+  /** Variants loaded so far (incl. reloads). */
+  loads: number;
+  /** Test helpers for repeatable screenshots: freeze a clip at a time, and place the camera (target height y). */
+  pose?: (clip: string, time: number) => void;
+  view?: (opts: { yaw: number; pitch: number; distance: number; y: number }) => void;
 };
 
 declare global {
@@ -139,7 +156,15 @@ export function mountCharacterStage(
   seat.visible = false;
   scene.add(seat);
 
-  const snap: CharacterSnapshot = { status: 'loading', clip: info.idle, playing: true, loop: true, seat: false };
+  const snap: CharacterSnapshot = {
+    status: 'loading',
+    clip: info.idle,
+    playing: true,
+    loop: true,
+    seat: false,
+    variant: asset.variants[0]!.id,
+    flat: false,
+  };
   const emit = () => onChange({ ...snap });
 
   let mixer: THREE.AnimationMixer | null = null;
@@ -164,6 +189,11 @@ export function mountCharacterStage(
     yaw: 0,
     distance: 0,
     frames: 0,
+    variant: snap.variant,
+    flat: false,
+    tris: 0,
+    joints: 0,
+    loads: 0,
   };
   window.__characterStage = debug;
 
@@ -195,47 +225,129 @@ export function mountCharacterStage(
   }
 
   const loader = new GLTFLoader();
-  loader.load(
-    asset.variants[0]!.url,
-    (gltf) => {
-      if (disposed) return;
-      const model = gltf.scene;
-      model.traverse((obj) => {
-        const mesh = obj as THREE.Mesh;
-        if (obj.name === 'Hips') hipsBone = obj;
-        if (!mesh.isMesh) return;
-        mesh.frustumCulled = false; // Skinned bounds do not follow the walk / sit motion.
-        geos.push(mesh.geometry);
-        const list = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
-        for (const mat of list) {
-          mats.push(mat);
-          const map = (mat as THREE.MeshStandardMaterial).map;
-          if (map) textures.push(map);
-        }
-      });
-      scene.add(model);
-      mixer = new THREE.AnimationMixer(model);
-      for (const clip of gltf.animations) actions.set(clip.name, mixer.clipAction(clip));
-      debug.clips = gltf.animations.map((c) => c.name);
-      mixer.addEventListener('finished', (event) => {
-        const done = (event as unknown as { action: THREE.AnimationAction }).action;
-        const next = clipInfo(done.getClip().name)?.next;
-        if (done === current && next) play(next);
-        else if (done === current) {
-          snap.playing = false;
+  let model: THREE.Object3D | null = null;
+  // Resources owned by the loaded model (freed on variant swap); `geos` / `mats` / `textures` hold the stage's own.
+  let modelRes: { geos: THREE.BufferGeometry[]; mats: THREE.Material[]; textures: THREE.Texture[] } | null = null;
+  let loadSeq = 0;
+
+  function applyFlat(): void {
+    for (const mat of modelRes?.mats ?? []) {
+      const std = mat as THREE.MeshStandardMaterial;
+      if (std.flatShading === snap.flat) continue;
+      std.flatShading = snap.flat;
+      std.needsUpdate = true;
+    }
+    debug.flat = snap.flat;
+  }
+
+  function freeModel(): void {
+    if (!model) return;
+    mixer?.stopAllAction();
+    if (mixer) mixer.uncacheRoot(model);
+    scene.remove(model);
+    for (const geo of modelRes?.geos ?? []) geo.dispose();
+    for (const mat of modelRes?.mats ?? []) mat.dispose();
+    for (const tex of modelRes?.textures ?? []) tex.dispose();
+    model = null;
+    modelRes = null;
+    mixer = null;
+    actions.clear();
+    current = null;
+    hipsBone = null;
+  }
+
+  function loadVariant(id: string): void {
+    const variant = asset.variants.find((v) => v.id === id) ?? asset.variants[0]!;
+    const seq = ++loadSeq;
+    // Resume where the old mesh was: same clip and clip time.
+    const resume = { clip: snap.clip, time: current?.time ?? 0, keep: !!model };
+    snap.variant = variant.id;
+    debug.variant = variant.id;
+    snap.status = 'loading';
+    emit();
+    loader.load(
+      variant.url,
+      (gltf) => {
+        if (disposed || seq !== loadSeq) return;
+        freeModel();
+        const res = { geos: [] as THREE.BufferGeometry[], mats: [] as THREE.Material[], textures: [] as THREE.Texture[] };
+        let tris = 0;
+        let joints = 0;
+        gltf.scene.traverse((obj) => {
+          const mesh = obj as THREE.Mesh;
+          if (obj.name === 'Hips') hipsBone = obj;
+          if (!mesh.isMesh) return;
+          mesh.frustumCulled = false; // Skinned bounds do not follow the walk / sit motion.
+          res.geos.push(mesh.geometry);
+          tris += (mesh.geometry.index?.count ?? mesh.geometry.attributes.position!.count) / 3;
+          const skinned = mesh as unknown as THREE.SkinnedMesh;
+          if (skinned.isSkinnedMesh) joints = Math.max(joints, skinned.skeleton.bones.length);
+          const list = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+          for (const mat of list) {
+            res.mats.push(mat);
+            const map = (mat as THREE.MeshStandardMaterial).map;
+            if (map) res.textures.push(map);
+          }
+        });
+        model = gltf.scene;
+        modelRes = res;
+        scene.add(model);
+        applyFlat();
+        mixer = new THREE.AnimationMixer(model);
+        for (const clip of gltf.animations) actions.set(clip.name, mixer.clipAction(clip));
+        debug.clips = gltf.animations.map((c) => c.name);
+        debug.tris = tris;
+        debug.joints = joints;
+        debug.loads += 1;
+        mixer.addEventListener('finished', (event) => {
+          const done = (event as unknown as { action: THREE.AnimationAction }).action;
+          const next = clipInfo(done.getClip().name)?.next;
+          if (done === current && next) play(next);
+          else if (done === current) {
+            snap.playing = false;
+            emit();
+          }
+        });
+        snap.status = 'ready';
+        const wasPlaying = snap.playing;
+        play(resume.clip, 0);
+        if (resume.keep && current) {
+          current.time = Math.min(resume.time, current.getClip().duration);
+          mixer.update(0);
+          snap.playing = wasPlaying;
           emit();
         }
-      });
-      snap.status = 'ready';
-      play(snap.clip, 0);
-    },
-    undefined,
-    (err) => {
-      console.warn('character model failed to load', err);
-      snap.status = 'error';
-      emit();
-    },
-  );
+      },
+      undefined,
+      (err) => {
+        if (seq !== loadSeq) return;
+        console.warn('character model failed to load', err);
+        snap.status = 'error';
+        emit();
+      },
+    );
+  }
+  loadVariant(snap.variant);
+
+  debug.pose = (clip, time) => {
+    play(clip, 0);
+    if (!current || !mixer) return;
+    // Hard cut: a zero-length cross-fade only settles on the next mixer step, which a paused pose never takes.
+    for (const action of actions.values()) if (action !== current) action.stop();
+    current.stopFading();
+    current.setEffectiveWeight(1);
+    current.time = time;
+    mixer.update(0);
+    snap.playing = false;
+    emit();
+  };
+  debug.view = (opts) => {
+    yaw = opts.yaw;
+    pitch = opts.pitch;
+    dist = opts.distance;
+    targetY = opts.y;
+    yawGoal = null;
+  };
 
   // Orbit camera around the hips (drag = orbit, pinch / wheel = zoom).
   const orbit = asset.orbit;
@@ -246,6 +358,8 @@ export function mountCharacterStage(
   const target = new THREE.Vector3(0, orbit.target, 0);
   const pointers = new Map<number, { x: number; y: number }>();
   let pinch = 0;
+  /** Fixed camera target height (test views); null = follow the standing / seated default. */
+  let targetY: number | null = null;
 
   function down(event: PointerEvent): void {
     pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
@@ -306,7 +420,8 @@ export function mountCharacterStage(
       const k = 1 - Math.exp(-dt * 4);
       target.x += (hips.x - target.x) * k;
       target.z += (hips.z - target.z) * k;
-      target.y += ((snap.seat ? orbit.target - 0.2 : orbit.target) - target.y) * k;
+      if (targetY !== null) target.set(hips.x, targetY, hips.z);
+      else target.y += ((snap.seat ? orbit.target - 0.2 : orbit.target) - target.y) * k;
     }
     if (yawGoal !== null) {
       const delta = Math.atan2(Math.sin(yawGoal - yaw), Math.cos(yawGoal - yaw));
@@ -370,8 +485,17 @@ export function mountCharacterStage(
         play(info.idle);
       }
     },
+    setVariant(id) {
+      if (id !== snap.variant) loadVariant(id);
+    },
+    setFlat(flat) {
+      snap.flat = flat;
+      applyFlat();
+      emit();
+    },
     dispose() {
       disposed = true;
+      freeModel();
       cancelAnimationFrame(raf);
       visibility.disconnect();
       canvas.removeEventListener('pointerdown', down);

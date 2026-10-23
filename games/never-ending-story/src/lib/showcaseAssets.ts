@@ -12,6 +12,9 @@ export type ShowcaseVariant = {
   url: string;
   /** Low-poly look: flat shading on load. */
   flat?: boolean;
+  /** Triangle count and file size, shown when comparing mesh variants (LODs). */
+  tris?: number;
+  bytes?: number;
 };
 
 export type MatchedCamera = {
@@ -189,6 +192,36 @@ export const SHOWCASE_ASSETS: ShowcaseAsset[] = [
           return t('asset.grandma.variant.rigged');
         },
         url: `${BASE}models/grandma-mali.glb`,
+        tris: 19416,
+        bytes: 1255116,
+      },
+      // Comparison LODs (meshoptimizer QEM, same rig and clips); see assets-src/grandma/build/build.mjs --tris.
+      {
+        id: 'lod6k',
+        get label() {
+          return t('asset.grandma.variant.lod6k');
+        },
+        url: `${BASE}models/grandma-mali-6k.glb`,
+        tris: 5999,
+        bytes: 733344,
+      },
+      {
+        id: 'lod3k',
+        get label() {
+          return t('asset.grandma.variant.lod3k');
+        },
+        url: `${BASE}models/grandma-mali-3k.glb`,
+        tris: 3000,
+        bytes: 635424,
+      },
+      {
+        id: 'lod1k5',
+        get label() {
+          return t('asset.grandma.variant.lod1k5');
+        },
+        url: `${BASE}models/grandma-mali-1k5.glb`,
+        tris: 1500,
+        bytes: 593032,
       },
     ],
     character: {

@@ -7,8 +7,18 @@
   let { asset }: { asset: ShowcaseAsset } = $props();
   let canvas = $state<HTMLCanvasElement>();
   let stage: CharacterStage | null = null;
-  let snap = $state<CharacterSnapshot>({ status: 'loading', clip: '', playing: true, loop: true, seat: false });
+  let snap = $state<CharacterSnapshot>({
+    status: 'loading',
+    clip: '',
+    playing: true,
+    loop: true,
+    seat: false,
+    variant: '',
+    flat: false,
+  });
   const clips = $derived(asset.character?.clips ?? []);
+  const meshInfo = (tris?: number, bytes?: number) =>
+    tris && bytes ? t('game.character.meshInfo', { tris: tris.toLocaleString('en-US'), mb: (bytes / 1e6).toFixed(2) }) : '';
 
   onMount(() => {
     if (!canvas || !asset.character) return;
@@ -31,6 +41,24 @@
   </div>
   <p class="hint">{t('game.character.orbitHint')}</p>
 
+  {#if asset.variants.length > 1}
+    <h3>{t('game.character.mesh')}</h3>
+    <div class="variants" role="radiogroup" aria-label={t('game.character.mesh')}>
+      {#each asset.variants as v (v.id)}
+        <button
+          type="button"
+          role="radio"
+          aria-checked={snap.variant === v.id}
+          class:on={snap.variant === v.id}
+          data-character-variant={v.id}
+          onclick={() => stage?.setVariant(v.id)}
+          ><span>{v.label}</span><small>{meshInfo(v.tris, v.bytes)}</small></button
+        >
+      {/each}
+    </div>
+  {/if}
+
+  <div class="toggles">
   <label class="sofa">
     <input
       type="checkbox"
@@ -41,6 +69,16 @@
     />
     <span>{t('game.character.sofa')}</span>
   </label>
+  <label class="sofa">
+    <input
+      type="checkbox"
+      checked={snap.flat}
+      data-character-flat
+      onchange={(event) => stage?.setFlat(event.currentTarget.checked)}
+    />
+    <span>{t('game.character.flat')}</span>
+  </label>
+  </div>
 
   <h3>{t('game.character.animation')}</h3>
   <div class="clips" role="radiogroup" aria-label={t('game.character.animation')}>
@@ -106,6 +144,22 @@
     font-size: 15px;
   }
   .hint { margin: 8px 0 12px; font-size: 14px; color: #c5d7e6; }
+  .variants {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .variants button {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 6px 8px;
+    min-height: 52px;
+  }
+  .variants small { font-size: 12px; font-weight: 600; opacity: 0.85; }
+  .toggles { display: flex; flex-wrap: wrap; gap: 8px; }
   h3 { margin: 14px 0 8px; font-size: 16px; }
   .clips {
     display: grid;

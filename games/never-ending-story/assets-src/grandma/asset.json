@@ -35,6 +35,15 @@
     "joints": 24,
     "texture": { "size": 1024, "format": "image/jpeg", "quality": 85 },
     "compression": "KHR_mesh_quantization (no Draco/meshopt decoder needed)",
+    "lods": {
+      "notes": "Showcase comparison only; the game uses runtime[0]. meshoptimizer QEM (position weld, Permissive) + xatlas re-unwrap and texture re-bake (build/bake.py). Same 24 joints and 6 clips. See README 'Low-poly LODs'.",
+      "command": "cd build && PYTHON=<venv python> npm run lods",
+      "files": {
+        "games/never-ending-story/public/models/grandma-mali-6k.glb": { "triangles": 5999, "vertices": 5084, "bytes": 733344 },
+        "games/never-ending-story/public/models/grandma-mali-3k.glb": { "triangles": 3000, "vertices": 2656, "bytes": 635424 },
+        "games/never-ending-story/public/models/grandma-mali-1k5.glb": { "triangles": 1500, "vertices": 1492, "bytes": 593032 }
+      }
+    },
     "nodes": {
       "scene": "GrandmaMali_Scene",
       "armature": "GrandmaMali_Armature",

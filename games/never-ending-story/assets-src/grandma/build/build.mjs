@@ -1,16 +1,30 @@
 // Builds public/models/grandma-mali.glb from the raw Meshy downloads in ../meshy/raw/ (git-ignored):
 // rigged mesh + named clips (Idle, Wave, SitDown, SitIdle, SitTalk, Walk), 1024 JPEG texture, quantized.
-// Usage (see ../README.md): python texture.py && npm i && node build.mjs [out.glb]
+// Usage (see ../README.md): python texture.py && npm i && node build.mjs [--tris N [--bake]] [out.glb]
+//   --tris N  low-poly LOD: QEM-simplify the skinned mesh to ~N triangles with meshoptimizer, keeping the
+//             skeleton, skin weights and every clip. Without --bake the original UVs / texture are kept
+//             (UV-aware; collapses across Meshy's UV seams leave small texture specks, more below ~6k).
+//   --bake    (used for all LODs) weld by position, simplify ignoring UVs, then bake.py re-unwraps (xatlas) and
+//             re-bakes the 2048 texture onto the low-poly mesh (python with requirements.txt; PYTHON=... to pick one).
+//   npm run lods  builds the comparison LODs grandma-mali-{6k,3k,1k5}.glb next to the original.
 import {NodeIO} from '@gltf-transform/core';
 import {ALL_EXTENSIONS} from '@gltf-transform/extensions';
-import {prune,dedup,resample,quantize} from '@gltf-transform/functions';
+import {prune,dedup,resample,quantize,weld,compactPrimitive} from '@gltf-transform/functions';
+import {MeshoptSimplifier} from 'meshoptimizer';
 import fs from 'fs';
+import os from 'os';
+import path from 'path';
+import {execFileSync} from 'child_process';
 import {fileURLToPath} from 'url';
 const HERE=fileURLToPath(new URL('.', import.meta.url));
 const R=HERE+'../meshy/raw/', R2=R;
-const OUT=process.argv[2]||HERE+'../../../public/models/grandma-mali.glb';
+const args=process.argv.slice(2); const ti=args.indexOf('--tris');
+const TRIS=ti>=0?Number(args.splice(ti,2)[1]):0;
+const bi=args.indexOf('--bake'); const BAKE=bi>=0; if(BAKE) args.splice(bi,1);
+const OUT=args[0]||HERE+'../../../public/models/grandma-mali.glb';
 const io=new NodeIO().registerExtensions(ALL_EXTENSIONS);
 const doc=await io.read(R+'Character_output.glb'); const root=doc.getRoot(); const buf=root.listBuffers()[0];
+const SRC_TEX=root.listTextures()[0].getImage(); // Meshy's 2048 base colour (bake source)
 for(const a of root.listAnimations()) a.dispose();
 const byName=new Map(root.listNodes().map(n=>[n.getName(),n]));
 const CM=100; // Armature scale 0.01: Hips translation is in cm, world metres = cm / 100.
@@ -54,6 +68,59 @@ async function addClips(file, pick){
 }
 const SIT_DY=Number(process.env.SIT_DY_IDLE??-0.03), TALK_DY=Number(process.env.SIT_DY_TALK??-0.04);
 const A1=R+'grandma-anims-idle3-chairsit-wave.glb', A2=R2+'grandma-anims-steptosit-sittalk.glb';
+/** QEM simplification of the (single) skinned primitive to ~target triangles. Surviving vertices keep their
+ *  original JOINTS_0/WEIGHTS_0, so the rig and all clips keep working. */
+async function simplifyTo(target){
+  await MeshoptSimplifier.ready;
+  await doc.transform(weld());
+  for(const mesh of root.listMeshes()) for(const prim of mesh.listPrimitives()){
+    const pos=prim.getAttribute('POSITION'), uv=prim.getAttribute('TEXCOORD_0'), nrm=prim.getAttribute('NORMAL');
+    const n=pos.getCount(), idx=prim.getIndices();
+    let indices=new Uint32Array(idx.getArray());
+    const P=new Float32Array(pos.getArray());
+    const hi=BAKE?{pos:P.slice(), idx:indices.slice(), uv:new Float32Array(uv.getArray())}:null;
+    if(BAKE){ // one vertex per position: UV seams no longer block collapses (the texture is re-baked below)
+      const first=new Map(), remap=new Uint32Array(n);
+      for(let i=0;i<n;i++){const k=`${P[i*3]},${P[i*3+1]},${P[i*3+2]}`; if(!first.has(k)) first.set(k,i); remap[i]=first.get(k);}
+      indices=indices.map(i=>remap[i]);
+    }
+    // Attribute stream: uv (2) + normal (3). The UV weight keeps texture details (face) from swimming, a light
+    // normal weight keeps creases a bit longer. Permissive is needed either way: the Meshy mesh has non-manifold
+    // spots and 17k of 21k vertices on UV seams, which otherwise stop the simplifier at ~6.5k (UVs) or ~12k (welded).
+    const A=new Float32Array(n*5), u=[0,0], v3=[0,0,0];
+    for(let i=0;i<n;i++){ uv.getElement(i,u); nrm.getElement(i,v3); A.set([u[0],u[1],v3[0],v3[1],v3[2]],i*5); }
+    const W=BAKE?[0,0,0.5,0.5,0.5]:[1,1,0.25,0.25,0.25];
+    const FLAGS=['Permissive','RegularizeLight'];
+    const before=indices.length/3;
+    const [out,err]=MeshoptSimplifier.simplifyWithAttributes(indices,P,3,A,5,W,null,target*3,1,FLAGS);
+    idx.setArray(n<65536?new Uint16Array(out):out);
+    compactPrimitive(prim);
+    console.log(`simplify ${mesh.getName()}: ${before} -> ${out.length/3} tris, verts ${n} -> ${prim.getAttribute('POSITION').getCount()}, rel. error ${err.toFixed(4)}`);
+    if(BAKE) bakeTexture(prim, hi);
+  }
+}
+/** Re-unwrap the simplified primitive and re-bake the texture with bake.py (see there). */
+function bakeTexture(prim, hi){
+  const dir=fs.mkdtempSync(path.join(os.tmpdir(),'grandma-bake-'));
+  const lo=prim.getAttribute('POSITION');
+  fs.writeFileSync(path.join(dir,'hi_pos.bin'),hi.pos); fs.writeFileSync(path.join(dir,'hi_idx.bin'),hi.idx);
+  fs.writeFileSync(path.join(dir,'hi_uv.bin'),hi.uv); fs.writeFileSync(path.join(dir,'src_tex'),SRC_TEX);
+  fs.writeFileSync(path.join(dir,'lo_pos.bin'),new Float32Array(lo.getArray()));
+  fs.writeFileSync(path.join(dir,'lo_idx.bin'),new Uint32Array(prim.getIndices().getArray()));
+  execFileSync(process.env.PYTHON||'python3',[HERE+'bake.py',dir,'1024'],{stdio:'inherit'});
+  const rd=(f,T)=>{const b=fs.readFileSync(path.join(dir,f)); return new T(b.buffer,b.byteOffset,b.byteLength/T.BYTES_PER_ELEMENT);};
+  const vmap=rd('out_vmap.bin',Uint32Array), nidx=rd('out_idx.bin',Uint32Array), nuv=rd('out_uv.bin',Float32Array);
+  for(const sem of prim.listSemantics()){
+    const acc=prim.getAttribute(sem), es=acc.getElementSize(), src=acc.getArray();
+    const dst=new src.constructor(vmap.length*es);
+    for(let i=0;i<vmap.length;i++) for(let k=0;k<es;k++) dst[i*es+k]=src[vmap[i]*es+k];
+    acc.setArray(sem==='TEXCOORD_0'?Float32Array.from(nuv):dst);
+  }
+  prim.getIndices().setArray(vmap.length<65536?Uint16Array.from(nidx):Uint32Array.from(nidx));
+  BAKED_TEX=fs.readFileSync(path.join(dir,'out_tex.jpg'));
+  fs.rmSync(dir,{recursive:true,force:true});
+}
+let BAKED_TEX=null;
 // Clip order in the file: Idle, Wave, SitDown, SitIdle, SitTalk, Walk.
 await addClips(A1,{Idle_3:{name:'Idle'}});
 await addClips(A1,{Wave_One_Hand:{name:'Wave'}});
@@ -67,6 +134,8 @@ for(const m of root.listMeshes()) m.setName('GrandmaMali_Body');
 for(const m of root.listMaterials()) m.setName('GrandmaMali');
 root.listScenes()[0].setName('GrandmaMali_Scene');
 const tex=root.listTextures()[0]; tex.setImage(fs.readFileSync(R+'texture-1024.jpg')).setMimeType('image/jpeg').setName('GrandmaMali_BaseColor');
+if(TRIS) await simplifyTo(TRIS);
+if(BAKED_TEX) tex.setImage(BAKED_TEX);
 await doc.transform(resample(),dedup(),prune(),quantize());
 await io.write(OUT,doc);
 console.log(OUT, fs.statSync(OUT).size, root.listAnimations().map(a=>a.getName()));
