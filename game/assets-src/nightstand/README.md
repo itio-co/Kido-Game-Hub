@@ -22,7 +22,7 @@ nightstand/
 │   ├── build_all.sh              build_master.py → finalize.py → add_cam.py
 │   ├── render_all.sh             render.py → compare.py → make_previews.py
 │   └── solve_cam.py              camera + dimension solve from 12 hand-picked landmarks
-├── export/           nightstand-master.glb (960 tris, 2048² texture), nightstand.glb (224 tris), texture
+├── export/           nightstand-master.glb (948 tris, 2048² texture), nightstand.glb (212 tris), texture
 ├── compare/          side-by-side / overlay vs ref and 4-angle turntables for master and low-poly
 └── external/         drop results from outside tools here (see external/README.md)
 ```
@@ -43,8 +43,8 @@ BLENDER=/path/to/blender PYTHON=python3 ./render_all.sh    # → ../compare (nee
 
 | | triangles | material |
 | --- | --- | --- |
-| `export/nightstand.glb` | 224 | flat-shaded vertex colours (top #e0995a, front #c47d42, side #a8652f), no texture |
-| `export/nightstand-master.glb` | 960 | bevelled, smooth-by-angle, 2048² baked wood base colour |
+| `export/nightstand.glb` | 212 | flat-shaded vertex colours (top #e0995a, front #c47d42, side #a8652f), no texture |
+| `export/nightstand-master.glb` | 948 | bevelled, smooth-by-angle, 2048² baked wood base colour |
 
 Size 61 × 40.5 × 55 cm (W × D × H), origin at the floor centre, front = −Y in Blender / +Z in glTF.
 Width comes from the camera solve against the 55 cm height.
@@ -65,5 +65,7 @@ Image 252 × 284 px, focal 1134.8 px, principal point at the centre.
 
 - The painted lighter band on the top is not modelled.
 - In the ref the side apron looks deeper and the side stretcher sits a little differently; heights are estimates.
-- Silhouette IoU: ~0.75 vs the rembg mask (it misses the stretchers and back legs). The IoU vs the refined mask
-  is higher (~0.92) but biased, because that mask used the master render as a prior.
+- Silhouette IoU (master / low-poly): 0.743 / 0.740 vs the rembg mask (it misses the stretchers and back legs);
+  0.925 / 0.923 vs the refined mask, which is biased because that mask used the earlier master render as a prior.
+- v0.2.4: side stretchers enlarged from 3 × 5 cm to 4.5 × 7 cm (z 11–18 cm); the drawer-bottom board that showed
+  under the back apron in the orbit view was removed. Before: IoU 0.748 / 0.745 (rembg), 0.922 / 0.921 (refined).
