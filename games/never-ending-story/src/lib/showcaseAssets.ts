@@ -218,7 +218,27 @@ export const SHOWCASE_ASSETS: ShowcaseAsset[] = [
       sceneMockup: `${BASE}img/living-grandma.jpg`,
     },
     variants: [
-      // Smooth big-face T-pose Ultra (Meshy 7.1 4K geometry + PBR maps: baseColor, normal, metallicRoughness).
+      // Original 19.4k cutout head (living-grandma.jpg, enable_pbr: false) transplanted onto the 6k T-pose body.
+      {
+        id: 'head19k',
+        get label() {
+          return t('asset.grandma.variant.head19k');
+        },
+        url: `${BASE}models/grandma-mali-head19k-tpose.glb`,
+        tris: 10865,
+        bytes: 3143288,
+      },
+      // Highest-detail Ultra model generated with enable_pbr: false and image_enhancement: false (pure diffuse).
+      {
+        id: 'ultraNoPbr',
+        get label() {
+          return t('asset.grandma.variant.ultraNoPbr');
+        },
+        url: `${BASE}models/grandma-mali-ultra-nopbr.glb`,
+        tris: 235018,
+        bytes: 8031204,
+      },
+      // Smooth big-face T-pose Ultra (Meshy 7.1 4K geometry + refined face).
       {
         id: 'ultra',
         get label() {
@@ -347,7 +367,7 @@ export const SHOWCASE_ASSETS: ShowcaseAsset[] = [
           },
         },
       ],
-      defaultVariant: 'ultra',
+      defaultVariant: 'head19k',
       idle: 'Idle',
       sitDown: 'SitDown',
       // SitDown turns 90 degrees, so she sits facing +X with the hips at (-0.35, 0.48, 0.903).

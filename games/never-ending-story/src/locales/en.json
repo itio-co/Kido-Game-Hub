@@ -645,7 +645,7 @@
   "game.nightstand.orbit": "Rotate the nightstand",
   "game.nightstand.view": "3D nightstand",
   "asset.grandma.title": "Grandma Mali",
-  "asset.grandma.variant.rigged": "Old cutout (19k)",
+  "asset.grandma.variant.rigged": "Original 19.4k Cutout (Full)",
   "asset.grandma.variant.lod6k": "6k (meshopt)",
   "asset.grandma.variant.remesh6k": "6k (Meshy Remesh, game)",
   "asset.grandma.variant.lod3k": "Low-poly 3k",
@@ -696,7 +696,7 @@
   "game.error.notOnShelf": "{slug} is not on the bookshelf",
   "game.error.noBuilder": "No builder for kind {kind}",
   "game.error.notBuildable": "Kind {kind} is not built as a scene object",
-  "asset.grandma.variant.ultra": "Ultra (Max Meshy)",
+  "asset.grandma.variant.ultra": "Ultra (Refined Face)",
   "asset.nightstand.variant.meshyMeasured": "Meshy-measured (212 tris, 15 parts)",
   "asset.child.title": "Grandchild (Player)",
   "asset.child.notes": "8-year-old grandchild detective · navy overalls over cream striped tee · 2-inch profile & T-pose ready for Meshy.",
@@ -717,5 +717,7 @@
   "game.showcase.conceptOnlyNote": "2-inch profile photo and full-body T-pose reference sheet are ready for 3D generation in Meshy.",
   "game.showcase.familyGallery": "Family Character Roster (Profile & T-Pose Mock-ups)",
   "asset.grandma.variant.remesh1k5": "1.5k (Meshy Remesh)",
-  "asset.grandma.variant.parametric": "Parametric Body + Head Focus"
+  "asset.grandma.variant.parametric": "Parametric Body + Head Focus",
+  "asset.grandma.variant.head19k": "19.4k Original Head + T-Pose Body",
+  "asset.grandma.variant.ultraNoPbr": "Ultra (No PBR, Pure Diffuse)"
 }

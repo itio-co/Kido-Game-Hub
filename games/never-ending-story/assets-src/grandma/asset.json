@@ -30,10 +30,12 @@
     "tool": "Meshy API (image-to-3d, rigging, animations, remesh)",
     "license": "Generated on a Meshy Pro plan: the output may be used commercially (Meshy terms for paid plans).",
     "tasks": "meshy/tasks.json",
-    "creditsUsed": 120
+    "creditsUsed": 140
   },
   "exports": {
     "runtime": [
+      "games/never-ending-story/public/models/grandma-mali-head19k-tpose.glb",
+      "games/never-ending-story/public/models/grandma-mali-ultra-nopbr.glb",
       "games/never-ending-story/public/models/grandma-mali-ultra.glb",
       "games/never-ending-story/public/models/grandma-mali-parametric.glb",
       "games/never-ending-story/public/models/grandma-mali-remesh-6k.glb",
@@ -104,6 +106,18 @@
           "verts": 11466,
           "bytes": 1328712,
           "method": "Parametric standard human base body (BodyParams 1.55m) + modular outfit meshes (Outfit_Blouse, Outfit_Cardigan, Outfit_Skirt, Outfit_Shoes) + subdivided high-detail Head_Focused (8,408 tris) with 2K front-focused portrait atlas via build/build_parametric_modular.py"
+        },
+        "games/never-ending-story/public/models/grandma-mali-head19k-tpose.glb": {
+          "triangles": 10865,
+          "vertices": 8373,
+          "bytes": 3143288,
+          "note": "Default showcase: Original 19.4k cutout head (living-grandma.jpg, enable_pbr: false, unedited face geometry & 2K texture) transplanted onto 6k T-pose body with 24-bone rig & 6 animations via build/transplant_19k_head.py"
+        },
+        "games/never-ending-story/public/models/grandma-mali-ultra-nopbr.glb": {
+          "triangles": 235018,
+          "vertices": 128775,
+          "bytes": 8031204,
+          "note": "Highest-detail Ultra T-pose generated with Meshy 7.1 (enable_pbr: false, image_enhancement: false, should_remesh: false, 4K diffuse) + 24-bone skin weight transfer via build/build_ultra_nopbr.py"
         }
       }
     },

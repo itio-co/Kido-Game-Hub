@@ -20,6 +20,8 @@ const ti=args.indexOf('--tris');
 const TRIS=ti>=0?Number(args.splice(ti,2)[1]):0;
 const bi=args.indexOf('--bake'); const BAKE=bi>=0; if(BAKE) args.splice(bi,1);
 const pmi=args.indexOf('--parametric'); const PARAMETRIC=pmi>=0; if(PARAMETRIC) args.splice(pmi,1);
+const h19i=args.indexOf('--head19k'); const HEAD19K=h19i>=0; if(HEAD19K) args.splice(h19i,1);
+const npbri=args.indexOf('--nopbr-raw'); const NOPBR_RAW=npbri>=0; if(NOPBR_RAW) args.splice(npbri,1);
 const ri=args.indexOf('--remesh');
 let REMESH_FILE='';
 if(ri>=0){
@@ -211,7 +213,69 @@ function applyParametric(){
   }
 }
 
+function applyHead19k(){
+  const mesh=root.listMeshes()[0];
+  const prim0=mesh.listPrimitives()[0];
+  const dir=fs.mkdtempSync(path.join(os.tmpdir(),'grandma-head19k-'));
+  fs.writeFileSync(path.join(dir,'hi_pos.bin'),new Float32Array(prim0.getAttribute('POSITION').getArray()));
+  fs.writeFileSync(path.join(dir,'hi_idx.bin'),new Uint32Array(prim0.getIndices().getArray()));
+  fs.writeFileSync(path.join(dir,'hi_j.bin'),new Uint8Array(prim0.getAttribute('JOINTS_0').getArray()));
+  fs.writeFileSync(path.join(dir,'hi_w.bin'),new Float32Array(prim0.getAttribute('WEIGHTS_0').getArray()));
+  execFileSync(process.env.PYTHON||'/workspace/meshy/venv/bin/python',[HERE+'transplant_19k_head.py',dir],{stdio:'inherit'});
+  const rd=(f,T)=>{const b=fs.readFileSync(path.join(dir,f)); return new T(b.buffer,b.byteOffset,b.byteLength/T.BYTES_PER_ELEMENT);};
+  // Update prim0 as Head19k
+  prim0.getAttribute('POSITION').setArray(Float32Array.from(rd('head_pos.bin',Float32Array)));
+  prim0.getAttribute('NORMAL').setArray(Float32Array.from(rd('head_nrm.bin',Float32Array)));
+  prim0.getAttribute('TEXCOORD_0').setArray(Float32Array.from(rd('head_uv.bin',Float32Array)));
+  prim0.getAttribute('JOINTS_0').setArray(Uint8Array.from(rd('head_j.bin',Uint8Array)));
+  prim0.getAttribute('WEIGHTS_0').setArray(Float32Array.from(rd('head_w.bin',Float32Array)));
+  prim0.getIndices().setArray(Uint16Array.from(rd('head_idx.bin',Uint32Array)));
+  BAKED_TEX=fs.readFileSync(path.join(dir,'head_tex.jpg'));
+  // Add prim1 as BodyTPose
+  const bodyTex=doc.createTexture('GrandmaMali_BodyTPose_BaseColor').setImage(fs.readFileSync(path.join(dir,'body_tex.jpg'))).setMimeType('image/jpeg');
+  const bodyMat=doc.createMaterial('GrandmaMali_BodyTPose').setBaseColorTexture(bodyTex).setMetallicFactor(0).setRoughnessFactor(0.88).setDoubleSided(true);
+  const bpos=Float32Array.from(rd('body_pos.bin',Float32Array));
+  const bnrm=Float32Array.from(rd('body_nrm.bin',Float32Array));
+  const buv=Float32Array.from(rd('body_uv.bin',Float32Array));
+  const bj=Uint8Array.from(rd('body_j.bin',Uint8Array));
+  const bw=Float32Array.from(rd('body_w.bin',Float32Array));
+  const bidx=Uint16Array.from(rd('body_idx.bin',Uint32Array));
+  const prim1=doc.createPrimitive()
+    .setMaterial(bodyMat)
+    .setAttribute('POSITION',doc.createAccessor().setType('VEC3').setArray(bpos).setBuffer(buf))
+    .setAttribute('NORMAL',doc.createAccessor().setType('VEC3').setArray(bnrm).setBuffer(buf))
+    .setAttribute('TEXCOORD_0',doc.createAccessor().setType('VEC2').setArray(buv).setBuffer(buf))
+    .setAttribute('JOINTS_0',doc.createAccessor().setType('VEC4').setArray(bj).setBuffer(buf))
+    .setAttribute('WEIGHTS_0',doc.createAccessor().setType('VEC4').setArray(bw).setBuffer(buf))
+    .setIndices(doc.createAccessor().setType('SCALAR').setArray(bidx).setBuffer(buf));
+  mesh.addPrimitive(prim1);
+  mat0.setDoubleSided(true);
+  fs.rmSync(dir,{recursive:true,force:true});
+}
+
+function applyNoPbrRaw(){
+  for(const mesh of root.listMeshes()) for(const prim of mesh.listPrimitives()){
+    const dir=fs.mkdtempSync(path.join(os.tmpdir(),'grandma-nopbr-'));
+    fs.writeFileSync(path.join(dir,'hi_pos.bin'),new Float32Array(prim.getAttribute('POSITION').getArray()));
+    fs.writeFileSync(path.join(dir,'hi_idx.bin'),new Uint32Array(prim.getIndices().getArray()));
+    fs.writeFileSync(path.join(dir,'hi_j.bin'),new Uint8Array(prim.getAttribute('JOINTS_0').getArray()));
+    fs.writeFileSync(path.join(dir,'hi_w.bin'),new Float32Array(prim.getAttribute('WEIGHTS_0').getArray()));
+    execFileSync(process.env.PYTHON||'/workspace/meshy/venv/bin/python',[HERE+'build_ultra_nopbr.py',dir,TEX_SZ],{stdio:'inherit'});
+    const rd=(f,T)=>{const b=fs.readFileSync(path.join(dir,f)); return new T(b.buffer,b.byteOffset,b.byteLength/T.BYTES_PER_ELEMENT);};
+    prim.getAttribute('POSITION').setArray(Float32Array.from(rd('out_pos.bin',Float32Array)));
+    prim.getAttribute('NORMAL').setArray(Float32Array.from(rd('out_nrm.bin',Float32Array)));
+    prim.getAttribute('TEXCOORD_0').setArray(Float32Array.from(rd('out_uv.bin',Float32Array)));
+    prim.getAttribute('JOINTS_0').setArray(Uint8Array.from(rd('out_j.bin',Uint8Array)));
+    prim.getAttribute('WEIGHTS_0').setArray(Float32Array.from(rd('out_w.bin',Float32Array)));
+    prim.getIndices().setArray(Uint32Array.from(rd('out_idx.bin',Uint32Array)));
+    BAKED_TEX=fs.readFileSync(path.join(dir,'out_tex.jpg'));
+    fs.rmSync(dir,{recursive:true,force:true});
+  }
+}
+
 if(TRIS) await simplifyTo(TRIS);
+else if(HEAD19K) applyHead19k();
+else if(NOPBR_RAW) applyNoPbrRaw();
 else if(PARAMETRIC) applyParametric();
 else if(REMESH) applyRemesh();
 else if(PBR) applyUltraFaceRefine();

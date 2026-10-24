@@ -1,7 +1,7 @@
 {
   "api": "https://api.meshy.ai/openapi/v1",
   "plan": "Meshy Pro",
-  "creditsTotal": 120,
+  "creditsTotal": 140,
   "tasks": [
     {
       "step": "image-to-3d",
@@ -115,6 +115,15 @@
       "credits": 5,
       "createdAt": "2026-10-24T18:19:15+07:00",
       "result": "grandma-bigface-remesh-1k5.glb (1,556 triangles, 3,036 raw verts -> 1,874 welded verts / 781 unique positions, 4096 PBR maps)"
+    },
+    {
+      "step": "image-to-3d-bigface-ultra-nopbr",
+      "endpoint": "POST /openapi/v1/image-to-3d",
+      "taskId": "01a16f00-eb5f-7566-912b-d1185f15ca69",
+      "request": "request-image-to-3d-bigface-nopbr.json (+ image_url = data URI of ../ref/grandma-mali-tpose-cutout.png)",
+      "credits": 20,
+      "createdAt": "2026-10-25T00:42:34+07:00",
+      "result": "grandma-bigface-nopbr.glb (235,018 triangles, 128,775 verts, 4096 pure diffuse texture, enable_pbr: false, image_enhancement: false)"
     }
   ],
   "balances": {
@@ -145,7 +154,8 @@
       "before": 1165,
       "after": 1160,
       "note": "monthly 875 -> 870 (-5), permanent 290"
-    }
+    },
+    "afterBigfaceNoPbr": 1220
   },
   "notes": "Meshy keeps task results for 3 days. The API key is read from the MESHY_API_KEY environment variable and is never stored here."
 }

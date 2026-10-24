@@ -645,7 +645,7 @@
   "game.nightstand.orbit": "หมุนตู้ข้างเตียง",
   "game.nightstand.view": "ตู้ข้างเตียงสามมิติ",
   "asset.grandma.title": "ย่ามะลิ",
-  "asset.grandma.variant.rigged": "รุ่นภาพตัดแปะเดิม (19k)",
+  "asset.grandma.variant.rigged": "รุ่น 19.4k ภาพตัดแปะดั้งเดิม",
   "asset.grandma.variant.lod6k": "6k (meshopt)",
   "asset.grandma.variant.remesh6k": "6k (Meshy Remesh, ใช้ในเกม)",
   "asset.grandma.variant.lod3k": "โลว์โพลี 3k",
@@ -696,7 +696,7 @@
   "game.error.notOnShelf": "{slug} ไม่อยู่ในชั้นหนังสือ",
   "game.error.noBuilder": "ไม่มีตัวสร้างสำหรับชนิด {kind}",
   "game.error.notBuildable": "ชนิด {kind} ไม่ได้สร้างเป็นวัตถุในฉาก",
-  "asset.grandma.variant.ultra": "Ultra (ละเอียดสุด Meshy)",
+  "asset.grandma.variant.ultra": "Ultra (เกลาผิวหน้า)",
   "asset.nightstand.variant.meshyMeasured": "สร้างใหม่ตามขนาด Meshy (212 สามเหลี่ยม, 15 ชิ้น)",
   "asset.child.title": "หลาน (ผู้เล่น)",
   "asset.child.notes": "หลานนักสืบวัย 8 ขวบ · เอี๊ยมสีกรมท่าทับเสื้อลายทางสีครีม · รูปโปรไฟล์ 2 นิ้วและภาพ T-pose พร้อมสร้าง 3D ด้วย Meshy",
@@ -717,5 +717,7 @@
   "game.showcase.conceptOnlyNote": "รูปโปรไฟล์ 2 นิ้ว และภาพต้นแบบ T-pose เต็มตัวพร้อมสำหรับนำไปสร้างโมเดล 3D ด้วย Meshy",
   "game.showcase.familyGallery": "รวมตัวละครครอบครัว (รูปโปรไฟล์ 2 นิ้ว & ต้นแบบ T-Pose)",
   "asset.grandma.variant.remesh1k5": "1.5k (Meshy Remesh)",
-  "asset.grandma.variant.parametric": "หุ่นมาตรฐาน + ชุดแยกชิ้น + โฟกัสใบหน้า"
+  "asset.grandma.variant.parametric": "หุ่นมาตรฐาน + ชุดแยกชิ้น + โฟกัสใบหน้า",
+  "asset.grandma.variant.head19k": "หัว 19.4k ต้นฉบับ + ตัว T-Pose",
+  "asset.grandma.variant.ultraNoPbr": "Ultra (ปิด PBR สีล้วน)"
 }
