@@ -188,16 +188,17 @@ export const SHOWCASE_ASSETS: ShowcaseAsset[] = [
       return t('asset.grandma.knownIssues');
     },
     variants: [
+      // Primary runtime model: Meshy Remesh 6k + transferred 24-bone skin weights (build/remesh.py).
       {
-        id: 'rigged',
+        id: 'remesh6k',
         get label() {
-          return t('asset.grandma.variant.rigged');
+          return t('asset.grandma.variant.remesh6k');
         },
-        url: `${BASE}models/grandma-mali.glb`,
-        tris: 19416,
-        bytes: 1255116,
+        url: `${BASE}models/grandma-mali-remesh-6k.glb`,
+        tris: 6234,
+        bytes: 744132,
       },
-      // Comparison LODs (meshoptimizer QEM, same rig and clips); see assets-src/grandma/build/build.mjs --tris.
+      // Comparison variants (meshoptimizer QEM LODs + original 19.4k mesh); see assets-src/grandma/build/build.mjs.
       {
         id: 'lod6k',
         get label() {
@@ -208,13 +209,13 @@ export const SHOWCASE_ASSETS: ShowcaseAsset[] = [
         bytes: 733344,
       },
       {
-        id: 'remesh6k',
+        id: 'rigged',
         get label() {
-          return t('asset.grandma.variant.remesh6k');
+          return t('asset.grandma.variant.rigged');
         },
-        url: `${BASE}models/grandma-mali-remesh-6k.glb`,
-        tris: 6234,
-        bytes: 744132,
+        url: `${BASE}models/grandma-mali.glb`,
+        tris: 19416,
+        bytes: 1255116,
       },
       {
         id: 'lod3k',
@@ -287,7 +288,7 @@ export const SHOWCASE_ASSETS: ShowcaseAsset[] = [
           },
         },
       ],
-      defaultVariant: 'lod6k',
+      defaultVariant: 'remesh6k',
       idle: 'Idle',
       sitDown: 'SitDown',
       // SitDown turns 90 degrees, so she sits facing +X with the hips at (-0.35, 0.48, 0.903).

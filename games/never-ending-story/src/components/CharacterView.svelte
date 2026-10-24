@@ -13,7 +13,7 @@
     playing: true,
     loop: true,
     seat: false,
-    variant: '',
+    variant: asset.character?.defaultVariant ?? asset.variants[0]?.id ?? '',
     flat: false,
   });
   const clips = $derived(asset.character?.clips ?? []);

@@ -31,12 +31,12 @@
   },
   "exports": {
     "runtime": [
-      "games/never-ending-story/public/models/grandma-mali-6k.glb"
+      "games/never-ending-story/public/models/grandma-mali-remesh-6k.glb"
     ],
     "build": "build/build.mjs",
-    "bytes": 733344,
-    "triangles": 5999,
-    "vertices": 5084,
+    "bytes": 744132,
+    "triangles": 6234,
+    "vertices": 4984,
     "joints": 24,
     "texture": {
       "size": 1024,
@@ -45,26 +45,26 @@
     },
     "compression": "KHR_mesh_quantization (no Draco/meshopt decoder needed)",
     "lods": {
-      "notes": "Default game & showcase variant is runtime[0] (grandma-mali-6k.glb, meshoptimizer QEM 6k). Showcase comparison also includes the original 19.4k mesh (grandma-mali.glb), Meshy Remesh API 6k with barycentric skin-weight transfer (grandma-mali-remesh-6k.glb, build/remesh.py), and QEM 3k / 1.5k (build/bake.py). Same 24 joints and 6 clips.",
+      "notes": "Default game & showcase variant is runtime[0] (grandma-mali-remesh-6k.glb, Meshy Remesh API 6k with barycentric 24-bone skin-weight transfer via build/remesh.py). Showcase comparison also includes meshoptimizer QEM 6k / 3k / 1.5k (build/bake.py) and the original 19.4k mesh (grandma-mali.glb). Same 24 joints and 6 clips.",
       "command": "cd build && PYTHON=<venv python> npm run lods",
       "files": {
-        "games/never-ending-story/public/models/grandma-mali.glb": {
-          "triangles": 19416,
-          "vertices": 20929,
-          "bytes": 1255116,
-          "note": "Original 20k Meshy mesh"
+        "games/never-ending-story/public/models/grandma-mali-remesh-6k.glb": {
+          "triangles": 6234,
+          "vertices": 4984,
+          "bytes": 744132,
+          "note": "Default 6k (Meshy Remesh API + skin weight transfer, game)"
         },
         "games/never-ending-story/public/models/grandma-mali-6k.glb": {
           "triangles": 5999,
           "vertices": 5084,
           "bytes": 733344,
-          "note": "Default 6k (meshopt QEM + xatlas bake)"
+          "note": "6k (meshopt QEM + xatlas bake)"
         },
-        "games/never-ending-story/public/models/grandma-mali-remesh-6k.glb": {
-          "triangles": 6234,
-          "vertices": 4984,
-          "bytes": 744132,
-          "note": "6k (Meshy Remesh API + skin weight transfer)"
+        "games/never-ending-story/public/models/grandma-mali.glb": {
+          "triangles": 19416,
+          "vertices": 20929,
+          "bytes": 1255116,
+          "note": "Original 20k Meshy mesh"
         },
         "games/never-ending-story/public/models/grandma-mali-3k.glb": {
           "triangles": 3000,

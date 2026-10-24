@@ -1,6 +1,6 @@
 # Grandma Mali (ย่ามะลิ) — rigged character
 
-`characters/grandma` · default runtime file `games/never-ending-story/public/models/grandma-mali-6k.glb` (733 KB, 5,999 tris) ·
+`characters/grandma` · default runtime file `games/never-ending-story/public/models/grandma-mali-remesh-6k.glb` (744 KB, 6,234 tris) ·
 shown in `#/showcase` (not editable in `#/editor`).
 
 Image-to-3D, rigging and animations were done with the [Meshy API](https://docs.meshy.ai/) from the
@@ -96,9 +96,9 @@ their generated assets, so the model can ship in the game. The source art is the
 
 ## Low-poly LODs & Meshy Remesh
 
-`public/models/grandma-mali-6k.glb` (meshoptimizer QEM 6k) is the default runtime model selected in the game and
-showcase. The showcase's *Mesh detail* switch lets you compare the original 19.4k mesh, **6k (meshopt)**,
-**6k (Meshy Remesh)**, **3k**, and **1.5k** side by side.
+`public/models/grandma-mali-remesh-6k.glb` (Meshy Remesh 6k + transferred 24-bone skin weights) is the default
+runtime model selected in the game and showcase. The showcase's *Mesh detail* switch lets you compare
+**6k (Meshy Remesh, game)**, **6k (meshopt)**, **Original (19.4k)**, **3k**, and **1.5k** side by side.
 
 ```sh
 cd build
@@ -108,9 +108,9 @@ npm i && PYTHON=.venv/bin/python npm run lods
 
 | File | Variant | Triangles | Vertices | Bytes | Notes |
 | --- | --- | ---: | ---: | ---: | --- |
+| grandma-mali-remesh-6k.glb | **6k (Meshy Remesh, game)** | 6,234 | 4,984 | 744,132 | Default; Meshy `/openapi/v1/remesh` + skin weight transfer |
+| grandma-mali-6k.glb | 6k (meshopt) | 5,999 | 5,084 | 733,344 | QEM (0.5 % err) + xatlas bake |
 | grandma-mali.glb | Original | 19,416 | 20,929 | 1,255,116 | Full Meshy mesh |
-| grandma-mali-6k.glb | **6k (meshopt, game)** | 5,999 | 5,084 | 733,344 | Default; QEM (0.5 % err) + xatlas bake |
-| grandma-mali-remesh-6k.glb | 6k (Meshy Remesh) | 6,234 | 4,984 | 744,132 | Meshy `/openapi/v1/remesh` + skin weight transfer |
 | grandma-mali-3k.glb | Low-poly 3k | 3,000 | 2,656 | 635,424 | QEM (1.2 % err) + xatlas bake |
 | grandma-mali-1k5.glb | Low-poly 1.5k | 1,500 | 1,492 | 593,032 | QEM (2.8 % err) + xatlas bake |
 
