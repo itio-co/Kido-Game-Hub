@@ -1,4 +1,5 @@
 import { mount } from 'svelte';
+import './lib/i18n/locale.svelte';
 import App from './App.svelte';
 import { registerServiceWorker } from './pwa';
 import './app.css';

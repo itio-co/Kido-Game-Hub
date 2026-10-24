@@ -1,6 +1,36 @@
-import { writeFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+
+// Story text lives in src/locales/story.{th,en}.json. S(key) marks a field as
+// localized; localize() expands it into `field` (Thai, the game's default) and
+// `fieldEn` (English) so the runtime can pick a language without a lookup table.
+const locales = join(dirname(fileURLToPath(import.meta.url)), '..', 'src', 'locales');
+const storyTh = JSON.parse(readFileSync(join(locales, 'story.th.json'), 'utf8'));
+const storyEn = JSON.parse(readFileSync(join(locales, 'story.en.json'), 'utf8'));
+const TEXT = Symbol('text');
+function S(key) {
+  if (!(key in storyTh) || !(key in storyEn)) throw new Error(`missing story key ${key}`);
+  return { [TEXT]: key };
+}
+const isText = (v) => v !== null && typeof v === 'object' && TEXT in v;
+function localize(value) {
+  if (Array.isArray(value)) return value.map(localize);
+  if (value === null || typeof value !== 'object') return value;
+  const out = {};
+  for (const [field, v] of Object.entries(value)) {
+    if (isText(v)) {
+      out[field] = storyTh[v[TEXT]];
+      out[`${field}En`] = storyEn[v[TEXT]];
+    } else if (Array.isArray(v) && v.length > 0 && v.every(isText)) {
+      out[field] = v.map((x) => storyTh[x[TEXT]]);
+      out[`${field}En`] = v.map((x) => storyEn[x[TEXT]]);
+    } else {
+      out[field] = localize(v);
+    }
+  }
+  return out;
+}
 
 let seq = 0;
 function id() {
@@ -14,41 +44,39 @@ function ent(kind, title, slug, extra = {}) {
 }
 
 const screens = [
-  ['player-room', 'ห้องของฉัน', 'My room', 'real'],
-  ['event-select', 'เลือกเหตุการณ์', 'Choose an event', 'demo'],
-  ['cutscene', 'ฉากเปิดเรื่อง', 'Opening cutscene', 'demo'],
-  ['difficulty', 'เลือกระดับความยาก', 'Choose difficulty', 'demo'],
-  ['house-map', 'แผนผังบ้าน', 'House map', 'demo'],
-  ['living-room', 'ห้องนั่งเล่น', 'Living room', 'demo'],
-  ['study', 'ห้องทำงาน', 'Study', 'demo'],
-  ['kitchen', 'ครัว', 'Kitchen', 'demo'],
-  ['kitchen-close', 'ครัวมุมใกล้', 'Kitchen close-up', 'demo'],
-  ['table', 'โต๊ะกลาง', 'Coffee table', 'demo'],
-  ['tray', 'ถาดชิ้นแผนผัง', 'Map-piece tray', 'demo'],
-  ['grandma', 'ย่ามะลิ', 'Grandma Mali', 'demo'],
-  ['uncle', 'ลุงเมฆ', 'Uncle Mek', 'demo'],
-  ['star-box', 'กล่องรูปดาว', 'Star box', 'demo'],
-  ['crossword', 'ครอสเวิร์ด', 'Crossword', 'demo'],
-  ['jigsaw', 'จิ๊กซอว์', 'Jigsaw', 'demo'],
-  ['slide', 'เลื่อนบล็อก', 'Sliding block', 'demo'],
-  ['notebook', 'สมุดคดี', 'Case notebook', 'demo'],
-  ['case-board', 'กระดานสรุปคดี', 'Case board', 'demo'],
-  ['album', 'พบอัลบั้ม', 'Album found', 'demo'],
-  ['return-home', 'กลับบ้านพร้อมของรางวัล', 'Return home with the reward', 'real'],
-  ['practice', 'มุมฝึกเล่น', 'Practice corner', 'demo'],
-  ['level-map', 'แผนที่ด่าน', 'Level map', 'demo'],
+  ['player-room', S('story.screen.playerRoom.title'), 'real'],
+  ['event-select', S('story.screen.eventSelect.title'), 'demo'],
+  ['cutscene', S('story.screen.cutscene.title'), 'demo'],
+  ['difficulty', S('story.screen.difficulty.title'), 'demo'],
+  ['house-map', S('story.screen.houseMap.title'), 'demo'],
+  ['living-room', S('story.screen.livingRoom.title'), 'demo'],
+  ['study', S('story.screen.study.title'), 'demo'],
+  ['kitchen', S('story.screen.kitchen.title'), 'demo'],
+  ['kitchen-close', S('story.screen.kitchenClose.title'), 'demo'],
+  ['table', S('story.screen.table.title'), 'demo'],
+  ['tray', S('story.screen.tray.title'), 'demo'],
+  ['grandma', S('story.screen.grandma.title'), 'demo'],
+  ['uncle', S('story.screen.uncle.title'), 'demo'],
+  ['star-box', S('story.screen.starBox.title'), 'demo'],
+  ['crossword', S('story.screen.crossword.title'), 'demo'],
+  ['jigsaw', S('story.screen.jigsaw.title'), 'demo'],
+  ['slide', S('story.screen.slide.title'), 'demo'],
+  ['notebook', S('story.screen.notebook.title'), 'demo'],
+  ['case-board', S('story.screen.caseBoard.title'), 'demo'],
+  ['album', S('story.screen.album.title'), 'demo'],
+  ['return-home', S('story.screen.returnHome.title'), 'real'],
+  ['practice', S('story.screen.practice.title'), 'demo'],
+  ['level-map', S('story.screen.levelMap.title'), 'demo'],
 ];
 
-const registry = ent('screen-registry', 'ทะเบียนหน้าจอ', 'screen-registry', {
-  titleEn: 'Screen registry',
-  screens: screens.map(([screen, title, titleEn, status]) =>
-    ent('screen', title, `screen/${screen}`, { titleEn, screen, status }),
+const registry = ent('screen-registry', S('story.screenRegistry.title'), 'screen-registry', {
+  screens: screens.map(([screen, title, status]) =>
+    ent('screen', title, `screen/${screen}`, { screen, status }),
   ),
 });
 
 function spot(title, slug, x, y, action, extra = {}) {
   return ent('hotspot', title, slug, {
-    titleEn: extra.en,
     x,
     y,
     when: extra.when ?? 'always',
@@ -61,20 +89,18 @@ const go = (screen) => ({ type: 'go', screen });
 const toast = (text) => ({ type: 'toast', text });
 
 const scenes = [
-  ent('scene', 'แผนผังบ้านย่า', 'flow/scene/house-map', {
-    titleEn: 'House map',
+  ent('scene', S('story.scene.houseMap.title'), 'flow/scene/house-map', {
     screen: 'house-map',
     image: 'house-map.jpg',
     contain: true,
-    hud: 'เลือกห้องที่จะไป',
+    hud: S('story.scene.houseMap.hud'),
     spots: [
-      spot('ห้องนั่งเล่น (จุดเริ่ม)', 'flow/house-map/living', 50.2, 27.5, go('living-room'), { en: 'Living room' }),
-      spot('ห้องทำงาน', 'flow/house-map/study', 34.9, 62.3, go('study'), { en: 'Study' }),
-      spot('ครัว (เสริม)', 'flow/house-map/kitchen', 72.5, 62.3, go('kitchen'), { en: 'Kitchen' }),
+      spot(S('story.houseMap.living.title'), 'flow/house-map/living', 50.2, 27.5, go('living-room')),
+      spot(S('story.houseMap.study.title'), 'flow/house-map/study', 34.9, 62.3, go('study')),
+      spot(S('story.houseMap.kitchen.title'), 'flow/house-map/kitchen', 72.5, 62.3, go('kitchen')),
     ],
   }),
-  ent('scene', 'ห้องนั่งเล่น', 'flow/scene/living-room', {
-    titleEn: 'Living room',
+  ent('scene', S('story.scene.livingRoom.title'), 'flow/scene/living-room', {
     screen: 'living-room',
     image: 'living-wide.jpg',
     images: {
@@ -84,147 +110,138 @@ const scenes = [
     },
     map: true,
     timed: true,
-    hud: 'ภารกิจ: ตามหาอัลบั้มครอบครัว',
+    hud: S('story.scene.livingRoom.hud'),
     spots: [
-      spot('นาฬิกา', 'flow/living-room/clock', 13, 12.5, { type: 'clock' }, { en: 'Clock' }),
-      spot('ปฏิทินของย่า', 'flow/living-room/calendar', 80, 27, { type: 'calendar' }, { en: 'Grandma calendar' }),
-      spot('ถาดชิ้นแผนผัง', 'flow/living-room/tray', 41, 37, go('tray'), { en: 'Map tray', when: 'now', done: 'E04' }),
-      spot('ประตูไปครัว', 'flow/living-room/kitchen-door', 12, 25.3, go('kitchen'), { en: 'Door to the kitchen', when: 'now' }),
-      spot('ประตูไปห้องทำงาน', 'flow/living-room/study-door', 92, 33.8, go('study'), { en: 'Door to the study', when: 'now' }),
-      spot('กล่องรูปดาว (ข้างโซฟา)', 'flow/living-room/star-box', 85.3, 70.5, toast('สัญลักษณ์ตรงแล้ว แต่ตำแหน่งนี้ตรงกับผังเก็บภาพถ่ายหรือยัง?'), { en: 'Star box by the sofa', when: 'now' }),
-      spot('โต๊ะกลาง', 'flow/living-room/table', 42, 71.1, go('table'), { en: 'Coffee table', when: 'now', done: 'E01' }),
-      spot('ลุงเมฆ', 'flow/living-room/mek', 17.8, 49.6, go('uncle'), { en: 'Uncle Mek', when: 'now', done: 'E03' }),
-      spot('ย่ามะลิ', 'flow/living-room/grandma', 61.4, 50.1, go('grandma'), { en: 'Grandma Mali', when: 'now' }),
-      spot('กล่องรูปดาว (ข้างโซฟา)', 'flow/living-room/star-box-past', 84.3, 70.5, toast('กล่องนี้อยู่ที่เดิมทุกช่วงเวลา'), { when: 'afternoon' }),
-      spot('น้าริน (บ่ายนี้)', 'flow/living-room/rin', 27, 44.2, {
+      spot(S('story.livingRoom.clock.title'), 'flow/living-room/clock', 13, 12.5, { type: 'clock' }),
+      spot(S('story.livingRoom.calendar.title'), 'flow/living-room/calendar', 80, 27, { type: 'calendar' }),
+      spot(S('story.livingRoom.tray.title'), 'flow/living-room/tray', 41, 37, go('tray'), { when: 'now', done: 'E04' }),
+      spot(S('story.livingRoom.kitchenDoor.title'), 'flow/living-room/kitchen-door', 12, 25.3, go('kitchen'), { when: 'now' }),
+      spot(S('story.livingRoom.studyDoor.title'), 'flow/living-room/study-door', 92, 33.8, go('study'), { when: 'now' }),
+      spot(S('story.livingRoom.starBox.title'), 'flow/living-room/star-box', 85.3, 70.5, toast(S('story.livingRoom.starBox.action.text')), { when: 'now' }),
+      spot(S('story.livingRoom.table.title'), 'flow/living-room/table', 42, 71.1, go('table'), { when: 'now', done: 'E01' }),
+      spot(S('story.livingRoom.mek.title'), 'flow/living-room/mek', 17.8, 49.6, go('uncle'), { when: 'now', done: 'E03' }),
+      spot(S('story.livingRoom.grandma.title'), 'flow/living-room/grandma', 61.4, 50.1, go('grandma'), { when: 'now' }),
+      spot(S('story.livingRoom.starBoxPast.title'), 'flow/living-room/star-box-past', 84.3, 70.5, toast(S('story.livingRoom.starBoxPast.action.text')), { when: 'afternoon' }),
+      spot(S('story.livingRoom.rin.title'), 'flow/living-room/rin', 27, 44.2, {
         type: 'lines',
-        who: 'น้าริน',
-        lines: ['แย่จัง แจกันล้ม น้ำหกเต็มโต๊ะเลย ต้องรีบเช็ดก่อน', 'ของบนโต๊ะต้องยกออกไปก่อน เดี๋ยวเปียกหมด'],
-      }, { en: 'Aunt Rin this afternoon', when: 'afternoon' }),
-      spot('แจกันล้ม', 'flow/living-room/fallen-vase', 38.5, 68, {
-        type: 'lines',
-        who: 'ย้อนเวลา: บ่ายนี้',
-        lines: ['แจกันล้ม น้ำหกนองโต๊ะ — อัลบั้มวางอยู่ข้าง ๆ เกือบเปียก!'],
+        who: S('story.livingRoom.rin.action.who'),
+        lines: [S('story.livingRoom.rin.action.line1'), S('story.livingRoom.rin.action.line2')],
       }, { when: 'afternoon' }),
-      spot('อัลบั้ม (บ่ายนี้)', 'flow/living-room/album-then', 58, 69.5, {
+      spot(S('story.livingRoom.fallenVase.title'), 'flow/living-room/fallen-vase', 38.5, 68, {
         type: 'lines',
-        who: 'ย้อนเวลา: บ่ายนี้',
-        lines: ['บ่ายนี้อัลบั้มยังอยู่บนโต๊ะ แต่ตอนนี้หายไป ใครยกไปตอนเช็ดน้ำนะ?'],
+        who: S('story.livingRoom.fallenVase.action.who'),
+        lines: [S('story.livingRoom.fallenVase.action.line1')],
       }, { when: 'afternoon' }),
-      spot('ถาดชิ้นแผนผัง', 'flow/living-room/tray-afternoon', 47, 37, toast('ชิ้นแผนผังยังอยู่ในถาด'), { when: 'afternoon' }),
-      spot('กล่องรูปดาว (ข้างโซฟา)', 'flow/living-room/star-box-yesterday', 84.3, 70.5, toast('กล่องนี้อยู่ที่เดิมทุกช่วงเวลา'), { when: 'yesterday' }),
-      spot('ย่ามะลิ (เมื่อวาน)', 'flow/living-room/grandma-yesterday', 26.7, 39, {
+      spot(S('story.livingRoom.albumThen.title'), 'flow/living-room/album-then', 58, 69.5, {
         type: 'lines',
-        who: 'ย่ามะลิ',
-        lines: ['พรุ่งนี้หลานจะมา ย่าจะหยิบอัลบั้มเล่มนี้ลงไปเปิดให้ดูตอนเช้า', 'รูปเก่า ๆ บ้านเรามีที่เก็บประจำนะ แต่เล่มนี้ย่าชอบไว้ใกล้ตัว'],
-      }, { when: 'yesterday' }),
-      spot('อัลบั้มบนชั้น', 'flow/living-room/album-shelf', 43, 30, {
+        who: S('story.livingRoom.albumThen.action.who'),
+        lines: [S('story.livingRoom.albumThen.action.line1')],
+      }, { when: 'afternoon' }),
+      spot(S('story.livingRoom.trayAfternoon.title'), 'flow/living-room/tray-afternoon', 47, 37, toast(S('story.livingRoom.trayAfternoon.action.text')), { when: 'afternoon' }),
+      spot(S('story.livingRoom.starBoxYesterday.title'), 'flow/living-room/star-box-yesterday', 84.3, 70.5, toast(S('story.livingRoom.starBoxYesterday.action.text')), { when: 'yesterday' }),
+      spot(S('story.livingRoom.grandmaYesterday.title'), 'flow/living-room/grandma-yesterday', 26.7, 39, {
         type: 'lines',
-        who: 'ย้อนเวลา: เมื่อวาน',
-        lines: ['อัลบั้มปกดอกไม้ตั้งอยู่บนชั้นบน ใกล้มือย่า'],
+        who: S('story.livingRoom.grandmaYesterday.action.who'),
+        lines: [S('story.livingRoom.grandmaYesterday.action.line1'), S('story.livingRoom.grandmaYesterday.action.line2')],
       }, { when: 'yesterday' }),
-      spot('ถาดชิ้นแผนผัง', 'flow/living-room/tray-yesterday', 42.5, 37.5, toast('ชิ้นแผนผังยังเรียงอยู่ในถาดครบ'), { when: 'yesterday' }),
+      spot(S('story.livingRoom.albumShelf.title'), 'flow/living-room/album-shelf', 43, 30, {
+        type: 'lines',
+        who: S('story.livingRoom.albumShelf.action.who'),
+        lines: [S('story.livingRoom.albumShelf.action.line1')],
+      }, { when: 'yesterday' }),
+      spot(S('story.livingRoom.trayYesterday.title'), 'flow/living-room/tray-yesterday', 42.5, 37.5, toast(S('story.livingRoom.trayYesterday.action.text')), { when: 'yesterday' }),
     ],
   }),
-  ent('scene', 'ห้องทำงาน', 'flow/scene/study', {
-    titleEn: 'Study',
+  ent('scene', S('story.scene.study.title'), 'flow/scene/study', {
     screen: 'study',
     image: 'study-wide.jpg',
     map: true,
-    hud: 'ภารกิจ: หากล่องที่ถูกต้อง',
+    hud: S('story.scene.study.hud'),
     spots: [
-      spot('กล่องรูปใบไม้', 'flow/study/leaf-box', 66.5, 64, toast('อยู่ในโซนที่หาแล้ว ลองเทียบสัญลักษณ์กับสิ่งที่ลุงเมฆเห็นอีกครั้ง'), { en: 'Leaf box' }),
-      spot('กล่องรูปดาว (ใต้หน้าต่าง)', 'flow/study/star-box', 50.8, 63, go('star-box'), { en: 'Star box under the window' }),
+      spot(S('story.study.leafBox.title'), 'flow/study/leaf-box', 66.5, 64, toast(S('story.study.leafBox.action.text'))),
+      spot(S('story.study.starBox.title'), 'flow/study/star-box', 50.8, 63, go('star-box')),
     ],
   }),
-  ent('scene', 'ครัว', 'flow/scene/kitchen', {
-    titleEn: 'Kitchen',
+  ent('scene', S('story.scene.kitchen.title'), 'flow/scene/kitchen', {
     screen: 'kitchen',
     image: 'kitchen-wide.jpg',
     map: true,
-    hud: 'ไม่บังคับ',
+    hud: S('story.scene.kitchen.hud'),
     spots: [
-      spot('ผ้าเปียกบนราว', 'flow/kitchen/cloth', 31.5, 40.5, go('kitchen-close'), { en: 'Wet cloth' }),
-      spot('แจกันเติมน้ำใหม่', 'flow/kitchen/vase', 79.5, 50, go('kitchen-close'), { en: 'Refilled vase' }),
+      spot(S('story.kitchen.cloth.title'), 'flow/kitchen/cloth', 31.5, 40.5, go('kitchen-close')),
+      spot(S('story.kitchen.vase.title'), 'flow/kitchen/vase', 79.5, 50, go('kitchen-close')),
     ],
   }),
-  ent('scene', 'ครัวมุมใกล้', 'flow/scene/kitchen-close', {
-    titleEn: 'Kitchen close-up',
+  ent('scene', S('story.scene.kitchenClose.title'), 'flow/scene/kitchen-close', {
     screen: 'kitchen-close',
     image: 'kitchen-close.jpg',
     map: true,
-    hud: 'ร่องรอยน้ำหก',
+    hud: S('story.scene.kitchenClose.hud'),
     spots: [
-      spot('ผ้าเปียก', 'flow/kitchen-close/cloth', 28.6, 40, { type: 'evidence', evidence: 'E02', who: 'ผ้าเปียก', text: 'ผ้าที่ใช้เช็ดโต๊ะยังเปียก' }, { en: 'Wet cloth' }),
-      spot('แจกันเติมน้ำใหม่', 'flow/kitchen-close/vase', 68.7, 59.5, toast('แจกันถูกเติมน้ำใหม่ — มีน้ำหกจริง'), { en: 'Refilled vase' }),
+      spot(S('story.kitchenClose.cloth.title'), 'flow/kitchen-close/cloth', 28.6, 40, { type: 'evidence', evidence: 'E02', who: S('story.kitchenClose.cloth.action.who'), text: S('story.kitchenClose.cloth.action.text') }),
+      spot(S('story.kitchenClose.vase.title'), 'flow/kitchen-close/vase', 68.7, 59.5, toast(S('story.kitchenClose.vase.action.text'))),
     ],
   }),
-  ent('scene', 'โต๊ะกลาง', 'flow/scene/table', {
-    titleEn: 'Coffee table',
+  ent('scene', S('story.scene.table.title'), 'flow/scene/table', {
     screen: 'table',
     image: 'living-table.jpg',
     map: true,
-    hud: 'แตะเพื่อตรวจ',
+    hud: S('story.scene.table.hud'),
     spots: [
-      spot('ข้อความของน้าริน', 'flow/table/note', 35, 31.3, {
+      spot(S('story.table.note.title'), 'flow/table/note', 35, 31.3, {
         type: 'evidence',
         evidence: 'E01',
-        who: 'ข้อความ',
-        text: 'ขอย้ายเก็บก่อน — ริน / (ด้านหลัง) เก็บตามผังเดิมนะ โต๊ะยังเปียกอยู่',
-      }, { en: "Aunt Rin's note", done: 'E01' }),
-      spot('รอยน้ำ', 'flow/table/water', 39.8, 53.3, { type: 'evidence', evidence: 'E02', who: 'รอยน้ำ', text: 'โต๊ะเปียก — น้ำหกจากแจกัน' }, { en: 'Water mark', done: 'E02' }),
-      spot('รอยที่อัลบั้มเคยวาง', 'flow/table/album-mark', 70, 64.3, toast('ตรงนี้เคยมีอัลบั้มวางอยู่'), { en: 'Where the album sat' }),
+        who: S('story.table.note.action.who'),
+        text: S('story.table.note.action.text'),
+      }, { done: 'E01' }),
+      spot(S('story.table.water.title'), 'flow/table/water', 39.8, 53.3, { type: 'evidence', evidence: 'E02', who: S('story.table.water.action.who'), text: S('story.table.water.action.text') }, { done: 'E02' }),
+      spot(S('story.table.albumMark.title'), 'flow/table/album-mark', 70, 64.3, toast(S('story.table.albumMark.action.text'))),
     ],
   }),
-  ent('scene', 'ถาดชิ้นแผนผัง', 'flow/scene/tray', {
-    titleEn: 'Map-piece tray',
+  ent('scene', S('story.scene.tray.title'), 'flow/scene/tray', {
     screen: 'tray',
     image: 'living-shelf-tray.jpg',
     map: true,
-    hud: 'ชิ้นแผนผังแม่เหล็กหล่นกระจาย',
+    hud: S('story.scene.tray.hud'),
     spots: [
-      spot('ต่อจิ๊กซอว์แผนผังบ้าน', 'flow/tray/jigsaw', 58.7, 65.5, { type: 'minigame', screen: 'jigsaw' }, { en: 'House-map jigsaw', done: 'E04' }),
+      spot(S('story.tray.jigsaw.title'), 'flow/tray/jigsaw', 58.7, 65.5, { type: 'minigame', screen: 'jigsaw' }, { done: 'E04' }),
     ],
   }),
-  ent('scene', 'ย่ามะลิ', 'flow/scene/grandma', {
-    titleEn: 'Grandma Mali',
+  ent('scene', S('story.scene.grandma.title'), 'flow/scene/grandma', {
     screen: 'grandma',
     image: 'living-grandma.jpg',
     map: true,
-    hud: 'คุยกับย่ามะลิ',
+    hud: S('story.scene.grandma.hud'),
     enter: 'flow/dialogue/grandma-open',
     enterWhenSolved: 'flow/dialogue/grandma-win',
-    spots: [spot('คุยกับย่า', 'flow/grandma/talk', 50, 42, { type: 'dialogue', dialogue: 'flow/dialogue/grandma-open' }, { en: 'Talk' })],
+    spots: [spot(S('story.grandma.talk.title'), 'flow/grandma/talk', 50, 42, { type: 'dialogue', dialogue: 'flow/dialogue/grandma-open' })],
   }),
-  ent('scene', 'ลุงเมฆ', 'flow/scene/uncle', {
-    titleEn: 'Uncle Mek',
+  ent('scene', S('story.scene.uncle.title'), 'flow/scene/uncle', {
     screen: 'uncle',
     image: 'uncle-mek.jpg',
     map: true,
-    hud: 'คุยกับลุงเมฆ',
+    hud: S('story.scene.uncle.hud'),
     enter: 'flow/dialogue/mek-open',
-    spots: [spot('คุยกับลุงเมฆ', 'flow/uncle/talk', 50, 40, { type: 'dialogue', dialogue: 'flow/dialogue/mek-open' }, { en: 'Talk' })],
+    spots: [spot(S('story.uncle.talk.title'), 'flow/uncle/talk', 50, 40, { type: 'dialogue', dialogue: 'flow/dialogue/mek-open' })],
   }),
-  ent('scene', 'กล่องรูปดาว', 'flow/scene/star-box', {
-    titleEn: 'Star box',
+  ent('scene', S('story.scene.starBox.title'), 'flow/scene/star-box', {
     screen: 'star-box',
     image: 'study-box.jpg',
     map: true,
-    hud: 'กล่องสีน้ำเงินติดรูปดาว · ตัวล็อกเลื่อนบล็อกบนฝา',
+    hud: S('story.scene.starBox.hud'),
     spots: [
-      spot('สติกเกอร์รูปดาว', 'flow/star-box/sticker', 46.5, 70, toast('กล่องสีน้ำเงินติดรูปดาว'), { en: 'Star sticker' }),
-      spot('ตัวล็อก', 'flow/star-box/lock', 52.6, 44.8, { type: 'box-lock' }, { en: 'Lock' }),
+      spot(S('story.starBox.sticker.title'), 'flow/star-box/sticker', 46.5, 70, toast(S('story.starBox.sticker.action.text'))),
+      spot(S('story.starBox.lock.title'), 'flow/star-box/lock', 52.6, 44.8, { type: 'box-lock' }),
     ],
   }),
-  ent('scene', 'พบอัลบั้มแล้ว', 'flow/scene/album', {
-    titleEn: 'Album found',
+  ent('scene', S('story.scene.album.title'), 'flow/scene/album', {
     screen: 'album',
     image: 'album-found.jpg',
-    hud: 'หลักฐาน E05',
+    hud: S('story.scene.album.hud'),
     enter: 'flow/dialogue/album-open',
     spots: [
-      spot('รูปตาตอนหนุ่ม', 'flow/album/portrait', 37.8, 44.5, { type: 'dialogue', dialogue: 'flow/dialogue/album-portrait' }, { en: "Grandfather's photo" }),
-      spot('โปสการ์ด', 'flow/album/postcard', 80, 45, { type: 'dialogue', dialogue: 'flow/dialogue/album-card' }, { en: 'Postcard' }),
+      spot(S('story.album.portrait.title'), 'flow/album/portrait', 37.8, 44.5, { type: 'dialogue', dialogue: 'flow/dialogue/album-portrait' }),
+      spot(S('story.album.postcard.title'), 'flow/album/postcard', 80, 45, { type: 'dialogue', dialogue: 'flow/dialogue/album-card' }),
     ],
   }),
 ];
@@ -232,74 +249,74 @@ const scenes = [
 const choice = (title, slug, extra) => ent('choice', title, slug, extra);
 
 const dialogues = [
-  ent('dialogue', 'ย่าเปิดเรื่อง', 'flow/dialogue/grandma-open', {
-    who: 'ย่ามะลิ',
-    text: 'หลานมาแล้วเหรอจ๊ะ ย่าหาอัลบั้มรูปครอบครัวไม่เจอ ในนั้นมีรูปตาตอนหนุ่ม ๆ ด้วยนะ',
+  ent('dialogue', S('story.dialogue.grandmaOpen.title'), 'flow/dialogue/grandma-open', {
+    who: S('story.dialogue.grandmaOpen.who'),
+    text: S('story.dialogue.grandmaOpen.text'),
     choices: [
-      choice('ถามเรื่องอัลบั้ม', 'flow/dialogue/grandma-open/ask', { next: 'flow/dialogue/grandma-ask' }),
-      choice('ปิด', 'flow/dialogue/grandma-open/close', { action: { type: 'toast', text: '' } }),
+      choice(S('story.dialogue.grandmaOpen.ask.title'), 'flow/dialogue/grandma-open/ask', { next: 'flow/dialogue/grandma-ask' }),
+      choice(S('story.common.close'), 'flow/dialogue/grandma-open/close', { action: { type: 'toast', text: '' } }),
     ],
   }),
-  ent('dialogue', 'ย่าเล่าเรื่องอัลบั้ม', 'flow/dialogue/grandma-ask', {
-    who: 'ย่ามะลิ',
-    text: 'เมื่อเช้าย่ายังเห็นวางอยู่บนโต๊ะกลางเลย แต่บ่ายนี้น้ารินเข้ามาเก็บกวาดนะ',
-    choices: [choice('ปิด', 'flow/dialogue/grandma-ask/close', {})],
+  ent('dialogue', S('story.dialogue.grandmaAsk.title'), 'flow/dialogue/grandma-ask', {
+    who: S('story.dialogue.grandmaAsk.who'),
+    text: S('story.dialogue.grandmaAsk.text'),
+    choices: [choice(S('story.common.close'), 'flow/dialogue/grandma-ask/close', {})],
   }),
-  ent('dialogue', 'ย่าดีใจ', 'flow/dialogue/grandma-win', {
-    who: 'ย่ามะลิ',
-    text: 'นี่ไงรูปตา ขอบใจนะหลาน มานั่งดูด้วยกันมา ย่าจะเล่าให้ฟัง',
-    choices: [choice('ปิด', 'flow/dialogue/grandma-win/close', {})],
+  ent('dialogue', S('story.dialogue.grandmaWin.title'), 'flow/dialogue/grandma-win', {
+    who: S('story.dialogue.grandmaWin.who'),
+    text: S('story.dialogue.grandmaWin.text'),
+    choices: [choice(S('story.common.close'), 'flow/dialogue/grandma-win/close', {})],
   }),
-  ent('dialogue', 'ลุงเมฆเล่า', 'flow/dialogue/mek-open', {
-    who: 'ลุงเมฆ',
-    text: 'รินเอาอัลบั้มใส่กล่องที่ติดรูปดาว ลุงเห็นตอนเธอยกผ่านโต๊ะ แต่ไม่ได้มองว่าเอาไปวางที่ไหน',
+  ent('dialogue', S('story.dialogue.mekOpen.title'), 'flow/dialogue/mek-open', {
+    who: S('story.dialogue.mekOpen.who'),
+    text: S('story.dialogue.mekOpen.text'),
     choices: [
-      choice('ช่วยเติมครอสเวิร์ด (เสริม)', 'flow/dialogue/mek-open/help', { next: 'flow/dialogue/mek-crossword' }),
-      choice('ปิด', 'flow/dialogue/mek-open/close', {}),
+      choice(S('story.dialogue.mekOpen.help.title'), 'flow/dialogue/mek-open/help', { next: 'flow/dialogue/mek-crossword' }),
+      choice(S('story.common.close'), 'flow/dialogue/mek-open/close', {}),
     ],
   }),
-  ent('dialogue', 'ลุงชวนเล่นครอสเวิร์ด', 'flow/dialogue/mek-crossword', {
-    who: 'ลุงเมฆ',
-    text: 'ถ้าชอบเกมคำศัพท์ มาช่วยลุงเติมหน้านี้ด้วยก็ได้นะ อีกไม่กี่คำเอง',
+  ent('dialogue', S('story.dialogue.mekCrossword.title'), 'flow/dialogue/mek-crossword', {
+    who: S('story.dialogue.mekCrossword.who'),
+    text: S('story.dialogue.mekCrossword.text'),
     choices: [
-      choice('เปิดครอสเวิร์ด', 'flow/dialogue/mek-crossword/play', { action: { type: 'minigame', screen: 'crossword' } }),
-      choice('ปิด', 'flow/dialogue/mek-crossword/close', {}),
+      choice(S('story.dialogue.mekCrossword.play.title'), 'flow/dialogue/mek-crossword/play', { action: { type: 'minigame', screen: 'crossword' } }),
+      choice(S('story.common.close'), 'flow/dialogue/mek-crossword/close', {}),
     ],
   }),
-  ent('dialogue', 'ลุงขอบคุณ', 'flow/dialogue/mek-thanks', {
-    who: 'ลุงเมฆ',
-    text: 'ครบแล้ว! เดี๋ยวให้ทุกคนลองเล่นกัน ขอบใจมากนะ',
-    choices: [choice('ปิด', 'flow/dialogue/mek-thanks/close', {})],
+  ent('dialogue', S('story.dialogue.mekThanks.title'), 'flow/dialogue/mek-thanks', {
+    who: S('story.dialogue.mekThanks.who'),
+    text: S('story.dialogue.mekThanks.text'),
+    choices: [choice(S('story.common.close'), 'flow/dialogue/mek-thanks/close', {})],
   }),
-  ent('dialogue', 'เปิดอัลบั้ม', 'flow/dialogue/album-open', {
-    who: 'ย่ามะลิ',
-    text: 'เจอแล้ว! หน้าปกดอกไม้เล่มนี้เอง',
-    choices: [choice('ปิด', 'flow/dialogue/album-open/close', {})],
+  ent('dialogue', S('story.dialogue.albumOpen.title'), 'flow/dialogue/album-open', {
+    who: S('story.dialogue.albumOpen.who'),
+    text: S('story.dialogue.albumOpen.text'),
+    choices: [choice(S('story.common.close'), 'flow/dialogue/album-open/close', {})],
   }),
-  ent('dialogue', 'รูปตา', 'flow/dialogue/album-portrait', {
-    who: 'ย่ามะลิ',
-    text: 'นี่ไงรูปตา ขอบใจนะหลาน มานั่งดูด้วยกันมา ย่าจะเล่าให้ฟัง',
-    choices: [choice('ต่อ', 'flow/dialogue/album-portrait/next', { next: 'flow/dialogue/album-rin' })],
+  ent('dialogue', S('story.dialogue.albumPortrait.title'), 'flow/dialogue/album-portrait', {
+    who: S('story.dialogue.albumPortrait.who'),
+    text: S('story.dialogue.albumPortrait.text'),
+    choices: [choice(S('story.dialogue.albumPortrait.next.title'), 'flow/dialogue/album-portrait/next', { next: 'flow/dialogue/album-rin' })],
   }),
-  ent('dialogue', 'รินอธิบาย', 'flow/dialogue/album-rin', {
-    who: 'ริน',
-    text: 'หาเจอแล้วใช่ไหม? เมื่อกี้น้ำหกบนโต๊ะ ฉันเลยรีบยกอัลบั้มใส่กล่อง แล้วทิ้งข้อความไว้',
-    choices: [choice('ปิด', 'flow/dialogue/album-rin/close', {})],
+  ent('dialogue', S('story.dialogue.albumRin.title'), 'flow/dialogue/album-rin', {
+    who: S('story.dialogue.albumRin.who'),
+    text: S('story.dialogue.albumRin.text'),
+    choices: [choice(S('story.common.close'), 'flow/dialogue/album-rin/close', {})],
   }),
-  ent('dialogue', 'โปสการ์ด', 'flow/dialogue/album-card', {
-    who: 'โปสการ์ด',
-    text: 'ภาพที่เหลือฝากไว้ที่ห้องสมุดวันวาน — ลิ้นชักหมายเลข 7',
-    choices: [choice('เก็บโปสการ์ด แล้วกลับบ้าน', 'flow/dialogue/album-card/home', { action: { type: 'home' } })],
+  ent('dialogue', S('story.dialogue.albumCard.title'), 'flow/dialogue/album-card', {
+    who: S('story.dialogue.albumCard.who'),
+    text: S('story.dialogue.albumCard.text'),
+    choices: [choice(S('story.dialogue.albumCard.home.title'), 'flow/dialogue/album-card/home', { action: { type: 'home' } })],
   }),
-  ent('dialogue', 'สรุปคดีผ่าน', 'flow/dialogue/deduce-ok', {
-    who: 'ย่ามะลิ',
-    text: 'เก่งมากหลาน! งั้นไปดูที่ห้องทำงานกันเถอะ',
-    choices: [choice('ไปห้องทำงาน', 'flow/dialogue/deduce-ok/go', { action: go('study') })],
+  ent('dialogue', S('story.dialogue.deduceOk.title'), 'flow/dialogue/deduce-ok', {
+    who: S('story.dialogue.deduceOk.who'),
+    text: S('story.dialogue.deduceOk.text'),
+    choices: [choice(S('story.dialogue.deduceOk.go.title'), 'flow/dialogue/deduce-ok/go', { action: go('study') })],
   }),
-  ent('dialogue', 'แผนผังบอกที่เก็บ', 'flow/dialogue/map-clue', {
-    who: 'แผนผัง',
-    text: 'หมวด “ภาพถ่ายและจดหมาย” อยู่ใต้หน้าต่างห้องทำงาน ส่วนข้างโซฟาในห้องนั่งเล่นเป็นของเล่น',
-    choices: [choice('ปิด', 'flow/dialogue/map-clue/close', {})],
+  ent('dialogue', S('story.dialogue.mapClue.title'), 'flow/dialogue/map-clue', {
+    who: S('story.dialogue.mapClue.who'),
+    text: S('story.dialogue.mapClue.text'),
+    choices: [choice(S('story.common.close'), 'flow/dialogue/map-clue/close', {})],
   }),
 ];
 
@@ -320,86 +337,82 @@ for (const dialogue of dialogues) {
   }
 }
 
-const flow = ent('story-flow', 'คดี 01 อัลบั้มครอบครัวที่หายไป', 'flow/case-01', {
-  titleEn: 'Case 01',
-  difficulties: ['ง่าย', 'ปานกลาง', 'ยาก'],
+const flow = ent('story-flow', S('story.case01.title'), 'flow/case-01', {
+  difficulties: ['easy', 'medium', 'hard'],
   events: [
-    ent('event', 'เยี่ยมบ้านคุณย่า', 'flow/event/case-01', {
-      titleEn: 'Visit grandma',
+    ent('event', S('story.event.case01.title'), 'flow/event/case-01', {
       eventId: 'case-01',
-      subtitle: 'อัลบั้มครอบครัวหายไป',
+      subtitle: S('story.event.case01.subtitle'),
       cover: 'cutscene-01-p2.jpg',
       unlockAfter: null,
       lockedHint: null,
     }),
-    ent('event', 'ห้องสมุดวันวาน', 'flow/event/case-02', {
-      titleEn: 'Library of yesterday',
+    ent('event', S('story.event.case02.title'), 'flow/event/case-02', {
       eventId: 'case-02',
-      subtitle: 'ลิ้นชักหมายเลข 7',
+      subtitle: S('story.event.case02.subtitle'),
       cover: 'study-wide.jpg',
       unlockAfter: 'case-01',
-      lockedHint: 'ปลดล็อกเมื่อจบคดี 01',
+      lockedHint: S('story.event.case02.lockedHint'),
     }),
-    ent('event', 'ตลาดน้ำยามเช้า', 'flow/event/case-03', {
-      titleEn: 'Morning market',
+    ent('event', S('story.event.case03.title'), 'flow/event/case-03', {
       eventId: 'case-03',
-      subtitle: 'เร็ว ๆ นี้',
+      subtitle: S('story.event.case03.subtitle'),
       cover: 'kitchen-wide.jpg',
       unlockAfter: 'case-02',
-      lockedHint: 'ปลดล็อกเมื่อจบคดี 02',
+      lockedHint: S('story.event.case03.lockedHint'),
     }),
   ],
   pages: [
-    ent('cutscene-page', 'ย่าโทรมา', 'flow/cutscene/case-01/p1', {
+    ent('cutscene-page', S('story.cutscene.case01.p1.title'), 'flow/cutscene/case-01/p1', {
       eventId: 'case-01',
       image: 'cutscene-01-p1.jpg',
-      caption: 'คืนวันศุกร์ คุณย่ามะลิโทรมาหาแม่',
+      caption: S('story.cutscene.case01.p1.caption'),
       lines: [
-        ent('speech-line', 'แม่', 'flow/cutscene/case-01/p1/mom', {
-          who: 'แม่',
-          text: 'พรุ่งนี้เราไปเยี่ยมบ้านคุณย่ากันนะ',
+        ent('speech-line', S('story.cutscene.case01.p1.mom.title'), 'flow/cutscene/case-01/p1/mom', {
+          who: S('story.cutscene.case01.p1.mom.who'),
+          text: S('story.cutscene.case01.p1.mom.text'),
           x: 4,
           y: 22,
           w: 48,
         }),
-        ent('speech-line', 'หนู', 'flow/cutscene/case-01/p1/child', {
-          who: 'หนู',
-          text: 'เย้! ไปหาคุณย่า!',
+        ent('speech-line', S('story.cutscene.case01.p1.child.title'), 'flow/cutscene/case-01/p1/child', {
+          who: S('story.cutscene.case01.p1.child.who'),
+          text: S('story.cutscene.case01.p1.child.text'),
           x: 40,
           y: 58,
           w: 44,
         }),
       ],
     }),
-    ent('cutscene-page', 'ถึงบ้านไม้', 'flow/cutscene/case-01/p2', {
+    ent('cutscene-page', S('story.cutscene.case01.p2.title'), 'flow/cutscene/case-01/p2', {
       eventId: 'case-01',
       image: 'cutscene-01-p2.jpg',
-      caption: 'เช้าวันเสาร์ ครอบครัวมาถึงบ้านไม้ของคุณย่า',
+      caption: S('story.cutscene.case01.p2.caption'),
       lines: [
-        ent('speech-line', 'ย่ามะลิ', 'flow/cutscene/case-01/p2/grandma', {
-          who: 'ย่ามะลิ',
-          text: 'มาแล้วเหรอจ๊ะหลาน ย่าคิดถึงจังเลย',
+        ent('speech-line', S('story.cutscene.case01.p2.grandma.title'), 'flow/cutscene/case-01/p2/grandma', {
+          who: S('story.cutscene.case01.p2.grandma.who'),
+          text: S('story.cutscene.case01.p2.grandma.text'),
           x: 2,
           y: 46,
           w: 50,
         }),
       ],
     }),
-    ent('cutscene-page', 'อัลบั้มหาย', 'flow/cutscene/case-01/p3', {
+    ent('cutscene-page', S('story.cutscene.case01.p3.title'), 'flow/cutscene/case-01/p3', {
       eventId: 'case-01',
       image: 'cutscene-01-p3.jpg',
-      caption: 'แต่คุณย่าดูไม่สบายใจเลย…',
+      caption: S('story.cutscene.case01.p3.caption'),
       lines: [
-        ent('speech-line', 'ย่ามะลิ', 'flow/cutscene/case-01/p3/grandma', {
-          who: 'ย่ามะลิ',
-          text: 'อัลบั้มรูปครอบครัวหายไปจากชั้นจ้ะ ในนั้นมีรูปตาตอนหนุ่ม ๆ ด้วย',
+        ent('speech-line', S('story.cutscene.case01.p3.grandma.title'), 'flow/cutscene/case-01/p3/grandma', {
+          who: S('story.cutscene.case01.p3.grandma.who'),
+          text: S('story.cutscene.case01.p3.grandma.text'),
           x: 2,
           y: 50,
           w: 34,
         }),
-        ent('speech-line', 'หนู', 'flow/cutscene/case-01/p3/child', {
-          who: 'หนู',
-          text: 'ไม่ต้องห่วงนะย่า หนูจะช่วยตามหาเอง!',
+        ent('speech-line', S('story.cutscene.case01.p3.child.title'), 'flow/cutscene/case-01/p3/child', {
+          who: S('story.cutscene.case01.p3.child.who'),
+          text: S('story.cutscene.case01.p3.child.text'),
           x: 56,
           y: 72,
           w: 42,
@@ -408,43 +421,43 @@ const flow = ent('story-flow', 'คดี 01 อัลบั้มครอบ�
     }),
   ],
   evidence: [
-    ent('evidence', 'ข้อความของน้าริน', 'flow/evidence/e01', {
+    ent('evidence', S('story.evidence.e01.title'), 'flow/evidence/e01', {
       code: 'E01',
-      text: 'ข้อความของน้าริน: "ขอย้ายเก็บก่อน — ริน / เก็บตามผังเดิมนะ โต๊ะยังเปียกอยู่"',
+      text: S('story.evidence.e01.text'),
     }),
-    ent('evidence', 'โต๊ะที่เปียก', 'flow/evidence/e02', {
+    ent('evidence', S('story.evidence.e02.title'), 'flow/evidence/e02', {
       code: 'E02',
-      text: 'โต๊ะที่เปียก (น้ำจากแจกันหก)',
+      text: S('story.evidence.e02.text'),
     }),
-    ent('evidence', 'กล่องมีรูปดาว', 'flow/evidence/e03', {
+    ent('evidence', S('story.evidence.e03.title'), 'flow/evidence/e03', {
       code: 'E03',
-      text: 'ลุงเมฆ: กล่องมีรูปดาว',
+      text: S('story.evidence.e03.text'),
     }),
-    ent('evidence', 'แผนผังที่เก็บภาพ', 'flow/evidence/e04', {
+    ent('evidence', S('story.evidence.e04.title'), 'flow/evidence/e04', {
       code: 'E04',
-      text: 'แผนผังบ้าน: ภาพถ่ายเก็บใต้หน้าต่างห้องทำงาน',
+      text: S('story.evidence.e04.text'),
     }),
-    ent('evidence', 'พบอัลบั้ม', 'flow/evidence/e05', {
+    ent('evidence', S('story.evidence.e05.title'), 'flow/evidence/e05', {
       code: 'E05',
-      text: 'พบอัลบั้มในกล่องรูปดาว',
+      text: S('story.evidence.e05.text'),
     }),
   ],
   slots: [
-    ent('time-slot', 'เมื่อวานเย็น (21 ต.ค.)', 'flow/time/yesterday', {
+    ent('time-slot', S('story.time.yesterday.title'), 'flow/time/yesterday', {
       slot: 'yesterday',
       part: 'day',
       image: 'living-wide-yesterday.jpg',
       unlockBy: 'E01',
-      hint: 'ลองหาข้อความบนโต๊ะกลางก่อน',
+      hint: S('story.time.yesterday.hint'),
     }),
-    ent('time-slot', 'บ่ายนี้ 14:00', 'flow/time/afternoon', {
+    ent('time-slot', S('story.time.afternoon.title'), 'flow/time/afternoon', {
       slot: 'afternoon',
       part: 'hour',
       image: 'living-wide-afternoon.jpg',
       unlockBy: 'E02',
-      hint: 'ลองตรวจรอยน้ำบนโต๊ะก่อน',
+      hint: S('story.time.afternoon.hint'),
     }),
-    ent('time-slot', 'ตอนนี้ 17:00', 'flow/time/now', {
+    ent('time-slot', S('story.time.now.title'), 'flow/time/now', {
       slot: 'now',
       part: 'hour',
       image: 'living-wide.jpg',
@@ -455,32 +468,29 @@ const flow = ent('story-flow', 'คดี 01 อัลบั้มครอบ�
   scenes,
   dialogues,
   games: [
-    ent('minigame', 'ครอสเวิร์ดของลุงเมฆ', 'flow/minigame/crossword', {
-      titleEn: 'Crossword',
+    ent('minigame', S('story.minigame.crossword.title'), 'flow/minigame/crossword', {
       game: 'crossword',
-      hud: 'มินิเกม: ครอสเวิร์ด',
+      hud: S('story.minigame.crossword.hud'),
     }),
-    ent('minigame', 'จิ๊กซอว์แผนผังบ้าน', 'flow/minigame/jigsaw', {
-      titleEn: 'Jigsaw',
+    ent('minigame', S('story.minigame.jigsaw.title'), 'flow/minigame/jigsaw', {
       game: 'jigsaw',
-      hud: 'มินิเกม: จิ๊กซอว์ (ชิ้นไม่ต้องหมุน)',
+      hud: S('story.minigame.jigsaw.hud'),
     }),
-    ent('minigame', 'ตัวล็อกเลื่อนบล็อก', 'flow/minigame/slide', {
-      titleEn: 'Sliding block',
+    ent('minigame', S('story.minigame.slide.title'), 'flow/minigame/slide', {
       game: 'slide',
-      hud: 'มินิเกม: พากุญแจ K ไปทางออกด้านขวา',
+      hud: S('story.minigame.slide.hud'),
     }),
   ],
   practice: [
-    ['cross', 'ครอสเวิร์ด', '📰', 'คำ', '01', false],
-    ['jig', 'จิ๊กซอว์แผนผัง', '🗺', 'ภาพ', '01', false],
-    ['slide', 'เลื่อนบล็อก', '🧩', 'ตรรกะ', '01', false],
-    ['ex', 'จับผิดภาพ', '🔍', 'ภาพ', '02', true],
-    ['ex', 'จับคู่ความจำ', '🃏', 'ภาพ', '03', true],
-    ['ex', 'ถอดรหัส', '🔐', 'คำ', '02', true],
-    ['ex', 'เขาวงกต', '🌀', 'ตรรกะ', '04', true],
-    ['ex', 'ต่อท่อ', '🚰', 'ตรรกะ', '05', true],
-    ['ex', 'เรียงลำดับเหตุการณ์', '🗓', 'คำ', '03', true],
+    ['cross', S('story.practice.cross0.title'), '📰', 'word', '01', false],
+    ['jig', S('story.practice.jig1.title'), '🗺', 'picture', '01', false],
+    ['slide', S('story.practice.slide2.title'), '🧩', 'logic', '01', false],
+    ['ex', S('story.practice.future3.title'), '🔍', 'picture', '02', true],
+    ['ex', S('story.practice.future4.title'), '🃏', 'picture', '03', true],
+    ['ex', S('story.practice.future5.title'), '🔐', 'word', '02', true],
+    ['ex', S('story.practice.future6.title'), '🌀', 'logic', '04', true],
+    ['ex', S('story.practice.future7.title'), '🚰', 'logic', '05', true],
+    ['ex', S('story.practice.future8.title'), '🗓', 'word', '03', true],
   ].map(([game, title, icon, group, caseNo, future], index) =>
     ent('practice-game', title, `flow/practice/${future ? 'future' : game}-${index}`, {
       game,
@@ -491,55 +501,55 @@ const flow = ent('story-flow', 'คดี 01 อัลบั้มครอบ�
     }),
   ),
   questions: [
-    ent('question', 'ใครย้ายอัลบั้ม', 'flow/question/who', {
-      prompt: '1. ใครย้ายอัลบั้ม?',
+    ent('question', S('story.question.who.title'), 'flow/question/who', {
+      prompt: S('story.question.who.prompt'),
       right: 'rin',
       evidence: ['E01', 'E03'],
-      hint: 'ลองอ่านกระดาษบนโต๊ะอีกทีสิจ๊ะ ใครเป็นคนเขียนไว้นะ',
+      hint: S('story.question.who.hint'),
       mode: 'portrait',
       answers: [
-        choice('ย่ามะลิ', 'flow/question/who/grandma', { value: 'grandma', image: 'living-grandma.jpg' }),
-        choice('ลุงเมฆ', 'flow/question/who/mek', { value: 'mek', image: 'uncle-mek.jpg' }),
-        choice('น้าริน', 'flow/question/who/rin', { value: 'rin', image: 'rin.jpg' }),
+        choice(S('story.question.who.grandma.title'), 'flow/question/who/grandma', { value: 'grandma', image: 'living-grandma.jpg' }),
+        choice(S('story.question.who.mek.title'), 'flow/question/who/mek', { value: 'mek', image: 'uncle-mek.jpg' }),
+        choice(S('story.question.who.rin.title'), 'flow/question/who/rin', { value: 'rin', image: 'rin.jpg' }),
       ],
     }),
-    ent('question', 'ย้ายทำไม', 'flow/question/why', {
-      prompt: '2. ย้ายทำไม?',
+    ent('question', S('story.question.why.title'), 'flow/question/why', {
+      prompt: S('story.question.why.prompt'),
       right: 'water',
       evidence: ['E02'],
-      hint: 'โต๊ะยังเปียกอยู่เลยนะ หลานว่าเกิดอะไรขึ้น',
+      hint: S('story.question.why.hint'),
       mode: 'chips',
       answers: [
-        choice('น้ำหกบนโต๊ะ', 'flow/question/why/water', { value: 'water' }),
-        choice('แอบซ่อนไว้', 'flow/question/why/hide', { value: 'hide' }),
-        choice('หยิบไปดูรูป', 'flow/question/why/look', { value: 'look' }),
+        choice(S('story.question.why.water.title'), 'flow/question/why/water', { value: 'water' }),
+        choice(S('story.question.why.hide.title'), 'flow/question/why/hide', { value: 'hide' }),
+        choice(S('story.question.why.look.title'), 'flow/question/why/look', { value: 'look' }),
       ],
     }),
-    ent('question', 'เก็บไว้ที่ไหน', 'flow/question/where', {
-      prompt: '3. เก็บไว้ที่ไหน? (แตะบนแผนผัง)',
+    ent('question', S('story.question.where.title'), 'flow/question/where', {
+      prompt: S('story.question.where.prompt'),
       right: 'study',
       evidence: ['E04'],
-      hint: 'รูปเก่า ๆ บ้านนี้เขาเก็บไว้ที่เดียวกันมาตลอดแหละ ลองต่อแผนที่ที่หล่นกระจายอยู่ดูสิ',
+      hint: S('story.question.where.hint'),
       mode: 'map',
       answers: [
-        choice('ห้องนั่งเล่น', 'flow/question/where/living', { value: 'living' }),
-        choice('ห้องทำงาน (ใต้หน้าต่าง)', 'flow/question/where/study', { value: 'study' }),
-        choice('ครัว', 'flow/question/where/kitchen', { value: 'kitchen' }),
+        choice(S('story.question.where.living.title'), 'flow/question/where/living', { value: 'living' }),
+        choice(S('story.question.where.study.title'), 'flow/question/where/study', { value: 'study' }),
+        choice(S('story.question.where.kitchen.title'), 'flow/question/where/kitchen', { value: 'kitchen' }),
       ],
     }),
   ],
   goals: [
-    ent('goal', 'ตรวจโต๊ะกลาง', 'flow/goal/table', { code: 'table', room: 'ห้องนั่งเล่น', at: 'living-room', object: 'โต๊ะกลาง' }),
-    ent('goal', 'ต่อแผนผัง', 'flow/goal/tray', { code: 'tray', room: 'ห้องนั่งเล่น', at: 'living-room', object: 'ถาดชิ้นแผนผัง' }),
-    ent('goal', 'คุยกับลุงเมฆ', 'flow/goal/mek', { code: 'mek', room: 'ห้องนั่งเล่น', at: 'living-room', object: 'ลุงเมฆ' }),
-    ent('goal', 'สรุปคดี', 'flow/goal/deduce', { code: 'deduce', room: 'สมุดคดี', at: null, object: 'ปุ่มสมุดคดี' }),
-    ent('goal', 'เปิดกล่องรูปดาว', 'flow/goal/box', { code: 'box', room: 'ห้องทำงาน', at: 'study', object: 'กล่องรูปดาว' }),
-    ent('goal', 'กลับบ้าน', 'flow/goal/home', { code: 'home', room: 'บ้านของฉัน', at: 'player-room', object: 'ช่องวางของ' }),
+    ent('goal', S('story.goal.table.title'), 'flow/goal/table', { code: 'table', room: S('story.goal.table.room'), at: 'living-room', object: S('story.goal.table.object') }),
+    ent('goal', S('story.goal.tray.title'), 'flow/goal/tray', { code: 'tray', room: S('story.goal.tray.room'), at: 'living-room', object: S('story.goal.tray.object') }),
+    ent('goal', S('story.goal.mek.title'), 'flow/goal/mek', { code: 'mek', room: S('story.goal.mek.room'), at: 'living-room', object: S('story.goal.mek.object') }),
+    ent('goal', S('story.goal.deduce.title'), 'flow/goal/deduce', { code: 'deduce', room: S('story.goal.deduce.room'), at: null, object: S('story.goal.deduce.object') }),
+    ent('goal', S('story.goal.box.title'), 'flow/goal/box', { code: 'box', room: S('story.goal.box.room'), at: 'study', object: S('story.goal.box.object') }),
+    ent('goal', S('story.goal.home.title'), 'flow/goal/home', { code: 'home', room: S('story.goal.home.room'), at: 'player-room', object: S('story.goal.home.object') }),
   ],
 });
 
 const root = dirname(fileURLToPath(import.meta.url));
 const data = join(root, '../public/data');
-writeFileSync(join(data, 'screens.json'), JSON.stringify(registry, null, 2) + '\n');
-writeFileSync(join(data, 'case-flow.json'), JSON.stringify(flow, null, 2) + '\n');
+writeFileSync(join(data, 'screens.json'), JSON.stringify(localize(registry), null, 2) + '\n');
+writeFileSync(join(data, 'case-flow.json'), JSON.stringify(localize(flow), null, 2) + '\n');
 console.log('screens', registry.screens.length, 'ids', seq);

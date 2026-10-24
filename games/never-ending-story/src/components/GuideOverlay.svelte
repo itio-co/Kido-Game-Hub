@@ -5,6 +5,7 @@
   import { distToRay, lockedPoint, lockVp, residualBand, vpPoint } from '../lib/editor/vpFit';
   import type { V3 } from '../lib/editor/camMath';
   import { T } from '../lib/editor/strings';
+  import { t } from '../lib/i18n/core';
 
   type Props = {
     st: MatchState;
@@ -774,7 +775,7 @@
   onpointercancel={up}
   onwheel={wheel}
   role="application"
-  aria-label="เส้นนำสายตา ลากปลายเส้นให้ทับขอบในภาพ"
+  aria-label={t('editor.guide.aria')}
   data-guides
   data-edge-mode={st.edgeMode}
   data-edge-ready={st.edgeMap ? 'true' : null}
@@ -967,7 +968,7 @@
     {/if}
     {#if pair.image}
       {@const p = pair.image}
-      <g class="handle pair" role="button" tabindex="-1" aria-label="จุดบนภาพ" data-pair={pair.id} onpointerdown={(e) => pairHandle(e, pair.id)}>
+      <g class="handle pair" role="button" tabindex="-1" aria-label={t('editor.guide.pairHandle')} data-pair={pair.id} onpointerdown={(e) => pairHandle(e, pair.id)}>
         <circle cx={p[0]} cy={p[1]} r={24 * s} class="hit" />
         <rect x={p[0] - 9 * s} y={p[1] - 9 * s} width={18 * s} height={18 * s} class="pdot" class:sel transform="rotate(45 {p[0]} {p[1]})" />
         <circle cx={p[0]} cy={p[1]} r={2.2 * s} class="pin" />

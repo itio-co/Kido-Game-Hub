@@ -1,0 +1,57 @@
+{
+  "model": "/workspace/grandma-pr/games/never-ending-story/assets-src/nightstand/external/meshy/nightstand-meshy-1k5.glb",
+  "asset": "player-room/nightstand",
+  "triangles": 961,
+  "rotDeg": "0,0,0",
+  "yawDeg": 180,
+  "yawScores": {
+    "0": {
+      "iou": 0.9122,
+      "grayNcc": 0.8674,
+      "edgeNcc": 0.539
+    },
+    "180": {
+      "iou": 0.9138,
+      "grayNcc": 0.8528,
+      "edgeNcc": 0.558
+    }
+  },
+  "yawCandidates": [
+    0,
+    180
+  ],
+  "yawAmbiguous": true,
+  "fit": "box",
+  "scale": [
+    0.3210955870785694,
+    0.29970527096287813,
+    0.3134304989847399
+  ],
+  "bboxInput": [
+    1.8997458219528198,
+    1.4347428679466248,
+    1.7547749876976013
+  ],
+  "bboxOutputM": [
+    0.6100000143051147,
+    0.4300000071525574,
+    0.550000011920929
+  ],
+  "targetM": [
+    0.61,
+    0.43000000000000005,
+    0.55
+  ],
+  "iou": {
+    "mask": 0.9143,
+    "maskRembg": 0.7718
+  },
+  "outputs": [
+    "nightstand-meshy-1k5-normalised.glb",
+    "nightstand-meshy-1k5-overlay.png",
+    "nightstand-meshy-1k5-render.png",
+    "nightstand-meshy-1k5-side-by-side.png",
+    "nightstand-meshy-1k5-turntable.png",
+    "nightstand-meshy-1k5-yaw-candidates.png"
+  ]
+}

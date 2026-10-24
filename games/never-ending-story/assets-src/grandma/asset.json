@@ -1,0 +1,201 @@
+{
+  "id": "7b6006ee-456a-45c5-9012-f35d26fd71a8",
+  "kind": "character",
+  "title": "ย่ามะลิ",
+  "titleEn": "Grandma Mali",
+  "slug": "characters/grandma",
+  "status": "modelled",
+  "statusNotes": "Rigged and animated GLB, shown in #/showcase only. Not placed in any scene yet and not editable in #/editor (skinned mesh). No entity in the room data yet; the id is new.",
+  "dimensionsCm": {
+    "width": 78.6,
+    "depth": 39.9,
+    "height": 155
+  },
+  "dimensionsNotes": "Bind pose (A-pose), so the width is the arm span. Origin at the floor between the feet, facing +Z (glTF / Three.js), metres in the GLB.",
+  "source": {
+    "mockup": "games/never-ending-story/public/img/living-grandma.jpg",
+    "mockupSize": {
+      "width": 720,
+      "height": 1280
+    },
+    "notes": "Cut out with rembg (ref/cut.py), cropped to the figure and padded to a 1224 x 1224 transparent square."
+  },
+  "ref": {
+    "tposeSheet": "ref/grandma-mali-tpose.jpg",
+    "tposeCutout": "ref/grandma-mali-tpose-cutout.png",
+    "portrait2Inch": "ref/grandma-mali-2inch-photo.jpg",
+    "isolatedSquare": "ref/grandma-cutout.png"
+  },
+  "generator": {
+    "tool": "Meshy API (image-to-3d, rigging, animations, remesh)",
+    "license": "Generated on a Meshy Pro plan: the output may be used commercially (Meshy terms for paid plans).",
+    "tasks": "meshy/tasks.json",
+    "creditsUsed": 140
+  },
+  "exports": {
+    "runtime": [
+      "games/never-ending-story/public/models/grandma-mali-head19k-tpose.glb",
+      "games/never-ending-story/public/models/grandma-mali-ultra-nopbr.glb",
+      "games/never-ending-story/public/models/grandma-mali-ultra.glb",
+      "games/never-ending-story/public/models/grandma-mali-parametric.glb",
+      "games/never-ending-story/public/models/grandma-mali-remesh-6k.glb",
+      "games/never-ending-story/public/models/grandma-mali-remesh-1k5.glb"
+    ],
+    "build": "build/build.mjs",
+    "bytes": 8236164,
+    "triangles": 233332,
+    "vertices": 128560,
+    "joints": 24,
+    "texture": {
+      "size": 2048,
+      "format": "image/jpeg",
+      "quality": 90,
+      "pbr": [
+        "baseColor (2048)",
+        "normal (2048)",
+        "metallicRoughness (1024)"
+      ]
+    },
+    "compression": "KHR_mesh_quantization (no Draco/meshopt decoder needed)",
+    "lods": {
+      "notes": "Default showcase variant is runtime[0] (grandma-mali-ultra.glb, 233,332 tris un-decimated Meshy 7.1 4K + PBR maps). Default game-budget variant is runtime[1] (grandma-mali-remesh-6k.glb, 6,251 tris Meshy Remesh API + PBR maps + 24-bone skin weights via build/remesh.py). Also includes the earlier cutout-based 19.4k mesh and meshoptimizer QEM 6k / 3k / 1.5k LODs.",
+      "command": "cd build && PYTHON=<venv python> npm run lods",
+      "files": {
+        "games/never-ending-story/public/models/grandma-mali-ultra.glb": {
+          "triangles": 233332,
+          "vertices": 128560,
+          "bytes": 8206988,
+          "note": "Default showcase: Smooth big-face T-pose Ultra (Meshy 7.1 4K geometry + PBR maps)"
+        },
+        "games/never-ending-story/public/models/grandma-mali-remesh-6k.glb": {
+          "triangles": 6251,
+          "vertices": 5431,
+          "bytes": 2263588,
+          "note": "Default game-budget: Smooth big-face T-pose 6k (Meshy Remesh API + PBR maps + skin weight transfer)"
+        },
+        "games/never-ending-story/public/models/grandma-mali-remesh-1k5.glb": {
+          "triangles": 1556,
+          "vertices": 1874,
+          "bytes": 953848,
+          "note": "Smooth big-face T-pose 1.5k (Meshy Remesh API from Ultra 233k + 1K PBR maps + 24-bone skin weight transfer)"
+        },
+        "games/never-ending-story/public/models/grandma-mali-cutout-19k.glb": {
+          "triangles": 19416,
+          "vertices": 20929,
+          "bytes": 1250112,
+          "note": "Earlier cutout-based 19.4k Meshy mesh"
+        },
+        "games/never-ending-story/public/models/grandma-mali-6k.glb": {
+          "triangles": 5999,
+          "vertices": 5084,
+          "bytes": 733344,
+          "note": "6k (meshopt QEM + xatlas bake)"
+        },
+        "games/never-ending-story/public/models/grandma-mali-3k.glb": {
+          "triangles": 3000,
+          "vertices": 2656,
+          "bytes": 635424
+        },
+        "games/never-ending-story/public/models/grandma-mali-1k5.glb": {
+          "triangles": 1500,
+          "vertices": 1492,
+          "bytes": 593032
+        },
+        "games/never-ending-story/public/models/grandma-mali-parametric.glb": {
+          "tris": 21360,
+          "verts": 11466,
+          "bytes": 1328712,
+          "method": "Parametric standard human base body (BodyParams 1.55m) + modular outfit meshes (Outfit_Blouse, Outfit_Cardigan, Outfit_Skirt, Outfit_Shoes) + subdivided high-detail Head_Focused (8,408 tris) with 2K front-focused portrait atlas via build/build_parametric_modular.py"
+        },
+        "games/never-ending-story/public/models/grandma-mali-head19k-tpose.glb": {
+          "triangles": 10865,
+          "vertices": 8373,
+          "bytes": 3143288,
+          "note": "Default showcase: Original 19.4k cutout head (living-grandma.jpg, enable_pbr: false, unedited face geometry & 2K texture) transplanted onto 6k T-pose body with 24-bone rig & 6 animations via build/transplant_19k_head.py"
+        },
+        "games/never-ending-story/public/models/grandma-mali-ultra-nopbr.glb": {
+          "triangles": 235018,
+          "vertices": 128775,
+          "bytes": 8031204,
+          "note": "Highest-detail Ultra T-pose generated with Meshy 7.1 (enable_pbr: false, image_enhancement: false, should_remesh: false, 4K diffuse) + 24-bone skin weight transfer via build/build_ultra_nopbr.py"
+        }
+      }
+    },
+    "nodes": {
+      "scene": "GrandmaMali_Scene",
+      "armature": "GrandmaMali_Armature",
+      "body": "GrandmaMali_Body",
+      "hips": "Hips",
+      "material": "GrandmaMali"
+    },
+    "clips": {
+      "Idle": {
+        "seconds": 9.97,
+        "loop": true,
+        "meshyAction": 243,
+        "meshyName": "Idle_3"
+      },
+      "Wave": {
+        "seconds": 4.1,
+        "loop": true,
+        "meshyAction": 290,
+        "meshyName": "Wave_One_Hand"
+      },
+      "SitDown": {
+        "seconds": 5.67,
+        "loop": false,
+        "meshyAction": 58,
+        "meshyName": "Step_to_Sit_Transition",
+        "notes": "Walks ~0.9 m forward, turns 90 degrees and sits facing +X; ends at the seat anchor."
+      },
+      "SitIdle": {
+        "seconds": 3.7,
+        "loop": true,
+        "meshyAction": 32,
+        "meshyName": "Chair_Sit_Idle_F",
+        "notes": "Trimmed to 0-3.7 s (upright part; the original slumps from ~4 s), last 0.6 s blended back to frame 0, rotated +90 degrees and moved onto the seat anchor."
+      },
+      "SitTalk": {
+        "seconds": 9.67,
+        "loop": true,
+        "meshyAction": 307,
+        "meshyName": "Sitting_Answering_Questions",
+        "notes": "Rotated +90 degrees and moved onto the seat anchor. Knees are wide, so the skirt spreads."
+      },
+      "Walk": {
+        "seconds": 1.07,
+        "loop": true,
+        "meshyName": "walking (free with rigging)",
+        "notes": "In place. The skirt splits into two legs (the skin follows the thigh bones)."
+      }
+    },
+    "droppedClips": {
+      "Run": "Free running clip from rigging: does not suit an elderly character and would add ~100 KB."
+    },
+    "seat": {
+      "notes": "Model space, metres. Where a seat must be for SitDown / SitIdle / SitTalk.",
+      "facing": "+X",
+      "hipsAnchor": [
+        -0.35,
+        0.49,
+        0.903
+      ],
+      "hipsHeight": {
+        "SitDown_end": 0.481,
+        "SitIdle": 0.495,
+        "SitTalk": 0.503
+      },
+      "seatTop": 0.44,
+      "seatFrontX": -0.15,
+      "seatDepth": 0.55,
+      "seatWidth": 1,
+      "seatHeightFromHips": "seatTop = hips height - ~0.05 (pelvis offset)"
+    }
+  },
+  "notes": [
+    "The skirt is part of the single skinned mesh, so in Walk it splits like trousers. A cloth bone or a skirt-specific rig would be needed to fix it.",
+    "Hands are mittens: the Meshy rig has no finger bones (24 joints).",
+    "Facial expression is baked into the texture; there are no blend shapes.",
+    "Large raw Meshy downloads (~4.5 MB each) are not in git: meshy/raw/ is git-ignored and Meshy only keeps task results for 3 days."
+  ]
+}
