@@ -1,10 +1,11 @@
 """Align a Meshy Remesh GLB to the rigged mesh's bind pose, transfer skin weights (barycentric on closest
-triangle), weld duplicate (pos, uv) vertices with smooth vertex normals, and downscale its 2048 base-colour
-texture to a 1024 JPEG (q85).
+triangle), weld duplicate (pos, uv) vertices with smooth vertex normals, and downscale its base-colour
+(plus optional PBR normal + metallic-roughness) textures to JPEG.
 
-Usage (called by build.mjs --remesh): python remesh.py <workdir> <remesh.glb>
+Usage (called by build.mjs --remesh): python remesh.py <workdir> <remesh.glb> [tex_size]
 Reads from workdir: hi_pos.bin (f32x3), hi_idx.bin (u32x3), hi_j.bin (u8x4), hi_w.bin (f32x4)
 Writes to workdir:  out_pos.bin, out_nrm.bin, out_uv.bin, out_j.bin, out_w.bin, out_idx.bin, out_tex.jpg
+                    (and out_norm.jpg, out_mr.jpg if present on the remesh GLB)
 """
 import io, sys
 from pathlib import Path
@@ -15,6 +16,7 @@ from PIL import Image
 
 W = Path(sys.argv[1])
 REMESH_GLB = Path(sys.argv[2])
+TEX_SZ = int(sys.argv[3]) if len(sys.argv) > 3 else 1024
 
 hi_pos = np.fromfile(W / "hi_pos.bin", np.float32).reshape(-1, 3)
 hi_idx = np.fromfile(W / "hi_idx.bin", np.uint32).reshape(-1, 3)
@@ -27,7 +29,7 @@ hi_W = np.zeros((len(hi_pos), n_joints), dtype=np.float64)
 for k in range(4):
     np.add.at(hi_W, (np.arange(len(hi_pos)), hi_j[:, k]), hi_w[:, k])
 
-# Read remeshed mesh and its base-colour texture from the Meshy Remesh GLB
+# Read remeshed mesh and its textures from the Meshy Remesh GLB
 gltf = pygltflib.GLTF2().load(str(REMESH_GLB))
 blob = gltf.binary_blob()
 prim = gltf.meshes[0].primitives[0]
@@ -110,13 +112,18 @@ out_j.tofile(W / "out_j.bin")
 out_w.tofile(W / "out_w.bin")
 out_idx.tofile(W / "out_idx.bin")
 
-# Extract base-colour texture from material.pbrMetallicRoughness.baseColorTexture
+def save_tex(tinfo, out_name, sz, q=85):
+    if tinfo is None:
+        return
+    img_idx = gltf.textures[tinfo.index].source
+    bv = gltf.bufferViews[gltf.images[img_idx].bufferView]
+    im = Image.open(io.BytesIO(blob[bv.byteOffset : bv.byteOffset + bv.byteLength])).convert("RGB")
+    im.resize((sz, sz), Image.LANCZOS).save(W / out_name, quality=q, optimize=True)
+
 mat = gltf.materials[0]
-tex_idx = mat.pbrMetallicRoughness.baseColorTexture.index
-img_idx = gltf.textures[tex_idx].source
-bv = gltf.bufferViews[gltf.images[img_idx].bufferView]
-im = Image.open(io.BytesIO(blob[bv.byteOffset : bv.byteOffset + bv.byteLength])).convert("RGB")
-im.resize((1024, 1024), Image.LANCZOS).save(W / "out_tex.jpg", quality=85, optimize=True)
+save_tex(mat.pbrMetallicRoughness.baseColorTexture, "out_tex.jpg", TEX_SZ, 88)
+save_tex(mat.normalTexture, "out_norm.jpg", TEX_SZ, 86)
+save_tex(mat.pbrMetallicRoughness.metallicRoughnessTexture, "out_mr.jpg", min(TEX_SZ, 1024), 85)
 
 print(
     f"remesh: {len(raw_idx)} tris, verts {len(raw_pos)} -> {len(out_pos)} ({len(u_pts)} positions), "

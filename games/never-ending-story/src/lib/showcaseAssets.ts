@@ -153,6 +153,15 @@ export const SHOWCASE_ASSETS: ShowcaseAsset[] = [
         },
         url: `${BASE}models/nightstand-master.glb`,
       },
+      {
+        id: 'meshy1k5',
+        get label() {
+          return t('asset.nightstand.variant.meshy1k5');
+        },
+        url: `${BASE}models/nightstand-meshy-1k5.glb`,
+        tris: 961,
+        bytes: 367108,
+      },
     ],
     ref: {
       src: `${BASE}showcase/nightstand-ref.png`,
@@ -188,17 +197,36 @@ export const SHOWCASE_ASSETS: ShowcaseAsset[] = [
       return t('asset.grandma.knownIssues');
     },
     variants: [
-      // Primary runtime model: Meshy Remesh 6k + transferred 24-bone skin weights (build/remesh.py).
+      // Smooth big-face T-pose Ultra (Meshy 7.1 4K geometry + PBR maps: baseColor, normal, metallicRoughness).
+      {
+        id: 'ultra',
+        get label() {
+          return t('asset.grandma.variant.ultra');
+        },
+        url: `${BASE}models/grandma-mali-ultra.glb`,
+        tris: 233332,
+        bytes: 8236164,
+      },
+      // Primary runtime model: Smooth big-face T-pose 6k Meshy Remesh + PBR maps + 24-bone skin weights.
       {
         id: 'remesh6k',
         get label() {
           return t('asset.grandma.variant.remesh6k');
         },
         url: `${BASE}models/grandma-mali-remesh-6k.glb`,
-        tris: 6234,
-        bytes: 744132,
+        tris: 6251,
+        bytes: 2280948,
       },
-      // Comparison variants (meshoptimizer QEM LODs + original 19.4k mesh); see assets-src/grandma/build/build.mjs.
+      // Earlier comparison variants (cutout-based 19.4k + meshoptimizer QEM LODs); see assets-src/grandma/build/build.mjs.
+      {
+        id: 'rigged',
+        get label() {
+          return t('asset.grandma.variant.rigged');
+        },
+        url: `${BASE}models/grandma-mali-cutout-19k.glb`,
+        tris: 19416,
+        bytes: 1250112,
+      },
       {
         id: 'lod6k',
         get label() {
@@ -207,15 +235,6 @@ export const SHOWCASE_ASSETS: ShowcaseAsset[] = [
         url: `${BASE}models/grandma-mali-6k.glb`,
         tris: 5999,
         bytes: 733344,
-      },
-      {
-        id: 'rigged',
-        get label() {
-          return t('asset.grandma.variant.rigged');
-        },
-        url: `${BASE}models/grandma-mali.glb`,
-        tris: 19416,
-        bytes: 1255116,
       },
       {
         id: 'lod3k',
@@ -288,7 +307,7 @@ export const SHOWCASE_ASSETS: ShowcaseAsset[] = [
           },
         },
       ],
-      defaultVariant: 'remesh6k',
+      defaultVariant: 'ultra',
       idle: 'Idle',
       sitDown: 'SitDown',
       // SitDown turns 90 degrees, so she sits facing +X with the hips at (-0.35, 0.48, 0.903).

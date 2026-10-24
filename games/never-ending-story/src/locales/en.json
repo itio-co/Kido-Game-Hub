@@ -635,6 +635,7 @@
   "asset.nightstand.title": "Nightstand",
   "asset.nightstand.variant.lowpoly": "Low-poly (game)",
   "asset.nightstand.variant.master": "Master",
+  "asset.nightstand.variant.meshy1k5": "Meshy 1.5k (961 tris)",
   "game.showcase.kicker": "Design corner",
   "game.showcase.variants": "Model version",
   "game.showcase.edit": "✎ Edit this model (3D editor)",
@@ -644,7 +645,7 @@
   "game.nightstand.orbit": "Rotate the nightstand",
   "game.nightstand.view": "3D nightstand",
   "asset.grandma.title": "Grandma Mali",
-  "asset.grandma.variant.rigged": "Original",
+  "asset.grandma.variant.rigged": "Old cutout (19k)",
   "asset.grandma.variant.lod6k": "6k (meshopt)",
   "asset.grandma.variant.remesh6k": "6k (Meshy Remesh, game)",
   "asset.grandma.variant.lod3k": "Low-poly 3k",
@@ -655,7 +656,7 @@
   "asset.grandma.clip.sitIdle": "Sitting",
   "asset.grandma.clip.sitTalk": "Sitting talk",
   "asset.grandma.clip.walk": "Walk",
-  "asset.grandma.knownIssues": "Known issues: the skirt splits like trousers while walking, and the hands have no fingers.",
+  "asset.grandma.knownIssues": "Generated from the smooth big-face T-pose reference sheet with Meshy 7.1 4K Ultra + PBR maps.",
   "game.showcase.assets": "Models",
   "game.showcase.notEditable": "Characters can't be edited in the 3D editor.",
   "game.character.view": "3D character",
@@ -694,5 +695,6 @@
   "game.error.notSceneLevel": "{slug} is not at the top level of the scene",
   "game.error.notOnShelf": "{slug} is not on the bookshelf",
   "game.error.noBuilder": "No builder for kind {kind}",
-  "game.error.notBuildable": "Kind {kind} is not built as a scene object"
+  "game.error.notBuildable": "Kind {kind} is not built as a scene object",
+  "asset.grandma.variant.ultra": "Ultra (Max Meshy)"
 }

@@ -285,8 +285,10 @@ export function mountCharacterStage(
           const list = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
           for (const mat of list) {
             res.mats.push(mat);
-            const map = (mat as THREE.MeshStandardMaterial).map;
-            if (map) res.textures.push(map);
+            const std = mat as THREE.MeshStandardMaterial;
+            for (const tex of [std.map, std.normalMap, std.metalnessMap, std.roughnessMap]) {
+              if (tex && !res.textures.includes(tex)) res.textures.push(tex);
+            }
           }
         });
         model = gltf.scene;

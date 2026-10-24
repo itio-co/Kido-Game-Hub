@@ -635,6 +635,7 @@
   "asset.nightstand.title": "ตู้ข้างเตียง",
   "asset.nightstand.variant.lowpoly": "Low-poly (เกม)",
   "asset.nightstand.variant.master": "Master",
+  "asset.nightstand.variant.meshy1k5": "Meshy 1.5k (961 สามเหลี่ยม)",
   "game.showcase.kicker": "มุมออกแบบ",
   "game.showcase.variants": "รุ่นโมเดล",
   "game.showcase.edit": "✎ แก้โมเดลนี้ (3D editor)",
@@ -644,7 +645,7 @@
   "game.nightstand.orbit": "หมุนตู้ข้างเตียง",
   "game.nightstand.view": "ตู้ข้างเตียงสามมิติ",
   "asset.grandma.title": "ย่ามะลิ",
-  "asset.grandma.variant.rigged": "ต้นฉบับ",
+  "asset.grandma.variant.rigged": "รุ่นภาพตัดแปะเดิม (19k)",
   "asset.grandma.variant.lod6k": "6k (meshopt)",
   "asset.grandma.variant.remesh6k": "6k (Meshy Remesh, ใช้ในเกม)",
   "asset.grandma.variant.lod3k": "โลว์โพลี 3k",
@@ -655,7 +656,7 @@
   "asset.grandma.clip.sitIdle": "นั่งพัก",
   "asset.grandma.clip.sitTalk": "นั่งคุย",
   "asset.grandma.clip.walk": "เดิน",
-  "asset.grandma.knownIssues": "ปัญหาที่รู้แล้ว: กระโปรงแยกเป็นสองขาเหมือนกางเกงตอนเดิน และมือยังไม่มีนิ้ว",
+  "asset.grandma.knownIssues": "สร้างจากภาพอ้างอิง T-pose ผิวเรียบสไตล์หัวโต ด้วย Meshy 7.1 4K Ultra + แผนที่ผิว PBR",
   "game.showcase.assets": "โมเดล",
   "game.showcase.notEditable": "ตัวละครยังแก้ในตัวแก้โมเดล 3 มิติไม่ได้",
   "game.character.view": "ตัวละครสามมิติ",
@@ -694,5 +695,6 @@
   "game.error.notSceneLevel": "{slug} ไม่อยู่ชั้นบนของฉาก",
   "game.error.notOnShelf": "{slug} ไม่อยู่ในชั้นหนังสือ",
   "game.error.noBuilder": "ไม่มีตัวสร้างสำหรับชนิด {kind}",
-  "game.error.notBuildable": "ชนิด {kind} ไม่ได้สร้างเป็นวัตถุในฉาก"
+  "game.error.notBuildable": "ชนิด {kind} ไม่ได้สร้างเป็นวัตถุในฉาก",
+  "asset.grandma.variant.ultra": "Ultra (ละเอียดสุด Meshy)"
 }

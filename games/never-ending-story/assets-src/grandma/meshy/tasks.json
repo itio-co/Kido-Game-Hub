@@ -1,7 +1,7 @@
 {
   "api": "https://api.meshy.ai/openapi/v1",
   "plan": "Meshy Pro",
-  "creditsTotal": 55,
+  "creditsTotal": 115,
   "tasks": [
     {
       "step": "image-to-3d",
@@ -54,6 +54,58 @@
       "credits": 5,
       "createdAt": "2026-10-24T08:46:06+07:00",
       "result": "grandma-remesh-6k.glb (6,234 triangles, 8,600 raw verts -> 4,984 welded verts, 2048 base-colour texture)"
+    },
+    {
+      "step": "image-to-3d-bigface-ultra",
+      "endpoint": "POST /openapi/v1/image-to-3d",
+      "taskId": "01a16c67-e03e-745e-adfe-619fa6da1da0",
+      "request": "request-image-to-3d-bigface.json (+ image_url = data URI of ../ref/grandma-mali-tpose-cutout.png)",
+      "credits": 35,
+      "createdAt": "2026-10-24T12:25:14+07:00",
+      "result": "model.glb, 233,332 triangles (128,560 verts), 4096 PBR maps (baseColor, normal, roughness, metallic)"
+    },
+    {
+      "step": "remesh-bigface-6k",
+      "endpoint": "POST /openapi/v1/remesh",
+      "taskId": "01a16c6a-5c4f-719b-bd97-4676c7b44d10",
+      "request": "request-remesh-bigface-6k.json",
+      "credits": 5,
+      "createdAt": "2026-10-24T12:28:18+07:00",
+      "result": "grandma-remesh-6k.glb (6,251 triangles, 7,955 raw verts -> 5,431 welded verts, 4096 PBR maps)"
+    },
+    {
+      "step": "rigging-bigface",
+      "endpoint": "POST /openapi/v1/rigging",
+      "taskId": "01a16c6a-5d67-70ad-92f1-ed627e220106",
+      "request": "request-rigging-bigface.json",
+      "credits": 5,
+      "createdAt": "2026-10-24T12:28:20+07:00",
+      "result": "Character_output.glb (233,332 tris, 24 joints) + basic walking / running clips"
+    },
+    {
+      "step": "animations-bigface-1",
+      "endpoint": "POST /openapi/v1/animations",
+      "taskId": "01a16c6c-8f98-7444-b508-a47f5454c978",
+      "request": "request-animations-bigface-1.json",
+      "actions": {
+        "243": "Idle_3",
+        "32": "Chair_Sit_Idle_F",
+        "290": "Wave_One_Hand"
+      },
+      "credits": 9,
+      "createdAt": "2026-10-24T12:30:27+07:00"
+    },
+    {
+      "step": "animations-bigface-2",
+      "endpoint": "POST /openapi/v1/animations",
+      "taskId": "01a16c6c-931c-7260-ab3c-dc28e1c2cf05",
+      "request": "request-animations-bigface-2.json",
+      "actions": {
+        "58": "Step_to_Sit_Transition",
+        "307": "Sitting_Answering_Questions"
+      },
+      "credits": 6,
+      "createdAt": "2026-10-24T12:30:29+07:00"
     }
   ],
   "balances": {
@@ -74,6 +126,11 @@
       "before": 1340,
       "after": 1335,
       "note": "monthly 1050 -> 1045 (-5), permanent 290"
+    },
+    "bigfaceTposeUltra": {
+      "before": 1255,
+      "after": 1195,
+      "note": "monthly 965 -> 905 (-60: 35 image-to-3d 4K + PBR, 5 remesh 6k, 5 rigging, 15 animations), permanent 290"
     }
   },
   "notes": "Meshy keeps task results for 3 days. The API key is read from the MESHY_API_KEY environment variable and is never stored here."

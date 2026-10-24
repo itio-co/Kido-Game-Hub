@@ -3,7 +3,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { findAsset, vfovFromHfov } from './showcaseAssets';
 
 export type NightstandStage = { dispose: () => void };
-export type NightstandVariant = 'lowpoly' | 'master';
+export type NightstandVariant = 'lowpoly' | 'master' | 'meshy1k5';
 
 /** Cream wall sampled to the crop's background. */
 const WALL = '#f0c9a0';
@@ -14,6 +14,7 @@ const NIGHTSTAND = findAsset('player-room/nightstand')!;
 export const NIGHTSTAND_MODELS: Record<NightstandVariant, string> = {
   lowpoly: NIGHTSTAND.variants.find((v) => v.id === 'lowpoly')!.url,
   master: NIGHTSTAND.variants.find((v) => v.id === 'master')!.url,
+  meshy1k5: NIGHTSTAND.variants.find((v) => v.id === 'meshy1k5')!.url,
 };
 
 /** Camera matched in Blender to showcase/nightstand-ref.png (see showcaseAssets.ts). */

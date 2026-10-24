@@ -1,0 +1,24 @@
+{
+  "asset": "player-room/nightstand",
+  "sourceImage": "assets-src/nightstand/ref/nightstand-isolated-1024.png",
+  "creditsUsed": 30,
+  "task": {
+    "endpoint": "POST /openapi/v1/image-to-3d",
+    "id": "01a16c77-3840-7395-b624-2f2bf168a529",
+    "params": {
+      "ai_model": "meshy-7.1",
+      "topology": "triangle",
+      "target_polycount": 1500,
+      "should_remesh": true,
+      "should_texture": true,
+      "enable_pbr": true
+    },
+    "resultTriangles": 961,
+    "output": "public/models/nightstand-meshy-1k5.glb",
+    "bytes": 367108,
+    "silhouetteIoU": {
+      "refinedMask": 0.9143,
+      "rembgMask": 0.7718
+    }
+  }
+}

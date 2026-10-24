@@ -30,7 +30,7 @@
 
   const mock = `${import.meta.env.BASE_URL}showcase/nightstand-ref.png`;
 
-  const initial: NightstandVariant = location.hash.includes('model=master') ? 'master' : 'lowpoly';
+  const initial: NightstandVariant = location.hash.includes('model=meshy1k5') ? 'meshy1k5' : location.hash.includes('model=master') ? 'master' : 'lowpoly';
   let variant = $state<NightstandVariant>(initial);
   const variants = $derived(
     (findAsset('player-room/nightstand')?.variants ?? []).map((v) => ({
