@@ -1,7 +1,7 @@
 {
   "api": "https://api.meshy.ai/openapi/v1",
   "plan": "Meshy Pro",
-  "creditsTotal": 50,
+  "creditsTotal": 55,
   "tasks": [
     {
       "step": "image-to-3d",
@@ -26,7 +26,11 @@
       "endpoint": "POST /openapi/v1/animations",
       "taskId": "01a169f1-770f-743a-abc0-a9e881d6e44a",
       "request": "request-animations-1.json",
-      "actions": { "243": "Idle_3", "32": "Chair_Sit_Idle_F", "290": "Wave_One_Hand" },
+      "actions": {
+        "243": "Idle_3",
+        "32": "Chair_Sit_Idle_F",
+        "290": "Wave_One_Hand"
+      },
       "credits": 9,
       "createdAt": "2026-10-24T01:06:34+07:00"
     },
@@ -35,15 +39,42 @@
       "endpoint": "POST /openapi/v1/animations",
       "taskId": "01a169f5-b46e-76d3-97b9-1bf9d67a3938",
       "request": "request-animations-2.json",
-      "actions": { "58": "Step_to_Sit_Transition", "307": "Sitting_Answering_Questions" },
+      "actions": {
+        "58": "Step_to_Sit_Transition",
+        "307": "Sitting_Answering_Questions"
+      },
       "credits": 6,
       "createdAt": "2026-10-24T01:11:12+07:00"
+    },
+    {
+      "step": "remesh",
+      "endpoint": "POST /openapi/v1/remesh",
+      "taskId": "01a16b96-2d16-7121-8ce4-d89e798ce919",
+      "request": "request-remesh-6k.json",
+      "credits": 5,
+      "createdAt": "2026-10-24T08:46:06+07:00",
+      "result": "grandma-remesh-6k.glb (6,234 triangles, 8,600 raw verts -> 4,984 welded verts, 2048 base-colour texture)"
     }
   ],
   "balances": {
-    "imageTo3d": { "before": 1340, "after": 1360, "note": "monthly 1100 -> 1070 (-30); permanent credits rose by 50 from an unrelated top-up at the same time" },
-    "rigAndAnimations1": { "before": 1360, "after": 1346 },
-    "animations2": { "before": 1346, "after": 1340 }
+    "imageTo3d": {
+      "before": 1340,
+      "after": 1360,
+      "note": "monthly 1100 -> 1070 (-30); permanent credits rose by 50 from an unrelated top-up at the same time"
+    },
+    "rigAndAnimations1": {
+      "before": 1360,
+      "after": 1346
+    },
+    "animations2": {
+      "before": 1346,
+      "after": 1340
+    },
+    "remesh6k": {
+      "before": 1340,
+      "after": 1335,
+      "note": "monthly 1050 -> 1045 (-5), permanent 290"
+    }
   },
   "notes": "Meshy keeps task results for 3 days. The API key is read from the MESHY_API_KEY environment variable and is never stored here."
 }

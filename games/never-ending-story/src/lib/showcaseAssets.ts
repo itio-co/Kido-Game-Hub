@@ -42,6 +42,8 @@ export type CharacterClip = {
  */
 export type CharacterInfo = {
   clips: CharacterClip[];
+  /** Default variant id selected in the Showcase and game (defaults to the first variant). */
+  defaultVariant?: string;
   /** Clip played on load and when leaving the seat. */
   idle: string;
   /** Transition played when the seat is turned on. */
@@ -206,6 +208,15 @@ export const SHOWCASE_ASSETS: ShowcaseAsset[] = [
         bytes: 733344,
       },
       {
+        id: 'remesh6k',
+        get label() {
+          return t('asset.grandma.variant.remesh6k');
+        },
+        url: `${BASE}models/grandma-mali-remesh-6k.glb`,
+        tris: 6234,
+        bytes: 744132,
+      },
+      {
         id: 'lod3k',
         get label() {
           return t('asset.grandma.variant.lod3k');
@@ -276,6 +287,7 @@ export const SHOWCASE_ASSETS: ShowcaseAsset[] = [
           },
         },
       ],
+      defaultVariant: 'lod6k',
       idle: 'Idle',
       sitDown: 'SitDown',
       // SitDown turns 90 degrees, so she sits facing +X with the hips at (-0.35, 0.48, 0.903).

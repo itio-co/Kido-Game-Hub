@@ -1,0 +1,8 @@
+{
+    "input_task_id": "01a169e7-74d3-7656-b0c0-81b6e7ddbc85",
+    "target_formats": [
+        "glb"
+    ],
+    "topology": "triangle",
+    "target_polycount": 6000
+}

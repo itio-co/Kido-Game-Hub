@@ -11,6 +11,6 @@
   },
   "scripts": {
     "build": "node build.mjs",
-    "lods": "node build.mjs --tris 6000 --bake ../../../public/models/grandma-mali-6k.glb && node build.mjs --tris 3000 --bake ../../../public/models/grandma-mali-3k.glb && node build.mjs --tris 1500 --bake ../../../public/models/grandma-mali-1k5.glb"
+    "lods": "node build.mjs --tris 6000 --bake ../../../public/models/grandma-mali-6k.glb && node build.mjs --remesh ../../../public/models/grandma-mali-remesh-6k.glb && node build.mjs --tris 3000 --bake ../../../public/models/grandma-mali-3k.glb && node build.mjs --tris 1500 --bake ../../../public/models/grandma-mali-1k5.glb"
   }
 }

@@ -21,6 +21,7 @@ const R=HERE+'../meshy/raw/', R2=R;
 const args=process.argv.slice(2); const ti=args.indexOf('--tris');
 const TRIS=ti>=0?Number(args.splice(ti,2)[1]):0;
 const bi=args.indexOf('--bake'); const BAKE=bi>=0; if(BAKE) args.splice(bi,1);
+const ri=args.indexOf('--remesh'); const REMESH=ri>=0; if(REMESH) args.splice(ri,1);
 const OUT=args[0]||HERE+'../../../public/models/grandma-mali.glb';
 const io=new NodeIO().registerExtensions(ALL_EXTENSIONS);
 const doc=await io.read(R+'Character_output.glb'); const root=doc.getRoot(); const buf=root.listBuffers()[0];
@@ -120,6 +121,34 @@ function bakeTexture(prim, hi){
   BAKED_TEX=fs.readFileSync(path.join(dir,'out_tex.jpg'));
   fs.rmSync(dir,{recursive:true,force:true});
 }
+/** Replace the skinned mesh geometry with a Meshy Remesh GLB (../meshy/raw/grandma-remesh-6k.glb),
+ *  transferring JOINTS_0 / WEIGHTS_0 from the rigged mesh via remesh.py so the 24-joint rig and clips work. */
+function applyRemesh(){
+  for(const mesh of root.listMeshes()) for(const prim of mesh.listPrimitives()){
+    const dir=fs.mkdtempSync(path.join(os.tmpdir(),'grandma-remesh-'));
+    fs.writeFileSync(path.join(dir,'hi_pos.bin'),new Float32Array(prim.getAttribute('POSITION').getArray()));
+    fs.writeFileSync(path.join(dir,'hi_idx.bin'),new Uint32Array(prim.getIndices().getArray()));
+    fs.writeFileSync(path.join(dir,'hi_j.bin'),new Uint8Array(prim.getAttribute('JOINTS_0').getArray()));
+    fs.writeFileSync(path.join(dir,'hi_w.bin'),new Float32Array(prim.getAttribute('WEIGHTS_0').getArray()));
+    execFileSync(process.env.PYTHON||'python3',[HERE+'remesh.py',dir,R+'grandma-remesh-6k.glb'],{stdio:'inherit'});
+    const rd=(f,T)=>{const b=fs.readFileSync(path.join(dir,f)); return new T(b.buffer,b.byteOffset,b.byteLength/T.BYTES_PER_ELEMENT);};
+    const npos=Float32Array.from(rd('out_pos.bin',Float32Array));
+    const nnrm=Float32Array.from(rd('out_nrm.bin',Float32Array));
+    const nuv=Float32Array.from(rd('out_uv.bin',Float32Array));
+    const nj=Uint8Array.from(rd('out_j.bin',Uint8Array));
+    const nw=Float32Array.from(rd('out_w.bin',Float32Array));
+    const nidx=rd('out_idx.bin',Uint32Array);
+    const tng=prim.getAttribute('TANGENT'); if(tng){prim.setAttribute('TANGENT',null); tng.dispose();}
+    prim.getAttribute('POSITION').setArray(npos);
+    prim.getAttribute('NORMAL').setArray(nnrm);
+    prim.getAttribute('TEXCOORD_0').setArray(nuv);
+    prim.getAttribute('JOINTS_0').setArray(nj);
+    prim.getAttribute('WEIGHTS_0').setArray(nw);
+    prim.getIndices().setArray(npos.length/3<65536?Uint16Array.from(nidx):Uint32Array.from(nidx));
+    BAKED_TEX=fs.readFileSync(path.join(dir,'out_tex.jpg'));
+    fs.rmSync(dir,{recursive:true,force:true});
+  }
+}
 let BAKED_TEX=null;
 // Clip order in the file: Idle, Wave, SitDown, SitIdle, SitTalk, Walk.
 await addClips(A1,{Idle_3:{name:'Idle'}});
@@ -135,6 +164,7 @@ for(const m of root.listMaterials()) m.setName('GrandmaMali');
 root.listScenes()[0].setName('GrandmaMali_Scene');
 const tex=root.listTextures()[0]; tex.setImage(fs.readFileSync(R+'texture-1024.jpg')).setMimeType('image/jpeg').setName('GrandmaMali_BaseColor');
 if(TRIS) await simplifyTo(TRIS);
+if(REMESH) applyRemesh();
 if(BAKED_TEX) tex.setImage(BAKED_TEX);
 await doc.transform(resample(),dedup(),prune(),quantize());
 await io.write(OUT,doc);

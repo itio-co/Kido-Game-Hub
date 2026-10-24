@@ -162,7 +162,7 @@ export function mountCharacterStage(
     playing: true,
     loop: true,
     seat: false,
-    variant: asset.variants[0]!.id,
+    variant: (asset.variants.find((v) => v.id === info.defaultVariant) ?? asset.variants[0]!).id,
     flat: false,
   };
   const emit = () => onChange({ ...snap });

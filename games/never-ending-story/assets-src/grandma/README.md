@@ -1,6 +1,6 @@
 # Grandma Mali (ย่ามะลิ) — rigged character
 
-`characters/grandma` · runtime file `games/never-ending-story/public/models/grandma-mali.glb` (1.26 MB) ·
+`characters/grandma` · default runtime file `games/never-ending-story/public/models/grandma-mali-6k.glb` (733 KB, 5,999 tris) ·
 shown in `#/showcase` (not editable in `#/editor`).
 
 Image-to-3D, rigging and animations were done with the [Meshy API](https://docs.meshy.ai/) from the
@@ -24,7 +24,8 @@ grandma/
 │   ├── texture.py            2048 → 1024 JPEG base colour (q85)
 │   ├── build.mjs             raw GLBs → public/models/grandma-mali.glb (+ low-poly LODs with --tris)
 │   ├── bake.py               LOD texture re-bake (xatlas unwrap + sampling the 2048 texture)
-│   ├── requirements.txt      python deps of bake.py
+│   ├── remesh.py             Meshy Remesh 6k align + 24-bone skin weight transfer + 1024 JPEG
+│   ├── requirements.txt      python deps of bake.py / remesh.py
 │   └── package.json          glTF Transform + meshoptimizer (offline only, not part of the game build)
 └── preview/                  turnaround, contact sheets, seated check (JPEG, small)
 ```
@@ -37,7 +38,8 @@ grandma/
 | rigging (height 1.55 m) | `01a169f1-22ab-738e-bdf2-21e01c7e017d` | 5 | 24-joint rig + free walk / run clips |
 | animations 243 Idle_3, 32 Chair_Sit_Idle_F, 290 Wave_One_Hand | `01a169f1-770f-743a-abc0-a9e881d6e44a` | 9 | merged GLB |
 | animations 58 Step_to_Sit_Transition, 307 Sitting_Answering_Questions | `01a169f5-b46e-76d3-97b9-1bf9d67a3938` | 6 | merged GLB |
-| **total** | | **50** | |
+| remesh (`target_polycount: 6000`, triangle) | `01a16b96-2d16-7121-8ce4-d89e798ce919` | 5 | 6,234-tri textured GLB |
+| **total** | | **55** | |
 
 Action 58 was chosen over 57 (male, ends with the knees wide) and 60 (Walk to Sit, a long walk first)
 because it ends knees together with the hands on the knees, the same pose as Chair_Sit_Idle_F.
@@ -92,10 +94,11 @@ The hips are ~0.05 m above the seat top. `#/showcase` draws a simple seat block 
 Generated on a **Meshy Pro** plan. Meshy's terms give paid-plan users ownership and commercial-use rights for
 their generated assets, so the model can ship in the game. The source art is the project's own mock-up.
 
-## Low-poly LODs (comparison only)
+## Low-poly LODs & Meshy Remesh
 
-`public/models/grandma-mali-{6k,3k,1k5}.glb` are QEM-simplified copies for the showcase's *Mesh detail* switch.
-The game still loads `grandma-mali.glb`. No Meshy credits: everything runs offline from `meshy/raw/`.
+`public/models/grandma-mali-6k.glb` (meshoptimizer QEM 6k) is the default runtime model selected in the game and
+showcase. The showcase's *Mesh detail* switch lets you compare the original 19.4k mesh, **6k (meshopt)**,
+**6k (Meshy Remesh)**, **3k**, and **1.5k** side by side.
 
 ```sh
 cd build
@@ -103,12 +106,13 @@ python -m venv .venv && .venv/bin/pip install -r requirements.txt   # numpy, sci
 npm i && PYTHON=.venv/bin/python npm run lods
 ```
 
-| File | Triangles | Vertices | Bytes | Simplifier error |
-| --- | ---: | ---: | ---: | ---: |
-| grandma-mali.glb (original, game) | 19,416 | 20,929 | 1,255,116 | – |
-| grandma-mali-6k.glb | 5,999 | 5,084 | 733,344 | 0.5 % |
-| grandma-mali-3k.glb | 3,000 | 2,656 | 635,424 | 1.2 % |
-| grandma-mali-1k5.glb | 1,500 | 1,492 | 593,032 | 2.8 % |
+| File | Variant | Triangles | Vertices | Bytes | Notes |
+| --- | --- | ---: | ---: | ---: | --- |
+| grandma-mali.glb | Original | 19,416 | 20,929 | 1,255,116 | Full Meshy mesh |
+| grandma-mali-6k.glb | **6k (meshopt, game)** | 5,999 | 5,084 | 733,344 | Default; QEM (0.5 % err) + xatlas bake |
+| grandma-mali-remesh-6k.glb | 6k (Meshy Remesh) | 6,234 | 4,984 | 744,132 | Meshy `/openapi/v1/remesh` + skin weight transfer |
+| grandma-mali-3k.glb | Low-poly 3k | 3,000 | 2,656 | 635,424 | QEM (1.2 % err) + xatlas bake |
+| grandma-mali-1k5.glb | Low-poly 1.5k | 1,500 | 1,492 | 593,032 | QEM (2.8 % err) + xatlas bake |
 
 How `node build.mjs --tris N --bake out.glb` works:
 
@@ -121,6 +125,20 @@ How `node build.mjs --tris N --bake out.glb` works:
 4. **`bake.py`**: xatlas unwraps the low-poly mesh (1024², 4 px padding), each texel finds the nearest point on
    the original surface (KD-tree over 4M samples, normal-checked) and samples Meshy's 2048 texture there; empty
    texels are padded. Writes a 1024 JPEG (q85). Deterministic for the same inputs.
+
+
+How `node build.mjs --remesh out.glb` works (`remesh.py`):
+
+1. Runs on `meshy/raw/grandma-remesh-6k.glb` (`POST /openapi/v1/remesh` on `01a169e7-74d3-7656-b0c0-81b6e7ddbc85`
+   with `target_polycount: 6000, topology: "triangle"`, task `01a16b96-2d16-7121-8ce4-d89e798ce919`, 5 credits).
+2. Aligns the unrigged remesh coordinates to `Character_output.glb`'s 1.55 m rig space via bbox + 15 iterations of
+   point-to-plane IRLS (median surface distance **0.14 mm**).
+3. Computes smooth area-weighted vertex normals per unique 3D position and welds duplicate `(position, uv)` vertices
+   (`8,600 → 4,984` vertices across `6,234` triangles).
+4. Transfers 24-bone skin weights (`JOINTS_0`, `WEIGHTS_0`) from `Character_output.glb` by barycentric interpolation
+   on the closest triangle (top 4 joints, re-normalised), so the remeshed mesh uses the exact same 24-joint skeleton
+   and 6 animation clips without spending additional rigging/animation credits.
+5. Downscales Meshy's remeshed 2048 base-colour texture to a 1024 JPEG (q85).
 
 Without `--bake` the original UVs and texture are kept (UV-aware simplification), but collapses across the many
 UV seams leave small wrong-coloured specks, so the committed LODs all use `--bake`.

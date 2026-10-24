@@ -1,4 +1,7 @@
 numpy
 scipy
 xatlas
+trimesh
+rtree
+pygltflib
 pillow

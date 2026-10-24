@@ -2,9 +2,10 @@
 
     MESHY_API_KEY=... python meshy_api.py balance
     python meshy_api.py image-to-3d          # 30 credits, uses ../ref/grandma-cutout.png
+    python meshy_api.py remesh <image_task_id>
     python meshy_api.py rigging <image_task_id>
     python meshy_api.py animations <rig_task_id> request-animations-1.json
-    python meshy_api.py poll <kind> <task_id> # kind: image-to-3d | rigging | animations
+    python meshy_api.py poll <kind> <task_id> # kind: image-to-3d | remesh | rigging | animations
     python meshy_api.py download <url> <file> # result URLs are in the polled task JSON
 
 The key is only read from the environment. It is never printed or written to disk.
@@ -38,6 +39,10 @@ def main(cmd, *args):
         body = json.loads((HERE / "request-image-to-3d.json").read_text())
         body["image_url"] = "data:image/png;base64," + base64.b64encode(png).decode()
         post("image-to-3d", body)
+    elif cmd == "remesh":
+        body = json.loads((HERE / "request-remesh-6k.json").read_text())
+        body["input_task_id"] = args[0]
+        post("remesh", body)
     elif cmd == "rigging":
         body = json.loads((HERE / "request-rigging.json").read_text())
         body["input_task_id"] = args[0]
