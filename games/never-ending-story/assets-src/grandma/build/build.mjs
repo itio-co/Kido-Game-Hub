@@ -19,6 +19,7 @@ const txi=args.indexOf('--tex'); const TEX_SZ=txi>=0?String(args.splice(txi,2)[1
 const ti=args.indexOf('--tris');
 const TRIS=ti>=0?Number(args.splice(ti,2)[1]):0;
 const bi=args.indexOf('--bake'); const BAKE=bi>=0; if(BAKE) args.splice(bi,1);
+const pmi=args.indexOf('--parametric'); const PARAMETRIC=pmi>=0; if(PARAMETRIC) args.splice(pmi,1);
 const ri=args.indexOf('--remesh');
 let REMESH_FILE='';
 if(ri>=0){
@@ -108,7 +109,7 @@ function bakeTexture(prim, hi){
   fs.writeFileSync(path.join(dir,'hi_uv.bin'),hi.uv); fs.writeFileSync(path.join(dir,'src_tex'),SRC_TEX);
   fs.writeFileSync(path.join(dir,'lo_pos.bin'),new Float32Array(lo.getArray()));
   fs.writeFileSync(path.join(dir,'lo_idx.bin'),new Uint32Array(prim.getIndices().getArray()));
-  execFileSync(process.env.PYTHON||'python3',[HERE+'bake.py',dir,'1024'],{stdio:'inherit'});
+  execFileSync(process.env.PYTHON||'/workspace/meshy/venv/bin/python',[HERE+'bake.py',dir,'1024'],{stdio:'inherit'});
   const rd=(f,T)=>{const b=fs.readFileSync(path.join(dir,f)); return new T(b.buffer,b.byteOffset,b.byteLength/T.BYTES_PER_ELEMENT);};
   const vmap=rd('out_vmap.bin',Uint32Array), nidx=rd('out_idx.bin',Uint32Array), nuv=rd('out_uv.bin',Float32Array);
   for(const sem of prim.listSemantics()){
@@ -129,7 +130,7 @@ function applyRemesh(){
     fs.writeFileSync(path.join(dir,'hi_idx.bin'),new Uint32Array(prim.getIndices().getArray()));
     fs.writeFileSync(path.join(dir,'hi_j.bin'),new Uint8Array(prim.getAttribute('JOINTS_0').getArray()));
     fs.writeFileSync(path.join(dir,'hi_w.bin'),new Float32Array(prim.getAttribute('WEIGHTS_0').getArray()));
-    execFileSync(process.env.PYTHON||'python3',[HERE+'remesh.py',dir,REMESH_FILE,TEX_SZ],{stdio:'inherit'});
+    execFileSync(process.env.PYTHON||'/workspace/meshy/venv/bin/python',[HERE+'remesh.py',dir,REMESH_FILE,TEX_SZ],{stdio:'inherit'});
     const rd=(f,T)=>{const b=fs.readFileSync(path.join(dir,f)); return new T(b.buffer,b.byteOffset,b.byteLength/T.BYTES_PER_ELEMENT);};
     const npos=Float32Array.from(rd('out_pos.bin',Float32Array));
     const nnrm=Float32Array.from(rd('out_nrm.bin',Float32Array));
@@ -169,8 +170,51 @@ for(const mesh of root.listMeshes()) for(const prim of mesh.listPrimitives()){
   const tng=prim.getAttribute('TANGENT'); if(tng){prim.setAttribute('TANGENT',null); tng.dispose();}
 }
 
+/** Refine facial skin geometry & PBR maps on the Ultra mesh via refine_face.py. */
+function applyUltraFaceRefine(){
+  for(const mesh of root.listMeshes()) for(const prim of mesh.listPrimitives()){
+    const dir=fs.mkdtempSync(path.join(os.tmpdir(),'grandma-ultra-face-'));
+    fs.writeFileSync(path.join(dir,'hi_pos.bin'),new Float32Array(prim.getAttribute('POSITION').getArray()));
+    fs.writeFileSync(path.join(dir,'hi_idx.bin'),new Uint32Array(prim.getIndices().getArray()));
+    fs.writeFileSync(path.join(dir,'hi_uv.bin'),new Float32Array(prim.getAttribute('TEXCOORD_0').getArray()));
+    execFileSync(process.env.PYTHON||'/workspace/meshy/venv/bin/python',[HERE+'refine_face.py',dir,TEX_SZ],{stdio:'inherit'});
+    const rd=(f,T)=>{const b=fs.readFileSync(path.join(dir,f)); return new T(b.buffer,b.byteOffset,b.byteLength/T.BYTES_PER_ELEMENT);};
+    prim.getAttribute('POSITION').setArray(Float32Array.from(rd('out_pos.bin',Float32Array)));
+    prim.getAttribute('NORMAL').setArray(Float32Array.from(rd('out_nrm.bin',Float32Array)));
+    BAKED_TEX=fs.readFileSync(path.join(dir,'out_tex.jpg'));
+    if(fs.existsSync(path.join(dir,'out_norm.jpg'))) BAKED_NORM=fs.readFileSync(path.join(dir,'out_norm.jpg'));
+    if(fs.existsSync(path.join(dir,'out_mr.jpg'))) BAKED_MR=fs.readFileSync(path.join(dir,'out_mr.jpg'));
+    fs.rmSync(dir,{recursive:true,force:true});
+  }
+}
+
+function applyParametric(){
+  for(const mesh of root.listMeshes()) for(const prim of mesh.listPrimitives()){
+    const dir=fs.mkdtempSync(path.join(os.tmpdir(),'grandma-parametric-'));
+    fs.writeFileSync(path.join(dir,'hi_pos.bin'),new Float32Array(prim.getAttribute('POSITION').getArray()));
+    fs.writeFileSync(path.join(dir,'hi_idx.bin'),new Uint32Array(prim.getIndices().getArray()));
+    fs.writeFileSync(path.join(dir,'hi_uv.bin'),new Float32Array(prim.getAttribute('TEXCOORD_0').getArray()));
+    fs.writeFileSync(path.join(dir,'hi_j.bin'),new Uint8Array(prim.getAttribute('JOINTS_0').getArray()));
+    fs.writeFileSync(path.join(dir,'hi_w.bin'),new Float32Array(prim.getAttribute('WEIGHTS_0').getArray()));
+    execFileSync(process.env.PYTHON||'/workspace/meshy/venv/bin/python',[HERE+'build_parametric_modular.py',dir,TEX_SZ],{stdio:'inherit'});
+    const rd=(f,T)=>{const b=fs.readFileSync(path.join(dir,f)); return new T(b.buffer,b.byteOffset,b.byteLength/T.BYTES_PER_ELEMENT);};
+    prim.getAttribute('POSITION').setArray(Float32Array.from(rd('out_pos.bin',Float32Array)));
+    prim.getAttribute('NORMAL').setArray(Float32Array.from(rd('out_nrm.bin',Float32Array)));
+    prim.getAttribute('TEXCOORD_0').setArray(Float32Array.from(rd('out_uv.bin',Float32Array)));
+    prim.getAttribute('JOINTS_0').setArray(Uint8Array.from(rd('out_j.bin',Uint8Array)));
+    prim.getAttribute('WEIGHTS_0').setArray(Float32Array.from(rd('out_w.bin',Float32Array)));
+    prim.getIndices().setArray(Uint32Array.from(rd('out_idx.bin',Uint32Array)));
+    BAKED_TEX=fs.readFileSync(path.join(dir,'out_tex.jpg'));
+    if(fs.existsSync(path.join(dir,'out_norm.jpg'))) BAKED_NORM=fs.readFileSync(path.join(dir,'out_norm.jpg'));
+    if(fs.existsSync(path.join(dir,'out_mr.jpg'))) BAKED_MR=fs.readFileSync(path.join(dir,'out_mr.jpg'));
+    fs.rmSync(dir,{recursive:true,force:true});
+  }
+}
+
 if(TRIS) await simplifyTo(TRIS);
-if(REMESH) applyRemesh();
+else if(PARAMETRIC) applyParametric();
+else if(REMESH) applyRemesh();
+else if(PBR) applyUltraFaceRefine();
 
 const baseTex=mat0.getBaseColorTexture()||root.listTextures()[0];
 const normTex=mat0.getNormalTexture();

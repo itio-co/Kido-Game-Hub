@@ -86,10 +86,13 @@ export function mountCharacterStage(
 
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(32, 1, 0.05, 40);
-  scene.add(new THREE.HemisphereLight('#fff1e0', '#8a6040', 1.6));
-  const sun = new THREE.DirectionalLight('#ffe2c0', 2.2);
-  sun.position.set(1.5, 3, 2.2);
+  scene.add(new THREE.HemisphereLight('#fff4e8', '#c49a78', 1.85));
+  const sun = new THREE.DirectionalLight('#ffe6cc', 1.45);
+  sun.position.set(1.2, 2.2, 2.6);
   scene.add(sun);
+  const fill = new THREE.DirectionalLight('#fff0e2', 0.85);
+  fill.position.set(-1.0, 1.35, 2.8);
+  scene.add(fill);
 
   const geos: THREE.BufferGeometry[] = [];
   const mats: THREE.Material[] = [];

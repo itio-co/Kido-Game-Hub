@@ -226,7 +226,17 @@ export const SHOWCASE_ASSETS: ShowcaseAsset[] = [
         },
         url: `${BASE}models/grandma-mali-ultra.glb`,
         tris: 233332,
-        bytes: 8236164,
+        bytes: 8206988,
+      },
+      // Parametric standard human base body + modular clothing + high-detail focused head.
+      {
+        id: 'parametric',
+        get label() {
+          return t('asset.grandma.variant.parametric');
+        },
+        url: `${BASE}models/grandma-mali-parametric.glb`,
+        tris: 21360,
+        bytes: 1328712,
       },
       // Primary runtime model: Smooth big-face T-pose 6k Meshy Remesh + PBR maps + 24-bone skin weights.
       {
@@ -236,7 +246,7 @@ export const SHOWCASE_ASSETS: ShowcaseAsset[] = [
         },
         url: `${BASE}models/grandma-mali-remesh-6k.glb`,
         tris: 6251,
-        bytes: 2280948,
+        bytes: 2263588,
       },
       {
         id: 'remesh1k5',
@@ -245,7 +255,7 @@ export const SHOWCASE_ASSETS: ShowcaseAsset[] = [
         },
         url: `${BASE}models/grandma-mali-remesh-1k5.glb`,
         tris: 1556,
-        bytes: 961936,
+        bytes: 953848,
       },
       // Earlier comparison variants (cutout-based 19.4k + meshoptimizer QEM LODs); see assets-src/grandma/build/build.mjs.
       {

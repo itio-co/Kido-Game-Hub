@@ -35,6 +35,7 @@
   "exports": {
     "runtime": [
       "games/never-ending-story/public/models/grandma-mali-ultra.glb",
+      "games/never-ending-story/public/models/grandma-mali-parametric.glb",
       "games/never-ending-story/public/models/grandma-mali-remesh-6k.glb",
       "games/never-ending-story/public/models/grandma-mali-remesh-1k5.glb"
     ],
@@ -61,19 +62,19 @@
         "games/never-ending-story/public/models/grandma-mali-ultra.glb": {
           "triangles": 233332,
           "vertices": 128560,
-          "bytes": 8236164,
+          "bytes": 8206988,
           "note": "Default showcase: Smooth big-face T-pose Ultra (Meshy 7.1 4K geometry + PBR maps)"
         },
         "games/never-ending-story/public/models/grandma-mali-remesh-6k.glb": {
           "triangles": 6251,
           "vertices": 5431,
-          "bytes": 2280948,
+          "bytes": 2263588,
           "note": "Default game-budget: Smooth big-face T-pose 6k (Meshy Remesh API + PBR maps + skin weight transfer)"
         },
         "games/never-ending-story/public/models/grandma-mali-remesh-1k5.glb": {
           "triangles": 1556,
           "vertices": 1874,
-          "bytes": 961936,
+          "bytes": 953848,
           "note": "Smooth big-face T-pose 1.5k (Meshy Remesh API from Ultra 233k + 1K PBR maps + 24-bone skin weight transfer)"
         },
         "games/never-ending-story/public/models/grandma-mali-cutout-19k.glb": {
@@ -97,6 +98,12 @@
           "triangles": 1500,
           "vertices": 1492,
           "bytes": 593032
+        },
+        "games/never-ending-story/public/models/grandma-mali-parametric.glb": {
+          "tris": 21360,
+          "verts": 11466,
+          "bytes": 1328712,
+          "method": "Parametric standard human base body (BodyParams 1.55m) + modular outfit meshes (Outfit_Blouse, Outfit_Cardigan, Outfit_Skirt, Outfit_Shoes) + subdivided high-detail Head_Focused (8,408 tris) with 2K front-focused portrait atlas via build/build_parametric_modular.py"
         }
       }
     },

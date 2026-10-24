@@ -716,5 +716,6 @@
   "game.showcase.statusConcept": "Concept · Ready for Meshy",
   "game.showcase.conceptOnlyNote": "2-inch profile photo and full-body T-pose reference sheet are ready for 3D generation in Meshy.",
   "game.showcase.familyGallery": "Family Character Roster (Profile & T-Pose Mock-ups)",
-  "asset.grandma.variant.remesh1k5": "1.5k (Meshy Remesh)"
+  "asset.grandma.variant.remesh1k5": "1.5k (Meshy Remesh)",
+  "asset.grandma.variant.parametric": "Parametric Body + Head Focus"
 }
