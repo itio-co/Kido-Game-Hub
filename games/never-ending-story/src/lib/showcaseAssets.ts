@@ -238,6 +238,15 @@ export const SHOWCASE_ASSETS: ShowcaseAsset[] = [
         tris: 6251,
         bytes: 2280948,
       },
+      {
+        id: 'remesh1k5',
+        get label() {
+          return t('asset.grandma.variant.remesh1k5');
+        },
+        url: `${BASE}models/grandma-mali-remesh-1k5.glb`,
+        tris: 1556,
+        bytes: 961936,
+      },
       // Earlier comparison variants (cutout-based 19.4k + meshoptimizer QEM LODs); see assets-src/grandma/build/build.mjs.
       {
         id: 'rigged',

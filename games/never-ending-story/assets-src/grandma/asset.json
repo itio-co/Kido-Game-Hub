@@ -9,7 +9,7 @@
   "dimensionsCm": {
     "width": 78.6,
     "depth": 39.9,
-    "height": 155.0
+    "height": 155
   },
   "dimensionsNotes": "Bind pose (A-pose), so the width is the arm span. Origin at the floor between the feet, facing +Z (glTF / Three.js), metres in the GLB.",
   "source": {
@@ -30,12 +30,13 @@
     "tool": "Meshy API (image-to-3d, rigging, animations, remesh)",
     "license": "Generated on a Meshy Pro plan: the output may be used commercially (Meshy terms for paid plans).",
     "tasks": "meshy/tasks.json",
-    "creditsUsed": 115
+    "creditsUsed": 120
   },
   "exports": {
     "runtime": [
       "games/never-ending-story/public/models/grandma-mali-ultra.glb",
-      "games/never-ending-story/public/models/grandma-mali-remesh-6k.glb"
+      "games/never-ending-story/public/models/grandma-mali-remesh-6k.glb",
+      "games/never-ending-story/public/models/grandma-mali-remesh-1k5.glb"
     ],
     "build": "build/build.mjs",
     "bytes": 8236164,
@@ -68,6 +69,12 @@
           "vertices": 5431,
           "bytes": 2280948,
           "note": "Default game-budget: Smooth big-face T-pose 6k (Meshy Remesh API + PBR maps + skin weight transfer)"
+        },
+        "games/never-ending-story/public/models/grandma-mali-remesh-1k5.glb": {
+          "triangles": 1556,
+          "vertices": 1874,
+          "bytes": 961936,
+          "note": "Smooth big-face T-pose 1.5k (Meshy Remesh API from Ultra 233k + 1K PBR maps + 24-bone skin weight transfer)"
         },
         "games/never-ending-story/public/models/grandma-mali-cutout-19k.glb": {
           "triangles": 19416,
@@ -160,7 +167,7 @@
       "seatTop": 0.44,
       "seatFrontX": -0.15,
       "seatDepth": 0.55,
-      "seatWidth": 1.0,
+      "seatWidth": 1,
       "seatHeightFromHips": "seatTop = hips height - ~0.05 (pelvis offset)"
     }
   },

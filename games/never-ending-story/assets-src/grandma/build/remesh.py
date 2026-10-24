@@ -123,7 +123,7 @@ def save_tex(tinfo, out_name, sz, q=85):
 mat = gltf.materials[0]
 save_tex(mat.pbrMetallicRoughness.baseColorTexture, "out_tex.jpg", TEX_SZ, 88)
 save_tex(mat.normalTexture, "out_norm.jpg", TEX_SZ, 86)
-save_tex(mat.pbrMetallicRoughness.metallicRoughnessTexture, "out_mr.jpg", min(TEX_SZ, 1024), 85)
+save_tex(mat.pbrMetallicRoughness.metallicRoughnessTexture, "out_mr.jpg", min(max(TEX_SZ // 2, 512), 1024), 85)
 
 print(
     f"remesh: {len(raw_idx)} tris, verts {len(raw_pos)} -> {len(out_pos)} ({len(u_pts)} positions), "

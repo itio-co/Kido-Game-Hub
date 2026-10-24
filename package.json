@@ -17,5 +17,5 @@
     "test": "npm -w @itio/mesh-editor run test",
     "check": "npm -w @itio/mesh-editor run typecheck && npm -w never-ending-story-game run check"
   },
-  "version": "0.2.12"
+  "version": "0.2.13"
 }

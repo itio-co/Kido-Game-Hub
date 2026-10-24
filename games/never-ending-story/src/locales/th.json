@@ -715,5 +715,6 @@
   "game.showcase.statusRigged": "มีโมเดล 3D แล้ว",
   "game.showcase.statusConcept": "ภาพต้นแบบ · พร้อมสร้าง 3D",
   "game.showcase.conceptOnlyNote": "รูปโปรไฟล์ 2 นิ้ว และภาพต้นแบบ T-pose เต็มตัวพร้อมสำหรับนำไปสร้างโมเดล 3D ด้วย Meshy",
-  "game.showcase.familyGallery": "รวมตัวละครครอบครัว (รูปโปรไฟล์ 2 นิ้ว & ต้นแบบ T-Pose)"
+  "game.showcase.familyGallery": "รวมตัวละครครอบครัว (รูปโปรไฟล์ 2 นิ้ว & ต้นแบบ T-Pose)",
+  "asset.grandma.variant.remesh1k5": "1.5k (Meshy Remesh)"
 }

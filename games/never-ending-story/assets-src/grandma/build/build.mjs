@@ -15,6 +15,7 @@ const args=process.argv.slice(2);
 const rwi=args.indexOf('--raw');
 const R=rwi>=0?path.resolve(HERE,args.splice(rwi,2)[1])+'/':HERE+'../meshy/raw/', R2=R;
 const pi=args.indexOf('--pbr'); const PBR=pi>=0; if(PBR) args.splice(pi,1);
+const txi=args.indexOf('--tex'); const TEX_SZ=txi>=0?String(args.splice(txi,2)[1]):(PBR?'2048':'1024');
 const ti=args.indexOf('--tris');
 const TRIS=ti>=0?Number(args.splice(ti,2)[1]):0;
 const bi=args.indexOf('--bake'); const BAKE=bi>=0; if(BAKE) args.splice(bi,1);
@@ -128,7 +129,7 @@ function applyRemesh(){
     fs.writeFileSync(path.join(dir,'hi_idx.bin'),new Uint32Array(prim.getIndices().getArray()));
     fs.writeFileSync(path.join(dir,'hi_j.bin'),new Uint8Array(prim.getAttribute('JOINTS_0').getArray()));
     fs.writeFileSync(path.join(dir,'hi_w.bin'),new Float32Array(prim.getAttribute('WEIGHTS_0').getArray()));
-    execFileSync(process.env.PYTHON||'python3',[HERE+'remesh.py',dir,REMESH_FILE,PBR?'2048':'1024'],{stdio:'inherit'});
+    execFileSync(process.env.PYTHON||'python3',[HERE+'remesh.py',dir,REMESH_FILE,TEX_SZ],{stdio:'inherit'});
     const rd=(f,T)=>{const b=fs.readFileSync(path.join(dir,f)); return new T(b.buffer,b.byteOffset,b.byteLength/T.BYTES_PER_ELEMENT);};
     const npos=Float32Array.from(rd('out_pos.bin',Float32Array));
     const nnrm=Float32Array.from(rd('out_nrm.bin',Float32Array));

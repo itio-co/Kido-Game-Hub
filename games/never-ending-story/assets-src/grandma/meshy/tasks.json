@@ -1,7 +1,7 @@
 {
   "api": "https://api.meshy.ai/openapi/v1",
   "plan": "Meshy Pro",
-  "creditsTotal": 115,
+  "creditsTotal": 120,
   "tasks": [
     {
       "step": "image-to-3d",
@@ -27,8 +27,8 @@
       "taskId": "01a169f1-770f-743a-abc0-a9e881d6e44a",
       "request": "request-animations-1.json",
       "actions": {
-        "243": "Idle_3",
         "32": "Chair_Sit_Idle_F",
+        "243": "Idle_3",
         "290": "Wave_One_Hand"
       },
       "credits": 9,
@@ -88,8 +88,8 @@
       "taskId": "01a16c6c-8f98-7444-b508-a47f5454c978",
       "request": "request-animations-bigface-1.json",
       "actions": {
-        "243": "Idle_3",
         "32": "Chair_Sit_Idle_F",
+        "243": "Idle_3",
         "290": "Wave_One_Hand"
       },
       "credits": 9,
@@ -106,6 +106,15 @@
       },
       "credits": 6,
       "createdAt": "2026-10-24T12:30:29+07:00"
+    },
+    {
+      "step": "remesh-bigface-1k5",
+      "endpoint": "POST /openapi/v1/remesh",
+      "taskId": "01a16da3-08bc-7150-9fef-094e82078389",
+      "request": "request-remesh-bigface-1k5.json",
+      "credits": 5,
+      "createdAt": "2026-10-24T18:19:15+07:00",
+      "result": "grandma-bigface-remesh-1k5.glb (1,556 triangles, 3,036 raw verts -> 1,874 welded verts / 781 unique positions, 4096 PBR maps)"
     }
   ],
   "balances": {
@@ -131,6 +140,11 @@
       "before": 1255,
       "after": 1195,
       "note": "monthly 965 -> 905 (-60: 35 image-to-3d 4K + PBR, 5 remesh 6k, 5 rigging, 15 animations), permanent 290"
+    },
+    "remeshBigface1k5": {
+      "before": 1165,
+      "after": 1160,
+      "note": "monthly 875 -> 870 (-5), permanent 290"
     }
   },
   "notes": "Meshy keeps task results for 3 days. The API key is read from the MESHY_API_KEY environment variable and is never stored here."
