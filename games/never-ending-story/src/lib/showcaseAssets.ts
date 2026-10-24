@@ -76,6 +76,12 @@ export type ShowcaseAsset = {
   notes?: string;
   /** Present for rigged characters. */
   character?: CharacterInfo;
+  /** Profile picture (2-inch 1:1), full-body T-pose mockup (3:4), and original scene concept for character showcase. */
+  characterRefs?: {
+    profilePhoto: string;
+    tposeMockup: string;
+    sceneMockup: string;
+  };
   /** Mock-up crop and the camera matched to it (Blender cam.json converted to Y-up). */
   ref?: {
     src: string;
@@ -160,7 +166,17 @@ export const SHOWCASE_ASSETS: ShowcaseAsset[] = [
         },
         url: `${BASE}models/nightstand-meshy-1k5.glb`,
         tris: 961,
-        bytes: 367108,
+        bytes: 356648,
+      },
+      {
+        id: 'meshy-measured',
+        get label() {
+          return t('asset.nightstand.variant.meshyMeasured');
+        },
+        url: `${BASE}models/nightstand-meshy-measured.glb`,
+        flat: true,
+        tris: 212,
+        bytes: 27468,
       },
     ],
     ref: {
@@ -195,6 +211,11 @@ export const SHOWCASE_ASSETS: ShowcaseAsset[] = [
     editable: false,
     get notes() {
       return t('asset.grandma.knownIssues');
+    },
+    characterRefs: {
+      profilePhoto: `${BASE}showcase/characters/grandma-mali-2inch-photo.jpg`,
+      tposeMockup: `${BASE}showcase/characters/grandma-mali-tpose.jpg`,
+      sceneMockup: `${BASE}img/living-grandma.jpg`,
     },
     variants: [
       // Smooth big-face T-pose Ultra (Meshy 7.1 4K geometry + PBR maps: baseColor, normal, metallicRoughness).
@@ -314,6 +335,101 @@ export const SHOWCASE_ASSETS: ShowcaseAsset[] = [
       // Seat top = hips - ~0.05 m (pelvis offset); front edge 0.2 m in front of the hips.
       seat: { facing: [1, 0], hips: [-0.35, 0.481, 0.903], top: 0.44, front: 0.2, depth: 0.55, width: 1.0 },
     },
+    orbit: { target: 0.85, distance: 3.1, height: 1.35 },
+  },
+  {
+    id: 'char-child-player',
+    kind: 'character',
+    slug: 'characters/child',
+    get title() {
+      return t('asset.child.title');
+    },
+    editable: false,
+    get notes() {
+      return t('asset.child.notes');
+    },
+    characterRefs: {
+      profilePhoto: `${BASE}showcase/characters/child-player-2inch-photo.jpg`,
+      tposeMockup: `${BASE}showcase/characters/child-player-tpose.jpg`,
+      sceneMockup: `${BASE}img/cutscene-01-p1.jpg`,
+    },
+    variants: [],
+    orbit: { target: 0.7, distance: 2.8, height: 1.15 },
+  },
+  {
+    id: 'char-mom',
+    kind: 'character',
+    slug: 'characters/mom',
+    get title() {
+      return t('asset.mom.title');
+    },
+    editable: false,
+    get notes() {
+      return t('asset.mom.notes');
+    },
+    characterRefs: {
+      profilePhoto: `${BASE}showcase/characters/mom-2inch-photo.jpg`,
+      tposeMockup: `${BASE}showcase/characters/mom-tpose.jpg`,
+      sceneMockup: `${BASE}img/album-found.jpg`,
+    },
+    variants: [],
+    orbit: { target: 0.85, distance: 3.1, height: 1.35 },
+  },
+  {
+    id: 'char-dad',
+    kind: 'character',
+    slug: 'characters/dad',
+    get title() {
+      return t('asset.dad.title');
+    },
+    editable: false,
+    get notes() {
+      return t('asset.dad.notes');
+    },
+    characterRefs: {
+      profilePhoto: `${BASE}showcase/characters/dad-2inch-photo.jpg`,
+      tposeMockup: `${BASE}showcase/characters/dad-tpose.jpg`,
+      sceneMockup: `${BASE}img/album-found.jpg`,
+    },
+    variants: [],
+    orbit: { target: 0.9, distance: 3.2, height: 1.4 },
+  },
+  {
+    id: 'char-uncle-mek',
+    kind: 'character',
+    slug: 'characters/uncle-mek',
+    get title() {
+      return t('asset.uncleMek.title');
+    },
+    editable: false,
+    get notes() {
+      return t('asset.uncleMek.notes');
+    },
+    characterRefs: {
+      profilePhoto: `${BASE}showcase/characters/uncle-mek-2inch-photo.jpg`,
+      tposeMockup: `${BASE}showcase/characters/uncle-mek-tpose.jpg`,
+      sceneMockup: `${BASE}img/uncle-mek.jpg`,
+    },
+    variants: [],
+    orbit: { target: 0.9, distance: 3.2, height: 1.4 },
+  },
+  {
+    id: 'char-aunt-rin',
+    kind: 'character',
+    slug: 'characters/aunt-rin',
+    get title() {
+      return t('asset.auntRin.title');
+    },
+    editable: false,
+    get notes() {
+      return t('asset.auntRin.notes');
+    },
+    characterRefs: {
+      profilePhoto: `${BASE}showcase/characters/aunt-rin-2inch-photo.jpg`,
+      tposeMockup: `${BASE}showcase/characters/aunt-rin-tpose.jpg`,
+      sceneMockup: `${BASE}img/rin.jpg`,
+    },
+    variants: [],
     orbit: { target: 0.85, distance: 3.1, height: 1.35 },
   },
 ];
