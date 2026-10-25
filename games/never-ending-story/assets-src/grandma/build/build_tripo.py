@@ -14,8 +14,9 @@ Builds the smoothed-face Tripo3D Grandma Mali runtime GLBs from
    so lighting hits a 100% smooth facial surface.
 4. Simplifies with `MeshoptSimplifier.simplifyWithAttributes` using continuous 3D coordinates
    and smooth head-detail attributes (preserving UVs and prioritizing facial density with zero
-   coordinate seams), aligns the T-pose arms to the 24-bone Mixamo bind pose, and transfers
-   skin weights with `Head` (joint 5) 100% rigid above the neck seam.
+   coordinate seams), aligns ONLY the T-pose arm vertices (`y < y_top` and `y > y_bot`) to the
+   24-bone Mixamo bind pose (leaving the wide silver hair and head 100% untouched!), and transfers
+   skin weights with `Head` (joint 5) 100% rigid across the entire head & silver hair above the neck seam.
 
 Can be invoked by `build.mjs --raw ../meshy/raw-bigface --tripo <tris>` with `<tmpdir> <tris> [tex_sz]`,
 or run standalone to build both `grandma-mali-tripo-smooth.glb` (42k) and `grandma-mali-tripo-6k.glb` (6k).
@@ -438,20 +439,26 @@ def generate_into_dir(work_dir: Path, target_tris: int = 42000, tex_sz: int = 20
         pts_smooth, uv_raw, ind_raw, skin_w, target_tris, work_dir
     )
 
-    # Align horizontal T-pose arms to the 24-bone Mixamo bind pose (`ref_pos`)
+    # Align ONLY horizontal T-pose arm vertices (`y < y_top` and `y > y_bot`) to the 24-bone Mixamo bind pose (`ref_pos`).
+    # Crucially, `y_top = 1.222 - 0.14 * |x|` passes cleanly through the 4.5-12cm vertical gap between the shoulder tops
+    # (`y <= 1.208`) and the wide silver hair (`y >= 1.254`), so the hair has ZERO arm rotation weight (`wL = wR = 0.0`)!
     pts_f64 = sub_pts.astype(np.float64)
+    ax = np.abs(pts_f64[:, 0])
+    y = pts_f64[:, 1]
+    y_top = 1.222 - 0.14 * ax
+    y_bot = 0.990 - 0.55 * (ax - 0.14)
+    w_arm_region = (1.0 - _sstep(y, y_top - 0.008, y_top + 0.004)) * _sstep(y, y_bot - 0.015, y_bot + 0.015)
+
+    wL = _sstep(pts_f64[:, 0], 0.125, 0.185) * w_arm_region
+    wR = _sstep(-pts_f64[:, 0], 0.125, 0.185) * w_arm_region
+
     piv_L = np.array([0.1471, 1.125, -0.0256], dtype=np.float64)
     piv_R = np.array([-0.1471, 1.125, -0.0261], dtype=np.float64)
     th = np.deg2rad(-41.5)
     c, s = np.cos(th), np.sin(th)
     R_L = np.array([[c, -s, 0.0], [s, c, 0.0], [0.0, 0.0, 1.0]], dtype=np.float64)
     R_R = np.array([[c, s, 0.0], [-s, c, 0.0], [0.0, 0.0, 1.0]], dtype=np.float64)
-    arm_scale = 1.02
-
-    wL = np.clip((pts_f64[:, 0] - 0.115) / 0.065, 0.0, 1.0) * np.clip((pts_f64[:, 1] - 0.78) / 0.14, 0.0, 1.0)
-    wR = np.clip((-pts_f64[:, 0] - 0.115) / 0.065, 0.0, 1.0) * np.clip((pts_f64[:, 1] - 0.78) / 0.14, 0.0, 1.0)
-    wL = wL * wL * (3.0 - 2.0 * wL)
-    wR = wR * wR * (3.0 - 2.0 * wR)
+    arm_scale = 0.92
 
     rel_L = pts_f64 - piv_L
     sL_x = 1.0 + (arm_scale - 1.0) * np.clip((pts_f64[:, 0] - 0.1471) / 0.12, 0.0, 1.0)
@@ -466,9 +473,13 @@ def generate_into_dir(work_dir: Path, target_tris: int = 42000, tex_sz: int = 20
     )
     aligned_norm = _compute_smooth_normals(aligned_pos, sub_faces)
 
-    # Transfer 24-bone skin weights from ref_pos via 8-NN inverse-distance squared interpolation
-    tree = cKDTree(ref_pos)
-    dists, idxs = tree.query(aligned_pos, k=8)
+    # Transfer 24-bone skin weights from body/arm vertices of `ref_pos` via 8-NN inverse-distance squared interpolation
+    ref_ax = np.abs(ref_pos[:, 0])
+    ref_y_top = 1.222 - 0.14 * ref_ax
+    ref_body_idx = np.where(ref_pos[:, 1] < ref_y_top)[0]
+    tree_body = cKDTree(ref_pos[ref_body_idx])
+    dists, local_idxs = tree_body.query(aligned_pos, k=8)
+    idxs = ref_body_idx[local_idxs]
     inv_d = 1.0 / np.maximum(dists, 1e-6) ** 2
     inv_d /= inv_d.sum(axis=1, keepdims=True)
     n_verts = len(aligned_pos)
@@ -481,8 +492,16 @@ def generate_into_dir(work_dir: Path, target_tris: int = 42000, tex_sz: int = 20
         for slot in range(4):
             np.add.at(accum, (np.arange(n_verts), nb_j[:, slot]), w_k[:, slot])
 
-    # Enforce 100% rigid Head bone (joint 5) above neck seam (y >= 1.185, blended across 1.150..1.185)
-    head_rigid_w = _sstep(sub_pts[:, 1], 1.150, 1.185) * (np.abs(sub_pts[:, 0]) < 0.16)
+    # Prevent any Head/head_end/headfront weights (joints 5, 6, 7) from leaking onto body/arm vertices below the neck
+    body_no_head = (y < y_top - 0.025) | (ax > 0.075)
+    accum[body_no_head, 5] = 0.0
+    accum[body_no_head, 6] = 0.0
+    accum[body_no_head, 7] = 0.0
+    row_s = accum.sum(axis=1, keepdims=True)
+    accum = np.where(row_s > 1e-8, accum / np.maximum(row_s, 1e-8), accum)
+
+    # Enforce 100% rigid Head bone (joint 5) across the entire head & wide silver hair above the neck seam (`y >= y_top`)!
+    head_rigid_w = _sstep(y, y_top - 0.018, y_top + 0.002)
     head_target = np.zeros_like(accum)
     head_target[:, 5] = 1.0
     accum = accum * (1.0 - head_rigid_w[:, None]) + head_target * head_rigid_w[:, None]

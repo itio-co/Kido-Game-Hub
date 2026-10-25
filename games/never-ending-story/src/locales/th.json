@@ -721,5 +721,7 @@
   "asset.grandma.variant.head19k": "หัว 19.4k ต้นฉบับ + ตัว T-Pose",
   "asset.grandma.variant.ultraNoPbr": "Ultra (ปิด PBR สีล้วน)",
   "asset.grandma.variant.tripoSmooth": "Tripo3D (เกลี่ยโครงหน้าเรียบ)",
-  "asset.grandma.variant.tripo6k": "Tripo3D 6k (หน้าเรียบ ใช้ในเกม)"
+  "asset.grandma.variant.tripo6k": "Tripo3D 6k (หน้าเรียบ ใช้ในเกม)",
+  "game.character.bones": "แสดงโครงกระดูก",
+  "asset.grandma.clip.bindPose": "ท่าตั้งต้น (Bind Pose)"
 }

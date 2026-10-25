@@ -9,7 +9,7 @@ const FLOOR = '#8a5a34';
 
 export type CharacterSnapshot = {
   status: 'loading' | 'ready' | 'error';
-  /** Animation name in the GLB of the clip that is playing (or was last picked). */
+  /** Animation name in the GLB of the clip that is playing (or was last picked), or 'BindPose'. */
   clip: string;
   playing: boolean;
   loop: boolean;
@@ -17,6 +17,8 @@ export type CharacterSnapshot = {
   /** Id of the loaded mesh variant (LOD). */
   variant: string;
   flat: boolean;
+  /** Whether the 24-bone skeleton overlay (SkeletonHelper + joint markers) is shown. */
+  bones: boolean;
 };
 
 export type CharacterStage = {
@@ -29,6 +31,8 @@ export type CharacterStage = {
   setVariant: (id: string) => void;
   /** Flat shading (faceted low-poly look); the texture is kept. */
   setFlat: (flat: boolean) => void;
+  /** Show or hide the 24-bone skeleton & joint markers on top of the mesh. */
+  setBones: (bones: boolean) => void;
   dispose: () => void;
 };
 
@@ -53,6 +57,7 @@ export type CharacterDebug = {
   frames: number;
   variant: string;
   flat: boolean;
+  bones: boolean;
   /** Triangles / joints of the loaded skinned mesh(es). */
   tris: number;
   joints: number;
@@ -159,6 +164,25 @@ export function mountCharacterStage(
   seat.visible = false;
   scene.add(seat);
 
+  // Shared geometry/material for the 24 joint sphere markers when Show Bones is active.
+  const jointGeo = new THREE.SphereGeometry(0.015, 10, 10);
+  const jointMat = new THREE.MeshBasicMaterial({
+    color: '#ff2d55',
+    depthTest: false,
+    depthWrite: false,
+    transparent: true,
+    opacity: 0.92,
+  });
+  const headJointMat = new THREE.MeshBasicMaterial({
+    color: '#00f5d4',
+    depthTest: false,
+    depthWrite: false,
+    transparent: true,
+    opacity: 0.95,
+  });
+  geos.push(jointGeo);
+  mats.push(jointMat, headJointMat);
+
   const snap: CharacterSnapshot = {
     status: 'loading',
     clip: info.idle,
@@ -167,6 +191,7 @@ export function mountCharacterStage(
     seat: false,
     variant: (asset.variants.find((v) => v.id === info.defaultVariant) ?? asset.variants[0]!).id,
     flat: false,
+    bones: false,
   };
   const emit = () => onChange({ ...snap });
 
@@ -174,9 +199,13 @@ export function mountCharacterStage(
   const actions = new Map<string, THREE.AnimationAction>();
   let current: THREE.AnimationAction | null = null;
   let hipsBone: THREE.Object3D | null = null;
+  let skeletonHelper: THREE.SkeletonHelper | null = null;
+  let boneGroup: THREE.Group | null = null;
+  let boneMarkers: { bone: THREE.Bone; marker: THREE.Mesh }[] = [];
   let disposed = false;
   let frames = 0;
   const hips = new THREE.Vector3();
+  const boneWorldPos = new THREE.Vector3();
 
   const debug: CharacterDebug = {
     slug: asset.slug,
@@ -194,6 +223,7 @@ export function mountCharacterStage(
     frames: 0,
     variant: snap.variant,
     flat: false,
+    bones: false,
     tris: 0,
     joints: 0,
     loads: 0,
@@ -202,7 +232,29 @@ export function mountCharacterStage(
 
   const clipInfo = (name: string) => info.clips.find((c) => c.clip === name);
 
+  function applyBindPose(): void {
+    if (!model) return;
+    mixer?.stopAllAction();
+    current = null;
+    model.traverse((obj) => {
+      const skinned = obj as unknown as THREE.SkinnedMesh;
+      if (skinned.isSkinnedMesh && skinned.skeleton) {
+        skinned.skeleton.pose();
+      }
+    });
+    model.updateMatrixWorld(true);
+    snap.clip = 'BindPose';
+    snap.seat = false;
+    seat.visible = false;
+    snap.playing = false;
+    emit();
+  }
+
   function play(name: string, fade = FADE): void {
+    if (name === 'BindPose') {
+      applyBindPose();
+      return;
+    }
     const next = actions.get(name);
     if (!next || !mixer) {
       snap.clip = name;
@@ -243,10 +295,26 @@ export function mountCharacterStage(
     debug.flat = snap.flat;
   }
 
+  function applyBones(): void {
+    if (skeletonHelper) skeletonHelper.visible = snap.bones;
+    if (boneGroup) boneGroup.visible = snap.bones;
+    debug.bones = snap.bones;
+  }
+
   function freeModel(): void {
     if (!model) return;
     mixer?.stopAllAction();
     if (mixer) mixer.uncacheRoot(model);
+    if (skeletonHelper) {
+      scene.remove(skeletonHelper);
+      skeletonHelper.dispose();
+      skeletonHelper = null;
+    }
+    if (boneGroup) {
+      scene.remove(boneGroup);
+      boneGroup = null;
+    }
+    boneMarkers = [];
     scene.remove(model);
     for (const geo of modelRes?.geos ?? []) geo.dispose();
     for (const mat of modelRes?.mats ?? []) mat.dispose();
@@ -276,6 +344,7 @@ export function mountCharacterStage(
         const res = { geos: [] as THREE.BufferGeometry[], mats: [] as THREE.Material[], textures: [] as THREE.Texture[] };
         let tris = 0;
         let joints = 0;
+        const uniqueBones = new Set<THREE.Bone>();
         gltf.scene.traverse((obj) => {
           const mesh = obj as THREE.Mesh;
           if (obj.name === 'Hips') hipsBone = obj;
@@ -284,7 +353,10 @@ export function mountCharacterStage(
           res.geos.push(mesh.geometry);
           tris += (mesh.geometry.index?.count ?? mesh.geometry.attributes.position!.count) / 3;
           const skinned = mesh as unknown as THREE.SkinnedMesh;
-          if (skinned.isSkinnedMesh) joints = Math.max(joints, skinned.skeleton.bones.length);
+          if (skinned.isSkinnedMesh) {
+            joints = Math.max(joints, skinned.skeleton.bones.length);
+            for (const b of skinned.skeleton.bones) uniqueBones.add(b);
+          }
           const list = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
           for (const mat of list) {
             res.mats.push(mat);
@@ -297,7 +369,33 @@ export function mountCharacterStage(
         model = gltf.scene;
         modelRes = res;
         scene.add(model);
+
+        // Build SkeletonHelper + joint spheres for visual bone verification.
+        skeletonHelper = new THREE.SkeletonHelper(model);
+        const skelMat = skeletonHelper.material as THREE.LineBasicMaterial;
+        skelMat.depthTest = false;
+        skelMat.depthWrite = false;
+        skelMat.transparent = true;
+        skelMat.opacity = 0.95;
+        skeletonHelper.renderOrder = 998;
+        skeletonHelper.frustumCulled = false;
+        scene.add(skeletonHelper);
+
+        boneGroup = new THREE.Group();
+        boneGroup.renderOrder = 999;
+        boneMarkers = [];
+        for (const bone of uniqueBones) {
+          const isHead = bone.name === 'Head' || bone.name === 'head_end' || bone.name === 'headfront' || bone.name === 'neck';
+          const marker = new THREE.Mesh(jointGeo, isHead ? headJointMat : jointMat);
+          marker.renderOrder = 999;
+          marker.frustumCulled = false;
+          boneGroup.add(marker);
+          boneMarkers.push({ bone, marker });
+        }
+        scene.add(boneGroup);
+
         applyFlat();
+        applyBones();
         mixer = new THREE.AnimationMixer(model);
         for (const clip of gltf.animations) actions.set(clip.name, mixer.clipAction(clip));
         debug.clips = gltf.animations.map((c) => c.name);
@@ -336,6 +434,7 @@ export function mountCharacterStage(
 
   debug.pose = (clip, time) => {
     play(clip, 0);
+    if (clip === 'BindPose') return;
     if (!current || !mixer) return;
     // Hard cut: a zero-length cross-fade only settles on the next mixer step, which a paused pose never takes.
     for (const action of actions.values()) if (action !== current) action.stop();
@@ -428,6 +527,12 @@ export function mountCharacterStage(
       if (targetY !== null) target.set(hips.x, targetY, hips.z);
       else target.y += ((snap.seat ? orbit.target - 0.2 : orbit.target) - target.y) * k;
     }
+    if (snap.bones && boneMarkers.length > 0) {
+      for (const { bone, marker } of boneMarkers) {
+        bone.getWorldPosition(boneWorldPos);
+        marker.position.copy(boneWorldPos);
+      }
+    }
     if (yawGoal !== null) {
       const delta = Math.atan2(Math.sin(yawGoal - yaw), Math.cos(yawGoal - yaw));
       yaw += delta * (1 - Math.exp(-dt * 3));
@@ -466,6 +571,10 @@ export function mountCharacterStage(
       play(name);
     },
     setPlaying(playing) {
+      if (snap.clip === 'BindPose' && playing) {
+        play(info.idle);
+        return;
+      }
       snap.playing = playing;
       if (playing && current && !current.isRunning() && current.loop === THREE.LoopOnce) play(snap.clip);
       clock.getDelta();
@@ -496,6 +605,11 @@ export function mountCharacterStage(
     setFlat(flat) {
       snap.flat = flat;
       applyFlat();
+      emit();
+    },
+    setBones(bones) {
+      snap.bones = bones;
+      applyBones();
       emit();
     },
     dispose() {

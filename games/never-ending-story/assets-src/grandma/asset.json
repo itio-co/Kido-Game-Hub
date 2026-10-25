@@ -122,15 +122,15 @@
           "note": "Highest-detail Ultra T-pose generated with Meshy 7.1 (enable_pbr: false, image_enhancement: false, should_remesh: false, 4K diffuse) + 24-bone skin weight transfer via build/build_ultra_nopbr.py"
         },
         "games/never-ending-story/public/models/grandma-mali-tripo-smooth.glb": {
-          "triangles": 42000,
-          "vertices": 24449,
-          "bytes": 2743404,
+          "triangles": 41998,
+          "vertices": 24652,
+          "bytes": 2748388,
           "note": "Default showcase: Tripo3D Studio sculpt with 3D macro-dome + Laplacian facial wrinkle smoothing & cleaned 2K texture, rigged to 24-bone Mixamo skeleton via build/build_tripo.py"
         },
         "games/never-ending-story/public/models/grandma-mali-tripo-6k.glb": {
           "triangles": 6000,
-          "vertices": 4464,
-          "bytes": 1388024,
+          "vertices": 4662,
+          "bytes": 1393128,
           "note": "Game 6k low-poly: Tripo3D Studio smoothed-face model simplified to 6,000 tris with 24-bone Mixamo rig & 6 animations via build/build_tripo.py"
         }
       }

@@ -15,6 +15,7 @@
     seat: false,
     variant: asset.character?.defaultVariant ?? asset.variants[0]?.id ?? '',
     flat: false,
+    bones: false,
   });
   const clips = $derived(asset.character?.clips ?? []);
   const meshInfo = (tris?: number, bytes?: number) =>
@@ -59,25 +60,35 @@
   {/if}
 
   <div class="toggles">
-  <label class="sofa">
-    <input
-      type="checkbox"
-      checked={snap.seat}
-      disabled={snap.status !== 'ready'}
-      data-character-seat
-      onchange={(event) => stage?.setSeat(event.currentTarget.checked)}
-    />
-    <span>{t('game.character.sofa')}</span>
-  </label>
-  <label class="sofa">
-    <input
-      type="checkbox"
-      checked={snap.flat}
-      data-character-flat
-      onchange={(event) => stage?.setFlat(event.currentTarget.checked)}
-    />
-    <span>{t('game.character.flat')}</span>
-  </label>
+    <label class="sofa">
+      <input
+        type="checkbox"
+        checked={snap.seat}
+        disabled={snap.status !== 'ready'}
+        data-character-seat
+        onchange={(event) => stage?.setSeat(event.currentTarget.checked)}
+      />
+      <span>{t('game.character.sofa')}</span>
+    </label>
+    <label class="sofa">
+      <input
+        type="checkbox"
+        checked={snap.flat}
+        data-character-flat
+        onchange={(event) => stage?.setFlat(event.currentTarget.checked)}
+      />
+      <span>{t('game.character.flat')}</span>
+    </label>
+    <label class="sofa">
+      <input
+        type="checkbox"
+        checked={snap.bones}
+        disabled={snap.status !== 'ready'}
+        data-character-bones
+        onchange={(event) => stage?.setBones(event.currentTarget.checked)}
+      />
+      <span>{t('game.character.bones')}</span>
+    </label>
   </div>
 
   <h3>{t('game.character.animation')}</h3>
@@ -93,6 +104,15 @@
         onclick={() => stage?.play(clip.clip)}>{clip.label}</button
       >
     {/each}
+    <button
+      type="button"
+      role="radio"
+      aria-checked={snap.clip === 'BindPose'}
+      class:on={snap.clip === 'BindPose'}
+      disabled={snap.status !== 'ready'}
+      data-clip="BindPose"
+      onclick={() => stage?.play('BindPose')}>{t('asset.grandma.clip.bindPose')}</button
+    >
   </div>
 
   <div class="transport">

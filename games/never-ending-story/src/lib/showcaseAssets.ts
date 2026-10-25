@@ -225,8 +225,8 @@ export const SHOWCASE_ASSETS: ShowcaseAsset[] = [
           return t('asset.grandma.variant.tripoSmooth');
         },
         url: `${BASE}models/grandma-mali-tripo-smooth.glb`,
-        tris: 42000,
-        bytes: 2743404,
+        tris: 41998,
+        bytes: 2748388,
       },
       // Tripo3D Studio 6k game-ready low-poly with smoothed 3D facial geometry & 24-bone rig.
       {
@@ -236,7 +236,7 @@ export const SHOWCASE_ASSETS: ShowcaseAsset[] = [
         },
         url: `${BASE}models/grandma-mali-tripo-6k.glb`,
         tris: 6000,
-        bytes: 1388024,
+        bytes: 1393128,
       },
       // Original 19.4k cutout head (living-grandma.jpg, enable_pbr: false) transplanted onto the 6k T-pose body.
       {
