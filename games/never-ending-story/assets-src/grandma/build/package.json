@@ -13,6 +13,7 @@
     "build": "node build.mjs --raw ../meshy/raw-bigface --pbr ../../../public/models/grandma-mali-ultra.glb && node build.mjs --raw ../meshy/raw-bigface --parametric --pbr --tex 2048 ../../../public/models/grandma-mali-parametric.glb && node build.mjs --raw ../meshy/raw-bigface --remesh --pbr ../../../public/models/grandma-mali-remesh-6k.glb && node build.mjs --raw ../meshy/raw-bigface --remesh ../meshy/raw-bigface/grandma-bigface-remesh-1k5.glb --pbr --tex 1024 ../../../public/models/grandma-mali-remesh-1k5.glb",
     "lods": "node build.mjs --tris 6000 --bake ../../../public/models/grandma-mali-6k.glb && node build.mjs --remesh ../../../public/models/grandma-mali-remesh-6k.glb && node build.mjs --tris 3000 --bake ../../../public/models/grandma-mali-3k.glb && node build.mjs --tris 1500 --bake ../../../public/models/grandma-mali-1k5.glb",
     "head19k": "node build.mjs --raw ../meshy/raw-bigface --head19k ../../../public/models/grandma-mali-head19k-tpose.glb",
-    "ultra-nopbr": "node build.mjs --raw ../meshy/raw-bigface --nopbr-raw --tex 2048 ../../../public/models/grandma-mali-ultra-nopbr.glb"
+    "ultra-nopbr": "node build.mjs --raw ../meshy/raw-bigface --nopbr-raw --tex 2048 ../../../public/models/grandma-mali-ultra-nopbr.glb",
+    "tripo": "python3 build_tripo.py"
   }
 }

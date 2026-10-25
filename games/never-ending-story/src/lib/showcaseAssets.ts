@@ -218,6 +218,26 @@ export const SHOWCASE_ASSETS: ShowcaseAsset[] = [
       sceneMockup: `${BASE}img/living-grandma.jpg`,
     },
     variants: [
+      // Tripo3D Studio sculpt with smoothed 3D facial geometry & cleaned 2K diffuse texture (42k tris).
+      {
+        id: 'tripoSmooth',
+        get label() {
+          return t('asset.grandma.variant.tripoSmooth');
+        },
+        url: `${BASE}models/grandma-mali-tripo-smooth.glb`,
+        tris: 42000,
+        bytes: 2743404,
+      },
+      // Tripo3D Studio 6k game-ready low-poly with smoothed 3D facial geometry & 24-bone rig.
+      {
+        id: 'tripo6k',
+        get label() {
+          return t('asset.grandma.variant.tripo6k');
+        },
+        url: `${BASE}models/grandma-mali-tripo-6k.glb`,
+        tris: 6000,
+        bytes: 1388024,
+      },
       // Original 19.4k cutout head (living-grandma.jpg, enable_pbr: false) transplanted onto the 6k T-pose body.
       {
         id: 'head19k',
@@ -367,7 +387,7 @@ export const SHOWCASE_ASSETS: ShowcaseAsset[] = [
           },
         },
       ],
-      defaultVariant: 'head19k',
+      defaultVariant: 'tripoSmooth',
       idle: 'Idle',
       sitDown: 'SitDown',
       // SitDown turns 90 degrees, so she sits facing +X with the hips at (-0.35, 0.48, 0.903).

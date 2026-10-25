@@ -22,6 +22,7 @@ const bi=args.indexOf('--bake'); const BAKE=bi>=0; if(BAKE) args.splice(bi,1);
 const pmi=args.indexOf('--parametric'); const PARAMETRIC=pmi>=0; if(PARAMETRIC) args.splice(pmi,1);
 const h19i=args.indexOf('--head19k'); const HEAD19K=h19i>=0; if(HEAD19K) args.splice(h19i,1);
 const npbri=args.indexOf('--nopbr-raw'); const NOPBR_RAW=npbri>=0; if(NOPBR_RAW) args.splice(npbri,1);
+const tripoi=args.indexOf('--tripo'); const TRIPO_TRIS=tripoi>=0?Number(args.splice(tripoi,2)[1]):0;
 const ri=args.indexOf('--remesh');
 let REMESH_FILE='';
 if(ri>=0){
@@ -273,7 +274,30 @@ function applyNoPbrRaw(){
   }
 }
 
-if(TRIS) await simplifyTo(TRIS);
+function applyTripo(targetTris){
+  for(const mesh of root.listMeshes()) for(const prim of mesh.listPrimitives()){
+    const dir=fs.mkdtempSync(path.join(os.tmpdir(),'grandma-tripo-'));
+    fs.writeFileSync(path.join(dir,'hi_pos.bin'),new Float32Array(prim.getAttribute('POSITION').getArray()));
+    fs.writeFileSync(path.join(dir,'hi_idx.bin'),new Uint32Array(prim.getIndices().getArray()));
+    fs.writeFileSync(path.join(dir,'hi_j.bin'),new Uint8Array(prim.getAttribute('JOINTS_0').getArray()));
+    fs.writeFileSync(path.join(dir,'hi_w.bin'),new Float32Array(prim.getAttribute('WEIGHTS_0').getArray()));
+    execFileSync(process.env.PYTHON||'/workspace/meshy/venv/bin/python',[HERE+'build_tripo.py',dir,String(targetTris),TEX_SZ],{stdio:'inherit'});
+    const rd=(f,T)=>{const b=fs.readFileSync(path.join(dir,f)); return new T(b.buffer,b.byteOffset,b.byteLength/T.BYTES_PER_ELEMENT);};
+    const npos=Float32Array.from(rd('out_pos.bin',Float32Array));
+    prim.getAttribute('POSITION').setArray(npos);
+    prim.getAttribute('NORMAL').setArray(Float32Array.from(rd('out_nrm.bin',Float32Array)));
+    prim.getAttribute('TEXCOORD_0').setArray(Float32Array.from(rd('out_uv.bin',Float32Array)));
+    prim.getAttribute('JOINTS_0').setArray(Uint8Array.from(rd('out_j.bin',Uint8Array)));
+    prim.getAttribute('WEIGHTS_0').setArray(Float32Array.from(rd('out_w.bin',Float32Array)));
+    const nidx=rd('out_idx.bin',Uint32Array);
+    prim.getIndices().setArray(npos.length/3<65536?Uint16Array.from(nidx):Uint32Array.from(nidx));
+    BAKED_TEX=fs.readFileSync(path.join(dir,'out_tex.jpg'));
+    fs.rmSync(dir,{recursive:true,force:true});
+  }
+}
+
+if(TRIPO_TRIS) applyTripo(TRIPO_TRIS);
+else if(TRIS) await simplifyTo(TRIS);
 else if(HEAD19K) applyHead19k();
 else if(NOPBR_RAW) applyNoPbrRaw();
 else if(PARAMETRIC) applyParametric();
