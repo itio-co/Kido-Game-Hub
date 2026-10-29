@@ -61,6 +61,8 @@ export type CharacterDebug = {
   /** Triangles / joints of the loaded skinned mesh(es). */
   tris: number;
   joints: number;
+  /** Skinned model bbox height (m), measured when BindPose is applied. */
+  height?: number;
   /** Variants loaded so far (incl. reloads). */
   loads: number;
   /** Test helpers for repeatable screenshots: freeze a clip at a time, and place the camera (target height y). */
@@ -202,6 +204,8 @@ export function mountCharacterStage(
   let skeletonHelper: THREE.SkeletonHelper | null = null;
   let boneGroup: THREE.Group | null = null;
   let boneMarkers: { bone: THREE.Bone; marker: THREE.Mesh }[] = [];
+  /** Rest-pose local transforms captured at load, before the mixer touches any bone. */
+  let restPose: { bone: THREE.Object3D; p: THREE.Vector3; q: THREE.Quaternion; s: THREE.Vector3 }[] = [];
   let disposed = false;
   let frames = 0;
   const hips = new THREE.Vector3();
@@ -236,13 +240,15 @@ export function mountCharacterStage(
     if (!model) return;
     mixer?.stopAllAction();
     current = null;
-    model.traverse((obj) => {
-      const skinned = obj as unknown as THREE.SkinnedMesh;
-      if (skinned.isSkinnedMesh && skinned.skeleton) {
-        skinned.skeleton.pose();
-      }
-    });
+    // Skeleton.pose() is unusable here: the root bone's parent is the scaled armature Object3D, not a Bone,
+    // so pose() would write the world-space bind matrix as Hips' local matrix and collapse the model.
+    for (const r of restPose) {
+      r.bone.position.copy(r.p);
+      r.bone.quaternion.copy(r.q);
+      r.bone.scale.copy(r.s);
+    }
     model.updateMatrixWorld(true);
+    debug.height = new THREE.Box3().setFromObject(model, true).getSize(new THREE.Vector3()).y;
     snap.clip = 'BindPose';
     snap.seat = false;
     seat.visible = false;
@@ -367,6 +373,7 @@ export function mountCharacterStage(
           }
         });
         model = gltf.scene;
+        restPose = [...uniqueBones].map((b) => ({ bone: b, p: b.position.clone(), q: b.quaternion.clone(), s: b.scale.clone() }));
         modelRes = res;
         scene.add(model);
 
