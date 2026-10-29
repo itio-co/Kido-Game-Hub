@@ -218,6 +218,16 @@ export const SHOWCASE_ASSETS: ShowcaseAsset[] = [
       sceneMockup: `${BASE}img/living-grandma.jpg`,
     },
     variants: [
+      // Tripo3D 42k smoothed body + 6k meshopt head (face & hair) transplanted at the neck ring; 24-bone rig.
+      {
+        id: 'tripoBody6kFace',
+        get label() {
+          return t('asset.grandma.variant.tripoBody6kFace');
+        },
+        url: `${BASE}models/grandma-mali-tripo-body-6kface.glb`,
+        tris: 35893,
+        bytes: 2871044,
+      },
       // Tripo3D Studio sculpt with smoothed 3D facial geometry & cleaned 2K diffuse texture (42k tris).
       {
         id: 'tripoSmooth',
@@ -387,7 +397,7 @@ export const SHOWCASE_ASSETS: ShowcaseAsset[] = [
           },
         },
       ],
-      defaultVariant: 'tripoSmooth',
+      defaultVariant: 'tripoBody6kFace',
       idle: 'Idle',
       sitDown: 'SitDown',
       // SitDown turns 90 degrees, so she sits facing +X with the hips at (-0.35, 0.48, 0.903).

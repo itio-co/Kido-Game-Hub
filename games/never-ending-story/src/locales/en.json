@@ -720,6 +720,7 @@
   "asset.grandma.variant.parametric": "Parametric Body + Head Focus",
   "asset.grandma.variant.head19k": "19.4k Original Head + T-Pose Body",
   "asset.grandma.variant.ultraNoPbr": "Ultra (No PBR, Pure Diffuse)",
+  "asset.grandma.variant.tripoBody6kFace": "Tripo3D Body + 6k Meshopt Face",
   "asset.grandma.variant.tripoSmooth": "Tripo3D (Smooth Face)",
   "asset.grandma.variant.tripo6k": "Tripo3D 6k (Smooth Face, Game)",
   "game.character.bones": "Show bones",
