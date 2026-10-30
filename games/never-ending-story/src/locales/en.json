@@ -724,5 +724,20 @@
   "asset.grandma.variant.tripoSmooth": "Tripo3D (Smooth Face)",
   "asset.grandma.variant.tripo6k": "Tripo3D 6k (Smooth Face, Game)",
   "game.character.bones": "Show bones",
-  "asset.grandma.clip.bindPose": "Bind pose"
+  "asset.grandma.clip.bindPose": "Bind pose",
+  "game.home.linksAria": "Demo links",
+  "game.home.viewDemo": "▶ View Demo",
+  "game.home.beforeAfter": "⇆ Before/After",
+  "game.compare.kicker": "Before / After",
+  "game.compare.title": "Original 2D art vs 3D",
+  "game.compare.hint": "Drag the divider left and right to compare",
+  "game.compare.tabsAria": "Choose a comparison",
+  "game.compare.tab.room": "Room (nightstand)",
+  "game.compare.tab.grandma": "Grandma Mali",
+  "game.compare.before": "Before 2D",
+  "game.compare.after": "After 3D",
+  "game.compare.roomNote": "Left: original room art · Right: live 3D model render",
+  "game.compare.grandmaNote": "Left: character reference art · Right: current 3D model render (Tripo3D + 6k face)",
+  "game.compare.back": "‹ Back home",
+  "game.compare.demo": "Full demo ›"
 }

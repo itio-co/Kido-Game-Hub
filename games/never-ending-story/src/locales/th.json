@@ -724,5 +724,20 @@
   "asset.grandma.variant.tripoSmooth": "Tripo3D (เกลี่ยโครงหน้าเรียบ)",
   "asset.grandma.variant.tripo6k": "Tripo3D 6k (หน้าเรียบ ใช้ในเกม)",
   "game.character.bones": "แสดงโครงกระดูก",
-  "asset.grandma.clip.bindPose": "ท่าตั้งต้น (Bind Pose)"
+  "asset.grandma.clip.bindPose": "ท่าตั้งต้น (Bind Pose)",
+  "game.home.linksAria": "ลิงก์เดโม",
+  "game.home.viewDemo": "▶ ดูเดโม",
+  "game.home.beforeAfter": "⇆ ก่อน/หลัง",
+  "game.compare.kicker": "ก่อน / หลัง",
+  "game.compare.title": "ภาพต้นแบบ 2D เทียบกับ 3D",
+  "game.compare.hint": "ลากเส้นกลางไปซ้าย-ขวาเพื่อเทียบ",
+  "game.compare.tabsAria": "เลือกภาพเปรียบเทียบ",
+  "game.compare.tab.room": "ห้อง (โต๊ะข้างเตียง)",
+  "game.compare.tab.grandma": "คุณยายมะลิ",
+  "game.compare.before": "ก่อน 2D",
+  "game.compare.after": "หลัง 3D",
+  "game.compare.roomNote": "ซ้าย: ภาพวาดห้องต้นฉบับ · ขวา: โมเดล 3D ที่เรนเดอร์สด",
+  "game.compare.grandmaNote": "ซ้าย: ภาพต้นแบบตัวละคร · ขวา: ภาพเรนเดอร์โมเดล 3D ปัจจุบัน (Tripo3D + หน้า 6k)",
+  "game.compare.back": "‹ กลับหน้าแรก",
+  "game.compare.demo": "ดูเดโมเต็ม ›"
 }
