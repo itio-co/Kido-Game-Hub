@@ -218,6 +218,17 @@ export const SHOWCASE_ASSETS: ShowcaseAsset[] = [
       sceneMockup: `${BASE}img/living-grandma.jpg`,
     },
     variants: [
+      // 6k meshopt re-prepped for rigging: X-symmetric, exact T-pose, named parts, low-relief art-toy head
+      // (separate head 3000 / body 4000 tris primitives on one 24-bone skin), per-part heat weights.
+      {
+        id: 'tripo6kClean',
+        get label() {
+          return t('asset.grandma.variant.tripo6kClean');
+        },
+        url: `${BASE}models/grandma-mali-tripo6k-clean.glb`,
+        tris: 7000,
+        bytes: 1449456,
+      },
       // Tripo3D 42k smoothed body + 6k meshopt head (face & hair) transplanted at the neck ring; 24-bone rig.
       {
         id: 'tripoBody6kFace',
@@ -397,7 +408,7 @@ export const SHOWCASE_ASSETS: ShowcaseAsset[] = [
           },
         },
       ],
-      defaultVariant: 'tripoBody6kFace',
+      defaultVariant: 'tripo6kClean',
       idle: 'Idle',
       sitDown: 'SitDown',
       // SitDown turns 90 degrees, so she sits facing +X with the hips at (-0.35, 0.48, 0.903).
