@@ -119,10 +119,10 @@
   },
   {
    "ao": {
-    "x": 120,
-    "y": 0,
-    "w": 288,
-    "h": 255
+    "x": 186,
+    "y": 23,
+    "w": 147,
+    "h": 151
    },
    "name": "clock",
    "group": "wall_decor",
@@ -148,17 +148,46 @@
   },
   {
    "ao": {
-    "x": 573,
-    "y": 204,
-    "w": 123,
-    "h": 161
+    "x": 564,
+    "y": 195,
+    "w": 141,
+    "h": 171
    },
    "name": "picture_frame",
    "group": "wall_decor",
    "z": 10,
    "x": 599,
-   "y": 212,
+   "y": 211,
    "w": 86,
+   "h": 126,
+   "shadow": {
+    "type": "wall-cast",
+    "scale": 1.0,
+    "blur": 1.0,
+    "opacity": 0.6,
+    "offset": [
+     0,
+     0
+    ],
+    "distance": 6,
+    "receivers": [
+     "shell"
+    ]
+   }
+  },
+  {
+   "ao": {
+    "x": 676,
+    "y": 200,
+    "w": 136,
+    "h": 174
+   },
+   "name": "calendar",
+   "group": "wall_decor",
+   "z": 11,
+   "x": 696,
+   "y": 219,
+   "w": 80,
    "h": 125,
    "shadow": {
     "type": "wall-cast",
@@ -177,39 +206,10 @@
   },
   {
    "ao": {
-    "x": 682,
-    "y": 164,
-    "w": 121,
-    "h": 239
-   },
-   "name": "calendar",
-   "group": "wall_decor",
-   "z": 11,
-   "x": 696,
-   "y": 220,
-   "w": 80,
-   "h": 123,
-   "shadow": {
-    "type": "wall-cast",
-    "scale": 1.0,
-    "blur": 1.0,
-    "opacity": 0.6,
-    "offset": [
-     0,
-     0
-    ],
-    "distance": 6,
-    "receivers": [
-     "shell"
-    ]
-   }
-  },
-  {
-   "ao": {
-    "x": 333,
-    "y": 187,
-    "w": 254,
-    "h": 361
+    "x": 75,
+    "y": 0,
+    "w": 772,
+    "h": 593
    },
    "name": "bookshelf",
    "group": "furniture",
@@ -230,43 +230,44 @@
     ],
     "contact": 0.9,
     "receivers": [
-     "shell",
+     "floor",
+     "baseboards",
      "rug"
     ]
    }
   },
   {
    "ao": {
-    "x": 457,
-    "y": 166,
-    "w": 109,
-    "h": 78
+    "x": 448,
+    "y": 169,
+    "w": 126,
+    "h": 84
    },
    "name": "shelf_books_top",
    "group": "prop",
    "z": 13,
    "x": 463,
-   "y": 209,
-   "w": 76,
-   "h": 34,
+   "y": 208,
+   "w": 81,
+   "h": 36,
    "shadow": {
     "type": "none"
    }
   },
   {
    "ao": {
-    "x": 337,
-    "y": 48,
-    "w": 181,
-    "h": 198
+    "x": 359,
+    "y": 131,
+    "w": 140,
+    "h": 124
    },
    "name": "shelf_plant_top",
    "group": "prop",
    "z": 14,
-   "x": 398,
+   "x": 397,
    "y": 170,
-   "w": 66,
-   "h": 76,
+   "w": 67,
+   "h": 77,
    "shadow": {
     "type": "none"
    }
@@ -276,9 +277,9 @@
    "group": "prop",
    "z": 15,
    "x": 443,
-   "y": 280,
+   "y": 279,
    "w": 48,
-   "h": 65,
+   "h": 66,
    "shadow": {
     "type": "none"
    }
@@ -299,10 +300,10 @@
    "name": "shelf_plant_R",
    "group": "prop",
    "z": 17,
-   "x": 499,
+   "x": 498,
    "y": 301,
-   "w": 19,
-   "h": 31,
+   "w": 25,
+   "h": 34,
    "shadow": {
     "type": "none"
    }
@@ -312,9 +313,9 @@
    "group": "prop",
    "z": 18,
    "x": 398,
-   "y": 379,
+   "y": 378,
    "w": 113,
-   "h": 65,
+   "h": 66,
    "shadow": {
     "type": "none"
    }
@@ -324,19 +325,19 @@
    "group": "furniture",
    "z": 19,
    "x": 60,
-   "y": 795,
-   "w": 817,
-   "h": 229,
+   "y": 797,
+   "w": 813,
+   "h": 227,
    "shadow": {
     "type": "none"
    }
   },
   {
    "ao": {
-    "x": 378,
-    "y": 428,
-    "w": 448,
-    "h": 353
+    "x": 310,
+    "y": 144,
+    "w": 616,
+    "h": 692
    },
    "name": "sofa",
    "group": "furniture",
@@ -375,19 +376,13 @@
    }
   },
   {
-   "ao": {
-    "x": 667,
-    "y": 474,
-    "w": 162,
-    "h": 72
-   },
    "name": "sofa_back_cushion_R",
    "group": "prop",
    "z": 22,
    "x": 615,
    "y": 486,
    "w": 189,
-   "h": 143,
+   "h": 149,
    "shadow": {
     "type": "none"
    }
@@ -396,9 +391,9 @@
    "name": "sofa_seat_cushion_L",
    "group": "prop",
    "z": 23,
-   "x": 408,
+   "x": 404,
    "y": 599,
-   "w": 200,
+   "w": 204,
    "h": 91,
    "shadow": {
     "type": "none"
@@ -410,19 +405,13 @@
    "z": 24,
    "x": 547,
    "y": 619,
-   "w": 164,
+   "w": 165,
    "h": 105,
    "shadow": {
     "type": "none"
    }
   },
   {
-   "ao": {
-    "x": 488,
-    "y": 352,
-    "w": 232,
-    "h": 405
-   },
    "name": "grandma",
    "group": "character",
    "z": 25,
@@ -451,21 +440,21 @@
   },
   {
    "ao": {
-    "x": 756,
-    "y": 601,
-    "w": 268,
-    "h": 306
+    "x": 793,
+    "y": 556,
+    "w": 231,
+    "h": 393
    },
    "name": "side_table",
    "group": "furniture",
    "z": 26,
    "x": 758,
-   "y": 655,
-   "w": 177,
-   "h": 168,
+   "y": 657,
+   "w": 175,
+   "h": 163,
    "shadow": {
     "type": "ground-drop",
-    "floorY": 823,
+    "floorY": 820,
     "scale": 1.0,
     "blur": 1.0,
     "opacity": 1.0,
@@ -482,21 +471,21 @@
   },
   {
    "ao": {
-    "x": 799,
-    "y": 519,
-    "w": 82,
-    "h": 36
+    "x": 812,
+    "y": 518,
+    "w": 78,
+    "h": 41
    },
    "name": "fan",
    "group": "prop",
    "z": 27,
-   "x": 785,
+   "x": 784,
    "y": 543,
-   "w": 95,
-   "h": 149,
+   "w": 96,
+   "h": 151,
    "shadow": {
     "type": "contact",
-    "floorY": 692,
+    "floorY": 694,
     "scale": 1.0,
     "blur": 1.0,
     "opacity": 0.9,
@@ -512,9 +501,9 @@
   {
    "ao": {
     "x": 0,
-    "y": 435,
-    "w": 378,
-    "h": 504
+    "y": 72,
+    "w": 418,
+    "h": 911
    },
    "name": "armchair",
    "group": "furniture",
@@ -553,12 +542,6 @@
    }
   },
   {
-   "ao": {
-    "x": 123,
-    "y": 254,
-    "w": 262,
-    "h": 533
-   },
    "name": "man",
    "group": "character",
    "z": 30,
@@ -588,19 +571,19 @@
    "group": "character_prop",
    "z": 31,
    "x": 245,
-   "y": 530,
+   "y": 529,
    "w": 172,
-   "h": 134,
+   "h": 136,
    "shadow": {
     "type": "none"
    }
   },
   {
    "ao": {
-    "x": 181,
-    "y": 719,
-    "w": 567,
-    "h": 305
+    "x": 137,
+    "y": 685,
+    "w": 651,
+    "h": 339
    },
    "name": "coffee_table",
    "group": "furniture",
@@ -631,12 +614,12 @@
    "group": "prop",
    "z": 33,
    "x": 339,
-   "y": 730,
+   "y": 724,
    "w": 151,
-   "h": 72,
+   "h": 79,
    "shadow": {
     "type": "contact",
-    "floorY": 802,
+    "floorY": 803,
     "scale": 1.0,
     "blur": 1.0,
     "opacity": 0.7,
@@ -678,9 +661,9 @@
    "group": "prop",
    "z": 35,
    "x": 369,
-   "y": 673,
+   "y": 672,
    "w": 95,
-   "h": 73,
+   "h": 74,
    "shadow": {
     "type": "none"
    }
@@ -710,10 +693,10 @@
   },
   {
    "ao": {
-    "x": 695,
-    "y": 759,
-    "w": 210,
-    "h": 265
+    "x": 649,
+    "y": 748,
+    "w": 304,
+    "h": 276
    },
    "name": "box",
    "group": "prop",
@@ -721,10 +704,10 @@
    "x": 709,
    "y": 762,
    "w": 128,
-   "h": 118,
+   "h": 119,
    "shadow": {
     "type": "ground-drop",
-    "floorY": 880,
+    "floorY": 881,
     "scale": 1.0,
     "blur": 1.0,
     "opacity": 1.0,
