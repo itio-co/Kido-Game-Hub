@@ -134,7 +134,10 @@
      0,
      0
     ],
-    "distance": 6
+    "distance": 6,
+    "receivers": [
+     "shell"
+    ]
    }
   },
   {
@@ -154,7 +157,10 @@
      0,
      0
     ],
-    "distance": 6
+    "distance": 6,
+    "receivers": [
+     "shell"
+    ]
    }
   },
   {
@@ -174,7 +180,10 @@
      0,
      0
     ],
-    "distance": 6
+    "distance": 6,
+    "receivers": [
+     "shell"
+    ]
    }
   },
   {
@@ -195,7 +204,11 @@
      0,
      0
     ],
-    "contact": 0.9
+    "contact": 0.9,
+    "receivers": [
+     "shell",
+     "rug"
+    ]
    }
   },
   {
@@ -300,7 +313,11 @@
      0,
      0
     ],
-    "contact": 0.9
+    "contact": 0.9,
+    "receivers": [
+     "shell",
+     "rug"
+    ]
    }
   },
   {
@@ -360,14 +377,21 @@
    "w": 204,
    "h": 388,
    "shadow": {
-    "type": "contact",
-    "floorY": 756,
-    "scale": 0.6,
-    "blur": 1.0,
-    "opacity": 0.5,
+    "type": "surface-drop",
+    "distance": 14,
+    "scale": 1.0,
+    "blur": 1.5,
+    "opacity": 0.45,
     "offset": [
      0,
      0
+    ],
+    "receivers": [
+     "sofa",
+     "sofa_back_cushion_L",
+     "sofa_back_cushion_R",
+     "sofa_seat_cushion_L",
+     "sofa_seat_cushion_R"
     ]
    }
   },
@@ -389,7 +413,11 @@
      0,
      0
     ],
-    "contact": 0.9
+    "contact": 0.9,
+    "receivers": [
+     "shell",
+     "rug"
+    ]
    }
   },
   {
@@ -409,6 +437,9 @@
     "offset": [
      0,
      0
+    ],
+    "receivers": [
+     "side_table"
     ]
    }
   },
@@ -430,7 +461,11 @@
      0,
      0
     ],
-    "contact": 0.9
+    "contact": 0.9,
+    "receivers": [
+     "shell",
+     "rug"
+    ]
    }
   },
   {
@@ -454,14 +489,19 @@
    "w": 258,
    "h": 414,
    "shadow": {
-    "type": "contact",
-    "floorY": 779,
-    "scale": 0.6,
-    "blur": 1.0,
-    "opacity": 0.5,
+    "type": "surface-drop",
+    "distance": 14,
+    "scale": 1.0,
+    "blur": 1.5,
+    "opacity": 0.45,
     "offset": [
      0,
      0
+    ],
+    "receivers": [
+     "armchair",
+     "armchair_seat_cushion",
+     "sofa"
     ]
    }
   },
@@ -495,7 +535,11 @@
      0,
      0
     ],
-    "contact": 0.9
+    "contact": 0.9,
+    "receivers": [
+     "shell",
+     "rug"
+    ]
    }
   },
   {
@@ -515,6 +559,9 @@
     "offset": [
      0,
      0
+    ],
+    "receivers": [
+     "coffee_table"
     ]
    }
   },
@@ -535,6 +582,10 @@
     "offset": [
      0,
      0
+    ],
+    "receivers": [
+     "tray",
+     "coffee_table"
     ]
    }
   },
@@ -567,6 +618,9 @@
     "offset": [
      0,
      0
+    ],
+    "receivers": [
+     "coffee_table"
     ]
    }
   },
@@ -588,7 +642,11 @@
      0,
      0
     ],
-    "contact": 0.9
+    "contact": 0.9,
+    "receivers": [
+     "shell",
+     "rug"
+    ]
    }
   }
  ]
