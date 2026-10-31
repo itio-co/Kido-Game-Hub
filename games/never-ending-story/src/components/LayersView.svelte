@@ -4,12 +4,15 @@
   import { DEFAULT_LIGHT, hexToRgb, lightVector, parseLayersQuery, planShadows, type SceneLight, type ShadowConfig } from '../lib/shadows/shadows';
   import { maskByReceivers, multiplyShadow, rasteriseShadow } from '../lib/shadows/render';
 
-  type Layer = { name: string; group: string; z: number; x: number; y: number; w: number; h: number; shadow: ShadowConfig };
-  type Loaded = Layer & { color: ImageData; normal: ImageData; bitmap: HTMLCanvasElement };
+  type Box = { x: number; y: number; w: number; h: number };
+  /** `ao`: the object's own contact shadow / ambient occlusion on the room (multiply factor image), moves and toggles with it. */
+  type Layer = Box & { name: string; group: string; z: number; shadow: ShadowConfig; ao?: Box };
+  type Loaded = Layer & { color: ImageData; normal: ImageData; bitmap: HTMLCanvasElement; aoData?: ImageData };
 
   const BASE = import.meta.env.BASE_URL;
   const DIR = `${BASE}showcase/livingroom-layers/`;
   const query = parseLayersQuery(location.hash);
+  const aoOn = !/[?&]ao=0/.test(location.hash);
   let canvas = $state<HTMLCanvasElement>();
   let layers = $state.raw<Loaded[]>([]);
   let visible = $state<Record<string, boolean>>({});
@@ -49,7 +52,8 @@
       sorted.map(async (layer) => {
         const color = pixels(await loadImage(`${DIR}${layer.name}.color.webp`));
         const normal = pixels(await loadImage(`${DIR}${layer.name}.normal.webp`));
-        return { ...layer, shadow: layer.shadow ?? { type: 'none' }, color: color.data, normal: normal.data, bitmap: color.canvas };
+        const aoData = layer.ao ? pixels(await loadImage(`${DIR}${layer.name}.ao.webp`)).data : undefined;
+        return { ...layer, shadow: layer.shadow ?? { type: 'none' }, color: color.data, normal: normal.data, bitmap: color.canvas, aoData };
       }),
     );
     visible = Object.fromEntries(layers.map((layer) => [layer.name, !query.off.includes(layer.name)]));
@@ -94,6 +98,24 @@
     return mask;
   }
 
+  /** Multiply the object's stored AO factor onto the room under it, at the object's moved position. */
+  function applyAo(out: Float32Array, box: Box, data: ImageData, mx: number, my: number, recv: Uint8ClampedArray, width: number, height: number): void {
+    const d = data.data;
+    for (let row = 0; row < box.h; row++) {
+      const py = box.y + my + row;
+      if (py < 0 || py >= height) continue;
+      for (let col = 0; col < box.w; col++) {
+        const px = box.x + mx + col;
+        if (px < 0 || px >= width) continue;
+        const p = py * width + px;
+        const k = recv[p] / 255;
+        if (k === 0) continue;
+        const i = (row * box.w + col) * 4;
+        for (let ch = 0; ch < 3; ch++) out[p * 3 + ch] *= 1 - (1 - d[i + ch] / 255) * k;
+      }
+    }
+  }
+
   function render(): void {
     if (!canvas || !ready) return;
     const { width, height } = size;
@@ -113,6 +135,7 @@
           if (plan.receivers) maskByReceivers(mask, receiverMask(plan.receivers, width, height));
           multiplyShadow(out, mask, tint);
         }
+        if (aoOn && layer.ao && layer.aoData) applyAo(out, layer.ao, layer.aoData, mx, my, receiverMask(['shell', 'rug'], width, height), width, height);
       }
       const c = layer.color.data;
       const n = layer.normal.data;
@@ -157,7 +180,12 @@
   });
 
   function setAll(on: boolean): void {
-    visible = Object.fromEntries(layers.map((layer) => [layer.name, on]));
+    // "None" hides the objects only; the room shell and the view through the doorways stay until toggled one by one.
+    visible = Object.fromEntries(layers.map((layer) => [layer.name, on || isRoom(layer)]));
+  }
+
+  function isRoom(layer: Layer): boolean {
+    return layer.group === 'room_shell' || layer.group === 'background_view';
   }
 
   function camel(name: string): string {
