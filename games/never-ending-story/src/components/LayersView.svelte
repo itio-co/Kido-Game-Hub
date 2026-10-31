@@ -18,6 +18,7 @@
   function loadImage(src: string): Promise<ImageData> {
     return new Promise((resolve, reject) => {
       const img = new Image();
+      img.crossOrigin = 'anonymous';
       img.onload = () => {
         const c = document.createElement('canvas');
         c.width = img.width;
