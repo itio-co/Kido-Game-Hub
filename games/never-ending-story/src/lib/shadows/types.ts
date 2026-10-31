@@ -12,7 +12,7 @@ export interface SceneLight {
   color: string;
 }
 
-export type ShadowType = 'none' | 'contact' | 'ground-drop' | 'wall-cast';
+export type ShadowType = 'none' | 'contact' | 'ground-drop' | 'wall-cast' | 'surface-drop';
 
 /** Per-object shadow settings. */
 export interface ShadowConfig {
@@ -29,7 +29,13 @@ export interface ShadowConfig {
   opacity?: number;
   /** Extra soft contact darkening (0..1) under the base, added to any type except wall-cast. */
   contact?: number;
-  /** wall-cast only: distance from the wall in pixels. */
+  /**
+   * Layers this shadow may darken. Omit to darken everything drawn below the caster.
+   * Use 'shell' for the bare room (floor, walls); other entries are object layer names,
+   * e.g. grandma -> ['sofa', 'sofa_back_cushion_R'], coffee_table -> ['shell', 'rug'].
+   */
+  receivers?: string[];
+  /** wall-cast / surface-drop: distance from the receiving surface in pixels. */
   distance?: number;
 }
 
@@ -52,4 +58,6 @@ export interface ShadowPlan {
   ellipse: { cx: number; cy: number; rx: number; ry: number };
   blurPx: number;
   opacity: number;
+  /** Copied from the config; undefined = no receiver mask. */
+  receivers?: string[];
 }

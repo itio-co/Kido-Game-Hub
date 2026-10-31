@@ -46,6 +46,12 @@ export function planShadows(caster: ShadowCaster, light: SceneLight, moveX = 0, 
 
 /** Plan the main shadow of one caster (see planShadows for main + contact). */
 export function planShadow(caster: ShadowCaster, light: SceneLight, moveX = 0, moveY = 0): ShadowPlan | null {
+  const plan = planShape(caster, light, moveX, moveY);
+  if (plan && caster.shadow.receivers?.length) plan.receivers = [...caster.shadow.receivers];
+  return plan;
+}
+
+function planShape(caster: ShadowCaster, light: SceneLight, moveX: number, moveY: number): ShadowPlan | null {
   const cfg = caster.shadow;
   if (cfg.type === 'none') return null;
   const { dx, dy, length } = shadowDirection(light);
@@ -61,6 +67,11 @@ export function planShadow(caster: ShadowCaster, light: SceneLight, moveX = 0, m
   if (cfg.type === 'wall-cast') {
     const d = (cfg.distance ?? 6) * scale;
     return { kind: 'silhouette', matrix: translate([1, 0, 0, 1, dx * d, Math.abs(dy) * d]), ellipse: none, blurPx: blurPx * 0.5, opacity };
+  }
+  if (cfg.type === 'surface-drop') {
+    // Shadow on a surface just behind/under the caster (e.g. grandma on the sofa): the silhouette slides along the light.
+    const d = (cfg.distance ?? 14) * scale * length;
+    return { kind: 'silhouette', matrix: translate([1, 0, 0, 1, dx * d, dy * d * 0.6]), ellipse: none, blurPx: blurPx * 0.7, opacity };
   }
   if (cfg.type === 'contact') {
     const cx = caster.x + caster.w / 2 + moveX + ox + dx * 4;

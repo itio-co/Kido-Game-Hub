@@ -21,6 +21,11 @@ from the caster's alpha each time the light, visibility or position changes, so 
   - `contact`: a soft ellipse at `floorY`, for props on a surface and seated characters.
   - `ground-drop`: the silhouette projected onto the floor line `floorY` along the light and foreshortened, for furniture.
   - `wall-cast`: the silhouette offset `distance` px along the light, for wall decor.
+  - `surface-drop`: the silhouette slid `distance` px along the light onto the surface just behind it (grandma onto the sofa).
+- `receivers` (optional): layer names this shadow may darken; `'shell'` means the bare room. Omit to darken everything drawn below the caster. E.g. furniture uses `['shell', 'rug']`, grandma uses the sofa layers. The renderer multiplies the shadow mask by the union alpha of the visible receivers (`maskByReceivers`), so shadows only land on real surfaces and follow receivers that move.
+
+### Calibrated art (asset pipeline)
+Baked shadows are removed from the art by dividing the original render by the runtime shadow factor (capped so nothing gets brighter than the local unshadowed surface). With all layers on, the runtime therefore reproduces the original; with a caster off or moved, its shadow leaves with it.
 - `contact` (0..1) adds a soft contact/ambient-occlusion ellipse under the base on top of the main shadow (`planShadows` returns both).
 - `scale`, `blur`, `opacity` multiply the light's values. `offset` is a final pixel nudge.
 

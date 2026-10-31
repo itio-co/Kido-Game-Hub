@@ -40,3 +40,8 @@ export function multiplyShadow(out: Float32Array, mask: Uint8ClampedArray, tint:
     out[o + 2] *= 1 - a + a * tb;
   }
 }
+
+/** Restrict a shadow mask to receiver pixels: mask *= receiver / 255. */
+export function maskByReceivers(mask: Uint8ClampedArray, receiver: Uint8ClampedArray): void {
+  for (let i = 0; i < mask.length; i++) if (mask[i]) mask[i] = (mask[i] * receiver[i]) / 255;
+}

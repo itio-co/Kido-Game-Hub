@@ -25,5 +25,8 @@ check('light comes from opposite of shadow', lx < 0 && ly < 0);
 check('contact adds a second plan', planShadows({ ...caster, shadow: { type: 'ground-drop', contact: 0.8 } }, DEFAULT_LIGHT).length === 2);
 const q = parseLayersQuery('#/layers?off=fan,box&move=box:-300:5&shadows=0&angle=10');
 check('query parse', q.off.length === 2 && q.move.box[0] === -300 && q.move.box[1] === 5 && !q.shadows && q.angle === 10);
+const surf = planShadow({ ...caster, shadow: { type: 'surface-drop', distance: 14, receivers: ['sofa'] } }, DEFAULT_LIGHT)!;
+check('surface-drop slides up-right and keeps receivers', surf.kind === 'silhouette' && surf.matrix[4] > 0 && surf.matrix[5] < 0 && surf.receivers?.[0] === 'sofa');
+check('no receivers by default', plan.receivers === undefined);
 console.log(`shadows: ${passed} passed, ${failed} failed`);
 if (failed) throw new Error(`${failed} shadow checks failed`);

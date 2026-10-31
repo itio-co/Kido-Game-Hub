@@ -2,7 +2,7 @@
   import { onMount } from 'svelte';
   import { t, type MessageKey } from '../lib/i18n/core';
   import { DEFAULT_LIGHT, hexToRgb, lightVector, parseLayersQuery, planShadows, type SceneLight, type ShadowConfig } from '../lib/shadows/shadows';
-  import { multiplyShadow, rasteriseShadow } from '../lib/shadows/render';
+  import { maskByReceivers, multiplyShadow, rasteriseShadow } from '../lib/shadows/render';
 
   type Layer = { name: string; group: string; z: number; x: number; y: number; w: number; h: number; shadow: ShadowConfig };
   type Loaded = Layer & { color: ImageData; normal: ImageData; bitmap: HTMLCanvasElement };
@@ -71,6 +71,29 @@
     return c;
   }
 
+  /** Union alpha of the visible receiver layers at their moved positions ('shell' = bare room layers). */
+  function receiverMask(names: string[], width: number, height: number): Uint8ClampedArray {
+    const mask = new Uint8ClampedArray(width * height);
+    for (const layer of layers) {
+      const isShell = layer.group === 'room_shell' || layer.group === 'background_view';
+      if (!visible[layer.name] || !(names.includes(layer.name) || (isShell && names.includes('shell')))) continue;
+      const [mx, my] = offsetOf(layer.name);
+      const c = layer.color.data;
+      for (let row = 0; row < layer.h; row++) {
+        const py = layer.y + my + row;
+        if (py < 0 || py >= height) continue;
+        for (let col = 0; col < layer.w; col++) {
+          const px = layer.x + mx + col;
+          if (px < 0 || px >= width) continue;
+          const a = c[(row * layer.w + col) * 4 + 3];
+          const o = py * width + px;
+          if (a > mask[o]) mask[o] = a;
+        }
+      }
+    }
+    return mask;
+  }
+
   function render(): void {
     if (!canvas || !ready) return;
     const { width, height } = size;
@@ -85,7 +108,11 @@
       if (shadowsOn && castShadow[layer.name]) {
         const plans = planShadows(layer, light, mx, my);
         const source = plans.some((plan) => plan.kind === 'silhouette') ? placed(layer) : layer.bitmap;
-        for (const plan of plans) multiplyShadow(out, rasteriseShadow(plan, source, width, height), tint);
+        for (const plan of plans) {
+          const mask = rasteriseShadow(plan, source, width, height);
+          if (plan.receivers) maskByReceivers(mask, receiverMask(plan.receivers, width, height));
+          multiplyShadow(out, mask, tint);
+        }
       }
       const c = layer.color.data;
       const n = layer.normal.data;
