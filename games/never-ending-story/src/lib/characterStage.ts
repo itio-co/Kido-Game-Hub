@@ -19,6 +19,8 @@ export type CharacterSnapshot = {
   flat: boolean;
   /** Whether the 24-bone skeleton overlay (SkeletonHelper + joint markers) is shown. */
   bones: boolean;
+  /** False for static (unrigged) variants: no skeleton or clips, so the UI hides animation controls. */
+  rigged: boolean;
 };
 
 export type CharacterStage = {
@@ -61,6 +63,8 @@ export type CharacterDebug = {
   /** Triangles / joints of the loaded skinned mesh(es). */
   tris: number;
   joints: number;
+  /** Materials of the loaded model that carry a normal map. */
+  normalMaps: number;
   /** Skinned model bbox height (m), measured when BindPose is applied. */
   height?: number;
   /** Variants loaded so far (incl. reloads). */
@@ -194,6 +198,7 @@ export function mountCharacterStage(
     variant: (asset.variants.find((v) => v.id === info.defaultVariant) ?? asset.variants[0]!).id,
     flat: false,
     bones: false,
+    rigged: true,
   };
   const emit = () => onChange({ ...snap });
 
@@ -230,6 +235,7 @@ export function mountCharacterStage(
     bones: false,
     tris: 0,
     joints: 0,
+    normalMaps: 0,
     loads: 0,
   };
   window.__characterStage = debug;
@@ -377,6 +383,15 @@ export function mountCharacterStage(
         modelRes = res;
         scene.add(model);
 
+        snap.rigged = uniqueBones.size > 0 && gltf.animations.length > 0;
+        if (!snap.rigged) {
+          snap.bones = false;
+          snap.seat = false;
+          seat.visible = false;
+          model.updateMatrixWorld(true);
+          debug.height = new THREE.Box3().setFromObject(model, true).getSize(new THREE.Vector3()).y;
+        }
+
         // Build SkeletonHelper + joint spheres for visual bone verification.
         skeletonHelper = new THREE.SkeletonHelper(model);
         const skelMat = skeletonHelper.material as THREE.LineBasicMaterial;
@@ -408,6 +423,7 @@ export function mountCharacterStage(
         debug.clips = gltf.animations.map((c) => c.name);
         debug.tris = tris;
         debug.joints = joints;
+        debug.normalMaps = res.mats.filter((m) => !!(m as THREE.MeshStandardMaterial).normalMap).length;
         debug.loads += 1;
         mixer.addEventListener('finished', (event) => {
           const done = (event as unknown as { action: THREE.AnimationAction }).action;
@@ -523,8 +539,10 @@ export function mountCharacterStage(
     raf = requestAnimationFrame(tick);
     const dt = Math.min(clock.getDelta(), 0.1);
     if (mixer && snap.playing) mixer.update(dt);
-    if (hipsBone) {
-      hipsBone.getWorldPosition(hips);
+    {
+      // Static (unrigged) meshes have no Hips bone: orbit around the origin.
+      if (hipsBone) hipsBone.getWorldPosition(hips);
+      else hips.set(0, 0, 0);
       shadow.position.x = hips.x;
       shadow.position.z = hips.z;
       // Follow the hips on the floor plane, softly.
@@ -597,6 +615,7 @@ export function mountCharacterStage(
       emit();
     },
     setSeat(on) {
+      if (!snap.rigged) return;
       if (on) {
         // Turn the camera towards the side she sits facing (3/4 view).
         yawGoal = Math.atan2(seatInfo.facing[0], seatInfo.facing[1]) - 0.45;
@@ -615,6 +634,7 @@ export function mountCharacterStage(
       emit();
     },
     setBones(bones) {
+      if (!snap.rigged) bones = false;
       snap.bones = bones;
       applyBones();
       emit();

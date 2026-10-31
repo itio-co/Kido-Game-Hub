@@ -16,6 +16,7 @@
     variant: asset.character?.defaultVariant ?? asset.variants[0]?.id ?? '',
     flat: false,
     bones: false,
+    rigged: true,
   });
   const clips = $derived(asset.character?.clips ?? []);
   const meshInfo = (tris?: number, bytes?: number) =>
@@ -60,6 +61,7 @@
   {/if}
 
   <div class="toggles">
+    {#if snap.rigged}
     <label class="sofa">
       <input
         type="checkbox"
@@ -70,6 +72,7 @@
       />
       <span>{t('game.character.sofa')}</span>
     </label>
+    {/if}
     <label class="sofa">
       <input
         type="checkbox"
@@ -79,6 +82,7 @@
       />
       <span>{t('game.character.flat')}</span>
     </label>
+    {#if snap.rigged}
     <label class="sofa">
       <input
         type="checkbox"
@@ -89,8 +93,12 @@
       />
       <span>{t('game.character.bones')}</span>
     </label>
+    {/if}
   </div>
 
+  {#if !snap.rigged}
+    <p class="hint" data-character-unrigged>{t('game.character.unrigged')}</p>
+  {:else}
   <h3>{t('game.character.animation')}</h3>
   <div class="clips" role="radiogroup" aria-label={t('game.character.animation')}>
     {#each clips as clip (clip.id)}
@@ -134,6 +142,7 @@
       <span>{t('game.character.loop')}</span>
     </label>
   </div>
+  {/if}
 </div>
 
 <style>

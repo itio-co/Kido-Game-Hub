@@ -218,6 +218,17 @@ export const SHOWCASE_ASSETS: ShowcaseAsset[] = [
       sceneMockup: `${BASE}img/living-grandma.jpg`,
     },
     variants: [
+      // Art-toy T-pose low-poly (8k tris) with a baked tangent-space normal map (glTF/OpenGL convention).
+      // Not rigged: the stage hides clips/bones for it. Node transform normalises it to +Z facing, feet on y=0, 1.6 m.
+      {
+        id: 'tposeLowpolyNormal',
+        get label() {
+          return t('asset.grandma.variant.tposeLowpolyNormal');
+        },
+        url: `${BASE}models/grandma-mali-tpose-lowpoly-8k-normal.glb`,
+        tris: 8000,
+        bytes: 4788380,
+      },
       // 6k meshopt re-prepped for rigging: X-symmetric, exact T-pose, named parts, low-relief art-toy head
       // (separate head 3000 / body 4000 tris primitives on one 24-bone skin), per-part heat weights.
       {
@@ -408,7 +419,7 @@ export const SHOWCASE_ASSETS: ShowcaseAsset[] = [
           },
         },
       ],
-      defaultVariant: 'tripo6kClean',
+      defaultVariant: 'tposeLowpolyNormal',
       idle: 'Idle',
       sitDown: 'SitDown',
       // SitDown turns 90 degrees, so she sits facing +X with the hips at (-0.35, 0.48, 0.903).
