@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import EditorView from './components/EditorView.svelte';
   import CompareView from './components/CompareView.svelte';
+  import LayersView from './components/LayersView.svelte';
   import CalendarPanel from './components/CalendarPanel.svelte';
   import DemoRibbon from './components/DemoRibbon.svelte';
   import FlowView from './components/flow/FlowView.svelte';
@@ -39,6 +40,7 @@
   const showcasing = $derived(route.startsWith('#/showcase'));
   const editing = $derived(route.startsWith('#/editor'));
   const comparing = $derived(route.startsWith('#/compare'));
+  const layering = $derived(route.startsWith('#/layers'));
 
   const calendar = $derived.by((): CalendarEntity | null => {
     const found = room?.objects.find((obj) => obj.kind === 'calendar');
@@ -216,6 +218,8 @@
     <ShowcaseView {room} />
   {:else if comparing}
     <CompareView />
+  {:else if layering}
+    <LayersView />
   {:else}
     <div class="stage" class:is-fading={session.fading}>
       <div class="room-layer" class:hidden={session.screen !== 'player-room'}>
@@ -256,6 +260,7 @@
       <nav class="home-links" aria-label={t('game.home.linksAria')}>
         <a class="home-link" href="#/showcase?asset=characters/grandma" data-home-demo>{t('game.home.viewDemo')}</a>
         <a class="home-link" href="#/compare" data-home-compare>{t('game.home.beforeAfter')}</a>
+        <a class="home-link" href="#/layers" data-home-layers>{t('game.home.layers')}</a>
       </nav>
     {/if}
 
