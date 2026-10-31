@@ -748,7 +748,6 @@
   "game.layers.panelAria": "Layers",
   "game.layers.loading": "Loading layers…",
   "game.layers.lighting": "Normal-map lighting",
-  "game.layers.lightHint": "Drag on the picture to move the light.",
   "game.layers.all": "All on",
   "game.layers.none": "All off",
   "game.layers.back": "← Back",
@@ -790,5 +789,15 @@
   "game.layers.item.vase": "Vase",
   "game.layers.item.flowers": "Flowers",
   "game.layers.item.notePaper": "Note paper",
-  "game.layers.item.box": "Box"
+  "game.layers.item.box": "Box",
+  "game.layers.dragHint": "Drag an object on the picture to move it. Its shadow follows.",
+  "game.layers.shadowsAria": "Shadows",
+  "game.layers.shadowsTitle": "Shadows",
+  "game.layers.shadowsOn": "Shadows on",
+  "game.layers.lightAngle": "Light angle",
+  "game.layers.lightElevation": "Light height",
+  "game.layers.softness": "Softness",
+  "game.layers.intensity": "Intensity",
+  "game.layers.resetMoves": "Reset positions",
+  "game.layers.shadowColumn": "Shadow"
 }

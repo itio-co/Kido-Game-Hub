@@ -748,7 +748,6 @@
   "game.layers.panelAria": "เลเยอร์",
   "game.layers.loading": "กำลังโหลดเลเยอร์…",
   "game.layers.lighting": "แสงจาก normal map",
-  "game.layers.lightHint": "ลากบนภาพเพื่อย้ายแสง",
   "game.layers.all": "เปิดทั้งหมด",
   "game.layers.none": "ปิดทั้งหมด",
   "game.layers.back": "← กลับ",
@@ -790,5 +789,15 @@
   "game.layers.item.vase": "แจกัน",
   "game.layers.item.flowers": "ดอกไม้",
   "game.layers.item.notePaper": "กระดาษโน้ต",
-  "game.layers.item.box": "กล่อง"
+  "game.layers.item.box": "กล่อง",
+  "game.layers.dragHint": "ลากวัตถุบนภาพเพื่อย้าย เงาจะตามไปด้วย",
+  "game.layers.shadowsAria": "เงา",
+  "game.layers.shadowsTitle": "เงา",
+  "game.layers.shadowsOn": "เปิดเงา",
+  "game.layers.lightAngle": "มุมแสง",
+  "game.layers.lightElevation": "ความสูงแสง",
+  "game.layers.softness": "ความนุ่มของเงา",
+  "game.layers.intensity": "ความเข้มเงา",
+  "game.layers.resetMoves": "รีเซ็ตตำแหน่ง",
+  "game.layers.shadowColumn": "เงา"
 }

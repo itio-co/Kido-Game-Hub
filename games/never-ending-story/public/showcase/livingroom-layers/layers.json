@@ -1,1 +1,595 @@
-{"width": 1024, "height": 1024, "layers": [{"name": "view_through_doorways", "group": "background_view", "z": 0, "x": 185, "y": 179, "w": 750, "h": 500}, {"name": "door_left", "group": "room_shell", "z": 1, "x": 239, "y": 190, "w": 72, "h": 445}, {"name": "frame_left", "group": "room_shell", "z": 2, "x": 160, "y": 142, "w": 187, "h": 532}, {"name": "frame_right", "group": "room_shell", "z": 3, "x": 787, "y": 150, "w": 175, "h": 534}, {"name": "ceiling_trim", "group": "room_shell", "z": 4, "x": 230, "y": 0, "w": 635, "h": 57}, {"name": "baseboards", "group": "room_shell", "z": 5, "x": 0, "y": 586, "w": 1024, "h": 132}, {"name": "floor", "group": "room_shell", "z": 6, "x": 0, "y": 617, "w": 1024, "h": 407}, {"name": "wall_back", "group": "room_shell", "z": 7, "x": 419, "y": 0, "w": 605, "h": 657}, {"name": "wall_left", "group": "room_shell", "z": 8, "x": 0, "y": 0, "w": 421, "h": 680}, {"name": "clock", "group": "wall_decor", "z": 9, "x": 225, "y": 62, "w": 69, "h": 86}, {"name": "picture_frame", "group": "wall_decor", "z": 10, "x": 599, "y": 212, "w": 86, "h": 125}, {"name": "calendar", "group": "wall_decor", "z": 11, "x": 696, "y": 220, "w": 80, "h": 123}, {"name": "bookshelf", "group": "furniture", "z": 12, "x": 372, "y": 229, "w": 194, "h": 400}, {"name": "shelf_books_top", "group": "prop", "z": 13, "x": 463, "y": 209, "w": 76, "h": 34}, {"name": "shelf_plant_top", "group": "prop", "z": 14, "x": 398, "y": 170, "w": 66, "h": 76}, {"name": "shelf_photo", "group": "prop", "z": 15, "x": 443, "y": 280, "w": 48, "h": 65}, {"name": "shelf_plant_L", "group": "prop", "z": 16, "x": 399, "y": 299, "w": 41, "h": 46}, {"name": "shelf_plant_R", "group": "prop", "z": 17, "x": 499, "y": 301, "w": 19, "h": 31}, {"name": "shelf_paper_crafts", "group": "prop", "z": 18, "x": 398, "y": 379, "w": 113, "h": 65}, {"name": "rug", "group": "furniture", "z": 19, "x": 60, "y": 733, "w": 817, "h": 291}, {"name": "sofa", "group": "furniture", "z": 20, "x": 382, "y": 477, "w": 437, "h": 316}, {"name": "sofa_back_cushion_L", "group": "prop", "z": 21, "x": 471, "y": 478, "w": 161, "h": 139}, {"name": "sofa_back_cushion_R", "group": "prop", "z": 22, "x": 615, "y": 486, "w": 189, "h": 143}, {"name": "sofa_seat_cushion_L", "group": "prop", "z": 23, "x": 408, "y": 599, "w": 200, "h": 91}, {"name": "sofa_seat_cushion_R", "group": "prop", "z": 24, "x": 547, "y": 619, "w": 164, "h": 105}, {"name": "grandma", "group": "character", "z": 25, "x": 497, "y": 368, "w": 204, "h": 388}, {"name": "side_table", "group": "furniture", "z": 26, "x": 758, "y": 654, "w": 178, "h": 168}, {"name": "fan", "group": "prop", "z": 27, "x": 785, "y": 543, "w": 95, "h": 149}, {"name": "armchair", "group": "furniture", "z": 28, "x": 58, "y": 511, "w": 315, "h": 306}, {"name": "armchair_seat_cushion", "group": "prop", "z": 29, "x": 198, "y": 635, "w": 153, "h": 118}, {"name": "man", "group": "character", "z": 30, "x": 161, "y": 365, "w": 258, "h": 414}, {"name": "newspaper", "group": "character_prop", "z": 31, "x": 245, "y": 530, "w": 172, "h": 134}, {"name": "coffee_table", "group": "furniture", "z": 32, "x": 260, "y": 726, "w": 435, "h": 253}, {"name": "tray", "group": "prop", "z": 33, "x": 339, "y": 730, "w": 151, "h": 72}, {"name": "vase", "group": "prop", "z": 34, "x": 380, "y": 738, "w": 72, "h": 39}, {"name": "flowers", "group": "prop", "z": 35, "x": 369, "y": 673, "w": 95, "h": 73}, {"name": "note_paper", "group": "prop", "z": 36, "x": 535, "y": 767, "w": 76, "h": 39}, {"name": "box", "group": "prop", "z": 37, "x": 709, "y": 762, "w": 128, "h": 118}]}
+{
+ "width": 1024,
+ "height": 1024,
+ "light": {
+  "shadowAngleDeg": 300.0,
+  "elevationDeg": 40,
+  "softness": 0.5,
+  "intensity": 0.7,
+  "color": "#3a2a35"
+ },
+ "layers": [
+  {
+   "name": "view_through_doorways",
+   "group": "background_view",
+   "z": 0,
+   "x": 185,
+   "y": 179,
+   "w": 750,
+   "h": 500,
+   "shadow": {
+    "type": "none"
+   }
+  },
+  {
+   "name": "door_left",
+   "group": "room_shell",
+   "z": 1,
+   "x": 239,
+   "y": 190,
+   "w": 72,
+   "h": 445,
+   "shadow": {
+    "type": "none"
+   }
+  },
+  {
+   "name": "frame_left",
+   "group": "room_shell",
+   "z": 2,
+   "x": 160,
+   "y": 142,
+   "w": 187,
+   "h": 532,
+   "shadow": {
+    "type": "none"
+   }
+  },
+  {
+   "name": "frame_right",
+   "group": "room_shell",
+   "z": 3,
+   "x": 787,
+   "y": 150,
+   "w": 175,
+   "h": 534,
+   "shadow": {
+    "type": "none"
+   }
+  },
+  {
+   "name": "ceiling_trim",
+   "group": "room_shell",
+   "z": 4,
+   "x": 230,
+   "y": 0,
+   "w": 635,
+   "h": 57,
+   "shadow": {
+    "type": "none"
+   }
+  },
+  {
+   "name": "baseboards",
+   "group": "room_shell",
+   "z": 5,
+   "x": 0,
+   "y": 586,
+   "w": 1024,
+   "h": 132,
+   "shadow": {
+    "type": "none"
+   }
+  },
+  {
+   "name": "floor",
+   "group": "room_shell",
+   "z": 6,
+   "x": 0,
+   "y": 617,
+   "w": 1024,
+   "h": 407,
+   "shadow": {
+    "type": "none"
+   }
+  },
+  {
+   "name": "wall_back",
+   "group": "room_shell",
+   "z": 7,
+   "x": 419,
+   "y": 0,
+   "w": 605,
+   "h": 657,
+   "shadow": {
+    "type": "none"
+   }
+  },
+  {
+   "name": "wall_left",
+   "group": "room_shell",
+   "z": 8,
+   "x": 0,
+   "y": 0,
+   "w": 421,
+   "h": 680,
+   "shadow": {
+    "type": "none"
+   }
+  },
+  {
+   "name": "clock",
+   "group": "wall_decor",
+   "z": 9,
+   "x": 225,
+   "y": 62,
+   "w": 69,
+   "h": 86,
+   "shadow": {
+    "type": "wall-cast",
+    "scale": 1.0,
+    "blur": 1.0,
+    "opacity": 0.6,
+    "offset": [
+     0,
+     0
+    ],
+    "distance": 6
+   }
+  },
+  {
+   "name": "picture_frame",
+   "group": "wall_decor",
+   "z": 10,
+   "x": 599,
+   "y": 212,
+   "w": 86,
+   "h": 125,
+   "shadow": {
+    "type": "wall-cast",
+    "scale": 1.0,
+    "blur": 1.0,
+    "opacity": 0.6,
+    "offset": [
+     0,
+     0
+    ],
+    "distance": 6
+   }
+  },
+  {
+   "name": "calendar",
+   "group": "wall_decor",
+   "z": 11,
+   "x": 696,
+   "y": 220,
+   "w": 80,
+   "h": 123,
+   "shadow": {
+    "type": "wall-cast",
+    "scale": 1.0,
+    "blur": 1.0,
+    "opacity": 0.6,
+    "offset": [
+     0,
+     0
+    ],
+    "distance": 6
+   }
+  },
+  {
+   "name": "bookshelf",
+   "group": "furniture",
+   "z": 12,
+   "x": 372,
+   "y": 229,
+   "w": 194,
+   "h": 400,
+   "shadow": {
+    "type": "ground-drop",
+    "floorY": 629,
+    "scale": 1.0,
+    "blur": 1.0,
+    "opacity": 1.0,
+    "offset": [
+     0,
+     0
+    ],
+    "contact": 0.9
+   }
+  },
+  {
+   "name": "shelf_books_top",
+   "group": "prop",
+   "z": 13,
+   "x": 463,
+   "y": 209,
+   "w": 76,
+   "h": 34,
+   "shadow": {
+    "type": "none"
+   }
+  },
+  {
+   "name": "shelf_plant_top",
+   "group": "prop",
+   "z": 14,
+   "x": 398,
+   "y": 170,
+   "w": 66,
+   "h": 76,
+   "shadow": {
+    "type": "none"
+   }
+  },
+  {
+   "name": "shelf_photo",
+   "group": "prop",
+   "z": 15,
+   "x": 443,
+   "y": 280,
+   "w": 48,
+   "h": 65,
+   "shadow": {
+    "type": "none"
+   }
+  },
+  {
+   "name": "shelf_plant_L",
+   "group": "prop",
+   "z": 16,
+   "x": 399,
+   "y": 299,
+   "w": 41,
+   "h": 46,
+   "shadow": {
+    "type": "none"
+   }
+  },
+  {
+   "name": "shelf_plant_R",
+   "group": "prop",
+   "z": 17,
+   "x": 499,
+   "y": 301,
+   "w": 19,
+   "h": 31,
+   "shadow": {
+    "type": "none"
+   }
+  },
+  {
+   "name": "shelf_paper_crafts",
+   "group": "prop",
+   "z": 18,
+   "x": 398,
+   "y": 379,
+   "w": 113,
+   "h": 65,
+   "shadow": {
+    "type": "none"
+   }
+  },
+  {
+   "name": "rug",
+   "group": "furniture",
+   "z": 19,
+   "x": 60,
+   "y": 733,
+   "w": 817,
+   "h": 291,
+   "shadow": {
+    "type": "none"
+   }
+  },
+  {
+   "name": "sofa",
+   "group": "furniture",
+   "z": 20,
+   "x": 382,
+   "y": 477,
+   "w": 437,
+   "h": 316,
+   "shadow": {
+    "type": "ground-drop",
+    "floorY": 793,
+    "scale": 1.0,
+    "blur": 1.0,
+    "opacity": 1.0,
+    "offset": [
+     0,
+     0
+    ],
+    "contact": 0.9
+   }
+  },
+  {
+   "name": "sofa_back_cushion_L",
+   "group": "prop",
+   "z": 21,
+   "x": 471,
+   "y": 478,
+   "w": 161,
+   "h": 139,
+   "shadow": {
+    "type": "none"
+   }
+  },
+  {
+   "name": "sofa_back_cushion_R",
+   "group": "prop",
+   "z": 22,
+   "x": 615,
+   "y": 486,
+   "w": 189,
+   "h": 143,
+   "shadow": {
+    "type": "none"
+   }
+  },
+  {
+   "name": "sofa_seat_cushion_L",
+   "group": "prop",
+   "z": 23,
+   "x": 408,
+   "y": 599,
+   "w": 200,
+   "h": 91,
+   "shadow": {
+    "type": "none"
+   }
+  },
+  {
+   "name": "sofa_seat_cushion_R",
+   "group": "prop",
+   "z": 24,
+   "x": 547,
+   "y": 619,
+   "w": 164,
+   "h": 105,
+   "shadow": {
+    "type": "none"
+   }
+  },
+  {
+   "name": "grandma",
+   "group": "character",
+   "z": 25,
+   "x": 497,
+   "y": 368,
+   "w": 204,
+   "h": 388,
+   "shadow": {
+    "type": "contact",
+    "floorY": 756,
+    "scale": 0.6,
+    "blur": 1.0,
+    "opacity": 0.5,
+    "offset": [
+     0,
+     0
+    ]
+   }
+  },
+  {
+   "name": "side_table",
+   "group": "furniture",
+   "z": 26,
+   "x": 758,
+   "y": 654,
+   "w": 178,
+   "h": 168,
+   "shadow": {
+    "type": "ground-drop",
+    "floorY": 822,
+    "scale": 1.0,
+    "blur": 1.0,
+    "opacity": 1.0,
+    "offset": [
+     0,
+     0
+    ],
+    "contact": 0.9
+   }
+  },
+  {
+   "name": "fan",
+   "group": "prop",
+   "z": 27,
+   "x": 785,
+   "y": 543,
+   "w": 95,
+   "h": 149,
+   "shadow": {
+    "type": "contact",
+    "floorY": 692,
+    "scale": 1.0,
+    "blur": 1.0,
+    "opacity": 0.9,
+    "offset": [
+     0,
+     0
+    ]
+   }
+  },
+  {
+   "name": "armchair",
+   "group": "furniture",
+   "z": 28,
+   "x": 58,
+   "y": 511,
+   "w": 315,
+   "h": 306,
+   "shadow": {
+    "type": "ground-drop",
+    "floorY": 817,
+    "scale": 1.0,
+    "blur": 1.0,
+    "opacity": 1.0,
+    "offset": [
+     0,
+     0
+    ],
+    "contact": 0.9
+   }
+  },
+  {
+   "name": "armchair_seat_cushion",
+   "group": "prop",
+   "z": 29,
+   "x": 198,
+   "y": 635,
+   "w": 153,
+   "h": 118,
+   "shadow": {
+    "type": "none"
+   }
+  },
+  {
+   "name": "man",
+   "group": "character",
+   "z": 30,
+   "x": 161,
+   "y": 365,
+   "w": 258,
+   "h": 414,
+   "shadow": {
+    "type": "contact",
+    "floorY": 779,
+    "scale": 0.6,
+    "blur": 1.0,
+    "opacity": 0.5,
+    "offset": [
+     0,
+     0
+    ]
+   }
+  },
+  {
+   "name": "newspaper",
+   "group": "character_prop",
+   "z": 31,
+   "x": 245,
+   "y": 530,
+   "w": 172,
+   "h": 134,
+   "shadow": {
+    "type": "none"
+   }
+  },
+  {
+   "name": "coffee_table",
+   "group": "furniture",
+   "z": 32,
+   "x": 260,
+   "y": 726,
+   "w": 435,
+   "h": 253,
+   "shadow": {
+    "type": "ground-drop",
+    "floorY": 979,
+    "scale": 1.0,
+    "blur": 1.0,
+    "opacity": 1.0,
+    "offset": [
+     0,
+     0
+    ],
+    "contact": 0.9
+   }
+  },
+  {
+   "name": "tray",
+   "group": "prop",
+   "z": 33,
+   "x": 339,
+   "y": 730,
+   "w": 151,
+   "h": 72,
+   "shadow": {
+    "type": "contact",
+    "floorY": 802,
+    "scale": 1.0,
+    "blur": 1.0,
+    "opacity": 0.7,
+    "offset": [
+     0,
+     0
+    ]
+   }
+  },
+  {
+   "name": "vase",
+   "group": "prop",
+   "z": 34,
+   "x": 380,
+   "y": 738,
+   "w": 72,
+   "h": 39,
+   "shadow": {
+    "type": "contact",
+    "floorY": 777,
+    "scale": 1.0,
+    "blur": 1.0,
+    "opacity": 0.7,
+    "offset": [
+     0,
+     0
+    ]
+   }
+  },
+  {
+   "name": "flowers",
+   "group": "prop",
+   "z": 35,
+   "x": 369,
+   "y": 673,
+   "w": 95,
+   "h": 73,
+   "shadow": {
+    "type": "none"
+   }
+  },
+  {
+   "name": "note_paper",
+   "group": "prop",
+   "z": 36,
+   "x": 535,
+   "y": 767,
+   "w": 76,
+   "h": 39,
+   "shadow": {
+    "type": "contact",
+    "floorY": 806,
+    "scale": 1.0,
+    "blur": 1.0,
+    "opacity": 0.7,
+    "offset": [
+     0,
+     0
+    ]
+   }
+  },
+  {
+   "name": "box",
+   "group": "prop",
+   "z": 37,
+   "x": 709,
+   "y": 762,
+   "w": 128,
+   "h": 118,
+   "shadow": {
+    "type": "ground-drop",
+    "floorY": 880,
+    "scale": 1.0,
+    "blur": 1.0,
+    "opacity": 1.0,
+    "offset": [
+     0,
+     0
+    ],
+    "contact": 0.9
+   }
+  }
+ ]
+}
