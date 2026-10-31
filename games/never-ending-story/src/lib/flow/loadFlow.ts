@@ -1,4 +1,5 @@
 import { validateEntities } from '../catalog';
+import { t } from '../i18n/core';
 import type { CaseFlow, ScreenRegistry } from './types';
 
 export async function loadFlow(): Promise<{ flow: CaseFlow; screens: ScreenRegistry }> {
@@ -7,7 +8,7 @@ export async function loadFlow(): Promise<{ flow: CaseFlow; screens: ScreenRegis
     fetch(`${base}data/screens.json`),
     fetch(`${base}data/case-flow.json`),
   ]);
-  if (!screenRes.ok || !flowRes.ok) throw new Error('โหลดหน้าจอไม่ได้');
+  if (!screenRes.ok || !flowRes.ok) throw new Error(t('game.error.flowFetch'));
   const screens: unknown = await screenRes.json();
   const flow: unknown = await flowRes.json();
   validateEntities(screens, 'screen-registry');

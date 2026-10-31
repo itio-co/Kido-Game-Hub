@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import type { PlayerRoom } from '../lib/types';
   import { mountRoom, type RoomView as View } from '../lib/scene';
+  import { tx } from '../lib/i18n/content';
 
   let {
     room,
@@ -54,7 +55,7 @@
 </script>
 
 <div class="room">
-  <canvas bind:this={canvas} aria-label={room.title}></canvas>
+  <canvas bind:this={canvas} aria-label={tx(room, 'title')}></canvas>
   <div class="spots">
     {#if ready && showMarkers}
       {#each spots as spot (spot.id)}
@@ -68,7 +69,7 @@
             class:hint={hintId === spot.id}
             class:below={spot.y < 96}
             style="left:{spot.x}px;top:{spot.y}px"
-            aria-label={hotspot.title}
+            aria-label={tx(hotspot, 'title')}
             aria-pressed={selectedId === spot.id}
             onclick={(event) => {
               event.stopPropagation();
@@ -77,7 +78,7 @@
           >
             <span class="mark">{#if hotspot.kind === 'decor-slot' && !filled}<span>+</span>{/if}</span>
             {#if selectedId === spot.id}
-              <span class="pill">{filled ? decor[hotspot.id] : hotspot.title}</span>
+              <span class="pill">{filled ? decor[hotspot.id] : tx(hotspot, 'title')}</span>
             {/if}
           </button>
         {/if}

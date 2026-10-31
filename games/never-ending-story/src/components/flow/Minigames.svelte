@@ -1,10 +1,13 @@
 <script lang="ts">
   import { imageUrl } from '../../lib/flow/loadFlow';
-  import { CROSS_GRID, CROSS_KEYS, CROSS_NUM, FAKE_TIME, jigPosition } from '../../lib/flow/puzzles';
+  import { t, type MessageKey } from '../../lib/i18n/core';
+  import { CROSS_NUM, FAKE_TIME, crossGrid, crossKeys, jigPosition } from '../../lib/flow/puzzles';
   import type { FlowSession } from '../../lib/flow/session.svelte';
 
   let { session }: { session: FlowSession } = $props();
 
+  const grid = $derived(crossGrid());
+  const letters = $derived(crossKeys());
   const time = $derived(
     session.screen === 'slide' ? FAKE_TIME.slide : session.screen === 'jigsaw' ? FAKE_TIME.jigsaw : FAKE_TIME.crossword,
   );
@@ -12,10 +15,10 @@
 
 <div class="mg">
   <div class="mgbar">
-    {#if session.practice}<span class="prac">ฝึก · ด่าน {session.lvN}</span>{/if}
-    <span class="t">⏱ {time.elapsed} · 🏆 {time.best} <small>({session.practice ? `ด่าน ${session.lvN}` : session.difficulty})</small></span>
+    {#if session.practice}<span class="prac">{t('game.mini.practiceLevel', { n: session.lvN })}</span>{/if}
+    <span class="t">⏱ {time.elapsed} · 🏆 {time.best} <small>({session.practice ? t('game.mini.level', { n: session.lvN }) : t(`game.difficulty.${session.difficulty}` as MessageKey)})</small></span>
     <span class="stars">{session.starText()}</span>
-    <button type="button" class="mgbtn" onclick={() => session.puzzleHint()}>คำใบ้</button>
+    <button type="button" class="mgbtn" onclick={() => session.puzzleHint()}>{t('game.mini.hint')}</button>
   </div>
 
   {#if session.screen === 'crossword'}
@@ -24,7 +27,7 @@
         {#each [0, 1, 2] as row (row)}
           {#each [0, 1, 2, 3, 4] as col (col)}
             {@const id = `${row},${col}`}
-            {#if CROSS_GRID[row][col] === '#'}
+            {#if (Array.from(grid[row] ?? '')[col] ?? '#') === '#'}
               <div class="cwc blk"></div>
             {:else}
               <button
@@ -42,18 +45,18 @@
         {/each}
       </div>
       <p class="clues">
-        <b>แนวนอน</b> 1. สิ่งที่เห็นเป็นจุดส่องแสงบนท้องฟ้ายามค่ำคืน ✓<br />
-        3. อีกคำหนึ่งที่หมายถึง “สวย” ←<br />
-        <b>แนวตั้ง</b> 2. ทำให้สิ่งของอยู่บนโต๊ะ เช่น “___ หนังสือบนโต๊ะ”
+        <b>{t('game.crossword.across')}</b> {t('game.crossword.clue1')}<br />
+        {t('game.crossword.clue3')}<br />
+        <b>{t('game.crossword.down')}</b> {t('game.crossword.clue2')}
       </p>
     </div>
     <div class="keys">
-      {#each CROSS_KEYS as letter, index (index)}
+      {#each letters as letter, index (index)}
         <button type="button" onclick={() => session.typeLetter(letter)}>{letter}</button>
       {/each}
     </div>
     <button type="button" class="mgbtn done" onclick={() => session.submitCross()}>
-      {session.practice ? `ผ่านด่าน ${session.lvN}` : 'ส่งคำตอบ'}
+      {session.practice ? t('game.mini.clearLevel', { n: session.lvN }) : t('game.mini.submit')}
     </button>
   {:else if session.screen === 'jigsaw'}
     <div class="jg">
@@ -62,7 +65,7 @@
           {#if session.jig.placed.includes(index)}
             <div class="pc" style="background-image:url('{imageUrl('house-map.jpg')}');background-position:{jigPosition(index)}"></div>
           {:else}
-            <button type="button" class="jgs" aria-label="ช่อง {index + 1}" onclick={() => session.placePiece(index)}></button>
+            <button type="button" class="jgs" aria-label={t('game.jigsaw.slot', { n: index + 1 })} onclick={() => session.placePiece(index)}></button>
           {/if}
         {/each}
       </div>
@@ -75,14 +78,14 @@
             class="pc"
             class:sel={session.jig.sel === index}
             style="background-image:url('{imageUrl('house-map.jpg')}');background-position:{jigPosition(index)}"
-            aria-label="ชิ้น {index + 1}"
+            aria-label={t('game.jigsaw.piece', { n: index + 1 })}
             onclick={() => session.pickPiece(index)}
           ></button>
         {/each}
       </div>
     {/if}
     <button type="button" class="mgbtn done" onclick={() => session.finishJigsaw()}>
-      {session.practice ? `ผ่านด่าน ${session.lvN}` : session.jig.placed.length === 12 ? 'เสร็จ' : 'ต่อที่เหลือให้'}
+      {session.practice ? t('game.mini.clearLevel', { n: session.lvN }) : session.jig.placed.length === 12 ? t('game.jigsaw.done') : t('game.jigsaw.finish')}
     </button>
   {:else}
     <div class="sb">
@@ -104,7 +107,7 @@
         {/each}
       </div>
     </div>
-    <p class="slide-note">แตะบล็อกเพื่อเลื่อน · A แนวตั้ง · B และ K แนวนอน · ไม่มีจำกัดเวลา</p>
+    <p class="slide-note">{t('game.slide.note')}</p>
   {/if}
 </div>
 

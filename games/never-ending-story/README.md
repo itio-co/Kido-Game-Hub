@@ -42,9 +42,47 @@ Open the hosted folder with a trailing slash, or open `index.html`. Relative fil
 ```bash
 npm run check
 npm run validate
+npm test
 ```
 
+`npm test` runs the unit tests and the i18n guard (see [Languages (i18n)](#languages-i18n)).
+
 `npm run validate` reads `public/data/player-room.json`, `public/data/screens.json`, and `public/data/case-flow.json`. It fails if any id or slug is duplicated, an id is not a UUID v4 stored in the file, a slug is not unique kebab-case, a title is missing, a kind is unknown, or a reference (`targetId`, `stackOn`, `hintTarget`, calendar `theme`) points at a missing id. The game runs the same check when the room and the story flow load.
+
+## Languages (i18n)
+
+The game ships Thai and English. The i18n code lives inside this game (`src/lib/i18n/`); there is no i18n library.
+
+- **English is the source language.** Keys are dotted English names grouped by area: `editor.match.setOrigin`, `game.settings.title`, `asset.nightstand.title`.
+- **Translations live only in the locale files**: `src/locales/en.json` and `src/locales/th.json` for the UI, and `src/locales/story.en.json` / `story.th.json` for the case story text used by `scripts/author-flow.mjs`. Code, comments, docs, and identifiers are English. Thai appears only in `th.json` and `story.th.json` (plus the language's own name, `locale.name.th`).
+- **Two independent locales.** The 3D editor (`#/editor`) defaults to English; the rest of the game defaults to Thai. The editor header has an EN / TH switch, saved in `localStorage` as `nes-locale-editor`. The game's Settings panel has its own switch, saved as `nes-locale-game`. The active scope follows the route.
+- **`t(key, params)`** (`src/lib/i18n/core.ts`) is typed: `key` must exist in `en.json`. `{name}` placeholders are filled from `params`. A key missing from the active locale falls back to English, then to the key itself. `t()` reads the reactive locale state (`src/lib/i18n/locale.svelte.ts`), so markup that calls it re-renders when the language changes. Editor code goes through the typed facade `src/lib/editor/strings.ts`.
+- **Content data** (`public/data/*.json`) keeps the default text in a field and English in an `En` sibling: `title` / `titleEn`, `text` / `textEn`, `lines` / `linesEn`. Read it with `tx(obj, 'title')` or `txList(obj, 'lines')` from `src/lib/i18n/content.ts`. Logic uses ids rather than text: difficulty is `easy` / `medium` / `hard`, and practice groups are `word` / `picture` / `logic`. Older saves that stored Thai labels are migrated when read.
+
+### Add a string
+
+1. Add the key to `src/locales/en.json` (English) and `src/locales/th.json` (Thai), using the same `{placeholders}`.
+2. Use it: `t('game.settings.title')`, or `t('game.notebook.found', { code })`.
+3. Run `npm test`.
+
+For story text, add the key to `story.en.json` and `story.th.json`, reference it in `scripts/author-flow.mjs` with `S('story.…')`, and regenerate with `node scripts/author-flow.mjs`. Each marker becomes a Thai field plus its `En` sibling in the JSON.
+
+### Add a locale
+
+1. Add the code to `LOCALES` in `src/lib/i18n/core.ts`, then create `src/locales/<code>.json` (and `story.<code>.json`) with every key. Register the import next to `th` in `core.ts`.
+2. Add `locale.name.<code>` to every locale file; the language switches list `LOCALES` automatically.
+3. Content data and the parity guard know only `th` + `En` siblings; extend `tx()` and `tests/i18n.test.mjs` for a third language.
+
+### The guard
+
+`npm test` runs `tests/i18n.test.mjs`. It fails when:
+
+- a Thai character (U+0E00–U+0E7F) appears in `src/**/*.{ts,svelte,js,mjs}`, `scripts/`, or `tests/` (the locale JSON files are the only allowed place);
+- a key exists in one locale file and not in its pair, or the `{placeholders}` differ;
+- a key is not a dotted English name, or an English value contains Thai;
+- a key is not used anywhere in the code. A key counts as used when it appears as a quoted literal or matches a template prefix such as `` `game.difficulty.${id}` ``.
+
+Data-validation messages in `src/lib/catalog.ts` are plain English, because that file must load without runtime imports (`npm run validate`). They are developer diagnostics, not player text.
 
 ## Model editor: Blender conventions
 
@@ -109,7 +147,7 @@ Every authored object — the room, walls, bed, wall shelf, shelf rows, books, d
 |---|---|
 | `id` | Stable UUID v4. Written in the JSON. Not generated at runtime. |
 | `kind` | Type name (`room`, `bookshelf`, `shelf-row`, `book`, `hotspot`, `decor-slot`, `door`, …). The kind registry maps each kind to a builder or a non-mesh role, and the scene is built by dispatching on `kind`. |
-| `title` | Thai name. Optional English `titleEn`. |
+| `title` | Default (Thai) name. English in the `titleEn` sibling (see [Languages (i18n)](#languages-i18n)). |
 | `slug` | Unique kebab-case path, such as `player-room/bookshelf/row-1/book-03`. |
 
 Links between objects use `id`. `SceneCatalog.getById` and `getBySlug` look an object up after validation.
@@ -119,12 +157,12 @@ The wall shelf is a Three.js group: `bookshelf` → `shelf-row` → `book`. Each
 ## This build
 
 - The game opens in the player's room. That room is a real 3D scene. It has no DEMO ribbon.
-- Dots are static. The first tap shows a Thai name. The second tap acts.
+- Dots are static. The first tap shows the object's name. The second tap acts.
 - Door → event select, a 3-page cutscene, difficulty, the house map, then the living room, study, and kitchen.
 - The living room clock lists hour slots. The living-room calendar lists days and can travel to yesterday or this afternoon. Leaving the living room returns the slot to “now”.
 - The case button opens the evidence notebook. With E01, E02, and E04 it opens the case board. The star-box lock opens the sliding-block puzzle only after the case is deduced. Winning that puzzle opens the album. The postcard sends the player home with the portrait reward, which can be placed on an empty decor slot in the real room.
 - The nightstand opens the practice grid and its level maps (crossword, jigsaw, sliding block).
-- Text size uses the phone setting (`sm` / `md` / `lg`). Sound is remembered but not played yet.
+- Text size uses the phone setting (`sm` / `md` / `lg`). Sound is remembered but not played yet. Settings also switch the game language (ไทย / English).
 - A 3-step lesson shows on the first launch only.
 
 Every screen other than the player room is a 2D image scene ported from `prototypes/poc-clickthrough`, with the same pictures and tap spots. `public/data/screens.json` is the registry. Each entry has `screen` and `status`: `demo` or `real`. A demo screen shows a static diagonal **DEMO** ribbon in the top corner. The ribbon does not receive taps. Set `status` to `real` and the ribbon for that screen disappears. `return-home` is `real` because the reward is placed in the 3D room. `player-room` is `real`.
@@ -144,3 +182,7 @@ Clock, calendar, and day travel are overlays on the living room, so they use tha
 Story content (events, spots, evidence, dialogues, practice cards) lives in `public/data/case-flow.json` with the same `id` / `kind` / `title` / `slug` model. Room positions stay in `public/data/player-room.json`. `scripts/author-flow.mjs` is the authoring source for the flow files. Do not regenerate it casually: ids are assigned in call order.
 
 The UI fonts are Noto Sans and Noto Sans Thai, licensed under the SIL Open Font License 1.1 (`src/fonts/OFL.txt`).
+
+## Layers showcase (`#/layers`)
+
+`public/showcase/livingroom-layers/layers.json` lists the living-room layers. The room shell (walls, floor, baseboards, doors, doorway views) is clean: no object shadows or marks are baked into it. Each object is a complete standalone image (`<name>.color.webp`, `<name>.normal.webp`). An optional `ao: {x, y, w, h}` points at `<name>.ao.webp`, a multiply factor for the contact shadow the object casts on the room. It moves and toggles with the object and is applied only when shadows are on. Add `?ao=0` to disable it. The "None" button hides every object but keeps the room shell and doorway views visible.

@@ -6,3 +6,4 @@ dist/
 !.env.example
 *.local
 .DS_Store
+games/never-ending-story/assets-src/grandma/tripo/raw/

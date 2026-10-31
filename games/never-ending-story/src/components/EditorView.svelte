@@ -5,7 +5,7 @@
   import { projectedBox } from '../lib/editor/viewFrame';
   import GuideOverlay from './GuideOverlay.svelte';
   import CameraPanel from './CameraPanel.svelte';
-  import { SHOWCASE_ASSETS } from '../lib/showcaseAssets';
+  import { EDITABLE_ASSETS } from '../lib/showcaseAssets';
   import {
     createModelEditor,
     type EditorSnapshot,
@@ -21,8 +21,10 @@
   import { glbFileName, stableStringify } from '../lib/editor/editorFilesCore.mjs';
   import { withDefaultMasters } from '../lib/editor/masterLine';
   import { T } from '../lib/editor/strings';
+  import { t, LOCALES } from '../lib/i18n/core';
+  import { locale } from '../lib/i18n/locale.svelte';
 
-  const options = SHOWCASE_ASSETS.flatMap((asset) =>
+  const options = EDITABLE_ASSETS.flatMap((asset) =>
     asset.variants.map((variant) => ({ key: `${asset.slug}|${variant.id}`, asset, variant })),
   );
   const fromHash = new URLSearchParams(location.hash.split('?')[1] ?? '');
@@ -368,11 +370,11 @@
     if (!editor || !match?.pick) return false;
     const p = editor.pickVertex(clientX, clientY);
     if (!p) {
-      say('ไม่โดนโมเดล ลองแตะใหม่');
+      say(t('editor.pick.missedModel'));
       return false;
     }
-    match.setPairWorld(match.pick.pairId, p as V3, `โมเดล (${p.map((v) => v.toFixed(1)).join(', ')})`);
-    say('แตะจุดเดียวกันบนภาพ');
+    match.setPairWorld(match.pick.pairId, p as V3, t('editor.pick.modelPoint', { coords: p.map((v) => v.toFixed(1)).join(', ') }));
+    say(t('editor.pick.tapSameOnImage'));
     return true;
   }
   function modelDims(): V3 {
@@ -415,7 +417,7 @@
       refreshFiles();
     } catch (err) {
       console.warn('editor load failed', err);
-      say('เปิดโมเดลไม่ได้');
+      say(t('editor.load.failed'));
     } finally {
       loading = false;
     }
@@ -671,7 +673,7 @@
     try {
       const blob = await editor.exportGlb({ bake: bakePlacement });
       download(blob, `${fileBase}.glb`);
-      say(`ดาวน์โหลด ${fileBase}.glb แล้ว`);
+      say(t('editor.export.downloaded', { file: `${fileBase}.glb` }));
     } catch (err) {
       console.warn('export failed', err);
       say(T.files.glbFailed);
@@ -681,13 +683,13 @@
     if (!editor) return;
     const json = JSON.stringify(editor.exportEdits(), null, 2);
     download(new Blob([json], { type: 'application/json' }), `${fileBase}.edits.json`);
-    say(`ดาวน์โหลด ${fileBase}.edits.json แล้ว`);
+    say(t('editor.export.downloaded', { file: `${fileBase}.edits.json` }));
   }
   function reset(): void {
     if (!snap.dirty) return;
-    if (!confirm('ล้างการแก้ทั้งหมดของโมเดลนี้? (กด “ย้อน” เพื่อกลับมาได้)')) return;
+    if (!confirm(t('editor.reset.confirm'))) return;
     editor?.reset();
-    say('กลับเป็นโมเดลเดิมแล้ว');
+    say(t('editor.reset.done'));
   }
 
   // ---------- source files (dev save API) ----------
@@ -767,15 +769,15 @@
 
   const axes = [0, 1, 2] as const;
   // part fields stay in glTF order (x, y = up, z = front); labels use Blender axis names
-  const posLabels = T.part.posLabels;
-  const sizeLabels = T.part.sizeLabels;
-  const rotLabels = T.part.rotLabels;
+  const posLabels = $derived(T.part.posLabels);
+  const sizeLabels = $derived(T.part.sizeLabels);
+  const rotLabels = $derived(T.part.rotLabels);
   const pivotLabels = ['X', 'Y', 'Z'];
-  const modes: { id: GizmoMode; label: string; title: string }[] = [
+  const modes: { id: GizmoMode; label: string; title: string }[] = $derived([
     { id: 'translate', label: T.tool.move, title: T.tool.moveTitle },
     { id: 'rotate', label: T.tool.rotate, title: T.tool.rotateTitle },
     { id: 'scale', label: T.tool.scale, title: T.tool.scaleTitle },
-  ];
+  ]);
 </script>
 
 {#snippet pivotIcon()}
@@ -805,8 +807,15 @@
 
 <div class="editor">
   <header>
-    <a class="e-back" href="#/showcase" aria-label="กลับไปมุมออกแบบ">‹ กลับ</a>
-    <h1>แก้โมเดล 3D</h1>
+    <a class="e-back" href="#/showcase" aria-label={t('editor.header.backAria')}>{t('editor.header.back')}</a>
+    <h1>{t('editor.header.title')}</h1>
+    <div class="lang" role="radiogroup" aria-label={t('editor.header.language')}>
+      {#each LOCALES as l (l)}
+        <button type="button" role="radio" aria-checked={locale.editor === l} class:on={locale.editor === l} data-lang={l}
+          onclick={() => locale.set('editor', l)}>{l.toUpperCase()}</button
+        >
+      {/each}
+    </div>
     <div class="hist">
       <button type="button" class="e-hist" onclick={undo} disabled={lineHistory ? lineHistory.lineUndoCount === 0 : !snap.canUndo} aria-label={T.common.undoAria}>{T.common.undo}</button>
       <button type="button" class="e-hist" onclick={redo} disabled={lineHistory ? lineHistory.lineRedoCount === 0 : !snap.canRedo} aria-label={T.common.redoAria}>{T.common.redoNext}</button>
@@ -855,9 +864,9 @@
       {#if staged && match}
         <img class="ref" src={match.imageRect.src} alt="Mock-up" style={imgStyle} draggable="false" data-ref-image={match.image} />
       {/if}
-      <canvas bind:this={canvas} style={canvasStyle} aria-label="พื้นที่แก้โมเดล แตะชิ้นส่วนเพื่อเลือก"></canvas>
+      <canvas bind:this={canvas} style={canvasStyle} aria-label={t('editor.viewport.aria')}></canvas>
       {#if staged && match && match.split > 0}
-        <div class="divider" style="left:{match.split}%"><span>ภาพ | โมเดล</span></div>
+        <div class="divider" style="left:{match.split}%"><span>{t('editor.viewport.splitLabel')}</span></div>
       {/if}
       {#if view === 'match' && match}
         <GuideOverlay st={match} onModelTap={modelTap} onChange={() => match?.save()} {say} modelCanvas={canvas} />
@@ -881,7 +890,7 @@
           </div>
         {/if}
         {#if match.pick}
-          <p class="pick-hint">{match.pick.want === 'model' ? 'แตะจุดบนโมเดล' : 'แตะจุดเดียวกันบนภาพ'}</p>
+          <p class="pick-hint">{match.pick.want === 'model' ? t('editor.pick.tapOnModel') : t('editor.pick.tapSameOnImage')}</p>
         {/if}
       {/if}
       {#if snap.cursorTool && !snap.modal}
@@ -902,7 +911,7 @@
           </div>
         </div>
       {/if}
-      {#if loading}<p class="loading">กำลังโหลดโมเดล…</p>{/if}
+      {#if loading}<p class="loading">{t('editor.load.loading')}</p>{/if}
       <div class="modes" class:withzoom={view === 'mock' && !!match} hidden={view === 'match'} bind:clientHeight={modesH}>
         <div class="mode-group" role="radiogroup" aria-label={T.tool.aria}>
           {#each modes as m (m.id)}
@@ -911,7 +920,7 @@
             >
           {/each}
           <button type="button" class:on={snapOn} aria-pressed={snapOn} onclick={toggleSnap} data-snap title={T.snap.title}
-            >แม่เหล็ก {snapOn ? 'เปิด' : 'ปิด'}</button
+            >{t('editor.snap.button', { state: T.common.onOff(snapOn) })}</button
           >
         </div>
         <div class="mode-group scope-group" role="radiogroup" aria-label={T.place.scope}>
@@ -983,7 +992,7 @@
         </div>
       {/if}
       <label class="field">
-        <span>โมเดล</span>
+        <span>{t('editor.panel.model')}</span>
         <select value={modelKey} onchange={(e) => changeModel(e.currentTarget.value)} data-model>
           {#each options as o (o.key)}
             <option value={o.key}>{o.asset.title} · {o.variant.label}</option>
@@ -991,9 +1000,9 @@
         </select>
       </label>
 
-      <div class="seg" role="radiogroup" aria-label="มุมกล้อง">
+      <div class="seg" role="radiogroup" aria-label={t('editor.view.aria')}>
         <button type="button" role="radio" aria-checked={view === 'orbit'} class:on={view === 'orbit'} data-view="orbit" onclick={() => pickView('orbit')}
-          >หมุนดูอิสระ</button
+          >{t('editor.view.orbit')}</button
         >
         <button
           type="button"
@@ -1002,7 +1011,7 @@
           class:on={view === 'mock'}
           data-view="mock"
           disabled={!ref}
-          onclick={() => pickView('mock')}>มุม Mock-up</button
+          onclick={() => pickView('mock')}>{t('editor.view.mock')}</button
         >
         <button
           type="button"
@@ -1011,22 +1020,22 @@
           class:on={view === 'match'}
           data-view="match"
           disabled={!ref}
-          onclick={() => pickView('match')}>จับมุมกล้อง</button
+          onclick={() => pickView('match')}>{t('editor.view.match')}</button
         >
       </div>
       {#if view === 'mock' && match}
-        <div class="seg" role="radiogroup" aria-label="แบบการแสดงโมเดล">
-          {#each [['solid', 'ทึบ'], ['wire', 'โครงลวด'], ['edges', 'เส้นขอบ']] as const as [id, label] (id)}
+        <div class="seg" role="radiogroup" aria-label={t('editor.display.aria')}>
+          {#each [['solid', t('editor.display.solid')], ['wire', t('editor.display.wire')], ['edges', t('editor.display.edges')]] as const as [id, label] (id)}
             <button type="button" role="radio" aria-checked={match.display === id} class:on={match.display === id} data-display={id}
               onclick={() => (match!.display = id)}>{label}</button>
           {/each}
         </div>
         <label class="field slider">
-          <span>ความทึบโมเดลบนภาพ Mock-up {match.opacity}%</span>
+          <span>{t('editor.display.opacity', { pct: match.opacity })}</span>
           <input type="range" min="0" max="100" step="5" bind:value={match.opacity} data-overlay />
         </label>
         <label class="field slider">
-          <span>เลื่อนเทียบ ก่อน|หลัง {match.split}%</span>
+          <span>{t('editor.display.split', { pct: match.split })}</span>
           <input type="range" min="0" max="100" step="1" bind:value={match.split} data-split />
         </label>
         <label class="check" title={T.stage.followTitle}>
@@ -1046,30 +1055,30 @@
           {#each axes as i (i)}
             <div class="row">
               <span>{posLabels[i]}</span>
-              <button type="button" class="step" onclick={() => nudge('position', i, -1)} aria-label="ลด">−</button>
+              <button type="button" class="step" onclick={() => nudge('position', i, -1)} aria-label={t('editor.part.decrease')}>−</button>
               <input type="number" inputmode="decimal" step={posStep} value={sel.positionCm[i]} data-field="position-{i}"
                 onchange={(e) => setValue('position', i, e.currentTarget.valueAsNumber)} />
-              <button type="button" class="step" onclick={() => nudge('position', i, 1)} aria-label="เพิ่ม">+</button>
+              <button type="button" class="step" onclick={() => nudge('position', i, 1)} aria-label={t('editor.part.increase')}>+</button>
             </div>
           {/each}
           <p class="sub">{T.part.size}</p>
           {#each axes as i (i)}
             <div class="row">
               <span>{sizeLabels[i]}</span>
-              <button type="button" class="step" onclick={() => nudge('size', i, -1)} aria-label="ลด">−</button>
+              <button type="button" class="step" onclick={() => nudge('size', i, -1)} aria-label={t('editor.part.decrease')}>−</button>
               <input type="number" inputmode="decimal" min="0.1" step={posStep} value={sel.sizeCm[i]} data-field="size-{i}"
                 onchange={(e) => setValue('size', i, e.currentTarget.valueAsNumber)} />
-              <button type="button" class="step" onclick={() => nudge('size', i, 1)} aria-label="เพิ่ม">+</button>
+              <button type="button" class="step" onclick={() => nudge('size', i, 1)} aria-label={t('editor.part.increase')}>+</button>
             </div>
           {/each}
           <p class="sub">{T.part.rotation}</p>
           {#each axes as i (i)}
             <div class="row">
               <span>{rotLabels[i]}</span>
-              <button type="button" class="step" onclick={() => nudge('rotation', i, -1)} aria-label="ลด">−</button>
+              <button type="button" class="step" onclick={() => nudge('rotation', i, -1)} aria-label={t('editor.part.decrease')}>−</button>
               <input type="number" inputmode="decimal" step={rotStep} value={sel.rotationDeg[i]} data-field="rotation-{i}"
                 onchange={(e) => setValue('rotation', i, e.currentTarget.valueAsNumber)} />
-              <button type="button" class="step" onclick={() => nudge('rotation', i, 1)} aria-label="เพิ่ม">+</button>
+              <button type="button" class="step" onclick={() => nudge('rotation', i, 1)} aria-label={t('editor.part.increase')}>+</button>
             </div>
           {/each}
           <div class="pivot-box" data-pivot-panel>
@@ -1108,14 +1117,14 @@
             {/each}
           </div>
           <div class="row color">
-            <span>สี</span>
-            <input type="color" value={sel.color} onchange={(e) => editor?.setColor(e.currentTarget.value)} aria-label="สีชิ้นส่วน" />
-            <button type="button" class="small" onclick={() => editor?.setColor(null)}>สีเดิม</button>
+            <span>{t('editor.part.color')}</span>
+            <input type="color" value={sel.color} onchange={(e) => editor?.setColor(e.currentTarget.value)} aria-label={t('editor.part.colorAria')} />
+            <button type="button" class="small" onclick={() => editor?.setColor(null)}>{t('editor.part.colorReset')}</button>
           </div>
           <div class="actions">
-            <button type="button" onclick={() => editor?.duplicate(sel.name)} data-act="duplicate">ทำสำเนา</button>
-            <button type="button" onclick={() => editor?.toggleHidden(sel.name)} data-act="hide">ซ่อน</button>
-            <button type="button" class="danger" onclick={() => editor?.remove(sel.name)} data-act="delete">ลบชิ้นนี้</button>
+            <button type="button" onclick={() => editor?.duplicate(sel.name)} data-act="duplicate">{t('editor.part.duplicate')}</button>
+            <button type="button" onclick={() => editor?.toggleHidden(sel.name)} data-act="hide">{t('editor.part.hide')}</button>
+            <button type="button" class="danger" onclick={() => editor?.remove(sel.name)} data-act="delete">{t('editor.part.delete')}</button>
           </div>
         </section>
       {:else if rootInfo}
@@ -1176,11 +1185,11 @@
         </section>
       {:else}
         <p class="tip small" data-keys-tip>{T.keysTip}</p>
-        <p class="tip">แตะชิ้นส่วนในภาพ หรือเลือกจากรายการด้านล่าง แล้วลากลูกศรหรือพิมพ์ตัวเลข</p>
+        <p class="tip">{t('editor.parts.tip')}</p>
       {/if}
 
       <section>
-        <h2>ชิ้นส่วน ({snap.parts.filter((p) => !p.deleted).length})</h2>
+        <h2>{t('editor.parts.heading', { n: snap.parts.filter((p) => !p.deleted).length })}</h2>
         <ul class="parts">
           <li class:sel={!!rootInfo} class="root-row">
             <button type="button" class="pick" disabled={!snap.ready} onclick={() => editor?.selectRoot()} data-part-root>
@@ -1192,13 +1201,13 @@
             <li class:sel={sel?.name === p.name} class:gone={p.deleted}>
               <button type="button" class="pick" disabled={p.deleted || p.hidden} onclick={() => editor?.selectPart(p.name)} data-part={p.name}>
                 <b>{partLabel(p.name)}</b>
-                <small>{p.name}{p.hidden ? ' · ซ่อนอยู่' : ''}{p.deleted ? ' · ลบแล้ว' : ''}</small>
+                <small>{p.name}{p.hidden ? t('editor.parts.hiddenTag') : ''}{p.deleted ? t('editor.parts.deletedTag') : ''}</small>
               </button>
               {#if p.deleted}
-                <button type="button" class="small" onclick={() => editor?.restore(p.name)}>เอากลับ</button>
+                <button type="button" class="small" onclick={() => editor?.restore(p.name)}>{t('editor.parts.restore')}</button>
               {:else}
                 <button type="button" class="small" onclick={() => editor?.toggleHidden(p.name)} aria-pressed={p.hidden}
-                  >{p.hidden ? 'แสดง' : 'ซ่อน'}</button
+                  >{p.hidden ? t('editor.part.show') : t('editor.part.hide')}</button
                 >
               {/if}
             </li>
@@ -1207,16 +1216,16 @@
       </section>
 
       <section>
-        <h2>บันทึก / ส่งออก</h2>
-        <p class="tip">งานที่แก้บันทึกในเครื่องนี้อัตโนมัติ ส่วนที่ซ่อนไว้ยังถูกส่งออก ส่วนที่ลบจะไม่ถูกส่งออก</p>
+        <h2>{t('editor.export.heading')}</h2>
+        <p class="tip">{t('editor.export.tip')}</p>
         <div class="actions col">
-          <button type="button" class="primary" onclick={exportGlb} disabled={!snap.ready} data-act="export-glb">ดาวน์โหลด GLB ที่แก้แล้ว</button>
-          <button type="button" onclick={exportEdits} disabled={!snap.ready} data-act="export-json">ดาวน์โหลดรายการแก้ (JSON)</button>
+          <button type="button" class="primary" onclick={exportGlb} disabled={!snap.ready} data-act="export-glb">{t('editor.export.glb')}</button>
+          <button type="button" onclick={exportEdits} disabled={!snap.ready} data-act="export-json">{t('editor.export.json')}</button>
           <label class="check" title={T.place.bakeTitle}>
             <input type="checkbox" bind:checked={bakePlacement} data-act="bake-placement" />
             <span>{T.place.bake}</span>
           </label>
-          <button type="button" class="danger" onclick={reset} disabled={!snap.dirty}>ล้างการแก้ทั้งหมด</button>
+          <button type="button" class="danger" onclick={reset} disabled={!snap.dirty}>{t('editor.reset.button')}</button>
         </div>
       </section>
 
@@ -1302,6 +1311,8 @@
     white-space: nowrap;
   }
   .hist { display: flex; gap: 6px; }
+  .lang { display: flex; gap: 2px; }
+  .lang button { min-height: 36px; padding: 0 8px; font-size: 13px; }
   button {
     font: inherit;
     color: inherit;

@@ -1,0 +1,161 @@
+{
+  "api": "https://api.meshy.ai/openapi/v1",
+  "plan": "Meshy Pro",
+  "creditsTotal": 140,
+  "tasks": [
+    {
+      "step": "image-to-3d",
+      "endpoint": "POST /openapi/v1/image-to-3d",
+      "taskId": "01a169e7-74d3-7656-b0c0-81b6e7ddbc85",
+      "request": "request-image-to-3d.json (+ image_url = data URI of ../ref/grandma-cutout.png)",
+      "credits": 30,
+      "createdAt": "2026-10-24T00:55:39+07:00",
+      "result": "model.glb, 20k triangles, 2048 base-colour texture"
+    },
+    {
+      "step": "rigging",
+      "endpoint": "POST /openapi/v1/rigging",
+      "taskId": "01a169f1-22ab-738e-bdf2-21e01c7e017d",
+      "request": "request-rigging.json",
+      "credits": 5,
+      "createdAt": "2026-10-24T01:06:15+07:00",
+      "result": "Character_output.glb (24 joints, no fingers) + basic walking / running clips"
+    },
+    {
+      "step": "animations",
+      "endpoint": "POST /openapi/v1/animations",
+      "taskId": "01a169f1-770f-743a-abc0-a9e881d6e44a",
+      "request": "request-animations-1.json",
+      "actions": {
+        "32": "Chair_Sit_Idle_F",
+        "243": "Idle_3",
+        "290": "Wave_One_Hand"
+      },
+      "credits": 9,
+      "createdAt": "2026-10-24T01:06:34+07:00"
+    },
+    {
+      "step": "animations",
+      "endpoint": "POST /openapi/v1/animations",
+      "taskId": "01a169f5-b46e-76d3-97b9-1bf9d67a3938",
+      "request": "request-animations-2.json",
+      "actions": {
+        "58": "Step_to_Sit_Transition",
+        "307": "Sitting_Answering_Questions"
+      },
+      "credits": 6,
+      "createdAt": "2026-10-24T01:11:12+07:00"
+    },
+    {
+      "step": "remesh",
+      "endpoint": "POST /openapi/v1/remesh",
+      "taskId": "01a16b96-2d16-7121-8ce4-d89e798ce919",
+      "request": "request-remesh-6k.json",
+      "credits": 5,
+      "createdAt": "2026-10-24T08:46:06+07:00",
+      "result": "grandma-remesh-6k.glb (6,234 triangles, 8,600 raw verts -> 4,984 welded verts, 2048 base-colour texture)"
+    },
+    {
+      "step": "image-to-3d-bigface-ultra",
+      "endpoint": "POST /openapi/v1/image-to-3d",
+      "taskId": "01a16c67-e03e-745e-adfe-619fa6da1da0",
+      "request": "request-image-to-3d-bigface.json (+ image_url = data URI of ../ref/grandma-mali-tpose-cutout.png)",
+      "credits": 35,
+      "createdAt": "2026-10-24T12:25:14+07:00",
+      "result": "model.glb, 233,332 triangles (128,560 verts), 4096 PBR maps (baseColor, normal, roughness, metallic)"
+    },
+    {
+      "step": "remesh-bigface-6k",
+      "endpoint": "POST /openapi/v1/remesh",
+      "taskId": "01a16c6a-5c4f-719b-bd97-4676c7b44d10",
+      "request": "request-remesh-bigface-6k.json",
+      "credits": 5,
+      "createdAt": "2026-10-24T12:28:18+07:00",
+      "result": "grandma-remesh-6k.glb (6,251 triangles, 7,955 raw verts -> 5,431 welded verts, 4096 PBR maps)"
+    },
+    {
+      "step": "rigging-bigface",
+      "endpoint": "POST /openapi/v1/rigging",
+      "taskId": "01a16c6a-5d67-70ad-92f1-ed627e220106",
+      "request": "request-rigging-bigface.json",
+      "credits": 5,
+      "createdAt": "2026-10-24T12:28:20+07:00",
+      "result": "Character_output.glb (233,332 tris, 24 joints) + basic walking / running clips"
+    },
+    {
+      "step": "animations-bigface-1",
+      "endpoint": "POST /openapi/v1/animations",
+      "taskId": "01a16c6c-8f98-7444-b508-a47f5454c978",
+      "request": "request-animations-bigface-1.json",
+      "actions": {
+        "32": "Chair_Sit_Idle_F",
+        "243": "Idle_3",
+        "290": "Wave_One_Hand"
+      },
+      "credits": 9,
+      "createdAt": "2026-10-24T12:30:27+07:00"
+    },
+    {
+      "step": "animations-bigface-2",
+      "endpoint": "POST /openapi/v1/animations",
+      "taskId": "01a16c6c-931c-7260-ab3c-dc28e1c2cf05",
+      "request": "request-animations-bigface-2.json",
+      "actions": {
+        "58": "Step_to_Sit_Transition",
+        "307": "Sitting_Answering_Questions"
+      },
+      "credits": 6,
+      "createdAt": "2026-10-24T12:30:29+07:00"
+    },
+    {
+      "step": "remesh-bigface-1k5",
+      "endpoint": "POST /openapi/v1/remesh",
+      "taskId": "01a16da3-08bc-7150-9fef-094e82078389",
+      "request": "request-remesh-bigface-1k5.json",
+      "credits": 5,
+      "createdAt": "2026-10-24T18:19:15+07:00",
+      "result": "grandma-bigface-remesh-1k5.glb (1,556 triangles, 3,036 raw verts -> 1,874 welded verts / 781 unique positions, 4096 PBR maps)"
+    },
+    {
+      "step": "image-to-3d-bigface-ultra-nopbr",
+      "endpoint": "POST /openapi/v1/image-to-3d",
+      "taskId": "01a16f00-eb5f-7566-912b-d1185f15ca69",
+      "request": "request-image-to-3d-bigface-nopbr.json (+ image_url = data URI of ../ref/grandma-mali-tpose-cutout.png)",
+      "credits": 20,
+      "createdAt": "2026-10-25T00:42:34+07:00",
+      "result": "grandma-bigface-nopbr.glb (235,018 triangles, 128,775 verts, 4096 pure diffuse texture, enable_pbr: false, image_enhancement: false)"
+    }
+  ],
+  "balances": {
+    "imageTo3d": {
+      "before": 1340,
+      "after": 1360,
+      "note": "monthly 1100 -> 1070 (-30); permanent credits rose by 50 from an unrelated top-up at the same time"
+    },
+    "rigAndAnimations1": {
+      "before": 1360,
+      "after": 1346
+    },
+    "animations2": {
+      "before": 1346,
+      "after": 1340
+    },
+    "remesh6k": {
+      "before": 1340,
+      "after": 1335,
+      "note": "monthly 1050 -> 1045 (-5), permanent 290"
+    },
+    "bigfaceTposeUltra": {
+      "before": 1255,
+      "after": 1195,
+      "note": "monthly 965 -> 905 (-60: 35 image-to-3d 4K + PBR, 5 remesh 6k, 5 rigging, 15 animations), permanent 290"
+    },
+    "remeshBigface1k5": {
+      "before": 1165,
+      "after": 1160,
+      "note": "monthly 875 -> 870 (-5), permanent 290"
+    },
+    "afterBigfaceNoPbr": 1220
+  },
+  "notes": "Meshy keeps task results for 3 days. The API key is read from the MESHY_API_KEY environment variable and is never stored here."
+}

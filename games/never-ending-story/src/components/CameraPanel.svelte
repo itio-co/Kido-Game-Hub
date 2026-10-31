@@ -3,6 +3,7 @@
   import type { DisplayMode } from '../lib/editor/modelEditor';
   import { AXIS_COLORS, AXIS_NAMES, type MatchState, type PrincipalMode } from '../lib/editor/matchState.svelte';
   import { T } from '../lib/editor/strings';
+  import { t } from '../lib/i18n/core';
 
   type Props = {
     st: MatchState;
@@ -19,17 +20,17 @@
   const counts = $derived(([0, 1, 2] as Axis[]).map((a) => st.lines.filter((l) => l.axis === a).length));
   const pp = $derived(st.principal);
   const slug = $derived(st.asset.slug.split('/').pop());
-  const axisLabels = ['X (กว้าง)', 'Y (ลึก)', 'Z (สูง)'];
-  const displays: { id: DisplayMode; label: string }[] = [
-    { id: 'solid', label: 'ทึบ' },
-    { id: 'wire', label: 'โครงลวด' },
-    { id: 'edges', label: 'เส้นขอบ' },
-  ];
-  const ppModes: { id: PrincipalMode; label: string }[] = [
-    { id: 'center', label: 'กลางภาพ' },
-    { id: 'vp3', label: 'จาก 3 จุดลับตา' },
-    { id: 'free', label: 'ปรับเอง/จากคู่จุด' },
-  ];
+  const axisLabels = $derived([t('editor.match.axis.xWidth'), t('editor.match.axis.yDepth'), t('editor.match.axis.zHeight')]);
+  const displays: { id: DisplayMode; label: string }[] = $derived([
+    { id: 'solid', label: t('editor.display.solid') },
+    { id: 'wire', label: t('editor.display.wire') },
+    { id: 'edges', label: t('editor.display.edges') },
+  ]);
+  const ppModes: { id: PrincipalMode; label: string }[] = $derived([
+    { id: 'center', label: t('editor.match.principal.center') },
+    { id: 'vp3', label: t('editor.match.principal.vp3') },
+    { id: 'free', label: t('editor.match.principal.free') },
+  ]);
 
   const band = (deg: number): string => (deg < 0.5 ? 'good' : deg <= 2 ? 'warn' : 'bad');
   const fmtDeg = (deg: number): string => `${deg < 0.1 ? deg.toFixed(2) : deg.toFixed(1)}°`;
@@ -121,22 +122,22 @@
     const kp = st.keyPoints().find((k) => k.id === id);
     if (!kp) return;
     st.addPair([...kp.p] as V3, kp.label);
-    say(`แตะจุด “${kp.label}” บนภาพ`);
+    say(t('editor.match.pairs.tapPresetOnImage', { label: kp.label }));
     onChange();
   }
   function addFromModel(): void {
     st.addPair(null);
-    say('แตะจุดบนโมเดล (จะจับมุมที่ใกล้ที่สุด)');
+    say(t('editor.match.pairs.tapModelNearest'));
   }
   function exportCam(): void {
     const json = JSON.stringify(st.camJson(dims()), null, 1);
     download(new Blob([json], { type: 'application/json' }), `${slug}-cam.json`);
-    say(`ดาวน์โหลด ${slug}-cam.json แล้ว`);
+    say(t('editor.export.downloaded', { file: `${slug}-cam.json` }));
   }
   function exportFull(): void {
     const json = JSON.stringify(st.fullJson(dims()), null, 2);
     download(new Blob([json], { type: 'application/json' }), `${slug}-camera-match.json`);
-    say(`ดาวน์โหลด ${slug}-camera-match.json แล้ว`);
+    say(t('editor.export.downloaded', { file: `${slug}-camera-match.json` }));
   }
   function numeric(fn: (v: number) => void) {
     return (e: Event & { currentTarget: HTMLInputElement }) => {
@@ -147,14 +148,14 @@
 </script>
 
 <section class="cm" data-camera-panel>
-  <h2>จับมุมกล้อง (Camera match)</h2>
+  <h2>{t('editor.match.title')}</h2>
   <p class="tip">
-    1) ลากปลายเส้นสีให้ทับขอบที่ขนานกันในภาพ: <b style="color:{AXIS_COLORS[0]}">แดง = แกน X (ด้านกว้าง)</b>,
-    <b style="color:{AXIS_COLORS[1]}">เขียว = แกน Y (ด้านลึก)</b>, <b style="color:{AXIS_COLORS[2]}">น้ำเงิน = แกน Z (แนวตั้ง)</b>
-    2) กด “คำนวณจากเส้น” 3) เพิ่มคู่จุดเพื่อตั้งระยะ/ขนาด แล้วกด “คำนวณละเอียด”
+    {t('editor.match.intro.step1')} <b style="color:{AXIS_COLORS[0]}">{t('editor.match.intro.x')}</b>,
+    <b style="color:{AXIS_COLORS[1]}">{t('editor.match.intro.y')}</b>, <b style="color:{AXIS_COLORS[2]}">{t('editor.match.intro.z')}</b>
+    {t('editor.match.intro.steps23')}
   </p>
 
-  <div class="seg3" role="radiogroup" aria-label="ภาพที่ใช้">
+  <div class="seg3" role="radiogroup" aria-label={t('editor.match.imageAria')}>
     <button type="button" class:on={st.image === 'crop'} aria-checked={st.image === 'crop'} role="radio" data-image="crop"
       onclick={() => { st.setImage('crop'); onChange(); say(T.groups.cropToast); }}>{T.groups.cropButton}</button>
     <button type="button" class:on={st.image === 'wide'} aria-checked={st.image === 'wide'} role="radio" data-image="wide"
@@ -175,34 +176,34 @@
       onclick={() => { st.rays = !st.rays; onChange(); }}>{T.groups.rays(st.rays)}</button>
   </div>
 
-  <h3>การแสดงผล</h3>
-  <div class="seg3" role="radiogroup" aria-label="แบบการแสดงโมเดล">
+  <h3>{t('editor.match.displayHeading')}</h3>
+  <div class="seg3" role="radiogroup" aria-label={t('editor.display.aria')}>
     {#each displays as d (d.id)}
       <button type="button" role="radio" aria-checked={st.display === d.id} class:on={st.display === d.id} data-display={d.id}
         onclick={() => (st.display = d.id)}>{d.label}</button>
     {/each}
   </div>
   <label class="field slider">
-    <span>ความทึบโมเดล {st.opacity}%</span>
+    <span>{t('editor.match.opacity', { pct: st.opacity })}</span>
     <input type="range" min="0" max="100" step="5" bind:value={st.opacity} data-opacity />
   </label>
   <label class="field slider">
-    <span>เลื่อนเทียบ ก่อน|หลัง {st.split}%</span>
+    <span>{t('editor.display.split', { pct: st.split })}</span>
     <input type="range" min="0" max="100" step="1" bind:value={st.split} data-split />
   </label>
 
-  <h3>เส้นนำสายตา</h3>
+  <h3>{t('editor.match.linesHeading')}</h3>
   <div class="adds">
     {#each [0, 1, 2] as const as a (a)}
       <button type="button" class="add" style="border-color:{AXIS_COLORS[a]}" data-add-line={a}
-        onclick={() => { st.addLine(a); onChange(); }}>+ เส้น {AXIS_NAMES[a]} <small>({counts[a]})</small></button>
+        onclick={() => { st.addLine(a); onChange(); }}>{t('editor.match.addLine', { axis: AXIS_NAMES[a] })} <small>({counts[a]})</small></button>
     {/each}
   </div>
   <div class="actions">
     <button type="button" class="danger" disabled={st.selectedLine === null} data-act="del-line"
       onclick={() => { const m = st.removeLine(st.selectedLine); if (m) st.solveLines(); onChange(); if (m) say(m); }}>{T.master.deleteSelected}</button>
-    <button type="button" data-act="seed-lines" onclick={() => { st.seedLines(); onChange(); }}>วางเส้นตามกล้องปัจจุบัน</button>
-    <button type="button" data-act="clear-lines" onclick={() => { st.clearLines(); onChange(); }}>ล้างเส้น</button>
+    <button type="button" data-act="seed-lines" onclick={() => { st.seedLines(); onChange(); }}>{t('editor.match.seedLines')}</button>
+    <button type="button" data-act="clear-lines" onclick={() => { st.clearLines(); onChange(); }}>{t('editor.match.clearLines')}</button>
   </div>
   <div class="actions snaprow">
     <button type="button" class:on={st.snap} aria-pressed={st.snap} data-line-snap
@@ -368,24 +369,24 @@
   </div>
   <p class="tip">{T.snap.tipDrag}<b>{T.snap.tipLinked}</b>{T.snap.tipLinkedRest}<b>{T.snap.tipHold}</b>{T.snap.tipHoldRest}{st.linkedEnds ? T.snap.tipLinkedEnds(st.linkedEnds) : ''}</p>
   <div class="zoom">
-    <button type="button" aria-label="ซูมเข้า" data-zoom="in" onclick={() => st.zoomAt(1.4)}>＋</button>
-    <button type="button" aria-label="ซูมออก" data-zoom="out" onclick={() => st.zoomAt(1 / 1.4)}>－</button>
-    <button type="button" data-zoom="fit" onclick={() => st.fit()}>พอดีจอ</button>
-    <span class="hint">ลากพื้นหลังเพื่อเลื่อน · หนีบ/ล้อเมาส์เพื่อซูม</span>
+    <button type="button" aria-label={T.stage.zoomIn} data-zoom="in" onclick={() => st.zoomAt(1.4)}>＋</button>
+    <button type="button" aria-label={T.stage.zoomOut} data-zoom="out" onclick={() => st.zoomAt(1 / 1.4)}>－</button>
+    <button type="button" data-zoom="fit" onclick={() => st.fit()}>{T.stage.fit}</button>
+    <span class="hint">{t('editor.match.zoomHint')}</span>
   </div>
 
-  <h3>คำนวณกล้อง</h3>
+  <h3>{t('editor.match.solveHeading')}</h3>
   <div class="field">
-    <span>จุดกึ่งกลางภาพ (principal point)</span>
-    <div class="seg3" role="radiogroup" aria-label="จุดกึ่งกลางภาพ">
+    <span>{t('editor.match.principalLabel')}</span>
+    <div class="seg3" role="radiogroup" aria-label={t('editor.match.principalAria')}>
       {#each ppModes as m (m.id)}
         <button type="button" role="radio" aria-checked={pp === m.id} class:on={pp === m.id} data-pp={m.id} onclick={() => setPP(m.id)}>{m.label}</button>
       {/each}
     </div>
   </div>
-  <label class="check"><input type="checkbox" bind:checked={st.lockLens} data-lock-lens /> ล็อกเลนส์ (ไม่คำนวณทางยาวโฟกัส)</label>
+  <label class="check"><input type="checkbox" bind:checked={st.lockLens} data-lock-lens /> {t('editor.match.lockLens')}</label>
   <div class="actions col">
-    <button type="button" class="primary" data-act="solve-lines" onclick={() => run(() => st.solveLines())}>คำนวณจากเส้น (มุม + เลนส์)</button>
+    <button type="button" class="primary" data-act="solve-lines" onclick={() => run(() => st.solveLines())}>{t('editor.match.solveLines')}</button>
   </div>
   {#if st.asset.ref?.mockup}
     <label class="check"><input type="checkbox" checked={st.roomAligned} data-room-aligned
@@ -429,21 +430,21 @@
     </div>
   {/if}
 
-  <h3>คู่จุด (โมเดล ↔ ภาพ) <small>{st.completePairs.length} คู่</small></h3>
-  <p class="tip">เลือกมุมที่รู้ขนาดจริง (เช่น สูง 55 ซม.) แล้วแตะจุดเดียวกันบนภาพ · 2 คู่ = ตั้งระยะ/ตำแหน่ง · 4–6 คู่ขึ้นไป = คำนวณทั้งหมด</p>
+  <h3>{t('editor.match.pairs.heading')} <small>{t('editor.match.pairs.count', { n: st.completePairs.length })}</small></h3>
+  <p class="tip">{t('editor.match.pairs.tip')}</p>
   <div class="actions">
-    <select onchange={addPreset} data-add-preset aria-label="เพิ่มคู่จุดจากมุมที่รู้ขนาด">
-      <option value="">+ จุดมุมที่รู้ขนาด…</option>
+    <select onchange={addPreset} data-add-preset aria-label={t('editor.match.pairs.presetAria')}>
+      <option value="">{t('editor.match.pairs.presetPlaceholder')}</option>
       {#each st.keyPoints() as k (k.id)}
         <option value={k.id}>{k.label}</option>
       {/each}
     </select>
-    <button type="button" data-act="pair-model" onclick={addFromModel}>+ แตะจุดบนโมเดล</button>
+    <button type="button" data-act="pair-model" onclick={addFromModel}>{t('editor.match.pairs.fromModel')}</button>
   </div>
   {#if st.pick}
     <p class="picking" data-picking={st.pick.want}>
-      {st.pick.want === 'model' ? '👉 แตะจุดบนโมเดล' : '👉 แตะจุดเดียวกันบนภาพ'}
-      <button type="button" class="small" onclick={() => { st.removePair(st.pick?.pairId ?? null); onChange(); }}>ยกเลิก</button>
+      {st.pick.want === 'model' ? t('editor.match.pairs.pickModel') : t('editor.match.pairs.pickImage')}
+      <button type="button" class="small" onclick={() => { st.removePair(st.pick?.pairId ?? null); onChange(); }}>{t('editor.match.pairs.cancel')}</button>
     </p>
   {/if}
   {#if st.pairs.length}
@@ -452,52 +453,52 @@
         {@const proj = p.world ? st.projectPoint(p.world) : null}
         {@const err = proj && p.image ? Math.hypot(proj[0] - p.image[0], proj[1] - p.image[1]) : null}
         <li class:sel={st.selectedPair === p.id}>
-          <span>{p.label ?? (p.world ? `(${p.world.map((v) => r(v, 1)).join(', ')})` : 'รอจุดบนโมเดล')}</span>
-          <small>{p.image ? (err !== null ? `${r(err, 1)} px` : '') : 'รอจุดบนภาพ'}</small>
-          <button type="button" class="small" aria-label="ลบคู่จุด" onclick={() => { st.removePair(p.id); onChange(); }}>ลบ</button>
+          <span>{p.label ?? (p.world ? `(${p.world.map((v) => r(v, 1)).join(', ')})` : t('editor.match.pairs.waitModel'))}</span>
+          <small>{p.image ? (err !== null ? `${r(err, 1)} px` : '') : t('editor.match.pairs.waitImage')}</small>
+          <button type="button" class="small" aria-label={t('editor.match.pairs.deleteAria')} onclick={() => { st.removePair(p.id); onChange(); }}>{t('editor.match.pairs.delete')}</button>
         </li>
       {/each}
     </ol>
   {/if}
   <div class="actions">
-    <button type="button" data-act="solve-position" disabled={st.completePairs.length < 2} onclick={() => run(() => st.solvePosition())}>ตั้งระยะจากคู่จุด (≥2)</button>
-    <button type="button" class="primary" data-act="solve-all" disabled={st.completePairs.length < 4} onclick={() => run(() => st.solveAll())}>คำนวณละเอียด (≥4)</button>
+    <button type="button" data-act="solve-position" disabled={st.completePairs.length < 2} onclick={() => run(() => st.solvePosition())}>{t('editor.match.pairs.solvePosition')}</button>
+    <button type="button" class="primary" data-act="solve-all" disabled={st.completePairs.length < 4} onclick={() => run(() => st.solveAll())}>{t('editor.match.pairs.solveAll')}</button>
   </div>
 
   <div class="result" data-residual>
-    <b>ค่าคลาดเคลื่อน</b>
-    เส้น {res.lines === null ? '–' : `${r(res.lines, 2)} px`} · คู่จุด {res.points === null ? '–' : `${r(res.points, 2)} px`}
+    <b>{t('editor.match.residual.heading')}</b>
+    {t('editor.match.residual.values', { lines: res.lines === null ? '–' : `${r(res.lines, 2)} px`, points: res.points === null ? '–' : `${r(res.points, 2)} px` })}
   </div>
 
-  <h3>ค่ากล้อง <small>(หน่วย Blender)</small></h3>
+  <h3>{t('editor.match.cam.heading')} <small>{t('editor.match.cam.units')}</small></h3>
   <div class="vals">
-    <span>เลนส์ (มม.)</span>
+    <span>{t('editor.match.cam.lens')}</span>
     <input type="number" step="0.5" value={r(st.lens, 2)} onchange={numeric((v) => st.setLens(v))} data-cam="lens" />
-    <span class="note" data-cam-fov>FOV แนวนอน {r(st.hfov, 2)}°{st.wideLens ? ` · บนภาพเต็ม ${r(st.wideLens, 1)} มม. / ${r(st.wideHfov ?? 0, 1)}°` : ''}</span>
+    <span class="note" data-cam-fov>{t('editor.match.cam.hfov', { deg: r(st.hfov, 2) })}{st.wideLens ? t('editor.match.cam.wide', { lens: r(st.wideLens, 1), deg: r(st.wideHfov ?? 0, 1) }) : ''}</span>
     {#each [0, 1, 2] as const as i (i)}
-      <span>ตำแหน่ง {axisLabels[i]} ซม.</span>
+      <span>{t('editor.match.cam.position', { axis: axisLabels[i] })}</span>
       <input type="number" step="1" value={r(st.cam.C[i], 1)} onchange={numeric((v) => st.setPosition(i, v))} data-cam="pos-{i}" />
     {/each}
     {#each [0, 1, 2] as const as i (i)}
-      <span>หมุน {AXIS_NAMES[i]} (องศา)</span>
+      <span>{t('editor.match.cam.rotation', { axis: AXIS_NAMES[i] })}</span>
       <input type="number" step="0.1" value={r(euler[i], 2)} onchange={numeric((v) => st.setEuler(i, v))} data-cam="rot-{i}" />
     {/each}
-    <span>จุดกึ่งกลาง cx, cy (px)</span>
+    <span>{t('editor.match.cam.principal')}</span>
     <div class="two">
       <input type="number" step="1" value={r(st.cam.cx, 1)} onchange={numeric((v) => st.setPrincipal(0, v))} data-cam="cx" />
       <input type="number" step="1" value={r(st.cam.cy, 1)} onchange={numeric((v) => st.setPrincipal(1, v))} data-cam="cy" />
     </div>
   </div>
   <div class="actions">
-    <button type="button" data-act="flip" onclick={() => { st.flip(); onChange(); }}>กลับด้าน 180°</button>
-    <button type="button" class="danger" data-act="reset-cam" onclick={() => { st.resetCamera(); onChange(); if (st.message) say(st.message); }}>กลับเป็นกล้องเดิม</button>
+    <button type="button" data-act="flip" onclick={() => { st.flip(); onChange(); }}>{t('editor.match.cam.flip')}</button>
+    <button type="button" class="danger" data-act="reset-cam" onclick={() => { st.resetCamera(); onChange(); if (st.message) say(st.message); }}>{t('editor.match.cam.reset')}</button>
   </div>
 
-  <h3>บันทึก / ส่งออกกล้อง</h3>
-  <p class="tip">บันทึกในเครื่องนี้อัตโนมัติ (มุม Mock-up จะใช้กล้องนี้) · cam.json ใช้กับ blender/add_cam.py, render.py</p>
+  <h3>{t('editor.match.export.heading')}</h3>
+  <p class="tip">{t('editor.match.export.tip')}</p>
   <div class="actions col">
-    <button type="button" class="primary" data-act="export-cam" onclick={exportCam}>ดาวน์โหลด cam.json (Blender)</button>
-    <button type="button" data-act="export-match" onclick={exportFull}>ดาวน์โหลดค่าทั้งหมด (Blender + Three.js)</button>
+    <button type="button" class="primary" data-act="export-cam" onclick={exportCam}>{t('editor.match.export.cam')}</button>
+    <button type="button" data-act="export-match" onclick={exportFull}>{t('editor.match.export.full')}</button>
   </div>
 </section>
 

@@ -1,0 +1,743 @@
+{
+ "width": 1024,
+ "height": 1024,
+ "light": {
+  "shadowAngleDeg": 300.0,
+  "elevationDeg": 40,
+  "softness": 0.5,
+  "intensity": 0.7,
+  "color": "#3a2a35"
+ },
+ "layers": [
+  {
+   "name": "view_through_doorways",
+   "group": "background_view",
+   "z": 0,
+   "x": 185,
+   "y": 179,
+   "w": 750,
+   "h": 500,
+   "shadow": {
+    "type": "none"
+   }
+  },
+  {
+   "name": "door_left",
+   "group": "room_shell",
+   "z": 1,
+   "x": 239,
+   "y": 190,
+   "w": 72,
+   "h": 445,
+   "shadow": {
+    "type": "none"
+   }
+  },
+  {
+   "name": "frame_left",
+   "group": "room_shell",
+   "z": 2,
+   "x": 160,
+   "y": 142,
+   "w": 187,
+   "h": 532,
+   "shadow": {
+    "type": "none"
+   }
+  },
+  {
+   "name": "frame_right",
+   "group": "room_shell",
+   "z": 3,
+   "x": 787,
+   "y": 150,
+   "w": 175,
+   "h": 534,
+   "shadow": {
+    "type": "none"
+   }
+  },
+  {
+   "name": "ceiling_trim",
+   "group": "room_shell",
+   "z": 4,
+   "x": 230,
+   "y": 0,
+   "w": 635,
+   "h": 57,
+   "shadow": {
+    "type": "none"
+   }
+  },
+  {
+   "name": "baseboards",
+   "group": "room_shell",
+   "z": 5,
+   "x": 0,
+   "y": 586,
+   "w": 1024,
+   "h": 132,
+   "shadow": {
+    "type": "none"
+   }
+  },
+  {
+   "name": "floor",
+   "group": "room_shell",
+   "z": 6,
+   "x": 0,
+   "y": 617,
+   "w": 1024,
+   "h": 407,
+   "shadow": {
+    "type": "none"
+   }
+  },
+  {
+   "name": "wall_back",
+   "group": "room_shell",
+   "z": 7,
+   "x": 419,
+   "y": 0,
+   "w": 605,
+   "h": 657,
+   "shadow": {
+    "type": "none"
+   }
+  },
+  {
+   "name": "wall_left",
+   "group": "room_shell",
+   "z": 8,
+   "x": 0,
+   "y": 0,
+   "w": 421,
+   "h": 680,
+   "shadow": {
+    "type": "none"
+   }
+  },
+  {
+   "ao": {
+    "x": 120,
+    "y": 0,
+    "w": 288,
+    "h": 255
+   },
+   "name": "clock",
+   "group": "wall_decor",
+   "z": 9,
+   "x": 225,
+   "y": 62,
+   "w": 69,
+   "h": 86,
+   "shadow": {
+    "type": "wall-cast",
+    "scale": 1.0,
+    "blur": 1.0,
+    "opacity": 0.6,
+    "offset": [
+     0,
+     0
+    ],
+    "distance": 6,
+    "receivers": [
+     "shell"
+    ]
+   }
+  },
+  {
+   "ao": {
+    "x": 573,
+    "y": 204,
+    "w": 123,
+    "h": 161
+   },
+   "name": "picture_frame",
+   "group": "wall_decor",
+   "z": 10,
+   "x": 599,
+   "y": 212,
+   "w": 86,
+   "h": 125,
+   "shadow": {
+    "type": "wall-cast",
+    "scale": 1.0,
+    "blur": 1.0,
+    "opacity": 0.6,
+    "offset": [
+     0,
+     0
+    ],
+    "distance": 6,
+    "receivers": [
+     "shell"
+    ]
+   }
+  },
+  {
+   "ao": {
+    "x": 682,
+    "y": 164,
+    "w": 121,
+    "h": 239
+   },
+   "name": "calendar",
+   "group": "wall_decor",
+   "z": 11,
+   "x": 696,
+   "y": 220,
+   "w": 80,
+   "h": 123,
+   "shadow": {
+    "type": "wall-cast",
+    "scale": 1.0,
+    "blur": 1.0,
+    "opacity": 0.6,
+    "offset": [
+     0,
+     0
+    ],
+    "distance": 6,
+    "receivers": [
+     "shell"
+    ]
+   }
+  },
+  {
+   "ao": {
+    "x": 333,
+    "y": 187,
+    "w": 254,
+    "h": 361
+   },
+   "name": "bookshelf",
+   "group": "furniture",
+   "z": 12,
+   "x": 372,
+   "y": 229,
+   "w": 194,
+   "h": 400,
+   "shadow": {
+    "type": "ground-drop",
+    "floorY": 629,
+    "scale": 1.0,
+    "blur": 1.0,
+    "opacity": 1.0,
+    "offset": [
+     0,
+     0
+    ],
+    "contact": 0.9,
+    "receivers": [
+     "shell",
+     "rug"
+    ]
+   }
+  },
+  {
+   "ao": {
+    "x": 457,
+    "y": 166,
+    "w": 109,
+    "h": 78
+   },
+   "name": "shelf_books_top",
+   "group": "prop",
+   "z": 13,
+   "x": 463,
+   "y": 209,
+   "w": 76,
+   "h": 34,
+   "shadow": {
+    "type": "none"
+   }
+  },
+  {
+   "ao": {
+    "x": 337,
+    "y": 48,
+    "w": 181,
+    "h": 198
+   },
+   "name": "shelf_plant_top",
+   "group": "prop",
+   "z": 14,
+   "x": 398,
+   "y": 170,
+   "w": 66,
+   "h": 76,
+   "shadow": {
+    "type": "none"
+   }
+  },
+  {
+   "name": "shelf_photo",
+   "group": "prop",
+   "z": 15,
+   "x": 443,
+   "y": 280,
+   "w": 48,
+   "h": 65,
+   "shadow": {
+    "type": "none"
+   }
+  },
+  {
+   "name": "shelf_plant_L",
+   "group": "prop",
+   "z": 16,
+   "x": 399,
+   "y": 299,
+   "w": 41,
+   "h": 46,
+   "shadow": {
+    "type": "none"
+   }
+  },
+  {
+   "name": "shelf_plant_R",
+   "group": "prop",
+   "z": 17,
+   "x": 499,
+   "y": 301,
+   "w": 19,
+   "h": 31,
+   "shadow": {
+    "type": "none"
+   }
+  },
+  {
+   "name": "shelf_paper_crafts",
+   "group": "prop",
+   "z": 18,
+   "x": 398,
+   "y": 379,
+   "w": 113,
+   "h": 65,
+   "shadow": {
+    "type": "none"
+   }
+  },
+  {
+   "name": "rug",
+   "group": "furniture",
+   "z": 19,
+   "x": 60,
+   "y": 795,
+   "w": 817,
+   "h": 229,
+   "shadow": {
+    "type": "none"
+   }
+  },
+  {
+   "ao": {
+    "x": 378,
+    "y": 428,
+    "w": 448,
+    "h": 353
+   },
+   "name": "sofa",
+   "group": "furniture",
+   "z": 20,
+   "x": 382,
+   "y": 477,
+   "w": 437,
+   "h": 316,
+   "shadow": {
+    "type": "ground-drop",
+    "floorY": 793,
+    "scale": 1.0,
+    "blur": 1.0,
+    "opacity": 1.0,
+    "offset": [
+     0,
+     0
+    ],
+    "contact": 0.9,
+    "receivers": [
+     "shell",
+     "rug"
+    ]
+   }
+  },
+  {
+   "name": "sofa_back_cushion_L",
+   "group": "prop",
+   "z": 21,
+   "x": 471,
+   "y": 478,
+   "w": 161,
+   "h": 139,
+   "shadow": {
+    "type": "none"
+   }
+  },
+  {
+   "ao": {
+    "x": 667,
+    "y": 474,
+    "w": 162,
+    "h": 72
+   },
+   "name": "sofa_back_cushion_R",
+   "group": "prop",
+   "z": 22,
+   "x": 615,
+   "y": 486,
+   "w": 189,
+   "h": 143,
+   "shadow": {
+    "type": "none"
+   }
+  },
+  {
+   "name": "sofa_seat_cushion_L",
+   "group": "prop",
+   "z": 23,
+   "x": 408,
+   "y": 599,
+   "w": 200,
+   "h": 91,
+   "shadow": {
+    "type": "none"
+   }
+  },
+  {
+   "name": "sofa_seat_cushion_R",
+   "group": "prop",
+   "z": 24,
+   "x": 547,
+   "y": 619,
+   "w": 164,
+   "h": 105,
+   "shadow": {
+    "type": "none"
+   }
+  },
+  {
+   "ao": {
+    "x": 488,
+    "y": 352,
+    "w": 232,
+    "h": 405
+   },
+   "name": "grandma",
+   "group": "character",
+   "z": 25,
+   "x": 497,
+   "y": 367,
+   "w": 204,
+   "h": 449,
+   "shadow": {
+    "type": "surface-drop",
+    "distance": 14,
+    "scale": 1.0,
+    "blur": 1.5,
+    "opacity": 0.45,
+    "offset": [
+     0,
+     0
+    ],
+    "receivers": [
+     "sofa",
+     "sofa_back_cushion_L",
+     "sofa_back_cushion_R",
+     "sofa_seat_cushion_L",
+     "sofa_seat_cushion_R"
+    ]
+   }
+  },
+  {
+   "ao": {
+    "x": 756,
+    "y": 601,
+    "w": 268,
+    "h": 306
+   },
+   "name": "side_table",
+   "group": "furniture",
+   "z": 26,
+   "x": 758,
+   "y": 655,
+   "w": 177,
+   "h": 168,
+   "shadow": {
+    "type": "ground-drop",
+    "floorY": 823,
+    "scale": 1.0,
+    "blur": 1.0,
+    "opacity": 1.0,
+    "offset": [
+     0,
+     0
+    ],
+    "contact": 0.9,
+    "receivers": [
+     "shell",
+     "rug"
+    ]
+   }
+  },
+  {
+   "ao": {
+    "x": 799,
+    "y": 519,
+    "w": 82,
+    "h": 36
+   },
+   "name": "fan",
+   "group": "prop",
+   "z": 27,
+   "x": 785,
+   "y": 543,
+   "w": 95,
+   "h": 149,
+   "shadow": {
+    "type": "contact",
+    "floorY": 692,
+    "scale": 1.0,
+    "blur": 1.0,
+    "opacity": 0.9,
+    "offset": [
+     0,
+     0
+    ],
+    "receivers": [
+     "side_table"
+    ]
+   }
+  },
+  {
+   "ao": {
+    "x": 0,
+    "y": 435,
+    "w": 378,
+    "h": 504
+   },
+   "name": "armchair",
+   "group": "furniture",
+   "z": 28,
+   "x": 58,
+   "y": 511,
+   "w": 315,
+   "h": 308,
+   "shadow": {
+    "type": "ground-drop",
+    "floorY": 819,
+    "scale": 1.0,
+    "blur": 1.0,
+    "opacity": 1.0,
+    "offset": [
+     0,
+     0
+    ],
+    "contact": 0.9,
+    "receivers": [
+     "shell",
+     "rug"
+    ]
+   }
+  },
+  {
+   "name": "armchair_seat_cushion",
+   "group": "prop",
+   "z": 29,
+   "x": 198,
+   "y": 635,
+   "w": 153,
+   "h": 118,
+   "shadow": {
+    "type": "none"
+   }
+  },
+  {
+   "ao": {
+    "x": 123,
+    "y": 254,
+    "w": 262,
+    "h": 533
+   },
+   "name": "man",
+   "group": "character",
+   "z": 30,
+   "x": 161,
+   "y": 365,
+   "w": 258,
+   "h": 447,
+   "shadow": {
+    "type": "surface-drop",
+    "distance": 14,
+    "scale": 1.0,
+    "blur": 1.5,
+    "opacity": 0.45,
+    "offset": [
+     0,
+     0
+    ],
+    "receivers": [
+     "armchair",
+     "armchair_seat_cushion",
+     "sofa"
+    ]
+   }
+  },
+  {
+   "name": "newspaper",
+   "group": "character_prop",
+   "z": 31,
+   "x": 245,
+   "y": 530,
+   "w": 172,
+   "h": 134,
+   "shadow": {
+    "type": "none"
+   }
+  },
+  {
+   "ao": {
+    "x": 181,
+    "y": 719,
+    "w": 567,
+    "h": 305
+   },
+   "name": "coffee_table",
+   "group": "furniture",
+   "z": 32,
+   "x": 260,
+   "y": 718,
+   "w": 435,
+   "h": 261,
+   "shadow": {
+    "type": "ground-drop",
+    "floorY": 979,
+    "scale": 1.0,
+    "blur": 1.0,
+    "opacity": 1.0,
+    "offset": [
+     0,
+     0
+    ],
+    "contact": 0.9,
+    "receivers": [
+     "shell",
+     "rug"
+    ]
+   }
+  },
+  {
+   "name": "tray",
+   "group": "prop",
+   "z": 33,
+   "x": 339,
+   "y": 730,
+   "w": 151,
+   "h": 72,
+   "shadow": {
+    "type": "contact",
+    "floorY": 802,
+    "scale": 1.0,
+    "blur": 1.0,
+    "opacity": 0.7,
+    "offset": [
+     0,
+     0
+    ],
+    "receivers": [
+     "coffee_table"
+    ]
+   }
+  },
+  {
+   "name": "vase",
+   "group": "prop",
+   "z": 34,
+   "x": 380,
+   "y": 738,
+   "w": 72,
+   "h": 39,
+   "shadow": {
+    "type": "contact",
+    "floorY": 777,
+    "scale": 1.0,
+    "blur": 1.0,
+    "opacity": 0.7,
+    "offset": [
+     0,
+     0
+    ],
+    "receivers": [
+     "tray",
+     "coffee_table"
+    ]
+   }
+  },
+  {
+   "name": "flowers",
+   "group": "prop",
+   "z": 35,
+   "x": 369,
+   "y": 673,
+   "w": 95,
+   "h": 73,
+   "shadow": {
+    "type": "none"
+   }
+  },
+  {
+   "name": "note_paper",
+   "group": "prop",
+   "z": 36,
+   "x": 535,
+   "y": 767,
+   "w": 76,
+   "h": 39,
+   "shadow": {
+    "type": "contact",
+    "floorY": 806,
+    "scale": 1.0,
+    "blur": 1.0,
+    "opacity": 0.7,
+    "offset": [
+     0,
+     0
+    ],
+    "receivers": [
+     "coffee_table"
+    ]
+   }
+  },
+  {
+   "ao": {
+    "x": 695,
+    "y": 759,
+    "w": 210,
+    "h": 265
+   },
+   "name": "box",
+   "group": "prop",
+   "z": 37,
+   "x": 709,
+   "y": 762,
+   "w": 128,
+   "h": 118,
+   "shadow": {
+    "type": "ground-drop",
+    "floorY": 880,
+    "scale": 1.0,
+    "blur": 1.0,
+    "opacity": 1.0,
+    "offset": [
+     0,
+     0
+    ],
+    "contact": 0.9,
+    "receivers": [
+     "shell",
+     "rug"
+    ]
+   }
+  }
+ ]
+}
