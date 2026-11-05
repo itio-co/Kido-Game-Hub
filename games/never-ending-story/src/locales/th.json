@@ -794,6 +794,7 @@
   "game.layers.shadowsAria": "เงา",
   "game.layers.shadowsTitle": "เงา",
   "game.layers.shadowsOn": "เปิดเงา",
+  "game.layers.aoOn": "เปิด AO สัมผัส",
   "game.layers.lightAngle": "มุมแสง",
   "game.layers.lightElevation": "ความสูงแสง",
   "game.layers.softness": "ความนุ่มของเงา",

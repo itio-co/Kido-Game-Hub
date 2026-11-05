@@ -13,7 +13,7 @@
   const scene = /[?&]scene=([^&]+)/.exec(location.hash)?.[1] ?? 'v1';
   const DIR = `${BASE}showcase/${scene === 'v2' || scene === 'livingroom_v2' ? 'livingroom-layers-v2' : 'livingroom-layers'}/`;
   const query = parseLayersQuery(location.hash);
-  const aoOn = !/[?&]ao=0/.test(location.hash);
+  // Shadows + AO default off (manifest/query can opt in). Toggles remain in the panel.
   let canvas = $state<HTMLCanvasElement>();
   let layers = $state.raw<Loaded[]>([]);
   let visible = $state<Record<string, boolean>>({});
@@ -21,6 +21,7 @@
   let moved = $state<Record<string, [number, number]>>({ ...query.move });
   let lit = $state(false);
   let shadowsOn = $state(query.shadows);
+  let aoOn = $state(query.ao);
   let light = $state<SceneLight>({ ...DEFAULT_LIGHT });
   let ready = $state(false);
   let size = { width: 1024, height: 1024 };
@@ -48,6 +49,9 @@
     const manifest = await (await fetch(`${DIR}layers.json`)).json();
     size = { width: manifest.width, height: manifest.height };
     light = { ...DEFAULT_LIGHT, ...manifest.light, ...(query.angle !== undefined ? { shadowAngleDeg: query.angle } : {}) };
+    // Opt-in only (default off): query shadows=1/ao=1, or manifest.shadowsEnabled/aoEnabled true.
+    shadowsOn = query.shadows || manifest.shadowsEnabled === true;
+    aoOn = query.ao || manifest.aoEnabled === true;
     const sorted = (manifest.layers as Layer[]).sort((a, b) => a.z - b.z);
     layers = await Promise.all(
       sorted.map(async (layer) => {
@@ -136,8 +140,8 @@
           if (plan.receivers) maskByReceivers(mask, receiverMask(plan.receivers, width, height));
           multiplyShadow(out, mask, tint);
         }
-        if (aoOn && layer.ao && layer.aoData) applyAo(out, layer.ao, layer.aoData, mx, my, receiverMask(['shell', 'rug'], width, height), width, height);
       }
+      if (aoOn && layer.ao && layer.aoData) applyAo(out, layer.ao, layer.aoData, mx, my, receiverMask(['shell', 'rug'], width, height), width, height);
       const c = layer.color.data;
       const n = layer.normal.data;
       for (let row = 0; row < layer.h; row++) {
@@ -175,7 +179,7 @@
 
   let frame = 0;
   $effect(() => {
-    void [lit, shadowsOn, ready, JSON.stringify(light), JSON.stringify(visible), JSON.stringify(castShadow), JSON.stringify(moved)];
+    void [lit, shadowsOn, aoOn, ready, JSON.stringify(light), JSON.stringify(visible), JSON.stringify(castShadow), JSON.stringify(moved)];
     cancelAnimationFrame(frame);
     frame = requestAnimationFrame(render);
   });
@@ -241,6 +245,7 @@
       <section class="panel" aria-label={t('game.layers.shadowsAria')} data-shadows-panel>
         <h2>{t('game.layers.shadowsTitle')}</h2>
         <label class="row"><input type="checkbox" bind:checked={shadowsOn} data-shadows-on /> {t('game.layers.shadowsOn')}</label>
+        <label class="row"><input type="checkbox" bind:checked={aoOn} data-ao-on /> {t('game.layers.aoOn')}</label>
         <label class="slider">{t('game.layers.lightAngle')} <input type="range" min="0" max="359" bind:value={light.shadowAngleDeg} data-light-angle /></label>
         <label class="slider">{t('game.layers.lightElevation')} <input type="range" min="10" max="80" bind:value={light.elevationDeg} /></label>
         <label class="slider">{t('game.layers.softness')} <input type="range" min="0" max="1" step="0.05" bind:value={light.softness} /></label>

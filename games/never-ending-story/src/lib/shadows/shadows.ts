@@ -92,8 +92,9 @@ function planShape(caster: ShadowCaster, light: SceneLight, moveX: number, moveY
   return { kind: 'silhouette', matrix: [m[0], m[1], m[2], m[3], m[4] + ox, m[5] + oy], ellipse: none, blurPx, opacity };
 }
 
-/** Parse `#/layers?off=a,b&move=box:-300:0&shadows=0&angle=300` for deep links and tests. */
-export function parseLayersQuery(hash: string): { off: string[]; move: Record<string, [number, number]>; shadows: boolean; angle?: number } {
+/** Parse `#/layers?off=a,b&move=box:-300:0&shadows=1&ao=1&angle=300` for deep links and tests.
+ *  Runtime shadows and per-object AO default OFF (2D-guessed shadows hurt the picture); pass shadows=1 / ao=1 to enable. */
+export function parseLayersQuery(hash: string): { off: string[]; move: Record<string, [number, number]>; shadows: boolean; ao: boolean; angle?: number } {
   const params = new URLSearchParams(hash.split('?')[1] ?? '');
   const off = (params.get('off') ?? '').split(',').filter(Boolean);
   const move: Record<string, [number, number]> = {};
@@ -102,7 +103,9 @@ export function parseLayersQuery(hash: string): { off: string[]; move: Record<st
     if (name) move[name] = [Number(x) || 0, Number(y) || 0];
   }
   const angle = params.has('angle') ? Number(params.get('angle')) : undefined;
-  return { off, move, shadows: params.get('shadows') !== '0', angle };
+  // Opt-in: only "1" / "true" turns them on. Bare absence or "0" keeps them off.
+  const on = (v: string | null) => v === '1' || v === 'true';
+  return { off, move, shadows: on(params.get('shadows')), ao: on(params.get('ao')), angle };
 }
 
 export function hexToRgb(hex: string): [number, number, number] {

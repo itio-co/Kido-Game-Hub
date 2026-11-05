@@ -794,6 +794,7 @@
   "game.layers.shadowsAria": "Shadows",
   "game.layers.shadowsTitle": "Shadows",
   "game.layers.shadowsOn": "Shadows on",
+  "game.layers.aoOn": "Contact AO on",
   "game.layers.lightAngle": "Light angle",
   "game.layers.lightElevation": "Light height",
   "game.layers.softness": "Softness",

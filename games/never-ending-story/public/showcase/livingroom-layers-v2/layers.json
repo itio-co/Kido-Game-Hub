@@ -333,5 +333,7 @@
     "type": "none"
    }
   }
- ]
+ ],
+ "shadowsEnabled": false,
+ "aoEnabled": false
 }
