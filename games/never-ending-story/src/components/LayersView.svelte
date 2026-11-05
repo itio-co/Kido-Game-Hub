@@ -10,7 +10,8 @@
   type Loaded = Layer & { color: ImageData; normal: ImageData; bitmap: HTMLCanvasElement; aoData?: ImageData };
 
   const BASE = import.meta.env.BASE_URL;
-  const DIR = `${BASE}showcase/livingroom-layers/`;
+  const scene = /[?&]scene=([^&]+)/.exec(location.hash)?.[1] ?? 'v1';
+  const DIR = `${BASE}showcase/${scene === 'v2' || scene === 'livingroom_v2' ? 'livingroom-layers-v2' : 'livingroom-layers'}/`;
   const query = parseLayersQuery(location.hash);
   const aoOn = !/[?&]ao=0/.test(location.hash);
   let canvas = $state<HTMLCanvasElement>();
