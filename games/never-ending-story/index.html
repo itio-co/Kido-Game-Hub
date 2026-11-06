@@ -11,6 +11,35 @@
     <link rel="manifest" href="./manifest.webmanifest" />
     <link rel="icon" href="./icons/icon-192.png" type="image/png" />
     <link rel="apple-touch-icon" href="./icons/icon-192.png" />
+    <meta name="description" content="Never Ending Story Game — a cozy mystery game with grandma. Practice mini-games or send a Challenge link (crossword, jigsaw, slide) to beat a friend's score and time." />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Never Ending Story Game — Challenge" />
+    <meta property="og:description" content="Same seeded puzzle, points + time. Can you beat my score?" />
+    <meta property="og:image" content="./img/living-wide.jpg" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "VideoGame",
+        "name": "Never Ending Story Game",
+        "inLanguage": ["th", "en"],
+        "genre": ["Puzzle", "Mystery"],
+        "gamePlatform": "Web browser",
+        "applicationCategory": "Game",
+        "playMode": ["SinglePlayer", "MultiPlayer"],
+        "numberOfPlayers": { "@type": "QuantitativeValue", "minValue": 1 },
+        "publisher": { "@type": "Organization", "name": "itio" },
+        "hasPart": [
+          { "@type": "Game", "name": "Crossword Challenge", "url": "#/challenge/cross" },
+          { "@type": "Game", "name": "Jigsaw Challenge", "url": "#/challenge/jig" },
+          { "@type": "Game", "name": "Slide Challenge", "url": "#/challenge/slide" }
+        ],
+        "potentialAction": {
+          "@type": "PlayAction",
+          "target": { "@type": "EntryPoint", "urlTemplate": "#/challenge/{game}/{difficulty}/{seed}/vs/{nickname}?score={score}&time={seconds}&run={protobufToken}" }
+        }
+      }
+    </script>
     <title>ห้องของฉัน — Never Ending Story Game</title>
   </head>
   <body>

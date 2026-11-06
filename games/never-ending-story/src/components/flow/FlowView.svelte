@@ -149,6 +149,7 @@
     {@const totalCount = session.flow?.practice.length ?? 0}
     <div class="pgrid">
       <p class="punlock">ปลดล็อกแล้ว {unlockedCount}/{totalCount} · เกมใหม่ปลดล็อกจากคดี</p>
+      <button type="button" class="boardbtn" onclick={() => (window.location.hash = '#/leaderboard')}>{t('practice.board')}</button>
       <div class="chips">
         {#each groups as group (group)}
           <button type="button" class:on={session.category === group} onclick={() => session.setCategory(group)}>{group}</button>
@@ -175,7 +176,12 @@
                 <small>ปลดล็อกจากคดี {game.caseNo}</small>
               {/if}
             </button>
-            {#if unlocked}
+            {#if unlocked && (game.game === 'cross' || game.game === 'jig' || game.game === 'slide')}
+              <div class="modes">
+                <button type="button" class="mode" onclick={() => session.openPractice(game.slug)}>{t('practice.modePractice')}</button>
+                <button type="button" class="mode ch" onclick={() => (window.location.hash = `#/challenge/${game.game}`)}>⚔️ {t('practice.modeChallenge')}</button>
+              </div>
+            {:else if unlocked}
               <button type="button" class="share" onclick={() => session.copyPracticeLink(game.slug)}>{t('practice.share')}</button>
             {/if}
           </div>
@@ -362,6 +368,10 @@
   .chips { display: flex; gap: 6px; margin-bottom: 10px; flex-wrap: wrap; }
   .chips button.on { background: #39e0ff; color: #06212f; }
   .cards { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .boardbtn { display: block; margin: 0 auto 10px; min-height: 40px; padding: 0 18px; border-radius: 20px; border: 2px solid #ffcf4a; background: #2a3a1d; color: #ffe9a3; font-weight: 800; }
+  .modes { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+  .mode { min-height: 38px; font-size: var(--fs-sm); border-radius: 10px; border: 1px solid #39e0ff; background: #0d4a66; color: #eaf6ff; font-weight: 800; padding: 0 2px; }
+  .mode.ch { background: #ffcf4a; color: #3a2a00; border-color: #ffcf4a; }
   .gcardwrap { display: flex; flex-direction: column; gap: 4px; }
   .gcardwrap .share { min-height: 36px; font-size: var(--fs-sm); border-radius: 10px; border: 1px dashed #39e0ff; background: #0d4a66; color: #eaf6ff; font-weight: 700; }
   .gcard { position: relative; background: #fffaf0; color: #13324a; border: 0; border-radius: 14px; padding: 12px 8px; display: flex; flex-direction: column; align-items: center; gap: 3px; text-align: center; width: 100%; }

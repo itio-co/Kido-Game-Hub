@@ -11,6 +11,9 @@
   import Sheet from './components/Sheet.svelte';
   import VersionBadge from './components/VersionBadge.svelte';
   import StirFryGame from './components/minigames/StirFryGame.svelte';
+  import ChallengeView from './components/minigames/ChallengeView.svelte';
+  import LeaderboardView from './components/minigames/LeaderboardView.svelte';
+  import { parseChallengeHash } from './lib/challenge';
   import { loadFlow } from './lib/flow/loadFlow';
   import { createFlow } from './lib/flow/session.svelte';
   import { loadPlayerRoom } from './lib/loadRoom';
@@ -35,6 +38,15 @@
   const showcasing = $derived(route.startsWith('#/showcase'));
   const editing = $derived(route.startsWith('#/editor'));
   const playingStirfry = $derived(route.startsWith('#/play/stirfry'));
+  const challenge = $derived(parseChallengeHash(route));
+  const showingBoard = $derived(route.startsWith('#/leaderboard'));
+  const fullscreenGame = $derived(playingStirfry || !!challenge || showingBoard);
+
+  function toPractice(): void {
+    window.location.hash = '';
+    route = '';
+    void session.go('practice');
+  }
 
   const calendar = $derived.by((): CalendarEntity | null => {
     const found = room?.objects.find((obj) => obj.kind === 'calendar');
@@ -208,7 +220,7 @@
 </script>
 
 <div class="phone" class:wide={editing} data-text={save.player.textSize}>
-  {#if !playingStirfry}<VersionBadge />{/if}
+  {#if !fullscreenGame}<VersionBadge />{/if}
   {#if editing}
     <EditorView />
   {:else if error}
@@ -217,6 +229,12 @@
     <p class="status">กำลังเปิดห้อง…</p>
   {:else if showcasing}
     <ShowcaseView {room} />
+  {:else if challenge}
+    {#key route}
+      <ChallengeView params={challenge} onExit={toPractice} onBoard={() => (window.location.hash = '#/leaderboard')} />
+    {/key}
+  {:else if showingBoard}
+    <LeaderboardView onExit={toPractice} onPlay={(game) => (window.location.hash = `#/challenge/${game}`)} />
   {:else if playingStirfry}
     <StirFryGame onExit={() => { window.location.hash = ''; route = ''; void session.go('practice'); }} />
   {:else}
