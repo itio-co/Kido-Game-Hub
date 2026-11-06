@@ -81,7 +81,7 @@
         decorSlotId = hotspot.id;
         overlay = 'decor';
       } else if (hotspot.action === 'event-select') void session.go('event-select');
-      else if (hotspot.action === 'practice') { window.location.hash = '#/play/stirfry'; route = '#/play/stirfry'; }
+      else if (hotspot.action === 'practice') void session.go('practice');
       else if (hotspot.action === 'calendar') overlay = 'calendar';
       else if (hotspot.action === 'case-board') void session.go('notebook');
       return;
@@ -198,7 +198,7 @@
 </script>
 
 <div class="phone" class:wide={editing} data-text={save.player.textSize}>
-  <VersionBadge />
+  {#if !playingStirfry}<VersionBadge />{/if}
   {#if editing}
     <EditorView />
   {:else if error}
@@ -208,7 +208,7 @@
   {:else if showcasing}
     <ShowcaseView {room} />
   {:else if playingStirfry}
-    <StirFryGame onExit={() => { window.location.hash = ''; route = ''; }} />
+    <StirFryGame onExit={() => { window.location.hash = ''; route = ''; void session.go('practice'); }} />
   {:else}
     <div class="stage" class:is-fading={session.fading}>
       <div class="room-layer" class:hidden={session.screen !== 'player-room'}>

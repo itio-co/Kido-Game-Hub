@@ -5,6 +5,7 @@
   import type { FlowSpot } from '../../lib/flow/types';
   import { t } from '../../lib/i18n';
   import { readEggs } from '../../lib/eggs';
+  import { readStirFry } from '../../lib/stirfrySave';
   import ImageScene from './ImageScene.svelte';
   import Minigames from './Minigames.svelte';
 
@@ -111,6 +112,7 @@
       {/each}
     </div>
   {:else if session.screen === 'practice'}
+    {@const stirBest = readStirFry()}
     <div class="pgrid">
       <div class="chips">
         {#each groups as group (group)}
@@ -119,20 +121,27 @@
       </div>
       <div class="cards">
         {#each (session.flow?.practice ?? []).filter((game) => session.category === 'ทั้งหมด' || game.group === session.category) as game (game.id)}
-          {@const on = session.played.includes(game.slug)}
+          {@const unlocked = game.game === 'stirfry' || (!game.future && session.played.includes(game.slug))}
           {@const row = game.game === 'cross' || game.game === 'jig' || game.game === 'slide' ? session.levels[game.game] : []}
           {@const total = row.reduce((sum, value) => sum + (value || 0), 0)}
-          <button type="button" class="gcard" class:off={!on} onclick={() => session.openPractice(game.slug)}>
-            {#if on && !session.seen.includes(game.slug)}<i class="new">ใหม่</i>{/if}
-            <span class="gic">{on ? game.icon : 'ล็อก'}</span>
-            <b>{game.title}{game.future ? ' (ตัวอย่าง)' : ''}</b>
-            <small>{game.group}</small>
-            {#if on}
-              <small>⭐ {total}/{3 * LEVEL_COUNT}</small>
-            {:else}
-              <small>ปลดล็อกจากคดี {game.caseNo}{game.future ? ' (ตัวอย่างอนาคต)' : ''}</small>
-            {/if}
-          </button>
+          <div class="gcardwrap">
+            <button type="button" class="gcard" class:off={!unlocked} onclick={() => session.openPractice(game.slug)}>
+              {#if unlocked && !session.seen.includes(game.slug)}<i class="new">ใหม่</i>{/if}
+              <span class="gic">{unlocked ? game.icon : '🔒'}</span>
+              <b>{game.title}{game.future ? ' (ตัวอย่าง)' : ''}</b>
+              <small>{game.group}</small>
+              {#if game.game === 'stirfry'}
+                <small>⭐ {stirBest.bestStars}/3 · {Math.round(stirBest.bestScore)}</small>
+              {:else if unlocked}
+                <small>⭐ {total}/{3 * LEVEL_COUNT}</small>
+              {:else if game.caseNo === 'soon' || game.future}
+                <small>{t('practice.comingSoon')}</small>
+              {:else}
+                <small>ปลดล็อกจากคดี {game.caseNo}</small>
+              {/if}
+            </button>
+            <button type="button" class="share" onclick={() => session.copyPracticeLink(game.slug)}>{t('practice.share')}</button>
+          </div>
         {/each}
       </div>
     </div>
@@ -314,7 +323,9 @@
   .chips { display: flex; gap: 6px; margin-bottom: 10px; flex-wrap: wrap; }
   .chips button.on { background: #39e0ff; color: #06212f; }
   .cards { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-  .gcard { position: relative; background: #fffaf0; color: #13324a; border: 0; border-radius: 14px; padding: 12px 8px; display: flex; flex-direction: column; align-items: center; gap: 3px; text-align: center; }
+  .gcardwrap { display: flex; flex-direction: column; gap: 4px; }
+  .gcardwrap .share { min-height: 36px; font-size: var(--fs-sm); border-radius: 10px; border: 1px dashed #39e0ff; background: #0d4a66; color: #eaf6ff; font-weight: 700; }
+  .gcard { position: relative; background: #fffaf0; color: #13324a; border: 0; border-radius: 14px; padding: 12px 8px; display: flex; flex-direction: column; align-items: center; gap: 3px; text-align: center; width: 100%; }
   .gcard.off { background: #2b3640; color: #8996a2; }
   .gic { font-size: calc(var(--fs) + 16px); }
   .new { position: absolute; top: 6px; right: 6px; background: #ff5d73; color: #fff; font-style: normal; font-size: var(--fs-sm); border-radius: 8px; padding: 1px 6px; }

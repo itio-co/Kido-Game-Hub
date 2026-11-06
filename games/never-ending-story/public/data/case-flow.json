@@ -164,7 +164,7 @@
           "who": "ย่ามะลิ",
           "text": "ending.line.1.grandma",
           "x": 48,
-          "y": 62,
+          "y": 50,
           "w": 46
         }
       ]
@@ -186,7 +186,7 @@
           "who": "ย่ามะลิ",
           "text": "ending.line.2.grandma",
           "x": 6,
-          "y": 16,
+          "y": 46,
           "w": 50
         },
         {
@@ -197,7 +197,7 @@
           "who": "หนู",
           "text": "ending.line.2.child",
           "x": 52,
-          "y": 70,
+          "y": 72,
           "w": 42
         }
       ]
@@ -219,7 +219,7 @@
           "who": "ย่ามะลิ",
           "text": "ending.line.3.grandma",
           "x": 8,
-          "y": 20,
+          "y": 18,
           "w": 70
         }
       ]
@@ -241,7 +241,7 @@
           "who": "ย่ามะลิ",
           "text": "ending.line.4.grandma",
           "x": 6,
-          "y": 16,
+          "y": 46,
           "w": 52
         },
         {
@@ -252,7 +252,7 @@
           "who": "หนู",
           "text": "ending.line.4.child",
           "x": 50,
-          "y": 68,
+          "y": 72,
           "w": 44
         }
       ]
@@ -274,7 +274,7 @@
           "who": "ย่ามะลิ",
           "text": "ending.line.5.grandma",
           "x": 6,
-          "y": 16,
+          "y": 46,
           "w": 56
         },
         {
@@ -285,7 +285,7 @@
           "who": "หนู",
           "text": "ending.line.5.child",
           "x": 48,
-          "y": 70,
+          "y": 72,
           "w": 46
         }
       ]
@@ -1087,9 +1087,9 @@
         {
           "id": "a4c0e001-0000-4000-8000-000000000046",
           "kind": "hotspot",
-          "title": "โปสการ์ด",
+          "title": "โปสเตอร์",
           "slug": "flow/album/postcard",
-          "titleEn": "Postcard",
+          "titleEn": "Poster",
           "x": 80,
           "y": 45,
           "when": "always",
@@ -1281,9 +1281,9 @@
     {
       "id": "a4c0e001-0000-4000-8000-00000000005e",
       "kind": "dialogue",
-      "title": "โปสการ์ด",
+      "title": "โปสเตอร์",
       "slug": "flow/dialogue/album-card",
-      "who": "โปสการ์ด",
+      "who": "โปสเตอร์",
       "text": "ภาพที่เหลือฝากไว้ที่ห้องสมุดวันวาน — ลิ้นชักหมายเลข 7",
       "choices": [
         {
@@ -1336,7 +1336,7 @@
     {
       "id": "a4c0e001-0000-4000-8000-0000000000a7",
       "kind": "dialogue",
-      "title": "ย่าขอโปสการ์ด",
+      "title": "ย่าขอโปสเตอร์",
       "slug": "flow/dialogue/grandma-need-poster",
       "who": "ย่ามะลิ",
       "text": "dialogue.grandmaNeedPoster",
@@ -1381,6 +1381,18 @@
   ],
   "practice": [
     {
+      "id": "a4c0e001-0000-4000-8000-0000000000b0",
+      "kind": "practice-game",
+      "title": "ผัดกับย่า",
+      "slug": "flow/practice/stirfry",
+      "game": "stirfry",
+      "icon": "🍳",
+      "group": "ตรรกะ",
+      "caseNo": "hub",
+      "future": false,
+      "route": "#/play/stirfry"
+    },
+    {
       "id": "a4c0e001-0000-4000-8000-000000000079",
       "kind": "practice-game",
       "title": "ครอสเวิร์ด",
@@ -1412,6 +1424,30 @@
       "group": "ตรรกะ",
       "caseNo": "01",
       "future": false
+    },
+    {
+      "id": "a4c0e001-0000-4000-8000-0000000000b1",
+      "kind": "practice-game",
+      "title": "ซ่อมใบพัดลม",
+      "slug": "flow/practice/fan",
+      "game": "fan",
+      "icon": "🪭",
+      "group": "ตรรกะ",
+      "caseNo": "soon",
+      "future": true,
+      "route": "#/play/fan"
+    },
+    {
+      "id": "a4c0e001-0000-4000-8000-0000000000b2",
+      "kind": "practice-game",
+      "title": "เรียงกล่องรูป",
+      "slug": "flow/practice/photobox",
+      "game": "photobox",
+      "icon": "📦",
+      "group": "ภาพ",
+      "caseNo": "soon",
+      "future": true,
+      "route": "#/play/photobox"
     },
     {
       "id": "a4c0e001-0000-4000-8000-00000000007c",

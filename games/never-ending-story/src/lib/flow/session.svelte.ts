@@ -614,21 +614,42 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
       difficulty = name;
       persist();
       showToast(`ระดับ: ${name}`);
+      // Fresh event entry lands in living room; house map stays via แผนผังบ้าน.
       history = ['player-room', 'event-select'];
-      void go('house-map', true, false);
+      void go('living-room', true, false);
     },
     setCategory(next: string) { category = next; },
     openPractice(slug: string) {
       const card = flow?.practice.find((item) => item.slug === slug);
       if (!card) return;
-      if (!played.includes(slug) || card.future || card.game === 'ex') {
-        showToast(`ยังล็อก — ปลดล็อกจากคดี ${card.caseNo}`);
+      if (card.game === 'stirfry') {
+        seen = seen.includes(slug) ? seen : [...seen, slug];
+        if (!played.includes(slug)) played = [...played, slug];
+        persist();
+        window.location.hash = card.route ?? '#/play/stirfry';
+        return;
+      }
+      if (card.future || card.game === 'ex' || card.game === 'fan' || card.game === 'photobox' || !played.includes(slug)) {
+        showToast(card.future || card.caseNo === 'soon'
+          ? `เร็ว ๆ นี้ — ${card.title}`
+          : `ยังล็อก — ปลดล็อกจากคดี ${card.caseNo}`);
         return;
       }
       seen = seen.includes(slug) ? seen : [...seen, slug];
       persist();
       if (card.game === 'cross' || card.game === 'jig' || card.game === 'slide') lvGame = card.game;
       void go('level-map');
+    },
+    async copyPracticeLink(slug: string) {
+      const card = flow?.practice.find((item) => item.slug === slug);
+      const path = card?.route ?? `#/practice/${encodeURIComponent(slug)}`;
+      const url = `${window.location.origin}${window.location.pathname}${path}`;
+      try {
+        await navigator.clipboard.writeText(url);
+        showToast('คัดลอกลิงก์แล้ว');
+      } catch {
+        showToast(url);
+      }
     },
     openLevel(index: number) {
       const row = levels[lvGame];
