@@ -173,12 +173,16 @@ export type HotspotAction = 'event-select' | 'practice' | 'calendar' | 'case-boa
 
 export type HitBox = { position: Vec3; size: Vec3 };
 
+/** Percentage rect on the 2D backdrop (object-fit: cover), from the click-through prototype. */
+export type ScreenRect = { left: number; top: number; width: number; height: number };
+
 export type HotspotEntity = Identity & {
   kind: 'hotspot';
   action: HotspotAction;
   targetId: string;
   anchor: Vec3;
   hit: HitBox;
+  screen: ScreenRect;
 };
 
 export type DecorSlotEntity = Identity & {
@@ -188,10 +192,13 @@ export type DecorSlotEntity = Identity & {
   emptyHint: string;
   anchor: Vec3;
   hit: HitBox;
+  screen: ScreenRect;
 };
 
 export type PlayerRoom = Identity & {
   kind: 'room';
+  /** 2D hub backdrop under public/img/ (hub runtime; 3D scene.ts kept but unused). */
+  backdrop: string;
   camera: CameraShot;
   shots?: Record<string, CameraShot>;
   lighting: {
