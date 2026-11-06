@@ -107,6 +107,12 @@ export function readSave(): SaveV1 {
                   : 'now',
               page: typeof flow.nav.page === 'number' ? flow.nav.page : 0,
               talkSlug: typeof flow.nav.talkSlug === 'string' ? flow.nav.talkSlug : null,
+              practice: flow.nav.practice === true,
+              lvGame:
+                flow.nav.lvGame === 'cross' || flow.nav.lvGame === 'jig' || flow.nav.lvGame === 'slide'
+                  ? flow.nav.lvGame
+                  : undefined,
+              lvN: typeof flow.nav.lvN === 'number' ? flow.nav.lvN : undefined,
             }
           : undefined,
       },

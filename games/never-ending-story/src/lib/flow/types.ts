@@ -139,7 +139,7 @@ export type PracticeGame = Identity & {
   game: 'cross' | 'jig' | 'slide' | 'ex' | 'stirfry' | 'fan' | 'photobox';
   route?: string;
   icon: string;
-  group: 'คำ' | 'ภาพ' | 'ตรรกะ';
+  group: 'คำ' | 'ภาพ' | 'ตรรกะ' | 'ฝีมือ';
   caseNo: string;
   future: boolean;
 };

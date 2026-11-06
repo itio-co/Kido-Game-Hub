@@ -270,6 +270,9 @@ export type FlowProgress = {
     slot: 'yesterday' | 'afternoon' | 'now';
     page: number;
     talkSlug: string | null;
+    practice?: boolean;
+    lvGame?: 'cross' | 'jig' | 'slide';
+    lvN?: number;
   };
 };
 

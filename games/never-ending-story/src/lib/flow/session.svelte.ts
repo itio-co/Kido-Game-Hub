@@ -109,6 +109,11 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
       history = (saved.nav.history as ScreenId[]) ?? [];
       slot = saved.nav.slot ?? 'now';
       page = saved.nav.page ?? 0;
+      practice = saved.nav.practice === true;
+      if (saved.nav.lvGame === 'cross' || saved.nav.lvGame === 'jig' || saved.nav.lvGame === 'slide') {
+        lvGame = saved.nav.lvGame;
+      }
+      if (typeof saved.nav.lvN === 'number' && saved.nav.lvN > 0) lvN = saved.nav.lvN;
       if (saved.nav.talkSlug) {
         // reopen after ready via microtask
         queueMicrotask(() => openDialogue(saved.nav!.talkSlug!));
@@ -138,6 +143,9 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
         slot,
         page,
         talkSlug,
+        practice,
+        lvGame,
+        lvN,
       },
     });
   }
@@ -461,11 +469,12 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
       return `หน้า ${page + 1}/${total}`;
     }
     if (screen === 'difficulty') return 'เลือกได้ใหม่ทุกครั้งที่เริ่มคดี ไม่มีจำกัดเวลา';
-    if (screen === 'practice') return `ปลดล็อกแล้ว ${played.length}/${flow?.practice.length ?? 0}`;
-    if (screen === 'level-map') return 'ผ่านด่านเพื่อปลดล็อกด่านถัดไป';
+    if (screen === 'practice') return '';
+    if (screen === 'level-map') return practice ? '' : 'ผ่านด่านเพื่อปลดล็อกด่านถัดไป';
     if (screen === 'notebook') return `หลักฐาน ${evidence.length}/5`;
     if (screen === 'case-board') return 'ตอบ 3 ข้อ แล้วเลือกหลักฐานยืนยัน';
     if (screen === 'crossword' || screen === 'jigsaw' || screen === 'slide') {
+      if (practice) return '';
       return `${flow?.games.find((item) => item.game === (screen === 'slide' ? 'slide' : screen === 'jigsaw' ? 'jigsaw' : 'crossword'))?.hud ?? ''} · คำใบ้ ${hints}`;
     }
     if (!scene || !flow) return '';

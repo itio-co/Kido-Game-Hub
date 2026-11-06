@@ -397,6 +397,11 @@ dialog.sheet::backdrop { display: none; }
   font-size: var(--fs-sm);
   text-align: center;
   animation: fade-in 300ms linear;
+  pointer-events: none;
+}
+.toast.toast-low {
+  top: auto;
+  bottom: calc(88px + env(safe-area-inset-bottom));
 }
 
 .status, .error {

@@ -59,6 +59,13 @@
     commit();
   });
 
+  const hideEventUi = $derived(
+    playingStirfry
+    || session.practice
+    || session.screen === 'practice'
+    || session.screen === 'level-map'
+  );
+
   function commit(): void {
     writeSave($state.snapshot(save));
   }
@@ -234,7 +241,7 @@
       onHint={onHint}
       onSettings={() => (overlay = overlay === 'settings' ? null : 'settings')}
     />
-    {#if session.screen !== 'player-room' && session.subtitle && !session.talk}
+    {#if !hideEventUi && session.screen !== 'player-room' && session.subtitle && !session.talk}
       <p class="flow-sub">{session.subtitle}</p>
     {/if}
 
@@ -244,7 +251,7 @@
       </svg>
     </button>
 
-    {#if session.screen !== 'event-select' && session.screen !== 'cutscene' && session.screen !== 'ending-comic'}
+    {#if !hideEventUi && session.screen !== 'event-select' && session.screen !== 'cutscene' && session.screen !== 'ending-comic'}
       <button type="button" class="case" onclick={() => (session.screen === 'notebook' ? session.back() : session.go('notebook'))}>
         {room.hud.caseLabel}
       </button>
@@ -284,7 +291,7 @@
     {/if}
 
     {#if session.toastText || toast}
-      <p class="toast" role="status">{session.toastText || toast}</p>
+      <p class="toast" class:toast-low={hideEventUi || session.screen === 'practice'} role="status">{session.toastText || toast}</p>
     {/if}
   {/if}
 </div>

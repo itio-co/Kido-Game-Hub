@@ -19,7 +19,7 @@
     if (value && value.includes('.') && !value.includes(' ')) return t(value);
     return value;
   }
-  const groups = ['ทั้งหมด', 'คำ', 'ภาพ', 'ตรรกะ'];
+  const groups = ['ทั้งหมด', 'คำ', 'ภาพ', 'ตรรกะ', 'ฝีมือ'];
   const livingMarks: Record<number, string> = { 12: '💐', 22: '⭕' };
   const firstWeekday = new Date(2026, 9, 1).getDay();
   const dayCount = 31;
@@ -113,7 +113,10 @@
     </div>
   {:else if session.screen === 'practice'}
     {@const stirBest = readStirFry()}
+    {@const unlockedCount = (session.flow?.practice ?? []).filter((game) => game.game === 'stirfry' || (!game.future && session.played.includes(game.slug))).length}
+    {@const totalCount = session.flow?.practice.length ?? 0}
     <div class="pgrid">
+      <p class="punlock">ปลดล็อกแล้ว {unlockedCount}/{totalCount} · เกมใหม่ปลดล็อกจากคดี</p>
       <div class="chips">
         {#each groups as group (group)}
           <button type="button" class:on={session.category === group} onclick={() => session.setCategory(group)}>{group}</button>
@@ -140,7 +143,9 @@
                 <small>ปลดล็อกจากคดี {game.caseNo}</small>
               {/if}
             </button>
-            <button type="button" class="share" onclick={() => session.copyPracticeLink(game.slug)}>{t('practice.share')}</button>
+            {#if unlocked}
+              <button type="button" class="share" onclick={() => session.copyPracticeLink(game.slug)}>{t('practice.share')}</button>
+            {/if}
           </div>
         {/each}
       </div>
@@ -320,6 +325,7 @@
   .pick button, .mgbtn, .chips button, .link { min-height: 48px; border-radius: 12px; border: 1px solid #39e0ff; background: #0d4a66; color: #fff; font-weight: 800; font-size: var(--fs); padding: 10px 14px; }
   .pick button { display: block; width: min(100%, 280px); margin: 10px auto; }
   .pgrid { background: #163044; }
+  .punlock { margin: 0 0 10px; text-align: center; font-size: var(--fs-sm); font-weight: 700; color: #cfefff; }
   .chips { display: flex; gap: 6px; margin-bottom: 10px; flex-wrap: wrap; }
   .chips button.on { background: #39e0ff; color: #06212f; }
   .cards { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
