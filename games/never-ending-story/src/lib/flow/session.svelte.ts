@@ -116,14 +116,17 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
       slot = saved.nav.slot ?? 'now';
       page = saved.nav.page ?? 0;
       practice = saved.nav.practice === true;
+      // Positive event membership only: never infer 'event' from screen alone
+      // (older saves without nav.context used to wrongly revive สมุดคดี on crossword).
       if (saved.nav.context === 'hub' || saved.nav.context === 'event' || saved.nav.context === 'practice') {
         context = saved.nav.context;
       } else if (practice || navScreen === 'practice' || navScreen === 'level-map') {
         context = 'practice';
-      } else if (EVENT_CASE_SCREENS.has(navScreen) || navScreen === 'cutscene' || navScreen === 'difficulty' || navScreen === 'ending-comic') {
-        context = 'event';
       } else {
+        // Stale pre-context saves are NOT inside an event. Keep the screen so the
+        // player can back out, but never grant event chrome (สมุดคดี / flow-sub).
         context = 'hub';
+        practice = false;
       }
       if (saved.nav.lvGame === 'cross' || saved.nav.lvGame === 'jig' || saved.nav.lvGame === 'slide') {
         lvGame = saved.nav.lvGame;
@@ -553,7 +556,7 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
     get levels() { return levels; },
     get practice() { return practice; },
     get context() { return context; },
-    /** สมุดคดี + event status: only inside an active event play screen. */
+    /** สมุดคดี + event status: only when nav.context was positively set to event. */
     get showCaseUi() {
       return context === 'event' && EVENT_CASE_SCREENS.has(screen);
     },
