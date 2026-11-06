@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { tick } from 'svelte';
   import { imageUrl } from '../../lib/flow/loadFlow';
   import { LEVEL_COUNT, LEVEL_THEME } from '../../lib/flow/puzzles';
   import type { FlowSession } from '../../lib/flow/session.svelte';
@@ -41,6 +42,37 @@
   const levelHeight = LEVEL_COUNT * 110 + 160;
   function levelX(index: number): number { return 50 + 30 * Math.sin(index * 0.9); }
   function levelY(index: number): number { return levelHeight - 110 - index * 110; }
+
+  /** First unfinished unlocked level, or the last level when the path is cleared. */
+  function playableLevelIndex(): number {
+    const row = session.levels[session.lvGame] ?? [];
+    for (let index = 0; index < LEVEL_COUNT; index += 1) {
+      const open = index === 0 || (row[index - 1] ?? 0) > 0;
+      const stars = row[index] ?? 0;
+      if (open && stars === 0) return index;
+    }
+    return LEVEL_COUNT - 1;
+  }
+
+  let lvWrapEl: HTMLDivElement | undefined = $state();
+
+  // Center the current/next playable node whenever the level map opens or
+  // progress changes (e.g. returning after clearing a stage).
+  $effect(() => {
+    if (session.screen !== 'level-map') return;
+    const index = playableLevelIndex();
+    void session.levels[session.lvGame];
+    void session.lvGame;
+    let cancelled = false;
+    void tick().then(() => {
+      if (cancelled) return;
+      const node = lvWrapEl?.querySelector<HTMLElement>(`[data-level="${index}"]`);
+      if (!node) return;
+      const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      node.scrollIntoView({ block: 'center', inline: 'nearest', behavior: reduce ? 'auto' : 'smooth' });
+    });
+    return () => { cancelled = true; };
+  });
 </script>
 
 <div class="flow">
@@ -152,7 +184,7 @@
     </div>
   {:else if session.screen === 'level-map'}
     {@const theme = LEVEL_THEME[session.lvGame]}
-    <div class="lvwrap" style="background:{theme.bg}">
+    <div class="lvwrap" style="background:{theme.bg}" bind:this={lvWrapEl}>
       <div class="lvboard" style="height:{levelHeight}px">
         {#each Array.from({ length: LEVEL_COUNT }, (_, index) => index) as index (index)}
           {@const stars = session.levels[session.lvGame][index] ?? 0}
@@ -163,6 +195,7 @@
             class:done={stars > 0}
             class:open={stars === 0 && open}
             class:lock={!open}
+            data-level={index}
             style="left:{levelX(index)}%;top:{levelY(index)}px"
             onclick={() => session.openLevel(index)}
           >
