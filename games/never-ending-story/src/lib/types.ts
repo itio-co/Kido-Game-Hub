@@ -250,6 +250,8 @@ export type CaseState = {
   facts: Record<string, boolean>;
 };
 
+export type NavContext = 'hub' | 'event' | 'practice';
+
 export type FlowProgress = {
   evidence: string[];
   solved: boolean;
@@ -270,6 +272,7 @@ export type FlowProgress = {
     slot: 'yesterday' | 'afternoon' | 'now';
     page: number;
     talkSlug: string | null;
+    context?: NavContext;
     practice?: boolean;
     lvGame?: 'cross' | 'jig' | 'slide';
     lvN?: number;

@@ -59,12 +59,6 @@
     commit();
   });
 
-  const hideEventUi = $derived(
-    playingStirfry
-    || session.practice
-    || session.screen === 'practice'
-    || session.screen === 'level-map'
-  );
 
   function commit(): void {
     writeSave($state.snapshot(save));
@@ -78,6 +72,15 @@
     }, 2200);
   }
 
+  function onCalendarEntry(message: string, kind?: string): void {
+    if (kind === 'daily-practice') {
+      overlay = null;
+      session.enterPractice();
+      return;
+    }
+    showToast(message);
+  }
+
   function choose(id: string): void {
     if (!room) return;
     if (selectedId === id) {
@@ -88,7 +91,7 @@
         decorSlotId = hotspot.id;
         overlay = 'decor';
       } else if (hotspot.action === 'event-select') void session.go('event-select');
-      else if (hotspot.action === 'practice') void session.go('practice');
+      else if (hotspot.action === 'practice') session.enterPractice();
       else if (hotspot.action === 'calendar') overlay = 'calendar';
       else if (hotspot.action === 'case-board') void session.go('notebook');
       return;
@@ -241,7 +244,7 @@
       onHint={onHint}
       onSettings={() => (overlay = overlay === 'settings' ? null : 'settings')}
     />
-    {#if !hideEventUi && session.screen !== 'player-room' && session.subtitle && !session.talk}
+    {#if session.subtitle && !session.talk && (session.showCaseUi || session.screen === 'cutscene' || session.screen === 'ending-comic' || session.screen === 'difficulty')}
       <p class="flow-sub">{session.subtitle}</p>
     {/if}
 
@@ -251,8 +254,8 @@
       </svg>
     </button>
 
-    {#if !hideEventUi && session.screen !== 'event-select' && session.screen !== 'cutscene' && session.screen !== 'ending-comic'}
-      <button type="button" class="case" onclick={() => (session.screen === 'notebook' ? session.back() : session.go('notebook'))}>
+    {#if session.showCaseUi}
+      <button type="button" class="case" data-testid="case-notebook" onclick={() => (session.screen === 'notebook' ? session.back() : session.go('notebook'))}>
         {room.hud.caseLabel}
       </button>
     {/if}
@@ -271,7 +274,7 @@
         {themeId}
         solvedCaseIds={save.knowledge.solvedCaseIds}
         onTheme={setTheme}
-        onEntry={showToast}
+        onEntry={onCalendarEntry}
         onClose={() => (overlay = null)}
       />
     {:else if overlay === 'decor' && decorHotspot}
@@ -291,7 +294,7 @@
     {/if}
 
     {#if session.toastText || toast}
-      <p class="toast" class:toast-low={hideEventUi || session.screen === 'practice'} role="status">{session.toastText || toast}</p>
+      <p class="toast" class:toast-low={session.context !== 'event'} role="status">{session.toastText || toast}</p>
     {/if}
   {/if}
 </div>

@@ -30,6 +30,11 @@ import { tapFanEgg } from '../eggs';
 export type TalkChoice = { title: string; run: () => void };
 export type Talk = { who: string; text: string; choices: TalkChoice[] };
 
+const EVENT_CASE_SCREENS = new Set<ScreenId>([
+  'house-map', 'living-room', 'study', 'kitchen', 'kitchen-close', 'table', 'tray',
+  'grandma', 'uncle', 'star-box', 'crossword', 'jigsaw', 'slide', 'notebook', 'case-board', 'album',
+]);
+
 const PUZZLE_SCREEN: Record<PuzzleKey, ScreenId> = {
   cross: 'crossword',
   jig: 'jigsaw',
@@ -68,6 +73,7 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
   let seen = $state<string[]>([]);
   let levels = $state<FlowProgress['levels']>({ cross: [], jig: [], slide: [] });
   let practice = $state(false);
+  let context = $state<NavContext>('hub');
   let lvGame = $state<PuzzleKey>('cross');
   let lvN = $state(1);
   let category = $state('ทั้งหมด');
@@ -110,6 +116,15 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
       slot = saved.nav.slot ?? 'now';
       page = saved.nav.page ?? 0;
       practice = saved.nav.practice === true;
+      if (saved.nav.context === 'hub' || saved.nav.context === 'event' || saved.nav.context === 'practice') {
+        context = saved.nav.context;
+      } else if (practice || navScreen === 'practice' || navScreen === 'level-map') {
+        context = 'practice';
+      } else if (EVENT_CASE_SCREENS.has(navScreen) || navScreen === 'cutscene' || navScreen === 'difficulty' || navScreen === 'ending-comic') {
+        context = 'event';
+      } else {
+        context = 'hub';
+      }
       if (saved.nav.lvGame === 'cross' || saved.nav.lvGame === 'jig' || saved.nav.lvGame === 'slide') {
         lvGame = saved.nav.lvGame;
       }
@@ -143,6 +158,7 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
         slot,
         page,
         talkSlug,
+        context,
         practice,
         lvGame,
         lvN,
@@ -242,6 +258,20 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
     selected = null;
     overlay = null;
     talk = null;
+    if (next === 'player-room' || next === 'event-select') {
+      context = 'hub';
+      practice = false;
+    } else if (
+      next === 'practice'
+      || next === 'level-map'
+      || (context === 'practice' && (next === 'crossword' || next === 'jigsaw' || next === 'slide'))
+    ) {
+      context = 'practice';
+    } else if (next === 'cutscene' || next === 'difficulty' || next === 'ending-comic' || EVENT_CASE_SCREENS.has(next)) {
+      context = 'event';
+      // in-event minigames are not practice mode
+      if (next === 'crossword' || next === 'jigsaw' || next === 'slide') practice = false;
+    }
     if (runEnter) enter(next);
     persist();
     await wait(30);
@@ -315,6 +345,8 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
       caseDone = true;
       talk = null;
       talkSlug = null;
+      context = 'hub';
+      practice = false;
       persist();
       history = [];
       await go('player-room', true, false);
@@ -385,6 +417,17 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
       return;
     }
     showToast(`คำใบ้: ไปที่ ${goal.room} แล้วแตะ “${goal.object}”`);
+  }
+
+  function setContext(next: NavContext): void {
+    context = next;
+    if (next !== 'practice') {
+      // leaving practice mode clears the practice puzzle flag
+      // (practice list itself uses context==='practice' with practice===false)
+    }
+    if (next === 'hub' || next === 'event') {
+      // keep practice boolean managed by start/endPractice
+    }
   }
 
   function endPractice(): void {
@@ -509,6 +552,16 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
     get seen() { return seen; },
     get levels() { return levels; },
     get practice() { return practice; },
+    get context() { return context; },
+    /** สมุดคดี + event status: only inside an active event play screen. */
+    get showCaseUi() {
+      return context === 'event' && EVENT_CASE_SCREENS.has(screen);
+    },
+    enterPractice() {
+      context = 'practice';
+      practice = false;
+      void go('practice');
+    },
     get lvGame() { return lvGame; },
     get lvN() { return lvN; },
     get category() { return category; },
@@ -539,6 +592,12 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
       if (!prev) { showToast('อยู่หน้านี้แล้ว'); return; }
       history = history.slice(0, -1);
       if (prev === 'player-room' || prev === 'level-map') endPractice();
+      if (prev === 'player-room' || prev === 'event-select') {
+        context = 'hub';
+        practice = false;
+      } else if (prev === 'practice' || prev === 'level-map') {
+        context = 'practice';
+      }
       await go(prev, true, prev !== 'uncle');
     },
     tapSpot(spot: FlowSpot) {
@@ -565,6 +624,8 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
         return;
       }
       page = 0;
+      context = 'event';
+      practice = false;
       void go('cutscene');
     },
     nextPage() {
@@ -609,6 +670,8 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
     },
     skipToMap() {
       if (!caseDone) return;
+      context = 'event';
+      practice = false;
       history = ['player-room', 'event-select'];
       void go('house-map', true, false);
     },
@@ -617,10 +680,14 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
       poster = true;
       solved = true;
       page = 0;
+      context = 'event';
+      practice = false;
       void go('ending-comic', true, false);
     },
     pickDifficulty(name: string) {
       difficulty = name;
+      context = 'event';
+      practice = false;
       persist();
       showToast(`ระดับ: ${name}`);
       // Fresh event entry lands in living room; house map stays via แผนผังบ้าน.
@@ -631,6 +698,7 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
     openPractice(slug: string) {
       const card = flow?.practice.find((item) => item.slug === slug);
       if (!card) return;
+      context = 'practice';
       if (card.game === 'stirfry') {
         seen = seen.includes(slug) ? seen : [...seen, slug];
         if (!played.includes(slug)) played = [...played, slug];
@@ -665,6 +733,7 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
       const open = index === 0 || (row[index - 1] ?? 0) > 0;
       if (!open) { showToast('ผ่านด่านก่อนหน้าก่อนนะ'); return; }
       lvN = index + 1;
+      context = 'practice';
       practice = true;
       hints = 0;
       startPractice(lvGame, lvN);

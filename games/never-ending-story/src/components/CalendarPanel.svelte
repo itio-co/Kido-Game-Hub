@@ -13,7 +13,7 @@
     themeId: string;
     solvedCaseIds: string[];
     onTheme: (id: string) => void;
-    onEntry: (message: string) => void;
+    onEntry: (message: string, kind?: string) => void;
     onClose: () => void;
   } = $props();
 
@@ -74,7 +74,10 @@
               <button
                 type="button"
                 onclick={() =>
-                  onEntry(entry.eventRef ? `${entry.title} — ออกทางประตูเพื่อเลือกเหตุการณ์` : entry.title)}
+                  onEntry(
+                    entry.eventRef ? `${entry.title} — ออกทางประตูเพื่อเลือกเหตุการณ์` : entry.title,
+                    entry.type,
+                  )}
               >
                 {entry.icon} {dayLabel(entry.date)} {entry.title}
               </button>
