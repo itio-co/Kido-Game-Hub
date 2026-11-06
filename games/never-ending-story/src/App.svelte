@@ -10,6 +10,7 @@
   import SettingsPanel from './components/SettingsPanel.svelte';
   import Sheet from './components/Sheet.svelte';
   import VersionBadge from './components/VersionBadge.svelte';
+  import StirFryGame from './components/minigames/StirFryGame.svelte';
   import { loadFlow } from './lib/flow/loadFlow';
   import { createFlow } from './lib/flow/session.svelte';
   import { loadPlayerRoom } from './lib/loadRoom';
@@ -33,6 +34,7 @@
   let route = $state(window.location.hash);
   const showcasing = $derived(route.startsWith('#/showcase'));
   const editing = $derived(route.startsWith('#/editor'));
+  const playingStirfry = $derived(route.startsWith('#/play/stirfry'));
 
   const calendar = $derived.by((): CalendarEntity | null => {
     const found = room?.objects.find((obj) => obj.kind === 'calendar');
@@ -79,7 +81,7 @@
         decorSlotId = hotspot.id;
         overlay = 'decor';
       } else if (hotspot.action === 'event-select') void session.go('event-select');
-      else if (hotspot.action === 'practice') void session.go('practice');
+      else if (hotspot.action === 'practice') { window.location.hash = '#/play/stirfry'; route = '#/play/stirfry'; }
       else if (hotspot.action === 'calendar') overlay = 'calendar';
       else if (hotspot.action === 'case-board') void session.go('notebook');
       return;
@@ -205,6 +207,8 @@
     <p class="status">กำลังเปิดห้อง…</p>
   {:else if showcasing}
     <ShowcaseView {room} />
+  {:else if playingStirfry}
+    <StirFryGame onExit={() => { window.location.hash = ''; route = ''; }} />
   {:else}
     <div class="stage" class:is-fading={session.fading}>
       <div class="room-layer" class:hidden={session.screen !== 'player-room'}>
