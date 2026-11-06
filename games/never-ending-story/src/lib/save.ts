@@ -1,4 +1,5 @@
 import type { FlowProgress, SaveV1, TextSize } from './types';
+import { markDirty } from './cloudSync';
 
 export const SAVE_KEY = 'nesg.player.v1';
 
@@ -129,4 +130,5 @@ export function readSave(): SaveV1 {
 
 export function writeSave(save: SaveV1): void {
   localStorage.setItem(SAVE_KEY, JSON.stringify(save));
+  markDirty();
 }

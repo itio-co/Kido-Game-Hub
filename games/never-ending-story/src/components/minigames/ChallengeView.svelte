@@ -11,6 +11,7 @@
   } from '../../lib/challenge';
   import { appendRun, newSessionId } from '../../lib/runLog';
   import { packRun, unpackRun } from '../../lib/runProto';
+  import { submitRun } from '../../lib/cloudSync';
 
   let { params, onExit, onBoard }: { params: ChallengeParams; onExit: () => void; onBoard: () => void } = $props();
 
@@ -60,6 +61,8 @@
   if (params.runToken && run.from) {
     void unpackRun(params.runToken).then((res) => {
       verified = !!res?.valid;
+      // Record the challenger's embedded run once (unverified: it is not ranked online).
+      if (res?.valid && params.runToken) submitRun(params.runToken, false);
       if (res?.valid && run.from) {
         run.from = { nick: res.run.nickname || run.from.nick, score: res.run.score, time: Math.floor(res.run.timeMs / 1000), sessionId: res.run.sessionId };
       }
@@ -222,6 +225,7 @@
       challengerScore: run.from?.score ?? 0, challengerTimeMs: (run.from?.time ?? 0) * 1000,
     }).catch(() => '');
     run.token = lastToken;
+    if (lastToken) submitRun(lastToken, true);
     try {
       await appendRun({
         sessionId: run.sessionId, playerId: me.playerId, nickname: me.nickname, game: run.game, difficulty: run.difficulty,

@@ -48,6 +48,7 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
   if (url.pathname.endsWith('/sw.js')) return;
+  if (url.pathname.includes('/api/')) return; // live API, never cached
   event.respondWith(fromCacheOrNetwork(request));
 });
 

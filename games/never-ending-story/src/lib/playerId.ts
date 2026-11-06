@@ -43,5 +43,6 @@ export function setNickname(nickname: string): PlayerIdState {
   const state = readPlayerId();
   state.nickname = nickname.trim().slice(0, 24) || null;
   localStorage.setItem(KEY, JSON.stringify(state));
+  if (state.nickname) void import('./cloudSync').then((m) => m.pushNickname(state.nickname as string));
   return state;
 }

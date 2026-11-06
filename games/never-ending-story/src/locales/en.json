@@ -110,7 +110,7 @@
   "board.title": "Leaderboard",
   "board.you": "you",
   "board.empty": "No scores yet — try a challenge",
-  "board.localOnly": "Scores on this device + challengers from links (no online board yet)",
+  "board.localOnly": "Scores on this device + challengers from links",
   "challenge.word.1": "ดาว|จุดส่องแสงบนท้องฟ้ายามค่ำคืน",
   "challenge.word.2": "งาม|อีกคำที่หมายถึง “สวย”",
   "challenge.word.3": "บ้าน|ที่อยู่อาศัยของครอบครัว",
@@ -123,5 +123,9 @@
   "challenge.word.10": "รูป|ภาพถ่ายในอัลบั้ม",
   "challenge.word.11": "นาฬิกา|บอกเวลา",
   "challenge.word.12": "ตลาด|ที่ซื้อขายผักปลา",
-  "challenge.unverified": "link edited, not verified"
+  "challenge.unverified": "link edited, not verified",
+  "board.online": "Online",
+  "board.local": "This device",
+  "board.loading": "Loading…",
+  "board.onlineNote": "Best run per player, verified players only"
 }
