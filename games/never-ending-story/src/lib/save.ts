@@ -36,6 +36,9 @@ export function defaultFlow(): FlowProgress {
     played: [],
     seen: [],
     levels: { cross: [], jig: [], slide: [] },
+    poster: false,
+    caseDone: false,
+    nav: undefined,
   };
 }
 
@@ -90,6 +93,22 @@ export function readSave(): SaveV1 {
           jig: stars(levels.jig),
           slide: stars(levels.slide),
         },
+        poster: flow.poster === true,
+        caseDone: flow.caseDone === true,
+        nav: isRecord(flow.nav)
+          ? {
+              screen: typeof flow.nav.screen === 'string' ? flow.nav.screen : 'player-room',
+              history: Array.isArray(flow.nav.history)
+                ? flow.nav.history.filter((item): item is string => typeof item === 'string')
+                : [],
+              slot:
+                flow.nav.slot === 'yesterday' || flow.nav.slot === 'afternoon' || flow.nav.slot === 'now'
+                  ? flow.nav.slot
+                  : 'now',
+              page: typeof flow.nav.page === 'number' ? flow.nav.page : 0,
+              talkSlug: typeof flow.nav.talkSlug === 'string' ? flow.nav.talkSlug : null,
+            }
+          : undefined,
       },
     };
   } catch {

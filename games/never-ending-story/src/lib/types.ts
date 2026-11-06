@@ -259,6 +259,18 @@ export type FlowProgress = {
   played: string[];
   seen: string[];
   levels: { cross: number[]; jig: number[]; slide: number[] };
+  /** Player picked up the postcard/poster from the album. */
+  poster: boolean;
+  /** Case-01 fully finished (ending comic done / home). Enables replay skip. */
+  caseDone: boolean;
+  /** Restored navigation after refresh. */
+  nav?: {
+    screen: string;
+    history: string[];
+    slot: 'yesterday' | 'afternoon' | 'now';
+    page: number;
+    talkSlug: string | null;
+  };
 };
 
 export type SaveV1 = {

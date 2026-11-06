@@ -24,7 +24,8 @@ export type ScreenId =
   | 'case-board'
   | 'album'
   | 'practice'
-  | 'level-map';
+  | 'level-map'
+  | 'ending-comic';
 
 export type FlowAction =
   | { type: 'go'; screen: ScreenId }
@@ -36,7 +37,10 @@ export type FlowAction =
   | { type: 'calendar' }
   | { type: 'minigame'; screen: 'crossword' | 'jigsaw' | 'slide' }
   | { type: 'box-lock' }
-  | { type: 'home' };
+  | { type: 'home' }
+  | { type: 'take-poster' }
+  | { type: 'ending-comic' }
+  | { type: 'egg-fan' };
 
 export type ScreenDef = Identity & {
   kind: 'screen';

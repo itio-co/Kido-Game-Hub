@@ -2,7 +2,6 @@
   import { onMount } from 'svelte';
   import EditorView from './components/EditorView.svelte';
   import CalendarPanel from './components/CalendarPanel.svelte';
-  import DemoRibbon from './components/DemoRibbon.svelte';
   import FlowView from './components/flow/FlowView.svelte';
   import Hud from './components/Hud.svelte';
   import Onboarding from './components/Onboarding.svelte';
@@ -52,7 +51,7 @@
   const session = createFlow((progress) => {
     save.flow = progress;
     save.knowledge.evidence = [...progress.evidence];
-    if (progress.solved && !save.knowledge.solvedCaseIds.includes('case-01')) {
+    if (progress.caseDone && !save.knowledge.solvedCaseIds.includes('case-01')) {
       save.knowledge.solvedCaseIds = [...save.knowledge.solvedCaseIds, 'case-01'];
     }
     commit();
@@ -177,7 +176,12 @@
     window.addEventListener('hashchange', onHash);
     loadFlow()
       .then((loaded) => {
-        if (!ac.signal.aborted) session.use(loaded.flow, loaded.screens, save.flow);
+        if (ac.signal.aborted) return;
+        session.use(loaded.flow, loaded.screens, save.flow);
+        const hash = window.location.hash;
+        if (hash === '#ending-comic' || hash === '#/ending-comic') {
+          session.jumpEndingComic();
+        }
       })
       .catch((reason: unknown) => {
         if (!ac.signal.aborted) showToast(reason instanceof Error ? reason.message : 'เปิดหน้าจอไม่ได้');
@@ -215,7 +219,6 @@
       </div>
       {#if session.ready && session.screen !== 'player-room'}
         <FlowView {session} />
-        <DemoRibbon show={session.status === 'demo'} />
       {/if}
     </div>
 
@@ -223,7 +226,7 @@
       title={session.screen === 'player-room' ? room.title : session.title}
       hintLabel={room.hud.hintLabel}
       settingsLabel={room.hud.settingsLabel}
-      showHint={!['event-select', 'cutscene', 'difficulty', 'practice', 'level-map', 'crossword', 'jigsaw', 'slide'].includes(session.screen)}
+      showHint={!['event-select', 'cutscene', 'ending-comic', 'difficulty', 'practice', 'level-map', 'crossword', 'jigsaw', 'slide'].includes(session.screen)}
       onHint={onHint}
       onSettings={() => (overlay = overlay === 'settings' ? null : 'settings')}
     />
@@ -237,7 +240,7 @@
       </svg>
     </button>
 
-    {#if session.screen !== 'event-select' && session.screen !== 'cutscene'}
+    {#if session.screen !== 'event-select' && session.screen !== 'cutscene' && session.screen !== 'ending-comic'}
       <button type="button" class="case" onclick={() => (session.screen === 'notebook' ? session.back() : session.go('notebook'))}>
         {room.hud.caseLabel}
       </button>

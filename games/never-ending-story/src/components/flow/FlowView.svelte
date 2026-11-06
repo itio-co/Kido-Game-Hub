@@ -3,13 +3,21 @@
   import { LEVEL_COUNT, LEVEL_THEME } from '../../lib/flow/puzzles';
   import type { FlowSession } from '../../lib/flow/session.svelte';
   import type { FlowSpot } from '../../lib/flow/types';
+  import { t } from '../../lib/i18n';
+  import { readEggs } from '../../lib/eggs';
   import ImageScene from './ImageScene.svelte';
   import Minigames from './Minigames.svelte';
 
   let { session }: { session: FlowSession } = $props();
 
-  const pages = $derived(session.flow?.pages.filter((item) => item.eventId === 'case-01') ?? []);
+  const introPages = $derived(session.flow?.pages.filter((item) => item.eventId === 'case-01') ?? []);
+  const endingPages = $derived(session.flow?.pages.filter((item) => item.eventId === 'case-01-ending') ?? []);
+  const pages = $derived(session.screen === 'ending-comic' ? endingPages : introPages);
   const cut = $derived(pages[session.page] ?? null);
+  function loc(value: string): string {
+    if (value && value.includes('.') && !value.includes(' ')) return t(value);
+    return value;
+  }
   const groups = ['ทั้งหมด', 'คำ', 'ภาพ', 'ตรรกะ'];
   const livingMarks: Record<number, string> = { 12: '💐', 22: '⭕' };
   const firstWeekday = new Date(2026, 9, 1).getDay();
@@ -52,7 +60,7 @@
     <div class="evlist">
       <p class="evh">ออกจากห้องแล้ว จะไปไหนดีนะ?</p>
       {#each session.flow?.events ?? [] as event (event.id)}
-        {@const open = !event.unlockAfter}
+        {@const open = !event.unlockAfter || (event.unlockAfter === 'case-01' && session.caseDone)}
         <button type="button" class="evcard" class:off={!open} onclick={() => session.openEvent(event.eventId)}>
           <img src={imageUrl(event.cover)} alt="" />
           {#if open}
@@ -62,25 +70,38 @@
           {/if}
           <span class="evt">
             <b>{open ? event.title : '???'}</b>
-            <small>{open ? event.subtitle : session.solved && event.unlockAfter === 'case-01' ? 'เร็ว ๆ นี้' : event.lockedHint}</small>
+            <small>{open ? event.subtitle : session.caseDone && event.unlockAfter === 'case-01' ? 'เร็ว ๆ นี้' : event.lockedHint}</small>
           </span>
         </button>
       {/each}
     </div>
-  {:else if session.screen === 'cutscene' && cut}
+  {:else if (session.screen === 'cutscene' || session.screen === 'ending-comic') && cut}
     <button type="button" class="cs" onclick={() => session.nextPage()}>
       <img src={imageUrl(cut.image)} alt="" />
       {#each cut.lines as line (line.id)}
-        <span class="bub" style="left:{line.x}%;top:{line.y}%;max-width:{line.w}%"><b>{line.who}</b>{line.text}</span>
+        <span class="bub" style="left:{line.x}%;top:{line.y}%;max-width:{line.w}%"><b>{line.who}</b>{loc(line.text)}</span>
       {/each}
-      <span class="cap">{cut.caption}</span>
-      <span class="tapnext">{session.page < pages.length - 1 ? 'แตะเพื่ออ่านต่อ' : 'แตะเพื่อเริ่มคดี'}</span>
+      <span class="cap">{loc(cut.caption)}</span>
+      <span class="tapnext">
+        {#if session.screen === 'ending-comic'}
+          {session.page < pages.length - 1 ? t('ending.tapNext') : t('ending.tapDone')}
+        {:else}
+          {session.page < pages.length - 1 ? 'แตะเพื่ออ่านต่อ' : 'แตะเพื่อเริ่มคดี'}
+        {/if}
+      </span>
       <span class="dots">{#each pages as _, index (index)}<i class:on={index === session.page}></i>{/each}</span>
     </button>
     {#if session.page > 0}
-      <button type="button" class="prev" onclick={() => session.prevPage()}>ก่อนหน้า</button>
+      <button type="button" class="prev" onclick={() => session.prevPage()}>{session.screen === 'ending-comic' ? t('ending.prev') : 'ก่อนหน้า'}</button>
     {/if}
-    <button type="button" class="skip" onclick={() => session.skipCutscene()}>ข้าม</button>
+    {#if session.screen === 'ending-comic' || session.caseDone}
+      <button type="button" class="skip" class:loud={session.caseDone && session.screen !== 'ending-comic'} onclick={() => session.skipCutscene()}>
+        {session.screen === 'ending-comic' ? t('ending.skip') : t('skip.intro')}
+      </button>
+    {/if}
+    {#if session.screen === 'cutscene' && session.caseDone}
+      <button type="button" class="skip mapskip" onclick={() => session.skipToMap()}>{t('skip.intro')} → แผนผัง</button>
+    {/if}
   {:else if session.screen === 'difficulty'}
     <div class="pick">
       <h1>เลือกระดับความยากของคดีนี้</h1>
@@ -247,6 +268,17 @@
       </div>
     </div>
   {/if}
+
+  {#if session.eggReveal}
+    <div class="egg-modal" role="dialog" aria-label={t('egg.revealTitle')}>
+      <div class="egg-card">
+        <img src={imageUrl('egg-young-grandpa.webp')} alt="" />
+        <h2>{t('egg.revealTitle')}</h2>
+        <p>{t('egg.revealBody')}</p>
+        <button type="button" onclick={() => session.closeEgg()}>{t('egg.close')}</button>
+      </div>
+    </div>
+  {/if}
 </div>
 
 <style>
@@ -334,4 +366,12 @@
   .clue button { background: rgba(255, 220, 200, 0.85); }
   .calx { position: absolute; right: 22px; top: 78px; width: 36px; height: 36px; border-radius: 50%; border: 0; background: #fff; color: #333; font-size: 18px; }
   .link { margin-top: 8px; background: #fff; color: #4a2e18; border: 1px solid #888; }
+  .skip.loud { background: #39e0ff; color: #06212f; font-weight: 800; }
+  .skip.mapskip { right: 12px; bottom: 56px; }
+  .egg-modal { position: absolute; inset: 0; z-index: 20; background: rgba(0,0,0,0.55); display: grid; place-items: center; padding: 24px; }
+  .egg-card { width: min(100%, 320px); background: #0d2a3c; border: 2px solid #39e0ff; border-radius: 16px; padding: 16px; text-align: center; }
+  .egg-card img { width: 160px; height: 160px; object-fit: contain; margin: 0 auto 10px; display: block; }
+  .egg-card h2 { margin: 0 0 8px; font-size: calc(var(--fs) + 4px); }
+  .egg-card p { margin: 0 0 12px; font-size: var(--fs-sm); line-height: 1.4; }
+  .egg-card button { min-height: 44px; border-radius: 12px; border: 0; background: #39e0ff; color: #06212f; font-weight: 800; padding: 8px 16px; }
 </style>

@@ -24,6 +24,8 @@ import type {
   ScreenId,
   ScreenRegistry,
 } from './types';
+import { t } from '../i18n';
+import { tapFanEgg } from '../eggs';
 
 export type TalkChoice = { title: string; run: () => void };
 export type Talk = { who: string; text: string; choices: TalkChoice[] };
@@ -57,6 +59,10 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
   let solved = $state(false);
   let deduced = $state(false);
   let reward = $state(false);
+  let poster = $state(false);
+  let caseDone = $state(false);
+  let talkSlug = $state<string | null>(null);
+  let eggReveal = $state(false);
   let difficulty = $state('ปานกลาง');
   let played = $state<string[]>([]);
   let seen = $state<string[]>([]);
@@ -94,7 +100,20 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
       jig: [...(saved?.levels.jig ?? [])],
       slide: [...(saved?.levels.slide ?? [])],
     };
+    poster = saved?.poster === true;
+    caseDone = saved?.caseDone === true;
     ready = true;
+    if (saved?.nav?.screen) {
+      const navScreen = saved.nav.screen as ScreenId;
+      screen = navScreen;
+      history = (saved.nav.history as ScreenId[]) ?? [];
+      slot = saved.nav.slot ?? 'now';
+      page = saved.nav.page ?? 0;
+      if (saved.nav.talkSlug) {
+        // reopen after ready via microtask
+        queueMicrotask(() => openDialogue(saved.nav!.talkSlug!));
+      }
+    }
   }
 
   const scene = $derived(flow?.scenes.find((item) => item.screen === screen) ?? null);
@@ -111,6 +130,15 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
       played: [...played],
       seen: [...seen],
       levels: { cross: [...levels.cross], jig: [...levels.jig], slide: [...levels.slide] },
+      poster,
+      caseDone,
+      nav: {
+        screen,
+        history: [...history],
+        slot,
+        page,
+        talkSlug,
+      },
     });
   }
 
@@ -146,18 +174,28 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
     }
     const found = flow?.dialogues.find((item) => item.slug === slug);
     if (!found) return;
+    talkSlug = slug;
     talk = {
       who: found.who,
-      text: found.text,
+      text: resolveText(found.text),
       choices: found.choices.map((choice) => ({
-        title: choice.title,
+        title: resolveText(choice.title),
         run: () => {
           talk = null;
+          talkSlug = null;
+          persist();
           if (choice.next) openDialogue(choice.next);
           else if (choice.action) void perform(choice.action);
         },
       })),
     };
+    persist();
+  }
+
+  function resolveText(value: string): string {
+    if (!value) return value;
+    if (value.includes('.') && !value.includes(' ')) return t(value);
+    return value;
   }
 
   function openLines(who: string, lines: string[], index = 0): void {
@@ -177,6 +215,10 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
     const found = flow?.scenes.find((item) => item.screen === next);
     if (next === 'uncle') addEvidence('E03');
     if (!found) return;
+    if (next === 'grandma' && solved) {
+      openDialogue(poster ? 'flow/dialogue/grandma-win' : 'flow/dialogue/grandma-need-poster');
+      return;
+    }
     const slug = solved && found.enterWhenSolved ? found.enterWhenSolved : found.enter;
     if (slug) openDialogue(slug);
   }
@@ -193,6 +235,7 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
     overlay = null;
     talk = null;
     if (runEnter) enter(next);
+    persist();
     await wait(30);
     fading = false;
   }
@@ -261,11 +304,39 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
     }
     if (action.type === 'home') {
       reward = true;
+      caseDone = true;
+      talk = null;
+      talkSlug = null;
       persist();
       history = [];
-      talk = null;
       await go('player-room', true, false);
-      showToast('กลับถึงบ้านแล้ว แตะช่องว่างเพื่อวางรูปตา');
+      showToast(t('toast.caseComplete'));
+      return;
+    }
+    if (action.type === 'take-poster') {
+      poster = true;
+      persist();
+      showToast(t('toast.posterTaken'));
+      return;
+    }
+    if (action.type === 'ending-comic') {
+      page = 0;
+      talk = null;
+      talkSlug = null;
+      await go('ending-comic', false, false);
+      return;
+    }
+    if (action.type === 'egg-fan') {
+      const result = tapFanEgg();
+      if (result.unlocked) {
+        eggReveal = true;
+        showToast(t('toast.eggFound'));
+      } else if (result.state.fanSticker) {
+        eggReveal = true;
+      } else {
+        showToast('…');
+      }
+      return;
     }
   }
 
@@ -385,6 +456,10 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
   const subtitle = $derived.by(() => {
     if (screen === 'event-select') return 'แตะการ์ดเพื่อเริ่มเหตุการณ์';
     if (screen === 'cutscene') return `หน้า ${page + 1}/3`;
+    if (screen === 'ending-comic') {
+      const total = flow?.pages.filter((item) => item.eventId === 'case-01-ending').length ?? 5;
+      return `หน้า ${page + 1}/${total}`;
+    }
     if (screen === 'difficulty') return 'เลือกได้ใหม่ทุกครั้งที่เริ่มคดี ไม่มีจำกัดเวลา';
     if (screen === 'practice') return `ปลดล็อกแล้ว ${played.length}/${flow?.practice.length ?? 0}`;
     if (screen === 'level-map') return 'ผ่านด่านเพื่อปลดล็อกด่านถัดไป';
@@ -394,8 +469,11 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
       return `${flow?.games.find((item) => item.game === (screen === 'slide' ? 'slide' : screen === 'jigsaw' ? 'jigsaw' : 'crossword'))?.hud ?? ''} · คำใบ้ ${hints}`;
     }
     if (!scene || !flow) return '';
+    if (poster && solved && !caseDone) {
+      return `${t('hud.takePoster')} · ${t('hud.evidence', { n: evidence.length })}`;
+    }
     const clock = scene.timed ? `⏳ ${flow.slots.find((item) => item.slot === slot)?.title ?? ''} · ` : '';
-    return `${clock}${scene.hud} · หลักฐาน ${evidence.length}/5`;
+    return `${clock}${scene.hud} · ${t('hud.evidence', { n: evidence.length })}`;
   });
 
   return {
@@ -414,6 +492,9 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
     get solved() { return solved; },
     get deduced() { return deduced; },
     get reward() { return reward; },
+    get poster() { return poster; },
+    get caseDone() { return caseDone; },
+    get eggReveal() { return eggReveal; },
     get difficulty() { return difficulty; },
     get played() { return played; },
     get seen() { return seen; },
@@ -439,7 +520,7 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
     starText: () => starText(hints),
     showToast,
     exploreHint,
-    closeTalk() { talk = null; },
+    closeTalk() { talk = null; talkSlug = null; persist(); },
     closeOverlay() { overlay = null; },
     async go(next: ScreenId) { await go(next); },
     async back() {
@@ -454,9 +535,13 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
     tapSpot(spot: FlowSpot) {
       if (selected === spot.id) {
         selected = null;
-        const action = spot.slug === 'flow/grandma/talk' && solved
-          ? { type: 'dialogue' as const, dialogue: 'flow/dialogue/grandma-win' }
-          : spot.action;
+        const action =
+          spot.slug === 'flow/grandma/talk' && solved
+            ? {
+                type: 'dialogue' as const,
+                dialogue: poster ? 'flow/dialogue/grandma-win' : 'flow/dialogue/grandma-need-poster',
+              }
+            : spot.action;
         void perform(action);
         return;
       }
@@ -467,13 +552,23 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
       const event = flow?.events.find((item) => item.eventId === eventId);
       if (!event) return;
       if (event.unlockAfter) {
-        showToast(solved && event.unlockAfter === 'case-01' ? 'เร็ว ๆ นี้' : event.lockedHint ?? 'ยังล็อกอยู่');
+        showToast(caseDone && event.unlockAfter === 'case-01' ? 'เร็ว ๆ นี้' : event.lockedHint ?? 'ยังล็อกอยู่');
         return;
       }
       page = 0;
       void go('cutscene');
     },
     nextPage() {
+      if (screen === 'ending-comic') {
+        const pages = flow?.pages.filter((item) => item.eventId === 'case-01-ending') ?? [];
+        if (page < pages.length - 1) {
+          page += 1;
+          persist();
+          return;
+        }
+        void perform({ type: 'home' });
+        return;
+      }
       const pages = flow?.pages.filter((item) => item.eventId === 'case-01') ?? [];
       if (page < pages.length - 1) {
         page += 1;
@@ -485,9 +580,36 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
     prevPage() {
       if (page <= 0) return;
       page -= 1;
+      if (screen === 'ending-comic') {
+        persist();
+        return;
+      }
       void go('cutscene', true, false);
     },
-    skipCutscene() { void go('difficulty'); },
+    skipCutscene() {
+      if (screen === 'ending-comic') {
+        void perform({ type: 'home' });
+        return;
+      }
+      if (!caseDone) return; // first play: intro not skippable
+      void go('difficulty');
+    },
+    skipIntro() {
+      if (!caseDone) return;
+      void go('difficulty');
+    },
+    skipToMap() {
+      if (!caseDone) return;
+      history = ['player-room', 'event-select'];
+      void go('house-map', true, false);
+    },
+    closeEgg() { eggReveal = false; },
+    jumpEndingComic() {
+      poster = true;
+      solved = true;
+      page = 0;
+      void go('ending-comic', true, false);
+    },
     pickDifficulty(name: string) {
       difficulty = name;
       persist();
