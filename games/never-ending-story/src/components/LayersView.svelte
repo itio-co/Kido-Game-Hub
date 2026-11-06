@@ -11,7 +11,14 @@
 
   const BASE = import.meta.env.BASE_URL;
   const scene = /[?&]scene=([^&]+)/.exec(location.hash)?.[1] ?? 'v1';
-  const DIR = `${BASE}showcase/${scene === 'v2' || scene === 'livingroom_v2' ? 'livingroom-layers-v2' : 'livingroom-layers'}/`;
+  const SCENE_DIR: Record<string, string> = {
+    v1: 'livingroom-layers',
+    v2: 'livingroom-layers-v2',
+    livingroom_v2: 'livingroom-layers-v2',
+    v3: 'livingroom-layers-v3',
+    livingroom_v3: 'livingroom-layers-v3',
+  };
+  const DIR = `${BASE}showcase/${SCENE_DIR[scene] ?? 'livingroom-layers'}/`;
   const query = parseLayersQuery(location.hash);
   // Shadows + AO default off (manifest/query can opt in). Toggles remain in the panel.
   let canvas = $state<HTMLCanvasElement>();
@@ -84,7 +91,7 @@
   function receiverMask(names: string[], width: number, height: number): Uint8ClampedArray {
     const mask = new Uint8ClampedArray(width * height);
     for (const layer of layers) {
-      const isShell = layer.group === 'room_shell' || layer.group === 'background_view';
+      const isShell = layer.group === 'room_shell' || layer.group === 'background_view' || layer.group === 'room';
       if (!visible[layer.name] || !(names.includes(layer.name) || (isShell && names.includes('shell')))) continue;
       const [mx, my] = offsetOf(layer.name);
       const c = layer.color.data;
@@ -190,7 +197,7 @@
   }
 
   function isRoom(layer: Layer): boolean {
-    return layer.group === 'room_shell' || layer.group === 'background_view';
+    return layer.group === 'room_shell' || layer.group === 'background_view' || layer.group === 'room';
   }
 
   function camel(name: string): string {
@@ -206,7 +213,7 @@
   function pick(event: PointerEvent): void {
     const [sx, sy] = scenePoint(event);
     for (const layer of [...layers].reverse()) {
-      if (!visible[layer.name] || layer.group === 'room_shell' || layer.group === 'background_view') continue;
+      if (!visible[layer.name] || layer.group === 'room_shell' || layer.group === 'background_view' || layer.group === 'room') continue;
       const [mx, my] = offsetOf(layer.name);
       const col = Math.floor(sx - layer.x - mx);
       const row = Math.floor(sy - layer.y - my);
