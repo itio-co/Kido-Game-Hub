@@ -227,7 +227,7 @@
       onHint={onHint}
       onSettings={() => (overlay = overlay === 'settings' ? null : 'settings')}
     />
-    {#if session.screen !== 'player-room' && session.subtitle}
+    {#if session.screen !== 'player-room' && session.subtitle && !session.talk}
       <p class="flow-sub">{session.subtitle}</p>
     {/if}
 
@@ -289,16 +289,20 @@
   .flow-sub {
     position: absolute;
     z-index: 5;
-    top: calc(50px + env(safe-area-inset-top));
-    left: 12px;
-    right: 78px;
+    left: 50%;
+    transform: translateX(-50%);
+    bottom: calc(88px + env(safe-area-inset-bottom));
+    width: max-content;
+    max-width: min(78%, 320px);
     margin: 0;
-    padding: 4px 10px;
-    border-radius: 10px;
-    background: rgba(6, 24, 40, 0.88);
+    padding: 6px 12px;
+    border-radius: 12px;
+    background: rgba(6, 24, 40, 0.9);
     border: 1px solid var(--cyan);
     font-size: var(--fs-sm);
     line-height: 1.35;
+    text-align: center;
     pointer-events: none;
+    box-sizing: border-box;
   }
 </style>
