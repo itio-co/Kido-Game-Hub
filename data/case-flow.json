@@ -1387,7 +1387,7 @@
       "slug": "flow/practice/stirfry",
       "game": "stirfry",
       "icon": "🍳",
-      "group": "ตรรกะ",
+      "group": "ฝีมือ",
       "caseNo": "hub",
       "future": false,
       "route": "#/play/stirfry"
