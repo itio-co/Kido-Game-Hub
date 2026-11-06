@@ -24,6 +24,7 @@ import type {
   ScreenId,
   ScreenRegistry,
 } from './types';
+import type { NavContext } from '../types';
 import { t } from '../i18n';
 import { tapFanEgg } from '../eggs';
 
@@ -73,6 +74,8 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
   let seen = $state<string[]>([]);
   let levels = $state<FlowProgress['levels']>({ cross: [], jig: [], slide: [] });
   let practice = $state(false);
+  /** Sticky: set by practice-corner entry; cleared only when entering hub/event. */
+  let practiceRun = $state(false);
   let context = $state<NavContext>('hub');
   let lvGame = $state<PuzzleKey>('cross');
   let lvN = $state(1);
@@ -111,30 +114,49 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
     ready = true;
     if (saved?.nav?.screen) {
       const navScreen = saved.nav.screen as ScreenId;
-      screen = navScreen;
-      history = (saved.nav.history as ScreenId[]) ?? [];
+      const navSchema = typeof saved.nav.schema === 'number' ? saved.nav.schema : 0;
       slot = saved.nav.slot ?? 'now';
       page = saved.nav.page ?? 0;
-      practice = saved.nav.practice === true;
-      // Positive event membership only: never infer 'event' from screen alone
-      // (older saves without nav.context used to wrongly revive สมุดคดี on crossword).
-      if (saved.nav.context === 'hub' || saved.nav.context === 'event' || saved.nav.context === 'practice') {
-        context = saved.nav.context;
-      } else if (practice || navScreen === 'practice' || navScreen === 'level-map') {
-        context = 'practice';
-      } else {
-        // Stale pre-context saves are NOT inside an event. Keep the screen so the
-        // player can back out, but never grant event chrome (สมุดคดี / flow-sub).
-        context = 'hub';
-        practice = false;
-      }
       if (saved.nav.lvGame === 'cross' || saved.nav.lvGame === 'jig' || saved.nav.lvGame === 'slide') {
         lvGame = saved.nav.lvGame;
       }
       if (typeof saved.nav.lvN === 'number' && saved.nav.lvN > 0) lvN = saved.nav.lvN;
-      if (saved.nav.talkSlug) {
-        // reopen after ready via microtask
-        queueMicrotask(() => openDialogue(saved.nav!.talkSlug!));
+
+      // schema < 2 (0.5.3–0.5.7): never resume mid-puzzle / inferred-event chrome.
+      if (navSchema < 2) {
+        screen = 'player-room';
+        history = [];
+        context = 'hub';
+        practice = false;
+        practiceRun = false;
+        talkSlug = null;
+      } else {
+        screen = navScreen;
+        history = (saved.nav.history as ScreenId[]) ?? [];
+        practice = saved.nav.practice === true;
+        if (saved.nav.context === 'hub' || saved.nav.context === 'event' || saved.nav.context === 'practice') {
+          context = saved.nav.context;
+        } else if (practice || navScreen === 'practice' || navScreen === 'level-map') {
+          context = 'practice';
+        } else {
+          context = 'hub';
+          practice = false;
+        }
+        practiceRun = context === 'practice';
+        // Stranded puzzle with no practice flag → hub (never fake event).
+        if (
+          (navScreen === 'crossword' || navScreen === 'jigsaw' || navScreen === 'slide')
+          && context !== 'event'
+          && !practice
+        ) {
+          screen = 'player-room';
+          history = [];
+          context = 'hub';
+          practiceRun = false;
+        }
+        if (saved.nav.talkSlug && screen === navScreen) {
+          queueMicrotask(() => openDialogue(saved.nav!.talkSlug!));
+        }
       }
     }
   }
@@ -162,6 +184,7 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
         page,
         talkSlug,
         context,
+        schema: 2,
         practice,
         lvGame,
         lvN,
@@ -251,7 +274,15 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
   }
 
   async function go(next: ScreenId, replace = false, runEnter = true): Promise<void> {
-    if (fading) return;
+    // Wait out an in-flight fade instead of dropping the navigation (practice list
+    // used void go() then immediate openLevel, which previously no-op'd).
+    if (fading) {
+      let guard = 0;
+      while (fading && guard < 40) {
+        await wait(50);
+        guard += 1;
+      }
+    }
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     fading = true;
     await wait(reduce ? 0 : 300);
@@ -264,16 +295,23 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
     if (next === 'player-room' || next === 'event-select') {
       context = 'hub';
       practice = false;
+      practiceRun = false;
     } else if (
-      next === 'practice'
+      practiceRun
+      || next === 'practice'
       || next === 'level-map'
       || (context === 'practice' && (next === 'crossword' || next === 'jigsaw' || next === 'slide'))
     ) {
+      // Practice-corner stack always wins over EVENT_CASE_SCREENS (crossword etc.).
       context = 'practice';
+      practiceRun = true;
+      if (next === 'crossword' || next === 'jigsaw' || next === 'slide') {
+        practice = true;
+      }
     } else if (next === 'cutscene' || next === 'difficulty' || next === 'ending-comic' || EVENT_CASE_SCREENS.has(next)) {
       context = 'event';
-      // in-event minigames are not practice mode
-      if (next === 'crossword' || next === 'jigsaw' || next === 'slide') practice = false;
+      practice = false;
+      practiceRun = false;
     }
     if (runEnter) enter(next);
     persist();
@@ -350,6 +388,7 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
       talkSlug = null;
       context = 'hub';
       practice = false;
+      practiceRun = false;
       persist();
       history = [];
       await go('player-room', true, false);
@@ -558,10 +597,11 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
     get context() { return context; },
     /** สมุดคดี + event status: only when nav.context was positively set to event. */
     get showCaseUi() {
-      return context === 'event' && EVENT_CASE_SCREENS.has(screen);
+      return context === 'event' && !practice && !practiceRun && EVENT_CASE_SCREENS.has(screen);
     },
     enterPractice() {
       context = 'practice';
+      practiceRun = true;
       practice = false;
       void go('practice');
     },
@@ -598,8 +638,10 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
       if (prev === 'player-room' || prev === 'event-select') {
         context = 'hub';
         practice = false;
+        practiceRun = false;
       } else if (prev === 'practice' || prev === 'level-map') {
         context = 'practice';
+        practiceRun = true;
       }
       await go(prev, true, prev !== 'uncle');
     },
@@ -629,6 +671,7 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
       page = 0;
       context = 'event';
       practice = false;
+      practiceRun = false;
       void go('cutscene');
     },
     nextPage() {
@@ -675,6 +718,7 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
       if (!caseDone) return;
       context = 'event';
       practice = false;
+      practiceRun = false;
       history = ['player-room', 'event-select'];
       void go('house-map', true, false);
     },
@@ -685,12 +729,14 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
       page = 0;
       context = 'event';
       practice = false;
+      practiceRun = false;
       void go('ending-comic', true, false);
     },
     pickDifficulty(name: string) {
       difficulty = name;
       context = 'event';
       practice = false;
+      practiceRun = false;
       persist();
       showToast(`ระดับ: ${name}`);
       // Fresh event entry lands in living room; house map stays via แผนผังบ้าน.
@@ -698,10 +744,11 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
       void go('living-room', true, false);
     },
     setCategory(next: string) { category = next; },
-    openPractice(slug: string) {
+    async openPractice(slug: string) {
       const card = flow?.practice.find((item) => item.slug === slug);
       if (!card) return;
       context = 'practice';
+      practiceRun = true;
       if (card.game === 'stirfry') {
         seen = seen.includes(slug) ? seen : [...seen, slug];
         if (!played.includes(slug)) played = [...played, slug];
@@ -716,9 +763,9 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
         return;
       }
       seen = seen.includes(slug) ? seen : [...seen, slug];
-      persist();
       if (card.game === 'cross' || card.game === 'jig' || card.game === 'slide') lvGame = card.game;
-      void go('level-map');
+      persist();
+      await go('level-map');
     },
     async copyPracticeLink(slug: string) {
       const card = flow?.practice.find((item) => item.slug === slug);
@@ -731,16 +778,17 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
         showToast(url);
       }
     },
-    openLevel(index: number) {
+    async openLevel(index: number) {
       const row = levels[lvGame];
       const open = index === 0 || (row[index - 1] ?? 0) > 0;
       if (!open) { showToast('ผ่านด่านก่อนหน้าก่อนนะ'); return; }
       lvN = index + 1;
       context = 'practice';
+      practiceRun = true;
       practice = true;
       hints = 0;
       startPractice(lvGame, lvN);
-      void go(PUZZLE_SCREEN[lvGame]);
+      await go(PUZZLE_SCREEN[lvGame]);
     },
     pickCell(id: string) { cross = { ...cross, sel: id }; },
     typeLetter(letter: string) {

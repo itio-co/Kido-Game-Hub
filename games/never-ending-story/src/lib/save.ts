@@ -111,6 +111,7 @@ export function readSave(): SaveV1 {
                 flow.nav.context === 'hub' || flow.nav.context === 'event' || flow.nav.context === 'practice'
                   ? flow.nav.context
                   : undefined,
+              schema: typeof flow.nav.schema === 'number' ? flow.nav.schema : 0,
               practice: flow.nav.practice === true,
               lvGame:
                 flow.nav.lvGame === 'cross' || flow.nav.lvGame === 'jig' || flow.nav.lvGame === 'slide'

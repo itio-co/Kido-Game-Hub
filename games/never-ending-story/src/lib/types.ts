@@ -273,6 +273,8 @@ export type FlowProgress = {
     page: number;
     talkSlug: string | null;
     context?: NavContext;
+    /** 2+ = post-0.5.8 practice/event gate */
+    schema?: number;
     practice?: boolean;
     lvGame?: 'cross' | 'jig' | 'slide';
     lvN?: number;
