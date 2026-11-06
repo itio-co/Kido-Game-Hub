@@ -770,5 +770,7 @@
     ]
    }
   }
- ]
+ ],
+ "shadowsEnabled": false,
+ "aoEnabled": false
 }
