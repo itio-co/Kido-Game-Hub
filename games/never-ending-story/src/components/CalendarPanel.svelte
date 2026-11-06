@@ -62,7 +62,8 @@
               <div></div>
             {:else}
               <div class="day" class:mark={!!cell.icon} class:today={cell.today}>
-                {cell.day}{#if cell.icon}<i>{cell.icon}</i>{/if}
+                <span class="num">{cell.day}</span>
+                {#if cell.icon}<i aria-hidden="true">{cell.icon}</i>{/if}
               </div>
             {/if}
           {/each}
