@@ -1,6 +1,8 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import EditorView from './components/EditorView.svelte';
+  import CompareView from './components/CompareView.svelte';
+  import LayersView from './components/LayersView.svelte';
   import CalendarPanel from './components/CalendarPanel.svelte';
   import DemoRibbon from './components/DemoRibbon.svelte';
   import FlowView from './components/flow/FlowView.svelte';
@@ -37,6 +39,8 @@
   let route = $state(window.location.hash);
   const showcasing = $derived(route.startsWith('#/showcase'));
   const editing = $derived(route.startsWith('#/editor'));
+  const comparing = $derived(route.startsWith('#/compare'));
+  const layering = $derived(route.startsWith('#/layers'));
 
   const calendar = $derived.by((): CalendarEntity | null => {
     const found = room?.objects.find((obj) => obj.kind === 'calendar');
@@ -209,6 +213,10 @@
     <p class="status">{t('game.status.loadingRoom')}</p>
   {:else if showcasing}
     <ShowcaseView {room} />
+  {:else if comparing}
+    <CompareView />
+  {:else if layering}
+    <LayersView />
   {:else}
     <div class="stage" class:is-fading={session.fading}>
       <div class="room-layer" class:hidden={session.screen !== 'player-room'}>
@@ -243,6 +251,14 @@
         <path d="M14.5 5 7.5 12l7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" />
       </svg>
     </button>
+
+    {#if session.screen === 'player-room' && !overlay}
+      <nav class="home-links" aria-label={t('game.home.linksAria')}>
+        <a class="home-link" href="#/showcase?asset=characters/grandma" data-home-demo>{t('game.home.viewDemo')}</a>
+        <a class="home-link" href="#/compare" data-home-compare>{t('game.home.beforeAfter')}</a>
+        <a class="home-link" href="#/layers" data-home-layers>{t('game.home.layers')}</a>
+      </nav>
+    {/if}
 
     {#if session.screen !== 'event-select' && session.screen !== 'cutscene'}
       <button type="button" class="case" onclick={() => (session.screen === 'notebook' ? session.back() : session.go('notebook'))}>
@@ -291,6 +307,37 @@
 
 <style>
   .phone.wide { width: 100vw; }
+  /* Sits on the floor strip between the round back button (left) and the case button (right). */
+  .home-links {
+    position: absolute;
+    z-index: 7;
+    left: 88px;
+    right: 112px;
+    bottom: calc(18px + env(safe-area-inset-bottom));
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    align-items: center;
+  }
+  .home-link {
+    min-width: 0;
+    width: 100%;
+    max-width: 180px;
+    min-height: 26px;
+    padding: 3px 10px;
+    border-radius: 12px;
+    border: 2px solid var(--cyan);
+    background: var(--hud);
+    color: var(--ink);
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 1.3;
+    text-align: center;
+    text-decoration: none;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
   .room-layer { position: absolute; inset: 0; }
   .room-layer.hidden { visibility: hidden; pointer-events: none; }
 </style>

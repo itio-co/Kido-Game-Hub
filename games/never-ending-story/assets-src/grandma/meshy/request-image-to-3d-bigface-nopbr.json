@@ -1,0 +1,10 @@
+{
+  "ai_model": "meshy-7.1",
+  "model_type": "standard",
+  "should_texture": true,
+  "enable_pbr": false,
+  "texture_resolution": "4k",
+  "should_remesh": false,
+  "pose_mode": "t-pose",
+  "image_enhancement": false
+}

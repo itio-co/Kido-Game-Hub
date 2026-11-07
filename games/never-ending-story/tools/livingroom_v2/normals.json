@@ -1,0 +1,16 @@
+{
+  "note": "Relief classes for normal generation. flat = near-constant OpenGL flat with 1-3px edge bevel only; low = soft planar bevels, no interior triangle noise; soft_faceted = gentle broad facets ~30-40% prior strength, no print relief; character = soft_faceted body + softer face/hair, flat crow's feet.",
+  "default": "low",
+  "classes": {
+    "flat": ["clock", "calendar", "picture_frame", "rug", "room_shell"],
+    "low": ["coffee_table", "side_table", "box", "bookshelf", "fan", "tray_flowers"],
+    "soft_faceted": ["sofa", "armchair"],
+    "character": ["grandma", "man"]
+  },
+  "params": {
+    "flat": { "bevel_px": 2.0, "bevel_strength": 0.012 },
+    "low": { "edge_bevel_px": 4.0, "edge_strength": 0.028, "interior_strength": 0.008, "bilateral_d": 11, "bilateral_sigma": 60 },
+    "soft_faceted": { "strength_scale": 0.35, "bilateral_d": 13, "bilateral_sigma": 55, "spike_clip": 0.55 },
+    "character": { "body_strength_scale": 0.38, "face_strength_scale": 0.28, "hair_strength_scale": 0.32, "crows_feet_flat": true, "bilateral_d": 11, "bilateral_sigma": 50, "spike_clip": 0.5 }
+  }
+}

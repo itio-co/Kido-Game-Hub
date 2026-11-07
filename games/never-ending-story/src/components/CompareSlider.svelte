@@ -7,11 +7,16 @@
   let {
     src,
     crop = null,
+    beforeLabel = 'Mock-up',
+    afterLabel = '3D',
     children,
   }: {
     src: string;
     /** Percent of the full frame. Both layers use the same rect so they stay aligned. */
     crop?: Crop | null;
+    /** Corner labels for the left (image) and right (live) layers. */
+    beforeLabel?: string;
+    afterLabel?: string;
     children: Snippet;
   } = $props();
 
@@ -55,14 +60,14 @@
   aria-label={t('game.showcase.compare')}
   tabindex="0"
 >
-  <img class="fill" style={shift} {src} alt="Mock-up" draggable="false" />
+  <img class="fill" style={shift} {src} alt={beforeLabel} draggable="false" />
   <div class="live" style="clip-path: inset(0 0 0 {value}%)">
     <div class="fill" style={shift}>
       {@render children()}
     </div>
   </div>
-  <span class="label mock">Mock-up</span>
-  <span class="label three">3D</span>
+  <span class="label mock">{beforeLabel}</span>
+  <span class="label three">{afterLabel}</span>
   <div class="line" style="left:{value}%">
     <span class="handle" aria-hidden="true">
       <svg viewBox="0 0 24 24" width="22" height="22">

@@ -1,0 +1,17 @@
+{
+  "room_shell": "flat",
+  "rug": "flat",
+  "bookshelf": "low",
+  "sofa": "soft_faceted",
+  "grandma": "character",
+  "side_table": "low",
+  "fan": "low",
+  "armchair": "soft_faceted",
+  "man": "character",
+  "coffee_table": "low",
+  "tray_flowers": "low",
+  "box": "low",
+  "clock": "flat",
+  "picture_frame": "flat",
+  "calendar": "flat"
+}

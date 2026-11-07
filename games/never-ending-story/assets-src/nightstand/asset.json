@@ -109,7 +109,8 @@
     },
     "runtime": [
       "games/never-ending-story/public/models/nightstand.glb",
-      "games/never-ending-story/public/models/nightstand-master.glb"
+      "games/never-ending-story/public/models/nightstand-master.glb",
+      "games/never-ending-story/public/models/nightstand-meshy-1k5.glb"
     ],
     "partNodes": [
       "TopSlab",
@@ -128,7 +129,19 @@
       "Stretcher_L",
       "Stretcher_R"
     ],
-    "partNodesNote": "One mesh node per part under a root node (Nightstand_Master / Nightstand_LowPoly), origin at part centre; used by #/editor."
+    "partNodesNote": "One mesh node per part under a root node (Nightstand_Master / Nightstand_LowPoly), origin at part centre; used by #/editor.",
+    "meshy1k5": {
+      "file": "external/meshy/model.glb",
+      "triangles": 961,
+      "pbr": [
+        "baseColor",
+        "normal",
+        "metallicRoughness"
+      ],
+      "textureSize": 1024,
+      "meshyTaskId": "01a16c77-3840-7395-b624-2f2bf168a529",
+      "targetPolycount": 1500
+    }
   },
   "notes": [
     "The dark vertical post at the left of the crop is the bed, not part of this asset.",

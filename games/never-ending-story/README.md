@@ -184,3 +184,7 @@ Clock, calendar, and day travel are overlays on the living room, so they use tha
 Story content (events, spots, evidence, dialogues, practice cards) lives in `public/data/case-flow.json` with the same `id` / `kind` / `title` / `slug` model. Room positions stay in `public/data/player-room.json`. `scripts/author-flow.mjs` is the authoring source for the flow files. Do not regenerate it casually: ids are assigned in call order.
 
 The UI fonts are Noto Sans and Noto Sans Thai, licensed under the SIL Open Font License 1.1 (`src/fonts/OFL.txt`).
+
+## Layers showcase (`#/layers`)
+
+`public/showcase/livingroom-layers/layers.json` lists the living-room layers. The room shell (walls, floor, baseboards, doors, doorway views) is clean: no object shadows or marks are baked into it. Each object, small props included (cushions, shelf items, frames, fan, tray, vase, flowers, box), is a complete standalone image with its hidden parts filled (`<name>.color.webp`, `<name>.normal.webp`). Printed content such as the newspaper text is colour only and stays flat in the normal map. Children (sitters, cushions, held props) put their room darkening into their seat's AO, so hiding the sofa also removes the wall shadow behind it. An optional `ao: {x, y, w, h}` points at `<name>.ao.webp`, a multiply factor for the contact shadow the object casts on the room. It moves and toggles with the object and is applied only when shadows are on. Add `?ao=0` to disable it. The "None" button hides every object but keeps the room shell and doorway views visible.

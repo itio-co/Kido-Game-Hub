@@ -1,0 +1,39 @@
+{
+  "width": 1024,
+  "height": 1024,
+  "shadowsEnabled": false,
+  "aoEnabled": false,
+  "light": {
+    "shadowAngleDeg": 300.0,
+    "elevationDeg": 40,
+    "softness": 0.5,
+    "intensity": 0.7,
+    "color": "#3a2a35"
+  },
+  "layers": [
+    {
+      "name": "background",
+      "group": "room",
+      "z": 0,
+      "x": 0,
+      "y": 0,
+      "w": 1024,
+      "h": 1024,
+      "shadow": {
+        "type": "none"
+      }
+    },
+    {
+      "name": "grandma",
+      "group": "character",
+      "z": 10,
+      "x": 490,
+      "y": 352,
+      "w": 220,
+      "h": 446,
+      "shadow": {
+        "type": "none"
+      }
+    }
+  ]
+}

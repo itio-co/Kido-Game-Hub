@@ -1,0 +1,11 @@
+{
+  "image_url": "<data:image/png;base64,... of ../ref/grandma-mali-tpose-cutout.png>",
+  "ai_model": "meshy-7.1",
+  "geometry_resolution": "4k",
+  "should_remesh": false,
+  "should_texture": true,
+  "enable_pbr": true,
+  "texture_resolution": "4k",
+  "pose_mode": "t-pose",
+  "remove_lighting": true
+}
