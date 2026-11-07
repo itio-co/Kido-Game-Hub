@@ -1,4 +1,5 @@
 import type { FlowProgress, SaveV1, TextSize } from './types';
+import { markDirty } from './cloudSync';
 
 export const SAVE_KEY = 'nesg.player.v1';
 
@@ -9,6 +10,7 @@ export function defaultSave(): SaveV1 {
     version: 1,
     player: {
       onboardingComplete: false,
+      prologueSeen: false,
       textSize: 'md',
       soundEnabled: false,
       calendarTheme: null,
@@ -36,6 +38,9 @@ export function defaultFlow(): FlowProgress {
     played: [],
     seen: [],
     levels: { cross: [], jig: [], slide: [] },
+    poster: false,
+    caseDone: false,
+    nav: undefined,
   };
 }
 
@@ -62,6 +67,7 @@ export function readSave(): SaveV1 {
       version: 1,
       player: {
         onboardingComplete: player.onboardingComplete === true,
+        prologueSeen: player.prologueSeen === true,
         textSize,
         soundEnabled: player.soundEnabled === true,
         calendarTheme: typeof player.calendarTheme === 'string' ? player.calendarTheme : null,
@@ -90,6 +96,33 @@ export function readSave(): SaveV1 {
           jig: stars(levels.jig),
           slide: stars(levels.slide),
         },
+        poster: flow.poster === true,
+        caseDone: flow.caseDone === true,
+        nav: isRecord(flow.nav)
+          ? {
+              screen: typeof flow.nav.screen === 'string' ? flow.nav.screen : 'player-room',
+              history: Array.isArray(flow.nav.history)
+                ? flow.nav.history.filter((item): item is string => typeof item === 'string')
+                : [],
+              slot:
+                flow.nav.slot === 'yesterday' || flow.nav.slot === 'afternoon' || flow.nav.slot === 'now'
+                  ? flow.nav.slot
+                  : 'now',
+              page: typeof flow.nav.page === 'number' ? flow.nav.page : 0,
+              talkSlug: typeof flow.nav.talkSlug === 'string' ? flow.nav.talkSlug : null,
+              context:
+                flow.nav.context === 'hub' || flow.nav.context === 'event' || flow.nav.context === 'practice'
+                  ? flow.nav.context
+                  : undefined,
+              schema: typeof flow.nav.schema === 'number' ? flow.nav.schema : 0,
+              practice: flow.nav.practice === true,
+              lvGame:
+                flow.nav.lvGame === 'cross' || flow.nav.lvGame === 'jig' || flow.nav.lvGame === 'slide'
+                  ? flow.nav.lvGame
+                  : undefined,
+              lvN: typeof flow.nav.lvN === 'number' ? flow.nav.lvN : undefined,
+            }
+          : undefined,
       },
     };
   } catch {
@@ -99,4 +132,5 @@ export function readSave(): SaveV1 {
 
 export function writeSave(save: SaveV1): void {
   localStorage.setItem(SAVE_KEY, JSON.stringify(save));
+  markDirty();
 }

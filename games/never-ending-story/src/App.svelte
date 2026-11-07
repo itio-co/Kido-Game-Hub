@@ -1,16 +1,19 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { t } from './lib/i18n';
   import EditorView from './components/EditorView.svelte';
   import CalendarPanel from './components/CalendarPanel.svelte';
-  import DemoRibbon from './components/DemoRibbon.svelte';
   import FlowView from './components/flow/FlowView.svelte';
   import Hud from './components/Hud.svelte';
   import Onboarding from './components/Onboarding.svelte';
+  import Prologue from './components/Prologue.svelte';
   import RoomView from './components/RoomView.svelte';
   import ShowcaseView from './components/ShowcaseView.svelte';
   import SettingsPanel from './components/SettingsPanel.svelte';
   import Sheet from './components/Sheet.svelte';
   import VersionBadge from './components/VersionBadge.svelte';
+  import { StirFryGame } from './modules/stirfry';
+  import { ChallengeView, LeaderboardView, parseChallengeHash } from './modules/challenge';
   import { loadFlow } from './lib/flow/loadFlow';
   import { createFlow } from './lib/flow/session.svelte';
   import { loadPlayerRoom } from './lib/loadRoom';
@@ -32,8 +35,26 @@
   let hintTimer = 0;
   let hintTier = 0;
   let route = $state(window.location.hash);
+  // Prologue only on a plain home entry, never for deep links (challenge, practice, leaderboard...).
+  const homeEntry = ['', '#', '#/'].includes(window.location.hash);
+  let showPrologue = $state(homeEntry && !save.player.prologueSeen);
+  function finishPrologue(): void {
+    showPrologue = false;
+    save.player.prologueSeen = true;
+    commit();
+  }
   const showcasing = $derived(route.startsWith('#/showcase'));
   const editing = $derived(route.startsWith('#/editor'));
+  const playingStirfry = $derived(route.startsWith('#/play/stirfry'));
+  const challenge = $derived(parseChallengeHash(route));
+  const showingBoard = $derived(route.startsWith('#/leaderboard'));
+  const fullscreenGame = $derived(playingStirfry || !!challenge || showingBoard);
+
+  function toPractice(): void {
+    window.location.hash = '';
+    route = '';
+    void session.go('practice');
+  }
 
   const calendar = $derived.by((): CalendarEntity | null => {
     const found = room?.objects.find((obj) => obj.kind === 'calendar');
@@ -52,11 +73,12 @@
   const session = createFlow((progress) => {
     save.flow = progress;
     save.knowledge.evidence = [...progress.evidence];
-    if (progress.solved && !save.knowledge.solvedCaseIds.includes('case-01')) {
+    if (progress.caseDone && !save.knowledge.solvedCaseIds.includes('case-01')) {
       save.knowledge.solvedCaseIds = [...save.knowledge.solvedCaseIds, 'case-01'];
     }
     commit();
   });
+
 
   function commit(): void {
     writeSave($state.snapshot(save));
@@ -70,6 +92,15 @@
     }, 2200);
   }
 
+  function onCalendarEntry(message: string, kind?: string): void {
+    if (kind === 'daily-practice') {
+      overlay = null;
+      session.enterPractice();
+      return;
+    }
+    showToast(message);
+  }
+
   function choose(id: string): void {
     if (!room) return;
     if (selectedId === id) {
@@ -80,7 +111,7 @@
         decorSlotId = hotspot.id;
         overlay = 'decor';
       } else if (hotspot.action === 'event-select') void session.go('event-select');
-      else if (hotspot.action === 'practice') void session.go('practice');
+      else if (hotspot.action === 'practice') session.enterPractice();
       else if (hotspot.action === 'calendar') overlay = 'calendar';
       else if (hotspot.action === 'case-board') void session.go('notebook');
       return;
@@ -177,7 +208,12 @@
     window.addEventListener('hashchange', onHash);
     loadFlow()
       .then((loaded) => {
-        if (!ac.signal.aborted) session.use(loaded.flow, loaded.screens, save.flow);
+        if (ac.signal.aborted) return;
+        session.use(loaded.flow, loaded.screens, save.flow);
+        const hash = window.location.hash;
+        if (hash === '#ending-comic' || hash === '#/ending-comic') {
+          session.jumpEndingComic();
+        }
       })
       .catch((reason: unknown) => {
         if (!ac.signal.aborted) showToast(reason instanceof Error ? reason.message : 'เปิดหน้าจอไม่ได้');
@@ -192,7 +228,7 @@
 </script>
 
 <div class="phone" class:wide={editing} data-text={save.player.textSize}>
-  <VersionBadge />
+  {#if !fullscreenGame}<VersionBadge />{/if}
   {#if editing}
     <EditorView />
   {:else if error}
@@ -201,6 +237,14 @@
     <p class="status">กำลังเปิดห้อง…</p>
   {:else if showcasing}
     <ShowcaseView {room} />
+  {:else if challenge}
+    {#key route}
+      <ChallengeView params={challenge} onExit={toPractice} onBoard={() => (window.location.hash = '#/leaderboard')} />
+    {/key}
+  {:else if showingBoard}
+    <LeaderboardView onExit={toPractice} onPlay={(game) => (window.location.hash = `#/challenge/${game}`)} />
+  {:else if playingStirfry}
+    <StirFryGame onExit={() => { window.location.hash = ''; route = ''; void session.go('practice'); }} />
   {:else}
     <div class="stage" class:is-fading={session.fading}>
       <div class="room-layer" class:hidden={session.screen !== 'player-room'}>
@@ -215,7 +259,6 @@
       </div>
       {#if session.ready && session.screen !== 'player-room'}
         <FlowView {session} />
-        <DemoRibbon show={session.status === 'demo'} />
       {/if}
     </div>
 
@@ -223,11 +266,11 @@
       title={session.screen === 'player-room' ? room.title : session.title}
       hintLabel={room.hud.hintLabel}
       settingsLabel={room.hud.settingsLabel}
-      showHint={!['event-select', 'cutscene', 'difficulty', 'practice', 'level-map', 'crossword', 'jigsaw', 'slide'].includes(session.screen)}
+      showHint={!['event-select', 'cutscene', 'ending-comic', 'difficulty', 'practice', 'level-map', 'crossword', 'jigsaw', 'slide'].includes(session.screen)}
       onHint={onHint}
       onSettings={() => (overlay = overlay === 'settings' ? null : 'settings')}
     />
-    {#if session.screen !== 'player-room' && session.subtitle}
+    {#if session.subtitle && !session.talk && (session.showCaseUi || session.screen === 'cutscene' || session.screen === 'ending-comic' || session.screen === 'difficulty')}
       <p class="flow-sub">{session.subtitle}</p>
     {/if}
 
@@ -237,10 +280,19 @@
       </svg>
     </button>
 
-    {#if session.screen !== 'event-select' && session.screen !== 'cutscene'}
-      <button type="button" class="case" onclick={() => (session.screen === 'notebook' ? session.back() : session.go('notebook'))}>
-        {room.hud.caseLabel}
-      </button>
+    {#if session.showCaseUi || (session.context === 'event' && session.scene?.map)}
+      <div class="bottom-actions">
+        {#if session.context === 'event' && session.scene?.map}
+          <button type="button" class="case mapbtn" data-testid="house-map-btn" onclick={() => session.go('house-map')}>
+            {t('hud.houseMap')}
+          </button>
+        {/if}
+        {#if session.showCaseUi}
+          <button type="button" class="case" data-testid="case-notebook" onclick={() => (session.screen === 'notebook' ? session.back() : session.go('notebook'))}>
+            {room.hud.caseLabel}
+          </button>
+        {/if}
+      </div>
     {/if}
 
     {#if overlay === 'settings'}
@@ -250,6 +302,7 @@
         onTextSize={setTextSize}
         onSound={setSound}
         onClose={() => (overlay = null)}
+        onReplayPrologue={() => { overlay = null; showPrologue = true; }}
       />
     {:else if overlay === 'calendar' && calendar && session.screen === 'player-room'}
       <CalendarPanel
@@ -257,7 +310,7 @@
         {themeId}
         solvedCaseIds={save.knowledge.solvedCaseIds}
         onTheme={setTheme}
-        onEntry={showToast}
+        onEntry={onCalendarEntry}
         onClose={() => (overlay = null)}
       />
     {:else if overlay === 'decor' && decorHotspot}
@@ -272,12 +325,16 @@
       />
     {/if}
 
-    {#if showTutor && session.screen === 'player-room' && !overlay}
+    {#if showTutor && session.screen === 'player-room' && !overlay && !showPrologue}
       <Onboarding steps={room.onboarding} index={tutorIndex} onNext={finishTutor} />
     {/if}
 
+    {#if showPrologue && session.screen === 'player-room'}
+      <Prologue onDone={finishPrologue} />
+    {/if}
+
     {#if session.toastText || toast}
-      <p class="toast" role="status">{session.toastText || toast}</p>
+      <p class="toast" class:toast-low={session.context !== 'event'} role="status">{session.toastText || toast}</p>
     {/if}
   {/if}
 </div>
@@ -286,19 +343,33 @@
   .phone.wide { width: 100vw; }
   .room-layer { position: absolute; inset: 0; }
   .room-layer.hidden { visibility: hidden; pointer-events: none; }
+  .bottom-actions {
+    position: absolute;
+    z-index: 7;
+    right: 12px;
+    bottom: calc(14px + env(safe-area-inset-bottom));
+    display: flex;
+    gap: 8px;
+    align-items: flex-end;
+  }
+  .bottom-actions .case { position: static; }
   .flow-sub {
     position: absolute;
     z-index: 5;
-    top: calc(50px + env(safe-area-inset-top));
-    left: 12px;
-    right: 78px;
+    left: 50%;
+    transform: translateX(-50%);
+    bottom: calc(88px + env(safe-area-inset-bottom));
+    width: max-content;
+    max-width: min(78%, 320px);
     margin: 0;
-    padding: 4px 10px;
-    border-radius: 10px;
-    background: rgba(6, 24, 40, 0.88);
+    padding: 6px 12px;
+    border-radius: 12px;
+    background: rgba(6, 24, 40, 0.9);
     border: 1px solid var(--cyan);
     font-size: var(--fs-sm);
     line-height: 1.35;
+    text-align: center;
     pointer-events: none;
+    box-sizing: border-box;
   }
 </style>

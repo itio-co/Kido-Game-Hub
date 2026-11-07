@@ -2,7 +2,7 @@
 
 This game lives at `games/never-ending-story/`. Thai specs and story packs are in `docs/design/`. Early demos are in `prototypes/`. Per-asset source folders stay under `assets-src/<slug>/`.
 
-Playable first screen: the player's room (hub). Portrait, touch-first. Svelte draws the HUD. Three.js draws the low-poly room from `public/data/player-room.json`, matched to `prototypes/poc-clickthrough/img/player-room-wide.jpg`.
+Playable first screen: the player's room (hub). Portrait, touch-first. Svelte draws the HUD and the 2D player-room hub from `public/img/player-room-wide.jpg` (same mock the old Three.js room was matched to). Tap spots come from `public/data/player-room.json` `screen` percentages. The Three.js room builders in `src/lib/scene.ts` stay in the repo but are unused on the hub path.
 
 Progress is saved in `localStorage` on this device. There is no account.
 
@@ -63,16 +63,16 @@ The wall shelf is a Three.js group: `bookshelf` → `shelf-row` → `book`. Each
 
 ## This build
 
-- The game opens in the player's room. That room is a real 3D scene. It has no DEMO ribbon.
+- The game opens in the player's room as a 2D backdrop with one-tap hotspots. It has no DEMO ribbon.
 - Dots are static. The first tap shows a Thai name. The second tap acts.
 - Door → event select, a 3-page cutscene, difficulty, the house map, then the living room, study, and kitchen.
 - The living room clock lists hour slots. The living-room calendar lists days and can travel to yesterday or this afternoon. Leaving the living room returns the slot to “now”.
-- The case button opens the evidence notebook. With E01, E02, and E04 it opens the case board. The star-box lock opens the sliding-block puzzle only after the case is deduced. Winning that puzzle opens the album. The postcard sends the player home with the portrait reward, which can be placed on an empty decor slot in the real room.
+- The case button opens the evidence notebook. With E01, E02, and E04 it opens the case board. The star-box lock opens the sliding-block puzzle only after the case is deduced. Winning that puzzle opens the album. The postcard sends the player home with the portrait reward, which can be placed on an empty decor slot in the player room.
 - The nightstand opens the practice grid and its level maps (crossword, jigsaw, sliding block).
 - Text size uses the phone setting (`sm` / `md` / `lg`). Sound is remembered but not played yet.
 - A 3-step lesson shows on the first launch only.
 
-Every screen other than the player room is a 2D image scene ported from `prototypes/poc-clickthrough`, with the same pictures and tap spots. `public/data/screens.json` is the registry. Each entry has `screen` and `status`: `demo` or `real`. A demo screen shows a static diagonal **DEMO** ribbon in the top corner. The ribbon does not receive taps. Set `status` to `real` and the ribbon for that screen disappears. `return-home` is `real` because the reward is placed in the 3D room. `player-room` is `real`.
+Every screen other than the player room is a 2D image scene ported from `prototypes/poc-clickthrough`, with the same pictures and tap spots. `public/data/screens.json` is the registry. Each entry has `screen` and `status`: `demo` or `real`. A demo screen shows a static diagonal **DEMO** ribbon in the top corner. The ribbon does not receive taps. Set `status` to `real` and the ribbon for that screen disappears. `return-home` is `real` because the reward is placed in the player room. `player-room` is `real`.
 
 | Screen | Status |
 |---|---|

@@ -211,6 +211,15 @@
       "titleEn": "Level map",
       "screen": "level-map",
       "status": "demo"
+    },
+    {
+      "id": "a4c0e001-0000-4000-8000-000000000095",
+      "kind": "screen",
+      "title": "ตอนจบการ์ตูน",
+      "slug": "screen/ending-comic",
+      "titleEn": "Ending comic",
+      "screen": "ending-comic",
+      "status": "demo"
     }
   ]
 }

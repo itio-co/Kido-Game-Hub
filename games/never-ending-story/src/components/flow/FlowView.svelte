@@ -1,16 +1,27 @@
 <script lang="ts">
+  import { tick } from 'svelte';
   import { imageUrl } from '../../lib/flow/loadFlow';
   import { LEVEL_COUNT, LEVEL_THEME } from '../../lib/flow/puzzles';
   import type { FlowSession } from '../../lib/flow/session.svelte';
   import type { FlowSpot } from '../../lib/flow/types';
+  import { t } from '../../lib/i18n';
+  import { readEggs } from '../../lib/eggs';
+  import { readStirFry } from '../../modules/stirfry';
+  import ComicPanel from './ComicPanel.svelte';
   import ImageScene from './ImageScene.svelte';
   import Minigames from './Minigames.svelte';
 
   let { session }: { session: FlowSession } = $props();
 
-  const pages = $derived(session.flow?.pages.filter((item) => item.eventId === 'case-01') ?? []);
+  const introPages = $derived(session.flow?.pages.filter((item) => item.eventId === 'case-01') ?? []);
+  const endingPages = $derived(session.flow?.pages.filter((item) => item.eventId === 'case-01-ending') ?? []);
+  const pages = $derived(session.screen === 'ending-comic' ? endingPages : introPages);
   const cut = $derived(pages[session.page] ?? null);
-  const groups = ['ทั้งหมด', 'คำ', 'ภาพ', 'ตรรกะ'];
+  function loc(value: string): string {
+    if (value && value.includes('.') && !value.includes(' ')) return t(value);
+    return value;
+  }
+  const groups = ['ทั้งหมด', 'คำ', 'ภาพ', 'ตรรกะ', 'ฝีมือ'];
   const livingMarks: Record<number, string> = { 12: '💐', 22: '⭕' };
   const firstWeekday = new Date(2026, 9, 1).getDay();
   const dayCount = 31;
@@ -32,6 +43,37 @@
   const levelHeight = LEVEL_COUNT * 110 + 160;
   function levelX(index: number): number { return 50 + 30 * Math.sin(index * 0.9); }
   function levelY(index: number): number { return levelHeight - 110 - index * 110; }
+
+  /** First unfinished unlocked level, or the last level when the path is cleared. */
+  function playableLevelIndex(): number {
+    const row = session.levels[session.lvGame] ?? [];
+    for (let index = 0; index < LEVEL_COUNT; index += 1) {
+      const open = index === 0 || (row[index - 1] ?? 0) > 0;
+      const stars = row[index] ?? 0;
+      if (open && stars === 0) return index;
+    }
+    return LEVEL_COUNT - 1;
+  }
+
+  let lvWrapEl: HTMLDivElement | undefined = $state();
+
+  // Center the current/next playable node whenever the level map opens or
+  // progress changes (e.g. returning after clearing a stage).
+  $effect(() => {
+    if (session.screen !== 'level-map') return;
+    const index = playableLevelIndex();
+    void session.levels[session.lvGame];
+    void session.lvGame;
+    let cancelled = false;
+    void tick().then(() => {
+      if (cancelled) return;
+      const node = lvWrapEl?.querySelector<HTMLElement>(`[data-level="${index}"]`);
+      if (!node) return;
+      const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      node.scrollIntoView({ block: 'center', inline: 'nearest', behavior: reduce ? 'auto' : 'smooth' });
+    });
+    return () => { cancelled = true; };
+  });
 </script>
 
 <div class="flow">
@@ -46,13 +88,12 @@
       {labelFor}
       onSpot={(spot) => session.tapSpot(spot)}
       onMiss={() => session.clearSpot()}
-      onMap={session.scene.map ? () => session.go('house-map') : null}
     />
   {:else if session.screen === 'event-select'}
     <div class="evlist">
       <p class="evh">ออกจากห้องแล้ว จะไปไหนดีนะ?</p>
       {#each session.flow?.events ?? [] as event (event.id)}
-        {@const open = !event.unlockAfter}
+        {@const open = !event.unlockAfter || (event.unlockAfter === 'case-01' && session.caseDone)}
         <button type="button" class="evcard" class:off={!open} onclick={() => session.openEvent(event.eventId)}>
           <img src={imageUrl(event.cover)} alt="" />
           {#if open}
@@ -62,25 +103,34 @@
           {/if}
           <span class="evt">
             <b>{open ? event.title : '???'}</b>
-            <small>{open ? event.subtitle : session.solved && event.unlockAfter === 'case-01' ? 'เร็ว ๆ นี้' : event.lockedHint}</small>
+            <small>{open ? event.subtitle : session.caseDone && event.unlockAfter === 'case-01' ? 'เร็ว ๆ นี้' : event.lockedHint}</small>
           </span>
         </button>
       {/each}
     </div>
-  {:else if session.screen === 'cutscene' && cut}
-    <button type="button" class="cs" onclick={() => session.nextPage()}>
-      <img src={imageUrl(cut.image)} alt="" />
-      {#each cut.lines as line (line.id)}
-        <span class="bub" style="left:{line.x}%;top:{line.y}%;max-width:{line.w}%"><b>{line.who}</b>{line.text}</span>
-      {/each}
-      <span class="cap">{cut.caption}</span>
-      <span class="tapnext">{session.page < pages.length - 1 ? 'แตะเพื่ออ่านต่อ' : 'แตะเพื่อเริ่มคดี'}</span>
-      <span class="dots">{#each pages as _, index (index)}<i class:on={index === session.page}></i>{/each}</span>
-    </button>
+  {:else if (session.screen === 'cutscene' || session.screen === 'ending-comic') && cut}
+    <ComicPanel
+      image={cut.image}
+      lines={cut.lines.map((line) => ({ ...line, text: loc(line.text) }))}
+      caption={loc(cut.caption)}
+      tapLabel={session.screen === 'ending-comic'
+        ? (session.page < pages.length - 1 ? t('ending.tapNext') : t('ending.tapDone'))
+        : (session.page < pages.length - 1 ? 'แตะเพื่ออ่านต่อ' : 'แตะเพื่อเริ่มคดี')}
+      count={pages.length}
+      index={session.page}
+      onNext={() => session.nextPage()}
+    />
     {#if session.page > 0}
-      <button type="button" class="prev" onclick={() => session.prevPage()}>ก่อนหน้า</button>
+      <button type="button" class="prev" onclick={() => session.prevPage()}>{session.screen === 'ending-comic' ? t('ending.prev') : 'ก่อนหน้า'}</button>
     {/if}
-    <button type="button" class="skip" onclick={() => session.skipCutscene()}>ข้าม</button>
+    {#if session.screen === 'ending-comic' || session.caseDone}
+      <button type="button" class="skip" class:loud={session.caseDone && session.screen !== 'ending-comic'} onclick={() => session.skipCutscene()}>
+        {session.screen === 'ending-comic' ? t('ending.skip') : t('skip.intro')}
+      </button>
+    {/if}
+    {#if session.screen === 'cutscene' && session.caseDone}
+      <button type="button" class="skip mapskip" onclick={() => session.skipToMap()}>{t('skip.intro')} → แผนผัง</button>
+    {/if}
   {:else if session.screen === 'difficulty'}
     <div class="pick">
       <h1>เลือกระดับความยากของคดีนี้</h1>
@@ -90,7 +140,12 @@
       {/each}
     </div>
   {:else if session.screen === 'practice'}
+    {@const stirBest = readStirFry()}
+    {@const unlockedCount = (session.flow?.practice ?? []).filter((game) => game.game === 'stirfry' || (!game.future && session.played.includes(game.slug))).length}
+    {@const totalCount = session.flow?.practice.length ?? 0}
     <div class="pgrid">
+      <p class="punlock">ปลดล็อกแล้ว {unlockedCount}/{totalCount} · เกมใหม่ปลดล็อกจากคดี</p>
+      <button type="button" class="boardbtn" onclick={() => (window.location.hash = '#/leaderboard')}>{t('practice.board')}</button>
       <div class="chips">
         {#each groups as group (group)}
           <button type="button" class:on={session.category === group} onclick={() => session.setCategory(group)}>{group}</button>
@@ -98,26 +153,40 @@
       </div>
       <div class="cards">
         {#each (session.flow?.practice ?? []).filter((game) => session.category === 'ทั้งหมด' || game.group === session.category) as game (game.id)}
-          {@const on = session.played.includes(game.slug)}
+          {@const unlocked = game.game === 'stirfry' || (!game.future && session.played.includes(game.slug))}
           {@const row = game.game === 'cross' || game.game === 'jig' || game.game === 'slide' ? session.levels[game.game] : []}
           {@const total = row.reduce((sum, value) => sum + (value || 0), 0)}
-          <button type="button" class="gcard" class:off={!on} onclick={() => session.openPractice(game.slug)}>
-            {#if on && !session.seen.includes(game.slug)}<i class="new">ใหม่</i>{/if}
-            <span class="gic">{on ? game.icon : 'ล็อก'}</span>
-            <b>{game.title}{game.future ? ' (ตัวอย่าง)' : ''}</b>
-            <small>{game.group}</small>
-            {#if on}
-              <small>⭐ {total}/{3 * LEVEL_COUNT}</small>
-            {:else}
-              <small>ปลดล็อกจากคดี {game.caseNo}{game.future ? ' (ตัวอย่างอนาคต)' : ''}</small>
+          <div class="gcardwrap">
+            <button type="button" class="gcard" class:off={!unlocked} onclick={() => session.openPractice(game.slug)}>
+              {#if unlocked && !session.seen.includes(game.slug)}<i class="new">ใหม่</i>{/if}
+              <span class="gic">{unlocked ? game.icon : '🔒'}</span>
+              <b>{game.title}{game.future ? ' (ตัวอย่าง)' : ''}</b>
+              <small>{game.group}</small>
+              {#if game.game === 'stirfry'}
+                <small>⭐ {stirBest.bestStars}/3 · {Math.round(stirBest.bestScore)}</small>
+              {:else if unlocked}
+                <small>⭐ {total}/{3 * LEVEL_COUNT}</small>
+              {:else if game.caseNo === 'soon' || game.future}
+                <small>{t('practice.comingSoon')}</small>
+              {:else}
+                <small>ปลดล็อกจากคดี {game.caseNo}</small>
+              {/if}
+            </button>
+            {#if unlocked && (game.game === 'cross' || game.game === 'jig' || game.game === 'slide')}
+              <div class="modes">
+                <button type="button" class="mode" onclick={() => session.openPractice(game.slug)}>{t('practice.modePractice')}</button>
+                <button type="button" class="mode ch" onclick={() => (window.location.hash = `#/challenge/${game.game}`)}>⚔️ {t('practice.modeChallenge')}</button>
+              </div>
+            {:else if unlocked}
+              <button type="button" class="share" onclick={() => session.copyPracticeLink(game.slug)}>{t('practice.share')}</button>
             {/if}
-          </button>
+          </div>
         {/each}
       </div>
     </div>
   {:else if session.screen === 'level-map'}
     {@const theme = LEVEL_THEME[session.lvGame]}
-    <div class="lvwrap" style="background:{theme.bg}">
+    <div class="lvwrap" style="background:{theme.bg}" bind:this={lvWrapEl}>
       <div class="lvboard" style="height:{levelHeight}px">
         {#each Array.from({ length: LEVEL_COUNT }, (_, index) => index) as index (index)}
           {@const stars = session.levels[session.lvGame][index] ?? 0}
@@ -128,6 +197,7 @@
             class:done={stars > 0}
             class:open={stars === 0 && open}
             class:lock={!open}
+            data-level={index}
             style="left:{levelX(index)}%;top:{levelY(index)}px"
             onclick={() => session.openLevel(index)}
           >
@@ -247,6 +317,17 @@
       </div>
     </div>
   {/if}
+
+  {#if session.eggReveal}
+    <div class="egg-modal" role="dialog" aria-label={t('egg.revealTitle')}>
+      <div class="egg-card">
+        <img src={imageUrl('egg-young-grandpa.webp')} alt="" />
+        <h2>{t('egg.revealTitle')}</h2>
+        <p>{t('egg.revealBody')}</p>
+        <button type="button" onclick={() => session.closeEgg()}>{t('egg.close')}</button>
+      </div>
+    </div>
+  {/if}
 </div>
 
 <style>
@@ -262,15 +343,6 @@
   .evt small { font-size: var(--fs-sm); }
   .badge, .lock { position: absolute; z-index: 1; top: 8px; left: 8px; background: #ffcf4a; color: #3a2a00; border-radius: 8px; padding: 2px 8px; font-weight: 800; font-size: var(--fs-sm); }
   .lock { top: 36%; left: 50%; transform: translate(-50%, -50%); background: transparent; color: #fff; font-size: calc(var(--fs) + 8px); }
-  .cs { position: absolute; inset: 0; border: 0; padding: 0; background: #000; }
-  .cs img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-  .bub { position: absolute; background: #fff; color: #2b2233; border-radius: 16px; padding: 8px 12px; font-size: var(--fs); line-height: 1.4; text-align: left; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35); }
-  .bub b { display: block; font-size: var(--fs-sm); color: #b0567a; }
-  .cap { position: absolute; left: 4%; right: 4%; bottom: 96px; background: #fff6dc; color: #3a2a10; border-radius: 10px; padding: 10px 12px; font-size: var(--fs); line-height: 1.45; text-align: left; }
-  .tapnext { position: absolute; right: 12px; bottom: 64px; color: #fff; font-size: var(--fs-sm); }
-  .dots { position: absolute; left: 0; right: 0; bottom: 34px; display: flex; justify-content: center; gap: 8px; }
-  .dots i { width: 9px; height: 9px; border-radius: 50%; background: rgba(255, 255, 255, 0.4); }
-  .dots i.on { background: #fff; }
   .skip, .prev { position: absolute; z-index: 6; bottom: 16px; background: rgba(0, 0, 0, 0.55); color: #fff; border: 0; border-radius: 16px; padding: 8px 14px; font-size: var(--fs-sm); font-weight: 700; }
   .skip { right: 12px; }
   .prev { left: 84px; }
@@ -279,10 +351,17 @@
   .pick button, .mgbtn, .chips button, .link { min-height: 48px; border-radius: 12px; border: 1px solid #39e0ff; background: #0d4a66; color: #fff; font-weight: 800; font-size: var(--fs); padding: 10px 14px; }
   .pick button { display: block; width: min(100%, 280px); margin: 10px auto; }
   .pgrid { background: #163044; }
+  .punlock { margin: 0 0 10px; text-align: center; font-size: var(--fs-sm); font-weight: 700; color: #cfefff; }
   .chips { display: flex; gap: 6px; margin-bottom: 10px; flex-wrap: wrap; }
   .chips button.on { background: #39e0ff; color: #06212f; }
   .cards { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-  .gcard { position: relative; background: #fffaf0; color: #13324a; border: 0; border-radius: 14px; padding: 12px 8px; display: flex; flex-direction: column; align-items: center; gap: 3px; text-align: center; }
+  .boardbtn { display: block; margin: 0 auto 10px; min-height: 40px; padding: 0 18px; border-radius: 20px; border: 2px solid #ffcf4a; background: #2a3a1d; color: #ffe9a3; font-weight: 800; }
+  .modes { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+  .mode { min-height: 38px; font-size: var(--fs-sm); border-radius: 10px; border: 1px solid #39e0ff; background: #0d4a66; color: #eaf6ff; font-weight: 800; padding: 0 2px; }
+  .mode.ch { background: #ffcf4a; color: #3a2a00; border-color: #ffcf4a; }
+  .gcardwrap { display: flex; flex-direction: column; gap: 4px; }
+  .gcardwrap .share { min-height: 36px; font-size: var(--fs-sm); border-radius: 10px; border: 1px dashed #39e0ff; background: #0d4a66; color: #eaf6ff; font-weight: 700; }
+  .gcard { position: relative; background: #fffaf0; color: #13324a; border: 0; border-radius: 14px; padding: 12px 8px; display: flex; flex-direction: column; align-items: center; gap: 3px; text-align: center; width: 100%; }
   .gcard.off { background: #2b3640; color: #8996a2; }
   .gic { font-size: calc(var(--fs) + 16px); }
   .new { position: absolute; top: 6px; right: 6px; background: #ff5d73; color: #fff; font-style: normal; font-size: var(--fs-sm); border-radius: 8px; padding: 1px 6px; }
@@ -334,4 +413,12 @@
   .clue button { background: rgba(255, 220, 200, 0.85); }
   .calx { position: absolute; right: 22px; top: 78px; width: 36px; height: 36px; border-radius: 50%; border: 0; background: #fff; color: #333; font-size: 18px; }
   .link { margin-top: 8px; background: #fff; color: #4a2e18; border: 1px solid #888; }
+  .skip.loud { background: #39e0ff; color: #06212f; font-weight: 800; }
+  .skip.mapskip { right: 12px; bottom: 56px; }
+  .egg-modal { position: absolute; inset: 0; z-index: 20; background: rgba(0,0,0,0.55); display: grid; place-items: center; padding: 24px; }
+  .egg-card { width: min(100%, 320px); background: #0d2a3c; border: 2px solid #39e0ff; border-radius: 16px; padding: 16px; text-align: center; }
+  .egg-card img { width: 160px; height: 160px; object-fit: contain; margin: 0 auto 10px; display: block; }
+  .egg-card h2 { margin: 0 0 8px; font-size: calc(var(--fs) + 4px); }
+  .egg-card p { margin: 0 0 12px; font-size: var(--fs-sm); line-height: 1.4; }
+  .egg-card button { min-height: 44px; border-radius: 12px; border: 0; background: #39e0ff; color: #06212f; font-weight: 800; padding: 8px 16px; }
 </style>

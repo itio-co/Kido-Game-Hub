@@ -135,6 +135,160 @@
           "w": 42
         }
       ]
+    },
+    {
+      "id": "a4c0e001-0000-4000-8000-000000000096",
+      "kind": "cutscene-page",
+      "title": "ตอนจบ 1",
+      "slug": "flow/cutscene/case-01-ending/p1",
+      "eventId": "case-01-ending",
+      "image": "ending-01.jpg",
+      "caption": "ending.caption.1",
+      "lines": [
+        {
+          "id": "a4c0e001-0000-4000-8000-000000000097",
+          "kind": "speech-line",
+          "title": "หนู",
+          "slug": "flow/cutscene/case-01-ending/p1/child",
+          "who": "หนู",
+          "text": "ending.line.1.child",
+          "x": 8,
+          "y": 18,
+          "w": 46
+        },
+        {
+          "id": "a4c0e001-0000-4000-8000-000000000098",
+          "kind": "speech-line",
+          "title": "ย่ามะลิ",
+          "slug": "flow/cutscene/case-01-ending/p1/grandma",
+          "who": "ย่ามะลิ",
+          "text": "ending.line.1.grandma",
+          "x": 48,
+          "y": 50,
+          "w": 46
+        }
+      ]
+    },
+    {
+      "id": "a4c0e001-0000-4000-8000-000000000099",
+      "kind": "cutscene-page",
+      "title": "ตอนจบ 2",
+      "slug": "flow/cutscene/case-01-ending/p2",
+      "eventId": "case-01-ending",
+      "image": "ending-02.jpg",
+      "caption": "ending.caption.2",
+      "lines": [
+        {
+          "id": "a4c0e001-0000-4000-8000-00000000009a",
+          "kind": "speech-line",
+          "title": "ย่ามะลิ",
+          "slug": "flow/cutscene/case-01-ending/p2/grandma",
+          "who": "ย่ามะลิ",
+          "text": "ending.line.2.grandma",
+          "x": 6,
+          "y": 46,
+          "w": 50
+        },
+        {
+          "id": "a4c0e001-0000-4000-8000-00000000009b",
+          "kind": "speech-line",
+          "title": "หนู",
+          "slug": "flow/cutscene/case-01-ending/p2/child",
+          "who": "หนู",
+          "text": "ending.line.2.child",
+          "x": 52,
+          "y": 72,
+          "w": 42
+        }
+      ]
+    },
+    {
+      "id": "a4c0e001-0000-4000-8000-00000000009c",
+      "kind": "cutscene-page",
+      "title": "ตอนจบ 3",
+      "slug": "flow/cutscene/case-01-ending/p3",
+      "eventId": "case-01-ending",
+      "image": "ending-03.jpg",
+      "caption": "ending.caption.3",
+      "lines": [
+        {
+          "id": "a4c0e001-0000-4000-8000-00000000009d",
+          "kind": "speech-line",
+          "title": "ย่ามะลิ",
+          "slug": "flow/cutscene/case-01-ending/p3/grandma",
+          "who": "ย่ามะลิ",
+          "text": "ending.line.3.grandma",
+          "x": 8,
+          "y": 18,
+          "w": 70
+        }
+      ]
+    },
+    {
+      "id": "a4c0e001-0000-4000-8000-00000000009e",
+      "kind": "cutscene-page",
+      "title": "ตอนจบ 4",
+      "slug": "flow/cutscene/case-01-ending/p4",
+      "eventId": "case-01-ending",
+      "image": "ending-04.jpg",
+      "caption": "ending.caption.4",
+      "lines": [
+        {
+          "id": "a4c0e001-0000-4000-8000-00000000009f",
+          "kind": "speech-line",
+          "title": "ย่ามะลิ",
+          "slug": "flow/cutscene/case-01-ending/p4/grandma",
+          "who": "ย่ามะลิ",
+          "text": "ending.line.4.grandma",
+          "x": 6,
+          "y": 46,
+          "w": 52
+        },
+        {
+          "id": "a4c0e001-0000-4000-8000-0000000000a0",
+          "kind": "speech-line",
+          "title": "หนู",
+          "slug": "flow/cutscene/case-01-ending/p4/child",
+          "who": "หนู",
+          "text": "ending.line.4.child",
+          "x": 50,
+          "y": 72,
+          "w": 44
+        }
+      ]
+    },
+    {
+      "id": "a4c0e001-0000-4000-8000-0000000000a1",
+      "kind": "cutscene-page",
+      "title": "ตอนจบ 5",
+      "slug": "flow/cutscene/case-01-ending/p5",
+      "eventId": "case-01-ending",
+      "image": "ending-05.jpg",
+      "caption": "ending.caption.5",
+      "lines": [
+        {
+          "id": "a4c0e001-0000-4000-8000-0000000000a2",
+          "kind": "speech-line",
+          "title": "ย่ามะลิ",
+          "slug": "flow/cutscene/case-01-ending/p5/grandma",
+          "who": "ย่ามะลิ",
+          "text": "ending.line.5.grandma",
+          "x": 6,
+          "y": 46,
+          "w": 56
+        },
+        {
+          "id": "a4c0e001-0000-4000-8000-0000000000a3",
+          "kind": "speech-line",
+          "title": "หนู",
+          "slug": "flow/cutscene/case-01-ending/p5/child",
+          "who": "หนู",
+          "text": "ending.line.5.child",
+          "x": 48,
+          "y": 72,
+          "w": 46
+        }
+      ]
     }
   ],
   "evidence": [
@@ -566,6 +720,19 @@
             "text": "ชิ้นแผนผังยังเรียงอยู่ในถาดครบ"
           },
           "doneEvidence": null
+        },
+        {
+          "id": "a4c0e001-0000-4000-8000-0000000000a9",
+          "kind": "hotspot",
+          "title": "พัดลมตั้งโต๊ะ",
+          "titleEn": "Desk fan",
+          "slug": "flow/living-room/fan",
+          "x": 91.5,
+          "y": 57.5,
+          "when": "always",
+          "action": {
+            "type": "egg-fan"
+          }
         }
       ]
     },
@@ -920,9 +1087,9 @@
         {
           "id": "a4c0e001-0000-4000-8000-000000000046",
           "kind": "hotspot",
-          "title": "โปสการ์ด",
+          "title": "โปสเตอร์",
           "slug": "flow/album/postcard",
-          "titleEn": "Postcard",
+          "titleEn": "Poster",
           "x": 80,
           "y": 45,
           "when": "always",
@@ -981,13 +1148,16 @@
       "title": "ย่าดีใจ",
       "slug": "flow/dialogue/grandma-win",
       "who": "ย่ามะลิ",
-      "text": "นี่ไงรูปตา ขอบใจนะหลาน มานั่งดูด้วยกันมา ย่าจะเล่าให้ฟัง",
+      "text": "dialogue.grandmaShow.text",
       "choices": [
         {
-          "id": "a4c0e001-0000-4000-8000-00000000004d",
+          "id": "a4c0e001-0000-4000-8000-0000000000a6",
           "kind": "choice",
-          "title": "ปิด",
-          "slug": "flow/dialogue/grandma-win/close"
+          "title": "dialogue.grandmaShow.listen",
+          "slug": "flow/dialogue/grandma-win/listen",
+          "action": {
+            "type": "ending-comic"
+          }
         }
       ]
     },
@@ -1077,15 +1247,18 @@
       "kind": "dialogue",
       "title": "รูปตา",
       "slug": "flow/dialogue/album-portrait",
-      "who": "ย่ามะลิ",
-      "text": "นี่ไงรูปตา ขอบใจนะหลาน มานั่งดูด้วยกันมา ย่าจะเล่าให้ฟัง",
+      "who": "หนู",
+      "text": "dialogue.albumPortrait.hint",
       "choices": [
         {
-          "id": "a4c0e001-0000-4000-8000-000000000059",
+          "id": "a4c0e001-0000-4000-8000-0000000000a5",
           "kind": "choice",
-          "title": "ต่อ",
-          "slug": "flow/dialogue/album-portrait/next",
-          "next": "flow/dialogue/album-rin"
+          "title": "dialogue.albumPortrait.go",
+          "slug": "flow/dialogue/album-portrait/go",
+          "action": {
+            "type": "go",
+            "screen": "grandma"
+          }
         }
       ]
     },
@@ -1108,18 +1281,18 @@
     {
       "id": "a4c0e001-0000-4000-8000-00000000005e",
       "kind": "dialogue",
-      "title": "โปสการ์ด",
+      "title": "โปสเตอร์",
       "slug": "flow/dialogue/album-card",
-      "who": "โปสการ์ด",
+      "who": "โปสเตอร์",
       "text": "ภาพที่เหลือฝากไว้ที่ห้องสมุดวันวาน — ลิ้นชักหมายเลข 7",
       "choices": [
         {
-          "id": "a4c0e001-0000-4000-8000-00000000005d",
+          "id": "a4c0e001-0000-4000-8000-0000000000a4",
           "kind": "choice",
-          "title": "เก็บโปสการ์ด แล้วกลับบ้าน",
-          "slug": "flow/dialogue/album-card/home",
+          "title": "dialogue.albumCard.keep",
+          "slug": "flow/dialogue/album-card/keep",
           "action": {
-            "type": "home"
+            "type": "take-poster"
           }
         }
       ]
@@ -1159,6 +1332,22 @@
           "slug": "flow/dialogue/map-clue/close"
         }
       ]
+    },
+    {
+      "id": "a4c0e001-0000-4000-8000-0000000000a7",
+      "kind": "dialogue",
+      "title": "ย่าขอโปสเตอร์",
+      "slug": "flow/dialogue/grandma-need-poster",
+      "who": "ย่ามะลิ",
+      "text": "dialogue.grandmaNeedPoster",
+      "choices": [
+        {
+          "id": "a4c0e001-0000-4000-8000-0000000000a8",
+          "kind": "choice",
+          "title": "ปิด",
+          "slug": "flow/dialogue/grandma-need-poster/close"
+        }
+      ]
     }
   ],
   "games": [
@@ -1192,6 +1381,18 @@
   ],
   "practice": [
     {
+      "id": "a4c0e001-0000-4000-8000-0000000000b0",
+      "kind": "practice-game",
+      "title": "ผัดกับย่า",
+      "slug": "flow/practice/stirfry",
+      "game": "stirfry",
+      "icon": "🍳",
+      "group": "ฝีมือ",
+      "caseNo": "hub",
+      "future": false,
+      "route": "#/play/stirfry"
+    },
+    {
       "id": "a4c0e001-0000-4000-8000-000000000079",
       "kind": "practice-game",
       "title": "ครอสเวิร์ด",
@@ -1223,6 +1424,30 @@
       "group": "ตรรกะ",
       "caseNo": "01",
       "future": false
+    },
+    {
+      "id": "a4c0e001-0000-4000-8000-0000000000b1",
+      "kind": "practice-game",
+      "title": "ซ่อมใบพัดลม",
+      "slug": "flow/practice/fan",
+      "game": "fan",
+      "icon": "🪭",
+      "group": "ตรรกะ",
+      "caseNo": "soon",
+      "future": true,
+      "route": "#/play/fan"
+    },
+    {
+      "id": "a4c0e001-0000-4000-8000-0000000000b2",
+      "kind": "practice-game",
+      "title": "เรียงกล่องรูป",
+      "slug": "flow/practice/photobox",
+      "game": "photobox",
+      "icon": "📦",
+      "group": "ภาพ",
+      "caseNo": "soon",
+      "future": true,
+      "route": "#/play/photobox"
     },
     {
       "id": "a4c0e001-0000-4000-8000-00000000007c",

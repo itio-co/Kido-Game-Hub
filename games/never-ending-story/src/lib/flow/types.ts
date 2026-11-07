@@ -24,7 +24,8 @@ export type ScreenId =
   | 'case-board'
   | 'album'
   | 'practice'
-  | 'level-map';
+  | 'level-map'
+  | 'ending-comic';
 
 export type FlowAction =
   | { type: 'go'; screen: ScreenId }
@@ -36,7 +37,10 @@ export type FlowAction =
   | { type: 'calendar' }
   | { type: 'minigame'; screen: 'crossword' | 'jigsaw' | 'slide' }
   | { type: 'box-lock' }
-  | { type: 'home' };
+  | { type: 'home' }
+  | { type: 'take-poster' }
+  | { type: 'ending-comic' }
+  | { type: 'egg-fan' };
 
 export type ScreenDef = Identity & {
   kind: 'screen';
@@ -132,9 +136,10 @@ export type Dialogue = Identity & {
 
 export type PracticeGame = Identity & {
   kind: 'practice-game';
-  game: 'cross' | 'jig' | 'slide' | 'ex';
+  game: 'cross' | 'jig' | 'slide' | 'ex' | 'stirfry' | 'fan' | 'photobox';
+  route?: string;
   icon: string;
-  group: 'คำ' | 'ภาพ' | 'ตรรกะ';
+  group: 'คำ' | 'ภาพ' | 'ตรรกะ' | 'ฝีมือ';
   caseNo: string;
   future: boolean;
 };

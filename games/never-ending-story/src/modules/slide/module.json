@@ -1,0 +1,12 @@
+{
+  "id": "slide",
+  "name": "Slide blocks",
+  "kind": "minigame",
+  "version": "1.0.0",
+  "description": "Sliding-block puzzle rules and board state.",
+  "entry": "src/modules/slide/index.ts",
+  "publicEntries": [
+    "src/modules/slide/index.ts"
+  ],
+  "dependsOn": {}
+}

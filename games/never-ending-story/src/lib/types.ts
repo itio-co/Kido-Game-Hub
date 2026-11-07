@@ -173,12 +173,16 @@ export type HotspotAction = 'event-select' | 'practice' | 'calendar' | 'case-boa
 
 export type HitBox = { position: Vec3; size: Vec3 };
 
+/** Percentage rect on the 2D backdrop (object-fit: cover), from the click-through prototype. */
+export type ScreenRect = { left: number; top: number; width: number; height: number };
+
 export type HotspotEntity = Identity & {
   kind: 'hotspot';
   action: HotspotAction;
   targetId: string;
   anchor: Vec3;
   hit: HitBox;
+  screen: ScreenRect;
 };
 
 export type DecorSlotEntity = Identity & {
@@ -188,10 +192,13 @@ export type DecorSlotEntity = Identity & {
   emptyHint: string;
   anchor: Vec3;
   hit: HitBox;
+  screen: ScreenRect;
 };
 
 export type PlayerRoom = Identity & {
   kind: 'room';
+  /** 2D hub backdrop under public/img/ (hub runtime; 3D scene.ts kept but unused). */
+  backdrop: string;
   camera: CameraShot;
   shots?: Record<string, CameraShot>;
   lighting: {
@@ -225,6 +232,8 @@ export type TextSize = 'sm' | 'md' | 'lg';
 /** Player perception and preferences. Kept apart from shared case facts. */
 export type PlayerProfile = {
   onboardingComplete: boolean;
+  /** Home-entry prologue was shown (or skipped). */
+  prologueSeen: boolean;
   textSize: TextSize;
   soundEnabled: boolean;
   calendarTheme: string | null;
@@ -243,6 +252,8 @@ export type CaseState = {
   facts: Record<string, boolean>;
 };
 
+export type NavContext = 'hub' | 'event' | 'practice';
+
 export type FlowProgress = {
   evidence: string[];
   solved: boolean;
@@ -252,6 +263,24 @@ export type FlowProgress = {
   played: string[];
   seen: string[];
   levels: { cross: number[]; jig: number[]; slide: number[] };
+  /** Player picked up the postcard/poster from the album. */
+  poster: boolean;
+  /** Case-01 fully finished (ending comic done / home). Enables replay skip. */
+  caseDone: boolean;
+  /** Restored navigation after refresh. */
+  nav?: {
+    screen: string;
+    history: string[];
+    slot: 'yesterday' | 'afternoon' | 'now';
+    page: number;
+    talkSlug: string | null;
+    context?: NavContext;
+    /** 2+ = post-0.5.8 practice/event gate */
+    schema?: number;
+    practice?: boolean;
+    lvGame?: 'cross' | 'jig' | 'slide';
+    lvN?: number;
+  };
 };
 
 export type SaveV1 = {
