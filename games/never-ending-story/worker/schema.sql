@@ -16,6 +16,7 @@ CREATE TABLE IF NOT EXISTS runs (
   score              INTEGER NOT NULL,
   timeMs             INTEGER NOT NULL,
   version            TEXT NOT NULL DEFAULT '',
+  ruleset            TEXT NOT NULL DEFAULT '', -- gameplay ruleset only; app version must not split boards
   ts                 INTEGER NOT NULL,
   challenger_session TEXT,
   integrity_ok       INTEGER NOT NULL DEFAULT 0,
@@ -23,6 +24,7 @@ CREATE TABLE IF NOT EXISTS runs (
   created_at         INTEGER NOT NULL
 );
 CREATE INDEX IF NOT EXISTS runs_board ON runs (game, difficulty, verified, score DESC, timeMs ASC);
+CREATE INDEX IF NOT EXISTS runs_ruleset_board ON runs (game, difficulty, ruleset, verified, score DESC, timeMs ASC);
 CREATE INDEX IF NOT EXISTS runs_player ON runs (playerId, game, difficulty);
 CREATE INDEX IF NOT EXISTS players_token ON players (token_hash);
 -- Whole persisted save (nesg.player.v1 + stir-fry + eggs). Never contains the token.

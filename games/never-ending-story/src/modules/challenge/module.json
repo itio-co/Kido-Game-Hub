@@ -7,10 +7,12 @@
   "entry": "src/modules/challenge/index.ts",
   "publicEntries": [
     "src/modules/challenge/index.ts",
-    "src/modules/challenge/proto.ts"
+    "src/modules/challenge/proto.ts",
+    "src/modules/challenge/ruleset.ts"
   ],
+  "ruleset": true,
   "dependsOn": {
-    "core": ">=0.6.0",
+    "core": ">=0.6.11",
     "crossword": "^1.0.0",
     "jigsaw": "^1.0.0",
     "slide": "^1.0.0"

@@ -3,7 +3,7 @@
   "name": "Core / main game",
   "kind": "core",
   "version": "app",
-  "description": "App shell, hub room, flow engine, save, i18n, cloudSync, prologue, Game of Dev admin.",
+  "description": "App shell, hub room, flow engine, save, i18n, cloudSync, prologue. God admin lives in the god module.",
   "entry": "src/main.ts",
   "publicEntries": [
     "src/main.ts"
@@ -14,7 +14,8 @@
     "slide": "^1.0.0",
     "stirfry": "^1.1.0",
     "challenge": "^1.1.0",
-    "event-01": "^1.0.0"
+    "event-01": "^1.0.0",
+    "god": "^1.0.0"
   },
   "paths": [
     "src",

@@ -16,7 +16,7 @@ Why KV and not Workers Static Assets: the deploy connection's asset-upload JWT f
 
 1. `npm run build` (Vite `base: './'` → works under `/never/`; routing is hash-based).
 2. Upload `dist/*` to KV with bulk PUT `/accounts/{acct}/storage/kv/namespaces/{ns}/bulk` — `[{key, value(base64), base64:true, metadata:{ct,h}}]`. `scripts/cloudflare/mk.mjs` + `kv.mjs` build the manifest and ≤2 MB batches. Keep old hashed `/assets/*` keys (clients with an old cached `index.html` still need them).
-3. Apply `worker/schema.sql` with D1 `/query`.
+3. Apply `worker/schema.sql` with D1 `/query`. If the database already exists from before 0.6.11, also run `worker/migrations/002_ruleset.sql` once (adds `runs.ruleset` and backfills the v0.6.10 ruleset). Skip that file on a brand-new database that already got the column from `schema.sql`.
 4. PUT the worker script (multipart: metadata `{main_module, compatibility_date, bindings:[kv ASSETS_KV, d1 DB]}` + `worker.js`).
 
 A GitHub Action would need a `CLOUDFLARE_API_TOKEN` secret with Workers Scripts/KV/D1 edit on the account (not created).

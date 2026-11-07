@@ -14,7 +14,7 @@
 แข่งกับเพื่อนในปริศนาชุดเดียวกัน
 
 ## 3. Core loop
-1. เลือกเกม+ระดับ (seed) 2. เล่น 3. ได้คะแนน 4. แชร์ลิงก์ `#/challenge/<game>/<diff>/<seed>` 5. ส่งคะแนนออนไลน์
+1. เลือกเกม+ระดับ (seed) 2. เล่น 3. ได้คะแนน 4. แชร์ลิงก์ `#/challenge/<game>/<diff>/<seed>/<ruleset>` เช่น `challenge@1.1.0+crossword@1.0.0` 5. ส่งคะแนนออนไลน์พร้อม `ruleset`
 
 ## 4. กฎและ invariants
 - seed เดียวกัน = ปริศนาเดียวกัน
@@ -25,19 +25,19 @@
 ปุ่มเริ่ม แชร์ ดูกระดาน
 
 ## 6. คะแนนและความยาก
-`scoreFor()` + `DIFF_MULT` + `PAR_SECONDS` (ดู GDD มินิเกม) · ระดับ easy/medium/hard
+`scoreFor()` อ่าน `ruleset.json` คีย์ 1.1.0 (`correct` 100, `combo` 20, `mistake` 40, `hint` 150, `timeBonus` 10, `mult`, `par`) · ระดับ easy/medium/hard · จำนวนคำ/กริด/จำนวนสลับของแต่ละเกมอยู่ใน ruleset ของมินิเกมนั้น ไม่ได้อยู่ในไฟล์นี้
 
 ## 7. Progression
 คะแนนดีสุดต่อเกม/ระดับในเครื่อง + อันดับออนไลน์
 
 ## 8. Content / config surface
-`PAR_SECONDS`, `DIFF_MULT`, รายชื่อเกมบนกระดาน (`BOARD_GAMES` ใน `LeaderboardView`) รวม edition ของ rhythm (`stirfry`)
+`ruleset.json`, รายชื่อเกมบนกระดาน (`BOARD_GAMES` ใน `LeaderboardView`) รวม pack ของ rhythm (`stirfry`) · ป้ายกระดานแสดงกติกาที่กำลังดู
 
 ## 9. UX / หน้าจอ
-ChallengeView, LeaderboardView (แท็บเกม; stirfry ไม่มีแท็บระดับ)
+ChallengeView, LeaderboardView (แท็บเกม; stirfry ใช้ระดับ easy/normal/hard) · แบนเนอร์แสดงกติกา · ลิงก์ที่อ้างเวอร์ชันที่ไม่มีใน registry ขึ้นข้อความแล้วให้เล่นกติกาปัจจุบัน
 
 ## 10. Data & telemetry (ฟิลด์บนเซิร์ฟเวอร์)
-`POST /never/api/runs`: sessionId, playerId, game, difficulty, seed, score, timeMs, version, ts, verified, integrity_ok · `GET` leaderboard ต่อ game/difficulty
+`POST /never/api/runs`: sessionId, playerId, game, difficulty, seed, score, timeMs, version, **ruleset**, ts, verified, integrity_ok · `GET` leaderboard ต่อ game + difficulty + ruleset (เวอร์ชันแอปไม่แยกกระดาน) · ruleset ว่างในโทเคนเก่า = กติกา 0.6.10
 
 ## 11. Dependencies + เวอร์ชัน
 core, crossword, jigsaw, slide
@@ -48,5 +48,6 @@ core, crossword, jigsaw, slide
 ## 13. Changelog (ผูกกับเวอร์ชันโมดูล)
 | เวอร์ชัน | แอป | การเปลี่ยนแปลง |
 |---|---|---|
+| 1.1.0 | 0.6.11 | ตรึงสูตรคะแนน 1.1.0 ใน ruleset.json (ตัวเลขไม่เปลี่ยน), ลิงก์และกระดานติดกติกา |
 | 1.1.0 | 0.6.9 | export `packRun`, กระดานรองรับ stirfry |
 | 1.0.0 | 0.6.5 | แยกเป็นโมดูล |

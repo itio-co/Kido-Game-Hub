@@ -3,9 +3,23 @@
  * Auth: Worker secret GOD_ADMIN_PASSWORD (SHA-256 hex of the password, or the plain password) -> HMAC-signed session cookie (12h).
  * Token hashes are never selected or returned.
  */
+/** Structural D1/KV shapes so this module typechecks with the app tsconfig (no Workers types). */
+interface GodStatement {
+  bind(...args: unknown[]): GodStatement;
+  first<T = Record<string, unknown>>(): Promise<T | null>;
+  all<T = Record<string, unknown>>(): Promise<{ results: T[] }>;
+  run(): Promise<{ meta: { changes?: number } }>;
+}
+interface GodDb {
+  prepare(query: string): GodStatement;
+  batch(statements: GodStatement[]): Promise<{ meta: { changes?: number } }[]>;
+}
+interface GodKv {
+  get(key: string, type: 'json'): Promise<unknown>;
+}
 export interface GodEnv {
-  DB: D1Database;
-  ASSETS_KV: KVNamespace;
+  DB: GodDb;
+  ASSETS_KV: GodKv;
   GOD_ADMIN_PASSWORD?: string;
 }
 
@@ -180,16 +194,21 @@ async function games(env: GodEnv): Promise<Response> {
   const stats = (await env.DB.prepare(
     `SELECT game, difficulty, count(*) runs, count(DISTINCT playerId) players, max(score) best, min(timeMs) fastest, avg(score) avg, sum(verified) verified
      FROM runs GROUP BY game, difficulty`).all()).results;
-  return json({ ok: true, games: GAMES, difficulties: DIFFS, gameDiffs: GAME_DIFFS, stats });
+  const byRuleset = (await env.DB.prepare(
+    `SELECT game, ruleset, count(*) runs, count(DISTINCT playerId) players, max(score) best
+     FROM runs GROUP BY game, ruleset ORDER BY game, ruleset`).all()).results;
+  return json({ ok: true, games: GAMES, difficulties: DIFFS, gameDiffs: GAME_DIFFS, stats, byRuleset });
 }
 
-async function board(env: GodEnv, game: string, diff: string): Promise<Response> {
+async function board(env: GodEnv, game: string, diff: string, ruleset: string): Promise<Response> {
   if (!GAME_DIFFS[game]?.includes(diff)) return fail(400, 'bad-game');
-  const { results } = await env.DB.prepare(
-    `SELECT r.sessionId, r.playerId, COALESCE(NULLIF(p.nickname,''), r.nickname) nickname, r.score, r.timeMs, r.seed, r.verified, r.integrity_ok, r.version, r.ts
-     FROM runs r LEFT JOIN players p ON p.playerId=r.playerId WHERE r.game=? AND r.difficulty=? ORDER BY r.score DESC, r.timeMs ASC LIMIT 200`,
-  ).bind(game, diff).all();
-  return json({ ok: true, game, difficulty: diff, rows: results });
+  const filter = ruleset ? ' AND r.ruleset=?' : '';
+  const stmt = env.DB.prepare(
+    `SELECT r.sessionId, r.playerId, COALESCE(NULLIF(p.nickname,''), r.nickname) nickname, r.score, r.timeMs, r.seed, r.verified, r.integrity_ok, r.version, r.ruleset, r.ts
+     FROM runs r LEFT JOIN players p ON p.playerId=r.playerId WHERE r.game=? AND r.difficulty=?${filter} ORDER BY r.score DESC, r.timeMs ASC LIMIT 200`,
+  );
+  const { results } = ruleset ? await stmt.bind(game, diff, ruleset).all() : await stmt.bind(game, diff).all();
+  return json({ ok: true, game, difficulty: diff, ruleset: ruleset || null, rows: results });
 }
 
 async function events(env: GodEnv): Promise<Response> {
@@ -236,7 +255,7 @@ export async function godApi(req: Request, env: GodEnv, path: string): Promise<R
   }
   if (path === '/games' && req.method === 'GET') return games(env);
   m = /^\/games\/([a-z]+)\/board$/.exec(path);
-  if (m && req.method === 'GET') return board(env, m[1], new URL(req.url).searchParams.get('difficulty') ?? 'easy');
+  if (m && req.method === 'GET') return board(env, m[1], new URL(req.url).searchParams.get('difficulty') ?? 'easy', new URL(req.url).searchParams.get('ruleset') ?? '');
   m = /^\/runs\/([^/]{8,80})$/.exec(path);
   if (m && req.method === 'DELETE') {
     const r = await env.DB.prepare('DELETE FROM runs WHERE sessionId=?').bind(decodeURIComponent(m[1])).run();

@@ -5,10 +5,15 @@
   import { imageUrl } from '../../lib/flow/loadFlow';
   import { readPlayerId, setNickname } from '../../lib/playerId';
   import {
-    DIFFICULTIES, PAR_SECONDS, challengeHash, clearRun, compare, fmtTime, leaderboard, newSeed, readRun,
+    DIFFICULTIES, challengeHash, clearRun, compare, fmtTime, leaderboard, newSeed, readRun,
     rng, scoreFor, shareUrl, shuffle, writeRun,
     type ChallengeParams, type Difficulty, type Tally,
   } from './challenge';
+  import { challengeScoring, CHALLENGE_VERSION } from './ruleset';
+  import { crossRules } from '../crossword/ruleset';
+  import { jigRules } from '../jigsaw/ruleset';
+  import { slideRules } from '../slide/ruleset';
+  import { currentRuleset, resolveGame, versionIn } from '../../lib/rulesetCatalog';
   import { appendRun, newSessionId } from './runLog';
   import { packRun, unpackRun } from './runProto';
   import { submitRun } from '../../lib/cloudSync';
@@ -36,7 +41,7 @@
     token?: string;
   };
 
-  const runId = (p: ChallengeParams) => `${p.game}|${p.difficulty ?? ''}|${p.seed ?? ''}|${p.from?.nick ?? ''}|${p.runToken ?? ''}`;
+  const runId = (p: ChallengeParams) => `${p.game}|${p.difficulty ?? ''}|${p.seed ?? ''}|${p.ruleset ?? ''}|${p.from?.nick ?? ''}|${p.runToken ?? ''}`;
 
   function freshRun(p: ChallengeParams): Run {
     return {
@@ -48,6 +53,9 @@
 
   const saved = readRun<Run>();
   let run = $state<Run>(saved && saved.id === runId(params) ? saved : freshRun(params));
+  const resolution = $derived(resolveGame(params.game, params.ruleset));
+  const rulesetKey = $derived(resolution.ok ? resolution.key : currentRuleset(params.game));
+  const scoring = $derived(challengeScoring(resolution.ok ? versionIn(resolution, 'challenge') : CHALLENGE_VERSION) ?? challengeScoring(CHALLENGE_VERSION)!);
   const locked = !!(params.difficulty && params.seed);
   const profile = readPlayerId();
   let nick = $state(profile.nickname ?? '');
@@ -71,22 +79,29 @@
 
   $effect(() => writeRun($state.snapshot(run)));
 
+  function activeCross() {
+    const version = resolution.ok ? versionIn(resolution, 'crossword') : '1.0.0';
+    return crossRules(version) ?? crossRules('1.0.0')!;
+  }
   function build(): Board {
     const rand = rng(run.seed * 7 + DIFFICULTIES.indexOf(run.difficulty));
     if (run.game === 'cross') {
-      const count = { easy: 3, medium: 5, hard: 7 }[run.difficulty];
-      const bank = Array.from({ length: 12 }, (_, i) => t(`challenge.word.${i + 1}`).split('|'));
+      const gen = activeCross();
+      const count = gen.words[run.difficulty];
+      const bank = Array.from({ length: gen.bank }, (_, i) => t(`challenge.word.${i + 1}`).split('|'));
       const words = shuffle(bank, rand).slice(0, count).map(([w, clue]) => ({ tiles: Array.from(w), clue }));
       const b: Board = { kind: 'cross', words, wi: 0, filled: 0, pool: [], used: [] };
       dealCross(b, rand);
       return b;
     }
     if (run.game === 'jig') {
-      const [cols, rows] = { easy: [3, 3], medium: [3, 4], hard: [4, 4] }[run.difficulty];
+      const gen = jigRules(resolution.ok ? versionIn(resolution, 'jigsaw') : '1.0.0') ?? jigRules('1.0.0')!;
+      const [cols, rows] = gen.grid[run.difficulty];
       return { kind: 'jig', cols, rows, placed: [], tray: shuffle(Array.from({ length: cols * rows }, (_, i) => i), rand), sel: null };
     }
-    const n = run.difficulty === 'hard' ? 4 : 3;
-    const scramble = { easy: 16, medium: 40, hard: 70 }[run.difficulty];
+    const slideGen = slideRules(resolution.ok ? versionIn(resolution, 'slide') : '1.0.0') ?? slideRules('1.0.0')!;
+    const n = slideGen.size[run.difficulty];
+    const scramble = slideGen.scramble[run.difficulty];
     const cells = Array.from({ length: n * n }, (_, i) => (i + 1) % (n * n));
     let blank = n * n - 1;
     let prev = -1;
@@ -101,7 +116,7 @@
   }
 
   function dealCross(b: Extract<Board, { kind: 'cross' }>, rand = rng(run.seed + b.wi * 31)): void {
-    const decoys = run.difficulty === 'easy' ? 0 : run.difficulty === 'medium' ? 2 : 4;
+    const decoys = activeCross().decoys[run.difficulty];
     const extra = Array.from(t('challenge.decoys')).filter((c) => c.trim());
     b.pool = shuffle([...b.words[b.wi].tiles, ...shuffle(extra, rand).slice(0, decoys)], rand);
     b.used = b.pool.map(() => false);
@@ -212,15 +227,15 @@
   async function finish(): Promise<void> {
     if (run.phase !== 'play') return;
     const time = Math.floor(run.elapsedMs / 1000);
-    run.score = scoreFor(run.game, run.difficulty, run.tally, time);
+    run.score = scoreFor(run.game, run.difficulty, run.tally, time, scoring);
     run.phase = 'result';
     const me = readPlayerId();
     const base = { game: run.game, difficulty: run.difficulty, seed: run.seed, at: Date.now() };
-    await leaderboard.submit({ ...base, nick: me.nickname ?? '?', playerId: me.playerId, score: run.score, time, source: 'me' });
-    if (run.from) await leaderboard.submit({ ...base, nick: run.from.nick, playerId: null, score: run.from.score, time: run.from.time, source: 'challenger' });
+    await leaderboard.submit({ ...base, nick: me.nickname ?? '?', playerId: me.playerId, score: run.score, time, source: 'me', ruleset: rulesetKey });
+    if (run.from) await leaderboard.submit({ ...base, nick: run.from.nick, playerId: null, score: run.from.score, time: run.from.time, source: 'challenger', ruleset: rulesetKey });
     lastToken = await packRun({
       sessionId: run.sessionId, playerId: me.playerId, nickname: me.nickname ?? '', game: run.game, difficulty: run.difficulty,
-      seed: run.seed, score: run.score, timeMs: run.elapsedMs, version, timestampMs: Date.now(),
+      seed: run.seed, score: run.score, timeMs: run.elapsedMs, version: `${version};${rulesetKey}`, ruleset: rulesetKey, timestampMs: Date.now(),
       challengerSessionId: run.from?.sessionId ?? '', challengerNickname: run.from?.nick ?? '',
       challengerScore: run.from?.score ?? 0, challengerTimeMs: (run.from?.time ?? 0) * 1000,
     }).catch(() => '');
@@ -229,7 +244,7 @@
     try {
       await appendRun({
         sessionId: run.sessionId, playerId: me.playerId, nickname: me.nickname, game: run.game, difficulty: run.difficulty,
-        seed: run.seed, score: run.score, timeMs: run.elapsedMs, version, timestamp: new Date().toISOString(), challengeFrom: run.from,
+        seed: run.seed, score: run.score, timeMs: run.elapsedMs, version: `${version};${rulesetKey}`, timestamp: new Date().toISOString(), challengeFrom: run.from,
       });
     } catch {
       /* Web Crypto unavailable (non-secure context) — run still counts locally. */
@@ -238,7 +253,7 @@
 
   async function share(): Promise<void> {
     const me = readPlayerId();
-    const url = shareUrl(challengeHash(run.game, run.difficulty, run.seed, { nick: me.nickname ?? '?', token: run.token ?? '', score: run.score, time: Math.floor(run.elapsedMs / 1000) }));
+    const url = shareUrl(challengeHash(run.game, run.difficulty, run.seed, { nick: me.nickname ?? '?', token: run.token ?? '', score: run.score, time: Math.floor(run.elapsedMs / 1000) }, rulesetKey));
     const text = t('challenge.shareText', { game: t(`challenge.game.${run.game}`), score: run.score, time: fmtTime(run.elapsedMs / 1000) });
     try {
       if (navigator.share) {
@@ -270,28 +285,41 @@
   onDestroy(() => window.clearInterval(timer));
 
   const secs = $derived(Math.floor(run.elapsedMs / 1000));
-  const liveScore = $derived(scoreFor(run.game, run.difficulty, run.tally, secs));
+  const liveScore = $derived(scoreFor(run.game, run.difficulty, run.tally, secs, scoring));
+
+  function playCurrent(): void {
+    const diff = run.difficulty;
+    const seed = params.seed ?? run.seed;
+    const from = run.from ? { nick: run.from.nick, token: params.runToken ?? '', score: run.from.score, time: run.from.time } : undefined;
+    window.location.hash = challengeHash(run.game, diff, seed, from, currentRuleset(run.game));
+  }
   const verdict = $derived(run.from ? compare({ score: run.score, time: secs }, run.from) : null);
 </script>
 
-<div class="ch" class:bad={flashBad} data-testid="challenge">
+<div class="ch" class:bad={flashBad} data-testid="challenge" data-ruleset={resolution.ok ? rulesetKey : ''}>
   <div class="top">
     <button type="button" class="x" aria-label={t('stirfry.exit')} onclick={exit}>✕</button>
     <div class="mid">
       <h1>{t('challenge.title')} · {t(`challenge.game.${run.game}`)}</h1>
       <span class="ver">v{version} · {t(`challenge.diff.${run.difficulty}`)} · #{run.seed}</span>
+      <span class="ver" data-testid="ruleset-banner">{t('ruleset.banner', { ruleset: resolution.ok ? rulesetKey : params.ruleset ?? '' })}</span>
     </div>
     <button type="button" class="x" aria-label={t('challenge.board')} onclick={onBoard}>🏆</button>
   </div>
 
-  {#if run.from}
+  {#if !resolution.ok}
+    <div class="body center" data-testid="ruleset-unsupported">
+      <p class="lead">{t('ruleset.unsupported', { ruleset: resolution.requested })}</p>
+      <button type="button" class="primary" onclick={playCurrent}>{t('ruleset.playCurrent')}</button>
+    </div>
+  {:else if run.from}
     <div class="banner" data-testid="challenge-banner">
       ⚔️ {t('challenge.from', { nick: run.from.nick, score: run.from.score, time: fmtTime(run.from.time) })}
       {#if verified === true}<small> ✓</small>{:else if verified === false}<small> · {t('challenge.unverified')}</small>{/if}
     </div>
   {/if}
 
-  {#if run.phase === 'pick'}
+  {#if resolution.ok && run.phase === 'pick'}
     <div class="body center">
       <p class="lead">{t('challenge.howto')}</p>
       {#if !hasNick}
@@ -305,7 +333,7 @@
         <div class="diffs" role="radiogroup">
           {#each DIFFICULTIES as d (d)}
             <button type="button" role="radio" aria-checked={run.difficulty === d} class:on={run.difficulty === d} onclick={() => (run.difficulty = d)}>
-              <b>{t(`challenge.diff.${d}`)}</b><small>{t('challenge.par', { time: fmtTime(PAR_SECONDS[run.game][d]) })}</small>
+              <b>{t(`challenge.diff.${d}`)}</b><small>{t('challenge.par', { time: fmtTime(scoring.par[run.game][d]) })}</small>
             </button>
           {/each}
         </div>
@@ -315,7 +343,7 @@
     <div class="foot">
       <button type="button" class="primary" disabled={!hasNick && !nick.trim()} onclick={start}>{t('challenge.start')}</button>
     </div>
-  {:else if run.phase === 'play' && run.board}
+  {:else if resolution.ok && run.phase === 'play' && run.board}
     <div class="hud">
       <span>⏱ {fmtTime(secs)}</span>
       <span>{t('challenge.points')} {liveScore}</span>
@@ -365,7 +393,7 @@
     <div class="foot">
       {#if run.board.kind !== 'slide'}<button type="button" class="ghost" onclick={hint}>{t('challenge.hint')}</button>{/if}
     </div>
-  {:else}
+  {:else if resolution.ok}
     <div class="body center" data-testid="challenge-result">
       <p class="big">{run.score}</p>
       <p class="sub">{t('challenge.points')} · ⏱ {fmtTime(secs)}</p>
@@ -393,7 +421,7 @@
   .top { display: grid; grid-template-columns: 44px 1fr 44px; align-items: center; gap: 8px; flex: none; }
   .mid { text-align: center; min-width: 0; }
   .mid h1 { margin: 0; font-size: calc(var(--fs) + 1px); line-height: 1.2; }
-  .ver { font-size: 11px; opacity: 0.75; font-weight: 700; }
+  .ver { font-size: 11px; opacity: 0.75; font-weight: 700; overflow-wrap: anywhere; }
   .x { width: 44px; height: 44px; border-radius: 50%; border: 2px solid #39e0ff; background: #0d4a66; color: #fff; font-size: 18px; }
   .banner { flex: none; background: #ffcf4a; color: #3a2a00; border-radius: 12px; padding: 8px 12px; font-weight: 800; text-align: center; font-size: var(--fs-sm); }
   .hud { flex: none; display: flex; justify-content: space-between; background: rgba(6, 30, 48, 0.92); border: 1px solid #39e0ff; border-radius: 12px; padding: 8px 12px; font-weight: 800; font-variant-numeric: tabular-nums; }

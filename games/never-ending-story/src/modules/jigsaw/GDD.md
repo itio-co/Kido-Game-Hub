@@ -23,7 +23,7 @@
 แตะชิ้นแล้วแตะช่อง
 
 ## 6. คะแนนและความยาก
-สูตร `challenge.scoreFor`: (correct×100 + maxCombo×20 − mistakes×40 − hints×150 + (par − วินาที)×10) × ตัวคูณ (easy 1, medium 1.5, hard 2) · par: 30/50/90 วินาที
+สูตรอยู่ใน `challenge` ruleset 1.1.0 · โหมด challenge ใช้กริดจาก `ruleset.json` 1.0.0: 3×3 / 3×4 / 4×4 · par: 30/50/90 วินาที · เปลี่ยนกริดต้อง bump โมดูลนี้และเพิ่มคีย์ ruleset
 
 ## 7. Progression
 ใช้ในคดีผ่าน flow engine และในโหมด challenge (คะแนนดีสุดต่อระดับ)

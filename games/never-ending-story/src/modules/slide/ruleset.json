@@ -1,0 +1,6 @@
+{
+  "1.0.0": {
+    "size": { "easy": 3, "medium": 3, "hard": 4 },
+    "scramble": { "easy": 16, "medium": 40, "hard": 70 }
+  }
+}

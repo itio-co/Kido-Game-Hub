@@ -3,6 +3,7 @@
   import { readPlayerId } from '../../lib/playerId';
   import { onlineTop, type OnlineRow } from '../../lib/cloudSync';
   import { CHALLENGE_GAMES, DIFFICULTIES, fmtTime, leaderboard, type ChallengeGame, type Difficulty, type LeaderEntry } from './challenge';
+  import { currentRuleset, supportedRulesets } from '../../lib/rulesetCatalog';
 
   type BoardGame = ChallengeGame | 'stirfry';
   let { onExit, onPlay }: { onExit: () => void; onPlay: (game: BoardGame) => void } = $props();
@@ -10,26 +11,30 @@
   const BOARD_GAMES: BoardGame[] = [...CHALLENGE_GAMES, 'stirfry'];
   let game = $state<BoardGame>('cross');
   let diff = $state<Difficulty>('easy');
-  /** Rhythm editions (stirfry) use their own difficulty set. */
+  /** Rhythm packs (stirfry) use their own difficulty set. */
   const SF_DIFFS = ['easy', 'normal', 'hard'] as const;
   let sfDiff = $state<(typeof SF_DIFFS)[number]>('normal');
   let rows = $state<LeaderEntry[]>([]);
   let scope = $state<'online' | 'local'>('online');
   let online = $state<OnlineRow[] | null>(null);
   let loading = $state(false);
+  let rulesetPick = $state<string | null>(null);
   const myId = readPlayerId().playerId;
+  const boardGameId = $derived(game === 'stirfry' ? 'stirfry' : game);
+  const rulesetOptions = $derived(supportedRulesets(boardGameId));
+  const ruleset = $derived(rulesetPick && rulesetOptions.includes(rulesetPick) ? rulesetPick : currentRuleset(boardGameId));
 
   $effect(() => {
-    const g = game, d = diff;
+    const g = game, d = diff, rs = ruleset;
     if (g === 'stirfry') { rows = []; return; }
-    void leaderboard.top(g, d).then((list) => (rows = list));
+    void leaderboard.top(g, d, 10, rs).then((list) => (rows = list));
   });
 
   $effect(() => {
-    const g = game, d = diff, sd = sfDiff;
+    const g = game, d = diff, sd = sfDiff, rs = ruleset;
     if (scope !== 'online') return;
     loading = true;
-    void onlineTop(g, g === 'stirfry' ? sd : d).then((list) => {
+    void onlineTop(g, g === 'stirfry' ? sd : d, 20, rs).then((list) => {
       online = list;
       loading = false;
       if (list === null) scope = 'local'; // offline / preview host: fall back to this device's board
@@ -65,6 +70,14 @@
       <button type="button" class:on={diff === d} onclick={() => (diff = d)}>{t(`challenge.diff.${d}`)}</button>
     {/each}
   </div>
+  {/if}
+  <p class="local" data-testid="board-ruleset">{t('board.ruleset', { ruleset })}</p>
+  {#if rulesetOptions.length > 1}
+    <div class="tabs small" data-testid="board-ruleset-pick">
+      {#each rulesetOptions as key (key)}
+        <button type="button" class:on={ruleset === key} onclick={() => (rulesetPick = key)}>{key}</button>
+      {/each}
+    </div>
   {/if}
   {#if scope === 'online'}
   <ol class="list" data-testid="board-online">
@@ -117,7 +130,7 @@
   .rk { font-weight: 900; color: #ffcf4a; }
   .nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .tm { text-align: right; opacity: 0.8; }
-  .local { margin: 0; font-size: 12px; opacity: 0.75; text-align: center; }
+  .local { margin: 0; font-size: 12px; opacity: 0.75; text-align: center; overflow-wrap: anywhere; }
   .foot { flex: none; display: grid; gap: 8px; }
   .primary { min-height: 52px; border-radius: 14px; font-weight: 800; font-size: var(--fs-sm); }
   .primary { background: #ffcf4a; color: #3a2a00; border: 0; }

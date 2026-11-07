@@ -25,6 +25,23 @@ function ownerOf(file) {
   return rel.startsWith('..') ? 'core' : rel.split(path.sep)[0];
 }
 
+const SEMVER_KEY = /^(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)$/;
+const RULESET_KINDS = new Set(['engine', 'pack', 'minigame']);
+/** `edition` is the pre-0.6.11 name of `pack`. Readers accept both. */
+function kindOf(m) {
+  return m.kind === 'edition' ? 'pack' : m.kind;
+}
+function packBlock(m) {
+  return m.pack ?? m.edition ?? null;
+}
+function rulesetVersions(dir) {
+  const file = path.join(dir, 'ruleset.json');
+  if (!fs.existsSync(file)) return null;
+  const data = JSON.parse(fs.readFileSync(file, 'utf8'));
+  if (!data || typeof data !== 'object' || Array.isArray(data)) return [];
+  return Object.keys(data);
+}
+
 function filesOf(mod) {
   if (mod.id !== 'core') return walk(mod.dir).filter((f) => SRC_EXT.test(f));
   return [...walk(path.join(ROOT, 'src')), ...walk(path.join(ROOT, 'worker'))].filter((f) => SRC_EXT.test(f) && ownerOf(f) === 'core');
@@ -95,11 +112,17 @@ export function buildRegistry() {
     const hash = createHash('sha256');
     let size = 0;
     for (const f of files) { const b = fs.readFileSync(f); size += b.length; hash.update(path.relative(ROOT, f)).update(b); }
+    const pack = packBlock(m);
+    const packs = mods.filter((e) => packBlock(e)?.mechanism === m.id).map((e) => e.id);
+    const rulesets = rulesetVersions(m.dir);
     return {
-      id: m.id, name: m.name, kind: m.kind, version: m.version, description: m.description, entry: m.entry,
+      id: m.id, name: m.name, kind: kindOf(m), version: m.version, description: m.description, entry: m.entry,
       dependsOn: Object.entries(m.dependsOn ?? {}).map(([id, range]) => ({ id, range, version: versions[id] ?? null, ok: !!versions[id] && satisfies(versions[id], range) })),
-      edition: m.edition ?? null,
-      editions: mods.filter((e) => e.edition?.mechanism === m.id).map((e) => e.id),
+      pack, packs,
+      // Legacy keys so a god build that still says "edition" can read this registry.
+      edition: pack, editions: packs,
+      ruleset: RULESET_KINDS.has(kindOf(m)) || m.ruleset === true,
+      rulesets,
       gdd: m.gdd ?? null,
       gddMarkdown: m.gdd && fs.existsSync(path.join(ROOT, m.gdd)) ? fs.readFileSync(path.join(ROOT, m.gdd), 'utf8') : null,
       files: files.length, size, hash: hash.digest('hex').slice(0, 12), lastCommit: lastCommit(files),
@@ -114,8 +137,22 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.a
     const errors = checkBoundaries();
     const reg = buildRegistry();
     for (const m of reg.modules) if (!m.gddMarkdown) errors.push(`${m.id} has no GDD (set "gdd" in module.json and create the file; template: docs/gdd/TEMPLATE.md)`);
-    for (const m of reg.modules) if (m.edition && !reg.modules.some((x) => x.id === m.edition.mechanism)) errors.push(`${m.id}: unknown mechanism ${m.edition.mechanism}`);
+    for (const m of reg.modules) if (m.pack && !reg.modules.some((x) => x.id === m.pack.mechanism)) errors.push(`${m.id}: unknown mechanism ${m.pack.mechanism}`);
     for (const m of reg.modules) for (const d of m.dependsOn) if (!d.ok) errors.push(`${m.id} needs ${d.id} ${d.range}, found ${d.version}`);
+    for (const m of reg.modules) {
+      if (!m.ruleset) continue;
+      if (!m.rulesets) errors.push(`${m.id} needs src/modules/${m.id}/ruleset.json (gameplay params keyed by semver; cover ${m.version})`);
+      else if (!m.rulesets.includes(m.version)) errors.push(`${m.id}@${m.version} is missing from ruleset.json — when gameplay params change, bump the module version and add a registry entry`);
+      else if (m.rulesets.some((v) => !SEMVER_KEY.test(v))) errors.push(`${m.id} ruleset.json has a key that is not x.y.z`);
+    }
+    const gamesDoc = JSON.parse(fs.readFileSync(path.join(ROOT, 'src/lib/ruleset-games.json'), 'utf8'));
+    for (const [id, version] of Object.entries(gamesDoc.legacy ?? {})) {
+      const m = reg.modules.find((x) => x.id === id);
+      if (!m?.rulesets?.includes(version)) errors.push(`v${gamesDoc.legacyApp} ruleset ${id}@${version} is not in that module's ruleset.json`);
+    }
+    for (const [game, ids] of Object.entries(gamesDoc.games ?? {})) {
+      for (const id of ids) if (!reg.modules.some((m) => m.id === id)) errors.push(`game "${game}" lists unknown ruleset module ${id}`);
+    }
     if (errors.length) { console.error(errors.join('\n')); process.exit(1); }
     console.log(`modules ok: ${reg.modules.map((m) => `${m.id}@${m.version}`).join(', ')}`);
   } else if (cmd === 'registry') {

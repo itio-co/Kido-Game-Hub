@@ -1,10 +1,10 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { t } from '../lib/i18n';
+  import { t } from '../../lib/i18n';
   import { ApiError, fmtDate, fmtTime, god, short } from './api';
   import GodModule from './GodModule.svelte';
-  import '../app.css';
-  import { version } from '../../package.json';
+  import '../../app.css';
+  import { version } from '../../../package.json';
 
   type Row = Record<string, any>;
   type Section = 'dashboard' | 'players' | 'games' | 'events' | 'modules';
@@ -31,17 +31,23 @@
   let toast = $state('');
   let renameTo = $state('');
   let confirmText = $state('');
-  const KIND_ORDER = ['core', 'engine', 'edition', 'feature', 'minigame', 'event'];
+  const KIND_ORDER = ['core', 'engine', 'pack', 'feature', 'minigame', 'event', 'admin'];
+  /** Old registries stored kind "edition". Group them with packs. */
+  const normalizeKind = (k: string) => (k === 'edition' ? 'pack' : k);
+  const packOf = (m: Row) => (m.pack ?? m.edition ?? null) as { mechanism?: string } | null;
   const GAME_MODULE: Record<string, string> = { cross: 'crossword', jig: 'jigsaw', slide: 'slide', stirfry: 'stirfry' };
   let kindFilter = $state('all');
   let collapsed = $state<Record<string, boolean>>({});
-  const kindName = (k: string) => (t(`god.mod.kind.${k}`) === `god.mod.kind.${k}` ? k : t(`god.mod.kind.${k}`));
+  const kindName = (k: string) => {
+    const key = normalizeKind(k);
+    return t(`god.mod.kind.${key}`) === `god.mod.kind.${key}` ? key : t(`god.mod.kind.${key}`);
+  };
 
   const parts = $derived(route.replace(/^#\/?/, '').split('/'));
   const section = $derived<Section>(SECTIONS.includes(parts[0] as Section) ? (parts[0] as Section) : 'dashboard');
   const playerId = $derived(section === 'players' && parts[1] ? decodeURIComponent(parts[1]) : null);
   const subId = $derived((section === 'games' || section === 'modules') && parts[1] ? decodeURIComponent(parts[1]) : null);
-  const modules = $derived<Row[]>(section === 'modules' && Array.isArray(data?.modules) ? data.modules : []);
+  const modules = $derived<Row[]>(section === 'modules' && Array.isArray(data?.modules) ? data.modules.map((m: Row) => ({ ...m, kind: normalizeKind(String(m.kind)), pack: packOf(m) })) : []);
   const kinds = $derived.by((): string[] => {
     const present = [...new Set(modules.map((m) => String(m.kind)))];
     return [...KIND_ORDER.filter((k) => present.includes(k)), ...present.filter((k) => !KIND_ORDER.includes(k)).sort()];
@@ -287,7 +293,7 @@
             {#if !collapsed[k]}
               <table class="wide"><thead><tr><th>{t('god.mod.name')}</th><th>{t('god.mod.version')}</th><th>{t('god.mod.deps')}</th><th>{t('god.mod.size')}</th><th>{t('god.mod.hash')}</th><th>{t('god.mod.commit')}</th></tr></thead>
                 <tbody>{#each mods as m (m.id)}
-                  <tr><td><a href="#/modules/{m.id}"><b>{m.name}</b></a><br /><code>{m.id}</code>{#if m.edition}<br /><small>↳ {m.edition.mechanism}</small>{/if}</td><td><b>{m.version}</b></td>
+                  <tr><td><a href="#/modules/{m.id}"><b>{m.name}</b></a><br /><code>{m.id}</code>{#if m.pack}<br /><small>↳ {m.pack.mechanism}</small>{/if}</td><td><b>{m.version}</b></td>
                     <td>{#each m.dependsOn as d (d.id)}<div class:bad={!d.ok}>{d.ok ? '✓' : '✗'} {d.id} {d.range} <small>({d.version ?? '–'})</small></div>{:else}–{/each}</td>
                     <td>{(m.size / 1024).toFixed(1)} KB<br /><small>{m.files} {t('god.mod.files')}</small></td><td><code>{m.hash}</code></td>
                     <td>{#if m.lastCommit}<code>{m.lastCommit.sha.slice(0, 7)}</code> <small>{fmtDate(Date.parse(m.lastCommit.date))}</small><br /><small>{m.lastCommit.subject}</small>{:else}–{/if}</td></tr>

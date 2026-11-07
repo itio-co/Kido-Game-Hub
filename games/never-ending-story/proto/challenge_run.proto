@@ -11,10 +11,11 @@ message ChallengeRun {
   uint32 seed = 6;                  // deterministic puzzle seed
   uint32 score = 7;                 // points
   uint32 time_ms = 8;               // elapsed play time
-  string version = 9;               // game build, e.g. 0.6.0
+  string version = 9;               // app build plus ruleset note, e.g. 0.6.11;rhythm@1.1.0+stirfry@1.2.0
   uint64 timestamp_ms = 10;         // unix epoch ms when finished
   string challenger_session_id = 11; // run this one answered (empty if none)
   string challenger_nickname = 12;
   uint32 challenger_score = 13;
   uint32 challenger_time_ms = 14;
+  string ruleset = 15;              // gameplay ruleset only (no app version). Empty = v0.6.10 ruleset
 }

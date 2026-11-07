@@ -1,4 +1,8 @@
 /** Challenge mode: seeded puzzles, points + time scoring, share links, leaderboard adapter. */
+import { RULESET_SRC } from '../../lib/ruleset';
+import { challengeScoring, CHALLENGE_VERSION, type ChallengeScoring } from './ruleset';
+import { currentRuleset, legacyRuleset } from '../../lib/rulesetCatalog';
+
 export type ChallengeGame = 'cross' | 'jig' | 'slide';
 export type Difficulty = 'easy' | 'medium' | 'hard';
 
@@ -9,6 +13,8 @@ export type ChallengeParams = {
   game: ChallengeGame;
   difficulty: Difficulty | null;
   seed: number | null;
+  /** Ruleset path segment, or null on a versionless (v0.6.10) link. */
+  ruleset: string | null;
   from: { nick: string; score: number; time: number; sessionId: string } | null;
   runToken: string | null;
 };
@@ -25,6 +31,8 @@ export type LeaderEntry = {
   seed: number;
   at: number;
   source: 'me' | 'challenger';
+  /** Canonical ruleset. Missing on rows saved before 0.6.11 (treated as the legacy ruleset). */
+  ruleset?: string;
 };
 
 /** mulberry32 — tiny deterministic PRNG so friends get the same puzzle from a seed. */
@@ -58,20 +66,22 @@ const isDiff = (v: string | null): v is Difficulty => !!v && (DIFFICULTIES as st
 /**
  * Human-readable URLs:
  *   #/challenge/<game>                                   → difficulty picker
- *   #/challenge/<game>/<difficulty>/<seed>               → fixed puzzle
- *   #/challenge/<game>/<difficulty>/<seed>/vs/<nick>?score=<pts>&time=<sec>&run=<protobuf.tag>
+ *   #/challenge/<game>/<difficulty>/<seed>               → fixed puzzle (v0.6.10 rules)
+ *   #/challenge/<game>/<difficulty>/<seed>/<ruleset>     → same puzzle, pinned rules
+ *   #/challenge/<game>/<difficulty>/<seed>[/<ruleset>]/vs/<nick>?score=<pts>&time=<sec>&run=<protobuf.tag>
+ * `ruleset` is `challenge@1.1.0+crossword@1.0.0`.
  */
 export function parseChallengeHash(hash: string): ChallengeParams | null {
-  const m = /^#\/challenge\/([a-z]+)(?:\/([a-z]+)\/(\d+))?(?:\/vs\/([^?/]+))?(?:\?(.*))?$/.exec(hash);
+  const m = new RegExp(`^#\\/challenge\\/([a-z]+)(?:\\/([a-z]+)\\/(\\d+))?(?:\\/(${RULESET_SRC}))?(?:\\/vs\\/([^?/]+))?(?:\\?(.*))?$`).exec(hash);
   if (!m || !isGame(m[1])) return null;
-  const q = new URLSearchParams(m[5] ?? '');
+  const q = new URLSearchParams(m[6] ?? '');
   const d = m[2] ?? null;
   const s = Number(m[3]);
   const sc = Number(q.get('score'));
   const tm = Number(q.get('time'));
   let nick = '';
   try {
-    nick = m[4] ? decodeURIComponent(m[4]).slice(0, 24) : '';
+    nick = m[5] ? decodeURIComponent(m[5]).slice(0, 24) : '';
   } catch {
     nick = '';
   }
@@ -79,6 +89,7 @@ export function parseChallengeHash(hash: string): ChallengeParams | null {
     game: m[1],
     difficulty: isDiff(d) ? d : null,
     seed: Number.isFinite(s) && s > 0 ? Math.floor(s) : null,
+    ruleset: m[4] ?? null,
     from: nick && Number.isFinite(sc) && Number.isFinite(tm)
       ? { nick, score: Math.max(0, Math.floor(sc)), time: Math.max(0, Math.floor(tm)), sessionId: '' }
       : null,
@@ -86,8 +97,8 @@ export function parseChallengeHash(hash: string): ChallengeParams | null {
   };
 }
 
-export function challengeHash(game: ChallengeGame, difficulty: Difficulty, seed: number, from?: { nick: string; token: string } & ChallengeResult): string {
-  const path = `#/challenge/${game}/${difficulty}/${seed}`;
+export function challengeHash(game: ChallengeGame, difficulty: Difficulty, seed: number, from?: { nick: string; token: string } & ChallengeResult, ruleset?: string | null): string {
+  const path = `#/challenge/${game}/${difficulty}/${seed}${ruleset ? `/${ruleset}` : ''}`;
   if (!from) return path;
   const q = new URLSearchParams({ score: String(from.score), time: String(from.time), run: from.token });
   return `${path}/vs/${encodeURIComponent(from.nick)}?${q.toString()}`;
@@ -104,20 +115,17 @@ export function compare(me: ChallengeResult, other: ChallengeResult): 'win' | 'l
   return 'tie';
 }
 
-export const DIFF_MULT: Record<Difficulty, number> = { easy: 1, medium: 1.5, hard: 2 };
-export const PAR_SECONDS: Record<ChallengeGame, Record<Difficulty, number>> = {
-  cross: { easy: 45, medium: 75, hard: 110 },
-  jig: { easy: 30, medium: 50, hard: 90 },
-  slide: { easy: 40, medium: 70, hard: 150 },
-};
+const CURRENT_SCORING = challengeScoring(CHALLENGE_VERSION)!;
+export const DIFF_MULT: Record<Difficulty, number> = CURRENT_SCORING.mult;
+export const PAR_SECONDS: Record<ChallengeGame, Record<Difficulty, number>> = CURRENT_SCORING.par;
 
 export type Tally = { correct: number; mistakes: number; hints: number; maxCombo: number };
 
 /** Points: correctness + combo − mistakes − hints, plus a time bonus under par; scaled by difficulty. */
-export function scoreFor(game: ChallengeGame, difficulty: Difficulty, tally: Tally, seconds: number): number {
-  const base = tally.correct * 100 + tally.maxCombo * 20 - tally.mistakes * 40 - tally.hints * 150;
-  const timeBonus = Math.max(0, PAR_SECONDS[game][difficulty] - seconds) * 10;
-  return Math.max(0, Math.round((base + timeBonus) * DIFF_MULT[difficulty]));
+export function scoreFor(game: ChallengeGame, difficulty: Difficulty, tally: Tally, seconds: number, scoring: ChallengeScoring = CURRENT_SCORING): number {
+  const base = tally.correct * scoring.correct + tally.maxCombo * scoring.combo - tally.mistakes * scoring.mistake - tally.hints * scoring.hint;
+  const timeBonus = Math.max(0, scoring.par[game][difficulty] - seconds) * scoring.timeBonus;
+  return Math.max(scoring.floor, Math.round((base + timeBonus) * scoring.mult[difficulty]));
 }
 
 export function fmtTime(sec: number): string {
@@ -129,7 +137,7 @@ export function fmtTime(sec: number): string {
 export interface LeaderboardAdapter {
   readonly kind: 'local' | 'global';
   submit(entry: LeaderEntry): Promise<void>;
-  top(game: ChallengeGame, difficulty: Difficulty, limit?: number): Promise<LeaderEntry[]>;
+  top(game: ChallengeGame, difficulty: Difficulty, limit?: number, ruleset?: string): Promise<LeaderEntry[]>;
 }
 
 const LB_KEY = 'nesg.challenge.board.v1';
@@ -147,16 +155,16 @@ export class LocalLeaderboard implements LeaderboardAdapter {
   readonly kind = 'local' as const;
   async submit(entry: LeaderEntry): Promise<void> {
     const all = readAll();
-    const key = (e: LeaderEntry) => `${e.game}|${e.difficulty}|${e.source}|${e.source === 'me' ? 'me' : e.nick}|${e.seed}`;
+    const key = (e: LeaderEntry) => `${e.game}|${e.difficulty}|${e.ruleset ?? legacyRuleset(e.game)}|${e.source}|${e.source === 'me' ? 'me' : e.nick}|${e.seed}`;
     const idx = all.findIndex((e) => key(e) === key(entry));
     if (idx >= 0) {
       if (compare(entry, all[idx]) === 'win') all[idx] = entry;
     } else all.push(entry);
     localStorage.setItem(LB_KEY, JSON.stringify(all.slice(-300)));
   }
-  async top(game: ChallengeGame, difficulty: Difficulty, limit = 10): Promise<LeaderEntry[]> {
+  async top(game: ChallengeGame, difficulty: Difficulty, limit = 10, ruleset = currentRuleset(game)): Promise<LeaderEntry[]> {
     return readAll()
-      .filter((e) => e.game === game && e.difficulty === difficulty)
+      .filter((e) => e.game === game && e.difficulty === difficulty && (e.ruleset || legacyRuleset(game)) === ruleset)
       .sort((a, b) => b.score - a.score || a.time - b.time)
       .slice(0, limit);
   }

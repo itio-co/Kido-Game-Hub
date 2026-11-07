@@ -6,7 +6,8 @@
   "description": "Sliding-block puzzle rules and board state.",
   "entry": "src/modules/slide/index.ts",
   "publicEntries": [
-    "src/modules/slide/index.ts"
+    "src/modules/slide/index.ts",
+    "src/modules/slide/ruleset.ts"
   ],
   "dependsOn": {},
   "gdd": "src/modules/slide/GDD.md"
