@@ -1,0 +1,21 @@
+{
+  "1.2.0": {
+    "params": {
+      "durationSec": 60,
+      "beatMs": 780,
+      "perfectMs": 110,
+      "goodMs": 200,
+      "extraFirstMs": 2800,
+      "extraLeadMs": 850,
+      "extraWindowMs": 480,
+      "extraGapMs": [2600, 4000],
+      "pressureRise": 7,
+      "pressureDropPerTap": 4,
+      "pressureZone": [35, 75],
+      "stars": { "two": 900, "three": 1400 }
+    },
+    "cook": { "halfBelow": 30, "cookedAt": 70 },
+    "burn": { "start": 78, "span": 18, "smokeAt": 0.3 },
+    "reactMs": { "hit": 260, "miss": 380 }
+  }
+}

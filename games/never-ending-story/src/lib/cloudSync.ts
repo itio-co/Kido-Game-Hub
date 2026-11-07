@@ -89,8 +89,10 @@ export async function flushRuns(): Promise<void> {
 }
 
 export type OnlineRow = { playerId: string; nickname: string; score: number; timeMs: number };
-export async function onlineTop(game: string, difficulty: string, limit = 20): Promise<OnlineRow[] | null> {
-  const res = await call(`leaderboard?game=${game}&difficulty=${difficulty}&limit=${limit}`, {}, false);
+export async function onlineTop(game: string, difficulty: string, limit = 20, ruleset?: string): Promise<OnlineRow[] | null> {
+  const q = new URLSearchParams({ game, difficulty, limit: String(limit) });
+  if (ruleset) q.set('ruleset', ruleset);
+  const res = await call(`leaderboard?${q}`, {}, false);
   if (!res?.ok) return null;
   return ((await res.json()) as { rows: OnlineRow[] }).rows;
 }

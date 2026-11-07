@@ -3,8 +3,9 @@
  * - Static files live in Workers KV (binding ASSETS_KV, key = path under /never, e.g. "/index.html").
  * - Leaderboard API under /never/api backed by D1 (binding DB). See docs/online-leaderboard.md.
  */
-import { godApi } from './god';
+import { godApi } from '../src/modules/god/server';
 import { decodeRun, tagFor, unb64url, type ChallengeRunPb } from '../src/modules/challenge/proto';
+import { acceptRuleset, legacyRuleset, rhythmFor, scoringFor, versionIn, resolveGame } from '../src/lib/rulesetCatalog';
 
 interface Env {
   ASSETS_KV: KVNamespace;
@@ -65,22 +66,42 @@ async function tokenOk(env: Env, playerId: string, token: string | null): Promis
 const STIRFRY = { difficulties: ['easy', 'normal', 'hard'], maxMs: 65_000, maxScore: 25_000 };
 export const BOARD_GAMES: Record<string, string[]> = { cross: DIFFS, jig: DIFFS, slide: DIFFS, stirfry: STIRFRY.difficulties };
 
+/** Empty ruleset (pre-0.6.11 tokens) is the v0.6.10 legacy ruleset. Anything else must be on the allowlist. */
+function rulesetFor(r: ChallengeRunPb): string | null {
+  return acceptRuleset(r.game, r.ruleset || null);
+}
+
 function plausible(r: ChallengeRunPb): string | null {
+  const ruleset = rulesetFor(r);
+  if (!ruleset) return 'unsupported ruleset';
+  const resolved = resolveGame(r.game, ruleset);
+  if (!resolved.ok) return 'unsupported ruleset';
   if (r.game === 'stirfry') {
     if (!STIRFRY.difficulties.includes(r.difficulty)) return 'bad game/difficulty';
     // Seeded chart: the seed picks the cue sequence, so it must be a real chart seed.
     if (!Number.isInteger(r.seed) || r.seed < 1 || r.seed >= 2 ** 31) return 'bad seed';
     if (!ID_RE.test(r.sessionId) || !ID_RE.test(r.playerId)) return 'bad ids';
-    if (r.timeMs < 3000 || r.timeMs > STIRFRY.maxMs) return 'implausible time';
-    if (r.score < 0 || r.score > STIRFRY.maxScore) return 'implausible score';
+    const engine = rhythmFor(versionIn(resolved, 'rhythm'));
+    const minMs = engine?.submit.minMs ?? 3000;
+    const maxMs = ((engine?.params.durationSec ?? 60) + (engine?.submit.slackSec ?? 5)) * 1000;
+    const maxScore = engine?.submit.maxScore ?? STIRFRY.maxScore;
+    if (r.timeMs < minMs || r.timeMs > maxMs) return 'implausible time';
+    if (r.score < 0 || r.score > maxScore) return 'implausible score';
     if (r.timestampMs && r.timestampMs > Date.now() + 86_400_000) return 'future timestamp';
     return null;
   }
   if (!GAMES.includes(r.game) || !DIFFS.includes(r.difficulty)) return 'bad game/difficulty';
   if (!ID_RE.test(r.sessionId) || !ID_RE.test(r.playerId)) return 'bad ids';
-  if (r.timeMs < 3000 || r.timeMs > 3_600_000) return 'implausible time';
+  const scoring = scoringFor(versionIn(resolved, 'challenge'));
+  const minMs = scoring?.minMs ?? 3000;
+  const maxMs = scoring?.maxMs ?? 3_600_000;
+  if (r.timeMs < minMs || r.timeMs > maxMs) return 'implausible time';
   const secs = r.timeMs / 1000;
-  const max = Math.round((3000 + Math.max(0, PAR[r.game][r.difficulty] - secs) * 10) * MULT[r.difficulty]);
+  const par = scoring?.par[r.game as 'cross']?.[r.difficulty as 'easy'] ?? PAR[r.game][r.difficulty];
+  const bonus = scoring?.timeBonus ?? 10;
+  const base = scoring?.maxBase ?? 3000;
+  const mult = scoring?.mult[r.difficulty as 'easy'] ?? MULT[r.difficulty];
+  const max = Math.round((base + Math.max(0, par - secs) * bonus) * mult);
   if (r.score < 0 || r.score > max) return 'implausible score';
   if (r.timestampMs && r.timestampMs > Date.now() + 86_400_000) return 'future timestamp';
   return null;
@@ -216,6 +237,7 @@ async function api(req: Request, env: Env, path: string): Promise<Response> {
       verified = 1;
     }
     const nick = cleanNick(run.nickname);
+    const ruleset = rulesetFor(run) ?? legacyRuleset(run.game);
     // Unverified (challenger) runs only create an unclaimed player row; they never change a claimed one.
     await env.DB.prepare(
       `INSERT INTO players (playerId,nickname,token_hash,created_at,last_seen) VALUES (?,?,NULL,?,?)
@@ -224,10 +246,10 @@ async function api(req: Request, env: Env, path: string): Promise<Response> {
     ).bind(run.playerId, nick, now, now, verified).run();
     // Idempotent by sessionId; a later verified submit upgrades an earlier unverified copy.
     const res = await env.DB.prepare(
-      `INSERT INTO runs (sessionId,playerId,nickname,game,difficulty,seed,score,timeMs,version,ts,challenger_session,integrity_ok,verified,created_at)
-       VALUES (?,?,?,?,?,?,?,?,?,?,?,1,?,?)
+      `INSERT INTO runs (sessionId,playerId,nickname,game,difficulty,seed,score,timeMs,version,ruleset,ts,challenger_session,integrity_ok,verified,created_at)
+       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,1,?,?)
        ON CONFLICT(sessionId) DO UPDATE SET verified=1 WHERE excluded.verified=1 AND runs.playerId=excluded.playerId`,
-    ).bind(run.sessionId, run.playerId, nick, run.game, run.difficulty, run.seed, run.score, run.timeMs, run.version, run.timestampMs || now,
+    ).bind(run.sessionId, run.playerId, nick, run.game, run.difficulty, run.seed, run.score, run.timeMs, run.version, ruleset, run.timestampMs || now,
       run.challengerSessionId || null, verified, now).run();
     return json({ ok: true, sessionId: run.sessionId, verified: !!verified, stored: (res.meta?.changes ?? 0) > 0 });
   }
@@ -237,15 +259,18 @@ async function api(req: Request, env: Env, path: string): Promise<Response> {
     const game = u.searchParams.get('game') ?? 'cross';
     const diff = u.searchParams.get('difficulty') ?? 'easy';
     if (!BOARD_GAMES[game]?.includes(diff)) return err(400, 'bad game/difficulty');
+    const requested = u.searchParams.get('ruleset');
+    const ruleset = acceptRuleset(game, requested);
+    if (!ruleset) return err(400, 'unsupported ruleset');
     const limit = Math.min(100, Math.max(1, Number(u.searchParams.get('limit')) || 20));
     const { results } = await env.DB.prepare(
       `SELECT x.playerId, COALESCE(NULLIF(p.nickname,''), x.nickname) AS nickname, x.score, x.timeMs, x.seed, x.ts
        FROM (SELECT r.*, ROW_NUMBER() OVER (PARTITION BY r.playerId ORDER BY r.score DESC, r.timeMs ASC) AS rn
-             FROM runs r WHERE r.game=? AND r.difficulty=? AND r.verified=1) x
+             FROM runs r WHERE r.game=? AND r.difficulty=? AND r.ruleset=? AND r.verified=1) x
        LEFT JOIN players p ON p.playerId=x.playerId
        WHERE x.rn=1 ORDER BY x.score DESC, x.timeMs ASC LIMIT ?`,
-    ).bind(game, diff, limit).all();
-    return json({ ok: true, game, difficulty: diff, rows: results });
+    ).bind(game, diff, ruleset, limit).all();
+    return json({ ok: true, game, difficulty: diff, ruleset, rows: results });
   }
 
   return err(404, 'no such endpoint');

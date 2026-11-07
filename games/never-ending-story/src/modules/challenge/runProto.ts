@@ -3,9 +3,11 @@ export type ChallengeRunPb = {
   sessionId: string; playerId: string; nickname: string; game: string; difficulty: string;
   seed: number; score: number; timeMs: number; version: string; timestampMs: number;
   challengerSessionId: string; challengerNickname: string; challengerScore: number; challengerTimeMs: number;
+  /** Canonical gameplay ruleset (`rhythm@1.1.0+stirfry@1.2.0`). Empty on tokens from before 0.6.11. */
+  ruleset: string;
 };
 
-const STR: [number, keyof ChallengeRunPb][] = [[1, 'sessionId'], [2, 'playerId'], [3, 'nickname'], [4, 'game'], [5, 'difficulty'], [9, 'version'], [11, 'challengerSessionId'], [12, 'challengerNickname']];
+const STR: [number, keyof ChallengeRunPb][] = [[1, 'sessionId'], [2, 'playerId'], [3, 'nickname'], [4, 'game'], [5, 'difficulty'], [9, 'version'], [11, 'challengerSessionId'], [12, 'challengerNickname'], [15, 'ruleset']];
 const INT: [number, keyof ChallengeRunPb][] = [[6, 'seed'], [7, 'score'], [8, 'timeMs'], [10, 'timestampMs'], [13, 'challengerScore'], [14, 'challengerTimeMs']];
 
 function varint(out: number[], n: number): void {
@@ -38,7 +40,7 @@ export function encodeRun(run: ChallengeRunPb): Uint8Array {
 }
 
 export function emptyRun(): ChallengeRunPb {
-  return { sessionId: '', playerId: '', nickname: '', game: '', difficulty: '', seed: 0, score: 0, timeMs: 0, version: '', timestampMs: 0, challengerSessionId: '', challengerNickname: '', challengerScore: 0, challengerTimeMs: 0 };
+  return { sessionId: '', playerId: '', nickname: '', game: '', difficulty: '', seed: 0, score: 0, timeMs: 0, version: '', timestampMs: 0, challengerSessionId: '', challengerNickname: '', challengerScore: 0, challengerTimeMs: 0, ruleset: '' };
 }
 
 export function decodeRun(buf: Uint8Array): ChallengeRunPb {

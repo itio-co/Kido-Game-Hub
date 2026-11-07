@@ -50,14 +50,26 @@ Supported ranges: exact `1.2.3`, `^1.2.3`, `~1.2.3`, `>=1.2.3`, `*` (space-separ
 4. Core changes bump the app version in `package.json` as before (`v0.6.x`).
 5. Mention `module@version` in the commit message, e.g. `feat(nes): slide@1.1.0 add undo`.
 
-## Mechanisms and editions
+## Mechanisms and packs
 
-A **mechanism** (`kind: "engine"`) owns the rules: timing, judging, combo, scoring, difficulty, run store, and server submission. An **edition** (`kind: "edition"`) reuses one mechanism and supplies only theme, art, Stage component, sounds, copy and params.
+A **mechanism** (`kind: "engine"`) owns the rules: timing, judging, combo, scoring, difficulty, run store, and server submission. A **pack** (`kind: "pack"`, called `edition` before 0.6.11) reuses one mechanism and supplies theme, art, Stage component, sounds, copy and params.
 
-- The edition's `module.json` has an `edition` block: `{ "mechanism": "rhythm", "leaderboardId": "stirfry", "storageKey": ..., "route": ..., "params": ... }` and `dependsOn` the mechanism.
-- Rhythm editions implement `RhythmEdition` (`src/modules/rhythm/types.ts`): `id`, `leaderboardId`, `copy` (i18n prefix), `storageKey`, `route`, `params`, `theme`, `Stage` (gets `StageProps`: progress, pressure, combo, beat, last judgement, pulse) and optional hooks `onBeat` / `onJudge` / `onFinish`.
-- Leaderboards are keyed by the edition's `leaderboardId`; each run's `version` records `<app>;<mechanism>@<version>;<edition>`.
-- The registry lists `edition` on editions and `editions` (ids) on mechanisms. `/never/god/games/<id>` shows the relationship.
+- The pack's `module.json` has a `pack` block: `{ "mechanism": "rhythm", "leaderboardId": "stirfry", "storageKey": ..., "route": ..., "params": ... }` and `dependsOn` the mechanism. `check:modules` still accepts a legacy `edition` block.
+- Rhythm packs implement `RhythmPack` (`src/modules/rhythm/types.ts`): `id`, `leaderboardId`, `copy` (i18n prefix), `storageKey`, `route`, `version`, `rulesets`, `theme`, `Stage` (gets `StageProps`: progress, pressure, pressureZone, combo, beat, extraDue, last judgement, pulse, packVersion) and optional hooks `onBeat` / `onJudge` / `onFinish`.
+- Leaderboards are keyed by the pack's `leaderboardId` **and** the ruleset (engine version + pack version). The app version is not part of that key.
+- The registry lists `pack` on packs and `packs` (ids) on mechanisms, and still emits `edition` / `editions` as aliases. `/never/god/games/<id>` shows the relationship.
+- God admin is its own module (`kind: "admin"`, `src/modules/god`). The page is still `/never/god` and the API is still `/never/api/god/*`.
+
+## Rulesets
+
+Gameplay params (chart generation, timing windows, scoring, pack thresholds) live in `src/modules/<id>/ruleset.json`, one entry per module version that must stay playable. `ruleset.ts` next to it is a public entry.
+
+- A share link carries every module that affects the run, in a path segment: `rhythm@1.1.0+stirfry@1.2.0` (canonical form sorts ids). Puzzle links look like `#/challenge/cross/medium/482913/challenge@1.1.0+crossword@1.0.0`.
+- A link with no segment is the **v0.6.10 ruleset** (`src/lib/ruleset-games.json` → `legacy`). Today that matches the current params, so old links and new shares land on the same board.
+- Changing a gameplay param means: bump that module's version, add a `ruleset.json` entry for the new version, leave the old entry in place. `npm run check:modules` fails if the current version is missing, or if a legacy pin is missing.
+- An unknown version shows a localized notice and a button to play the current ruleset instead.
+- The server stores `runs.ruleset` and partitions `GET /leaderboard` by game + difficulty + ruleset. Submitted rulesets must be on the allowlist (every registered combination of that game's modules). Empty `ruleset` on an old token is stored as the v0.6.10 ruleset.
+- Existing D1 databases: run `worker/migrations/002_ruleset.sql` once. Fresh installs already have the column from `worker/schema.sql`.
 
 ## GDD per module
 

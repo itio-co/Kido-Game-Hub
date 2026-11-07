@@ -1,0 +1,46 @@
+{
+  "1.1.0": {
+    "chart": "v1",
+    "params": {
+      "durationSec": 60,
+      "beatMs": 780,
+      "perfectMs": 110,
+      "goodMs": 200,
+      "extraFirstMs": 2800,
+      "extraLeadMs": 850,
+      "extraWindowMs": 480,
+      "extraGapMs": [2600, 4000],
+      "pressureRise": 7,
+      "pressureDropPerTap": 4,
+      "pressureZone": [35, 75],
+      "stars": { "two": 900, "three": 1400 }
+    },
+    "tuning": {
+      "easy": { "beat": 1.15, "window": 1.25, "gap": 1.2, "rise": 0.8 },
+      "normal": { "beat": 1, "window": 1, "gap": 1, "rise": 1 },
+      "hard": { "beat": 0.85, "window": 0.8, "gap": 0.8, "rise": 1.25 }
+    },
+    "scoring": {
+      "perfectBase": 80,
+      "perfectBonus": 50,
+      "perfectCombo": 3,
+      "perfectComboCap": 12,
+      "perfectProgress": 4.2,
+      "goodBase": 40,
+      "goodCombo": 1,
+      "goodComboCap": 8,
+      "goodProgress": 2.4,
+      "missPenalty": 10,
+      "extraHitBase": 140,
+      "extraHitCombo": 6,
+      "extraProgress": 9,
+      "zoneScorePerSec": 10,
+      "zoneProgressPerSec": 1.1,
+      "outZonePenaltyPerSec": 12,
+      "extraMissGraceMs": 520,
+      "cueMinGapMs": 600,
+      "cueMissGapMs": 1200
+    },
+    "submit": { "minMs": 3000, "slackSec": 5, "maxScore": 25000 }
+  }
+}

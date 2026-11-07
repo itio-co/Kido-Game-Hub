@@ -7,8 +7,9 @@ Challenge mode has no backend yet. **The share URL is the transport**: a link al
 | URL (hash route) | Meaning |
 |---|---|
 | `#/challenge/<game>` | Difficulty picker. `game` = `cross` \| `jig` \| `slide` |
-| `#/challenge/<game>/<difficulty>/<seed>` | A fixed seeded puzzle. `difficulty` = `easy` \| `medium` \| `hard` |
-| `#/challenge/<game>/<difficulty>/<seed>/vs/<nickname>?score=<pts>&time=<sec>&run=<token>` | A challenge from `nickname` |
+| `#/challenge/<game>/<difficulty>/<seed>` | A fixed seeded puzzle on the v0.6.10 ruleset. `difficulty` = `easy` \| `medium` \| `hard` |
+| `#/challenge/<game>/<difficulty>/<seed>/<ruleset>` | Same puzzle pinned to a ruleset, e.g. `challenge@1.1.0+crossword@1.0.0` |
+| `#/challenge/<game>/<difficulty>/<seed>[/<ruleset>]/vs/<nickname>?score=<pts>&time=<sec>&run=<token>` | A challenge from `nickname` |
 | `#/leaderboard` | Local leaderboard |
 
 Example: `#/challenge/cross/medium/482913/vs/%E0%B8%AB%E0%B8%A5%E0%B8%B2%E0%B8%99?score=1830&time=52&run=CiQ....Ab3dE2f9`

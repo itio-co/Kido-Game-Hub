@@ -6,7 +6,8 @@
   "description": "Thai crossword puzzle rules and board state.",
   "entry": "src/modules/crossword/index.ts",
   "publicEntries": [
-    "src/modules/crossword/index.ts"
+    "src/modules/crossword/index.ts",
+    "src/modules/crossword/ruleset.ts"
   ],
   "dependsOn": {},
   "gdd": "src/modules/crossword/GDD.md"

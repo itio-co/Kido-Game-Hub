@@ -1,0 +1,7 @@
+{
+  "1.0.0": {
+    "words": { "easy": 3, "medium": 5, "hard": 7 },
+    "decoys": { "easy": 0, "medium": 2, "hard": 4 },
+    "bank": 12
+  }
+}

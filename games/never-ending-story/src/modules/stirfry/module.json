@@ -1,23 +1,24 @@
 {
   "id": "stirfry",
   "name": "Stir-fry with Grandma",
-  "kind": "edition",
+  "kind": "pack",
   "version": "1.2.0",
-  "description": "Stir-fry with Grandma: rhythm edition with photoreal kitchen/wok art, wok frames mapped to cook progress and hits/misses, Thai copy.",
+  "description": "Stir-fry with Grandma: rhythm pack with photoreal kitchen/wok art, wok frames mapped to cook progress and hits/misses, Thai copy. Gameplay params are versioned in ruleset.json.",
   "entry": "src/modules/stirfry/index.ts",
   "publicEntries": [
-    "src/modules/stirfry/index.ts"
+    "src/modules/stirfry/index.ts",
+    "src/modules/stirfry/ruleset.ts"
   ],
   "dependsOn": {
-    "core": ">=0.6.10",
+    "core": ">=0.6.11",
     "rhythm": "^1.1.0"
   },
-  "edition": {
+  "pack": {
     "mechanism": "rhythm",
     "leaderboardId": "stirfry",
     "storageKey": "nesg.stirfry.v1",
     "route": "#/play/stirfry",
-    "params": "DEFAULT_PARAMS (60 s, beat 780 ms, perfect ±110 ms, good ±200 ms)",
+    "params": "ruleset 1.2.0 (60 s, beat 780 ms, perfect ±110 ms, good ±200 ms)",
     "art": [
       "public/img/stirfry/kitchen.webp",
       "wok-raw/half/cooked/burnt/toss.webp"
@@ -27,7 +28,7 @@
       "normal",
       "hard"
     ],
-    "challengeLink": "#/play/stirfry/<easy|normal|hard>/<seed>"
+    "challengeLink": "#/play/stirfry/<easy|normal|hard>/<seed>/rhythm@1.1.0+stirfry@1.2.0"
   },
   "gdd": "src/modules/stirfry/GDD.md"
 }

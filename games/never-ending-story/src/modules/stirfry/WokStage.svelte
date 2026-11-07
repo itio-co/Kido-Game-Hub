@@ -1,13 +1,15 @@
 <script lang="ts">
-  /** Stir-fry edition visual: photoreal wok frames driven by the rhythm engine's StageProps. */
+  /** Stir-fry pack visual: photoreal wok frames driven by the rhythm engine's StageProps. */
   import { imageUrl } from '../../lib/flow/loadFlow';
   import type { StageProps } from '../rhythm';
-  import { cookStage, burntLevel, WOK_FRAMES } from './edition';
+  import { cookStage, burntLevel, WOK_FRAMES } from './pack';
+  import { stirfryRuleset, STIRFRY_VERSION } from './ruleset';
 
   let props: StageProps = $props();
+  const rules = $derived(stirfryRuleset(props.packVersion) ?? stirfryRuleset(STIRFRY_VERSION)!);
 
-  const stage = $derived(cookStage(props.progress));
-  const burnt = $derived(burntLevel(props.pressure));
+  const stage = $derived(cookStage(props.progress, rules));
+  const burnt = $derived(burntLevel(props.pressure, rules));
   let tossing = $state(false);
   let missed = $state(false);
   let lastPulse = 0;
@@ -24,8 +26,8 @@
     clearTimeout(missTimer);
     tossing = hit;
     missed = !hit;
-    if (hit) tossTimer = window.setTimeout(() => (tossing = false), 260);
-    else missTimer = window.setTimeout(() => (missed = false), 380);
+    if (hit) tossTimer = window.setTimeout(() => (tossing = false), rules.reactMs.hit);
+    else missTimer = window.setTimeout(() => (missed = false), rules.reactMs.miss);
   });
 </script>
 
@@ -36,7 +38,7 @@
   <img src={imageUrl('stirfry/wok-burnt.webp')} alt="" class="burnt" style="opacity:{burnt}" draggable="false" />
   <img src={imageUrl('stirfry/wok-toss.webp')} alt="" class="tossimg" class:on={tossing} draggable="false" />
   {#key props.pulse}{#if tossing}<span class="steam"><i></i><i></i><i></i></span>{/if}{/key}
-  {#if burnt > 0.3}<span class="smoke"></span>{/if}
+  {#if burnt > rules.burn.smokeAt}<span class="smoke"></span>{/if}
 </span>
 
 <style>

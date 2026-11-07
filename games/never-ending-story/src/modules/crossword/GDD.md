@@ -23,7 +23,7 @@
 แตะช่องแล้วแตะตัวอักษรบนแป้น (`CROSS_KEYS`)
 
 ## 6. คะแนนและความยาก
-สูตร `challenge.scoreFor`: (correct×100 + maxCombo×20 − mistakes×40 − hints×150 + (par − วินาที)×10) × ตัวคูณ (easy 1, medium 1.5, hard 2) · par: 45/75/110 วินาที
+สูตรอยู่ใน `challenge` ruleset 1.1.0 · โหมด challenge สุ่มคำตาม `ruleset.json` 1.0.0: จำนวนคำ 3/5/7, ตัวลวง 0/2/4, คลัง 12 คำ · par: 45/75/110 วินาที · เปลี่ยนจำนวนคำต้อง bump โมดูลนี้และเพิ่มคีย์ ruleset
 
 ## 7. Progression
 ใช้ในคดีผ่าน flow engine และในโหมด challenge (คะแนนดีสุดต่อระดับ)

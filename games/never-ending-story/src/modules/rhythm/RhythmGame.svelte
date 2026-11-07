@@ -4,20 +4,29 @@
   import { version } from '../../../package.json';
   import { readPlayerId, setNickname } from '../../lib/playerId';
   import { clearRun, defaultRun, readRun, recordBest, starsFor, writeRun, type RhythmRun } from './store';
-  import type { Judgement, RhythmEdition, StageProps } from './types';
+  import type { Judgement, RhythmPack, StageProps } from './types';
   import manifest from './module.json';
+  import { rhythmRuleset } from './ruleset';
   import { buildChart, chartId, isChartSeed, newChartSeed, paramsFor, parseRhythmHash, rhythmHash, RHYTHM_DIFFICULTIES, type RhythmDifficulty, type RhythmLink } from './chart';
   import { submitRun } from '../../lib/cloudSync';
   import { packRun } from '../challenge/proto';
+  import { currentRuleset, resolveGame, versionIn } from '../../lib/rulesetCatalog';
 
-  let { edition, onExit }: { edition: RhythmEdition; onExit: () => void } = $props();
+  let { pack, onExit }: { pack: RhythmPack; onExit: () => void } = $props();
   let run = $state<RhythmRun>(defaultRun());
-  const P = $derived(paramsFor(edition.params, run.difficulty));
-  /** Extra-lane cue times (ms from start), fixed by edition + difficulty + seed. */
-  const chart = $derived(buildChart(edition.id, run.difficulty, run.seed, P));
-  let link = $state<RhythmLink>({ difficulty: null, seed: null, from: null });
+  let link = $state<RhythmLink>({ difficulty: null, seed: null, ruleset: null, from: null });
+  const resolution = $derived(resolveGame(pack.leaderboardId, link.ruleset));
+  const rulesetKey = $derived(resolution.ok ? resolution.key : currentRuleset(pack.leaderboardId));
+  const engineVersion = $derived(resolution.ok ? versionIn(resolution, manifest.id) : manifest.version);
+  const packVersion = $derived(resolution.ok ? versionIn(resolution, pack.id) : pack.version);
+  const engineRules = $derived(rhythmRuleset(engineVersion) ?? rhythmRuleset(manifest.version)!);
+  const packRules = $derived(pack.rulesets[packVersion] ?? pack.rulesets[pack.version]);
+  const P = $derived(paramsFor(packRules.params, run.difficulty, engineRules.tuning));
+  const S = $derived(engineRules.scoring);
+  /** Extra-lane cue times (ms from start), fixed by pack + difficulty + seed + the active params. */
+  const chart = $derived(engineRules.chart === 'v1' ? buildChart(pack.id, run.difficulty, run.seed, P) : []);
   let playStart = 0;
-  const c = (key: string, vars?: Record<string, string | number>) => t(`${edition.copy}.${key}`, vars);
+  const c = (key: string, vars?: Record<string, string | number>) => t(`${pack.copy}.${key}`, vars);
   let last = $state<Judgement | null>(null);
   let pulse = $state(0);
 
@@ -35,13 +44,13 @@
 
   const stageProps = $derived<StageProps>({
     progress: run.progress, pressure: run.heat, pressureZone: P.pressureZone, combo: run.combo,
-    beat: ringGlow, extraDue: run.ingredientDue !== null, last, pulse,
+    beat: ringGlow, extraDue: run.ingredientDue !== null, last, pulse, packVersion,
   });
 
   function judge(j: Judgement): void {
     last = j;
     pulse += 1;
-    edition.hooks?.onJudge?.(j, stageProps);
+    pack.hooks?.onJudge?.(j, stageProps);
   }
 
   async function submitOnline(): Promise<void> {
@@ -49,8 +58,8 @@
     const elapsed = Math.round((P.durationSec - run.timeLeft) * 1000);
     const sessionId = typeof crypto !== 'undefined' && 'randomUUID' in crypto ? crypto.randomUUID() : `sf-${Date.now().toString(16)}-${Math.random().toString(16).slice(2, 10)}`;
     const token = await packRun({
-      sessionId, playerId: me.playerId, nickname: me.nickname ?? '', game: edition.leaderboardId, difficulty: run.difficulty,
-      seed: run.seed, score: Math.round(run.score), timeMs: Math.max(3000, elapsed), version: `${version};${manifest.id}@${manifest.version};${edition.id}`, timestampMs: Date.now(),
+      sessionId, playerId: me.playerId, nickname: me.nickname ?? '', game: pack.leaderboardId, difficulty: run.difficulty,
+      seed: run.seed, score: Math.round(run.score), timeMs: Math.max(engineRules.submit.minMs, elapsed), version: `${version};${rulesetKey}`, ruleset: rulesetKey, timestampMs: Date.now(),
       challengerSessionId: '', challengerNickname: '', challengerScore: 0, challengerTimeMs: 0,
     }).catch(() => '');
     if (token) {
@@ -67,7 +76,7 @@
   const scoreLabel = $derived(String(Math.round(run.score)).padStart(4, '0'));
 
   function persist(): void {
-    writeRun(edition.storageKey, run);
+    writeRun(pack.storageKey, run);
   }
 
   let msgTimer = 0;
@@ -113,8 +122,8 @@
 
   function finish(reason: 'done' | 'time'): void {
     if (run.phase !== 'play') return;
-    const best = recordBest(edition.storageKey, run.score, run.progress, P.stars);
-    edition.hooks?.onFinish?.(run.score, run.progress);
+    const best = recordBest(pack.storageKey, run.score, run.progress, P.stars);
+    pack.hooks?.onFinish?.(run.score, run.progress);
     run = {
       ...run,
       phase: 'result',
@@ -132,7 +141,7 @@
 
   function retry(): void {
     const { difficulty, seed } = run;
-    clearRun(edition.storageKey);
+    clearRun(pack.storageKey);
     run = { ...run, difficulty, seed };
     needNick = false;
     start();
@@ -146,9 +155,10 @@
 
   async function shareLink(): Promise<void> {
     const me = readPlayerId();
-    const hash = run.phase === 'result'
-      ? rhythmHash(edition.route, run.difficulty, run.seed, { nick: me.nickname || '?', score: Math.round(run.score), time: Math.round((P.durationSec - run.timeLeft) * 10) / 10 })
-      : rhythmHash(edition.route, run.difficulty, run.seed);
+    const from = run.phase === 'result'
+      ? { nick: me.nickname || '?', score: Math.round(run.score), time: Math.round((P.durationSec - run.timeLeft) * 10) / 10 }
+      : undefined;
+    const hash = rhythmHash(pack.route, run.difficulty, run.seed, from, rulesetKey);
     const url = `${window.location.origin}${window.location.pathname}${hash}`;
     try {
       await navigator.clipboard.writeText(url);
@@ -169,23 +179,23 @@
     const now = performance.now();
     const delta = Math.abs(now - nextBeatAt);
     if (delta <= P.perfectMs) {
-      const bonus = Math.round((1 - delta / P.perfectMs) * 50) + run.combo * 3;
-      run.score += 80 + bonus;
-      run.combo = Math.min(run.combo + 1, 12);
-      bumpProgress(4.2);
+      const bonus = Math.round((1 - delta / P.perfectMs) * S.perfectBonus) + run.combo * S.perfectCombo;
+      run.score += S.perfectBase + bonus;
+      run.combo = Math.min(run.combo + 1, S.perfectComboCap);
+      bumpProgress(S.perfectProgress);
       beatFlash = true;
       window.setTimeout(() => (beatFlash = false), 140);
       judge('perfect');
       flash(c('perfect'), 'perfect');
     } else if (delta <= P.goodMs) {
-      run.score += 40 + run.combo;
-      run.combo = Math.min(run.combo + 1, 8);
-      bumpProgress(2.4);
+      run.score += S.goodBase + run.combo * S.goodCombo;
+      run.combo = Math.min(run.combo + 1, S.goodComboCap);
+      bumpProgress(S.goodProgress);
       judge('good');
       flash(c('good'), 'good');
     } else {
       run.combo = 0;
-      run.score = Math.max(0, run.score - 10);
+      run.score = Math.max(0, run.score - S.missPenalty);
       judge('miss');
       flash(c('miss'), 'miss');
     }
@@ -198,9 +208,9 @@
     if (run.phase !== 'play' || run.ingredientDue === null) return;
     const now = performance.now();
     if (Math.abs(now - run.ingredientDue) <= P.extraWindowMs) {
-      run.score += 140 + run.combo * 6;
+      run.score += S.extraHitBase + run.combo * S.extraHitCombo;
       run.ingredientHits += 1;
-      bumpProgress(9);
+      bumpProgress(S.extraProgress);
       judge('extra-hit');
       flash(c('ingHit'), 'extra-hit');
     } else {
@@ -211,7 +221,7 @@
     }
     run.ingredientDue = null;
     run.cue += 1;
-    scheduleCue(now, 600);
+    scheduleCue(now, S.cueMinGapMs);
     persist();
     if (run.progress >= 100) finish('done');
   }
@@ -234,28 +244,28 @@
     ringGlow = Math.max(0, 1 - dist / (P.beatMs * 0.5));
     if (ts >= nextBeatAt) {
       nextBeatAt += P.beatMs;
-      edition.hooks?.onBeat?.();
+      pack.hooks?.onBeat?.();
     }
 
     if (run.ingredientDue === null && ts >= nextIngAt) {
       run.ingredientDue = ts + P.extraLeadMs;
     }
-    if (run.ingredientDue !== null && ts > run.ingredientDue + 520) {
+    if (run.ingredientDue !== null && ts > run.ingredientDue + S.extraMissGraceMs) {
       run.ingredientMiss += 1;
       run.combo = 0;
       run.ingredientDue = null;
       run.cue += 1;
-      scheduleCue(ts, 1200);
+      scheduleCue(ts, S.cueMissGapMs);
       judge('extra-miss');
       flash(c('ingMiss'), 'extra-miss');
     }
 
     const inZone = run.heat >= P.pressureZone[0] && run.heat <= P.pressureZone[1];
     if (inZone) {
-      run.score += dt * 10;
-      bumpProgress(dt * 1.1);
+      run.score += dt * S.zoneScorePerSec;
+      bumpProgress(dt * S.zoneProgressPerSec);
     } else {
-      run.score = Math.max(0, run.score - dt * 12);
+      run.score = Math.max(0, run.score - dt * S.outZonePenaltyPerSec);
     }
 
     if (Math.floor(ts / 300) % 2 === 0) persist();
@@ -269,7 +279,7 @@
   }
 
   onMount(() => {
-    const saved = readRun(edition.storageKey);
+    const saved = readRun(pack.storageKey);
     if (saved.phase === 'play' && saved.timeLeft > 1 && saved.progress < 100) {
       if (!isChartSeed(saved.seed)) saved.seed = newChartSeed();
       run = saved;
@@ -292,10 +302,11 @@
     raf = requestAnimationFrame(tick);
   });
 
-  /** A challenge link (<route>/<diff>/<seed>) fixes the chart; it wins over a saved run that is not in progress. */
+  /** A challenge link fixes the chart; it wins over a saved run that is not in progress. Unsupported rulesets do not start. */
   function applyLink(): void {
-    link = parseRhythmHash(edition.route, location.hash);
-    if (!link.difficulty || !link.seed) return;
+    link = parseRhythmHash(pack.route, location.hash);
+    const resolved = resolveGame(pack.leaderboardId, link.ruleset);
+    if (!resolved.ok || !link.difficulty || !link.seed) return;
     if (run.phase === 'play' && run.difficulty === link.difficulty && run.seed === link.seed) return;
     if (run.phase === 'play' || run.phase === 'result') run = { ...defaultRun(), bestScore: run.bestScore, bestStars: run.bestStars };
     run = { ...run, difficulty: link.difficulty, seed: link.seed };
@@ -307,19 +318,34 @@
     cancelAnimationFrame(raf);
     if (run.phase === 'play') persist();
   });
+
+  function playCurrent(): void {
+    const diff = link.difficulty ?? run.difficulty;
+    const seed = link.seed && link.seed > 0 ? link.seed : run.seed;
+    const from = link.from ? { nick: link.from.nick, score: link.from.score, time: link.from.time } : undefined;
+    const key = currentRuleset(pack.leaderboardId);
+    location.hash = link.difficulty && link.seed ? rhythmHash(pack.route, diff, seed, from, key) : `${pack.route}`;
+  }
 </script>
 
-<div class="sf" data-edition={edition.id} data-difficulty={run.difficulty} data-seed={run.seed} data-chart={chartId(chart)} data-cues={chart.length} style="--kitchen:url('{new URL(edition.theme.background, document.baseURI).href}')">
+<div class="sf" data-pack={pack.id} data-edition={pack.id} data-ruleset={resolution.ok ? rulesetKey : ''} data-difficulty={run.difficulty} data-seed={run.seed} data-chart={chartId(chart)} data-cues={chart.length} style="--kitchen:url('{new URL(pack.theme.background, document.baseURI).href}')">
   <header class="top">
     <button type="button" class="sf-exit" aria-label={c('exit')} onclick={onExit}>←</button>
     <div class="topmid">
       <h1>{c('title')}</h1>
       <span class="ver">v{version}</span>
+      <span class="ver ruleset" data-testid="ruleset-banner">{t('ruleset.banner', { ruleset: resolution.ok ? rulesetKey : link.ruleset ?? '' })}</span>
     </div>
     <span class="time" aria-label="timer">{timeLabel}s</span>
   </header>
 
-  {#if run.phase === 'ready'}
+  {#if !resolution.ok}
+    <div class="panel howto" data-testid="ruleset-unsupported">
+      <p class="vs">{t('ruleset.unsupported', { ruleset: resolution.requested })}</p>
+      <button type="button" class="primary" onclick={playCurrent}>{t('ruleset.playCurrent')}</button>
+      <button type="button" class="ghost" onclick={onExit}>{c('exit')}</button>
+    </div>
+  {:else if run.phase === 'ready'}
     <div class="panel howto">
       <p class="line">{c('howto1')}</p>
       <p class="line">{c('howto2')}</p>
@@ -348,7 +374,7 @@
           <span class="score">{c('score')} <b class="num">{scoreLabel}</b></span>
           <span class="combo">x{run.combo}</span>
           <span class="heatlab">{c('heat')}</span>
-          <div class="bar heat"><i style="width:{run.heat}%"></i><em style="left:35%"></em><em style="left:75%"></em></div>
+          <div class="bar heat"><i style="width:{run.heat}%"></i><em style="left:{P.pressureZone[0]}%"></em><em style="left:{P.pressureZone[1]}%"></em></div>
         </div>
       </div>
 
@@ -364,7 +390,7 @@
           onclick={run.ingredientDue !== null ? onIngredient : onStir}
           aria-label={run.ingredientDue !== null ? c('add') : c('stir')}
         >
-          <edition.Stage {...stageProps} />
+          <pack.Stage {...stageProps} />
           <span class="ring"></span>
         </button>
       </div>
@@ -410,9 +436,10 @@
   .diffs { display: flex; gap: 8px; justify-content: center; margin: 10px 0 4px; }
   .diff { flex: 1; border-radius: 999px; padding: 8px 6px; border: 1px solid #5fd3ff; background: transparent; color: #eaf6ff; font-weight: 700; }
   .diff.on { background: #5fd3ff; color: #06212f; }
-  .chartline { text-align: center; font-size: 0.9em; opacity: 0.9; margin: 6px 0; }
+  .chartline { text-align: center; font-size: 0.78em; opacity: 0.9; margin: 6px 0; overflow-wrap: anywhere; }
   .ghost.mini { padding: 3px 10px; font-size: 0.85em; }
   .vs { text-align: center; font-weight: 700; color: #ffd34d; }
+  .ver.ruleset { display: block; font-size: 0.72em; opacity: 0.85; word-break: break-all; }
   .sf {
     position: absolute;
     inset: 0;
@@ -440,7 +467,7 @@
   }
   .topmid { display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 0; }
   .topmid h1 { margin: 0; font-size: calc(var(--fs) + 2px); line-height: 1.1; }
-  .ver { font-size: 11px; opacity: 0.75; font-weight: 700; }
+  .ver { font-size: 11px; opacity: 0.75; font-weight: 700; overflow-wrap: anywhere; text-align: center; }
   .sf-exit {
     width: 44px;
     height: 44px;

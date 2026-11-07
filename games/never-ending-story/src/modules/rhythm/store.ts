@@ -1,4 +1,4 @@
-/** Generic run/best-score store for a rhythm edition (one localStorage key per edition). */
+/** Generic run/best-score store for a rhythm pack (one localStorage key per pack). */
 export type RhythmRun = {
   phase: 'ready' | 'play' | 'result';
   timeLeft: number;
@@ -87,7 +87,7 @@ export function clearRun(KEY: string): void {
   writeRun(KEY, { ...defaultRun(), bestScore: cur.bestScore, bestStars: cur.bestStars });
 }
 
-/** Stars from score + progress; thresholds come from the edition params. */
+/** Stars from score + progress; thresholds come from the pack params. */
 export function starsFor(score: number, progress: number, stars: { two: number; three: number } = { two: 900, three: 1400 }): 1 | 2 | 3 {
   if (progress >= 100 && score >= stars.three) return 3;
   if (progress >= 100 || score >= stars.two) return 2;

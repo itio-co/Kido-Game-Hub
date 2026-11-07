@@ -1,0 +1,17 @@
+{
+  "legacyApp": "0.6.10",
+  "legacy": {
+    "rhythm": "1.1.0",
+    "stirfry": "1.2.0",
+    "challenge": "1.1.0",
+    "crossword": "1.0.0",
+    "jigsaw": "1.0.0",
+    "slide": "1.0.0"
+  },
+  "games": {
+    "stirfry": ["rhythm", "stirfry"],
+    "cross": ["challenge", "crossword"],
+    "jig": ["challenge", "jigsaw"],
+    "slide": ["challenge", "slide"]
+  }
+}

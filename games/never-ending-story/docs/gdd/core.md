@@ -3,12 +3,12 @@
 | ฟิลด์ | ค่า |
 |---|---|
 | kind | core |
-| เวอร์ชัน | app (ตาม `package.json`, ตอนนี้ 0.6.10) |
+| เวอร์ชัน | app (ตาม `package.json`, ตอนนี้ 0.6.11) |
 | เทมเพลต | `docs/gdd/TEMPLATE.md` |
 | อ้างอิง | `docs/design/never-ending-story-game-spec-v0.4-th.md` |
 
 ## 1. จุดประสงค์ / Pitch
-เปลือกแอปของ Never Ending Story: ห้องโถงบ้านย่า, flow engine เล่นเนื้อเรื่องจาก story pack, เซฟ, i18n, cloud sync, prologue และหน้า admin `/never/god`
+เปลือกแอปของ Never Ending Story: ห้องโถงบ้านย่า, flow engine เล่นเนื้อเรื่องจาก story pack, เซฟ, i18n, cloud sync, prologue. หน้า admin `/never/god` อยู่โมดูล `god`
 
 ## 2. แฟนตาซีของผู้เล่น
 เป็นหลานที่กลับมาบ้านย่ามะลิ ช่วยย่าไขคดีของเก่าในบ้าน (ย่ามะลิผมสั้นสีเงินปล่อยหลวม ไม่มวยผม)
@@ -23,7 +23,8 @@
 - โค้ดเป็นภาษาอังกฤษ ข้อความไทยอยู่เฉพาะ `src/locales/*.json`
 - โมดูลอื่นเข้าถึงกันผ่าน public entry (`index.ts`) เท่านั้น ตรวจด้วย `npm run check:modules`
 - ไม่พิมพ์ player token ลง log
-- `/never/god/*` และ `modules.json` เป็น network-only ใน SW และเป็น admin-only
+- `/never/god/*` และ `modules.json` เป็น network-only ใน SW และเป็น admin-only (โค้ดอยู่โมดูล `god`)
+- กระดานคะแนนแยกด้วยกติกา (`runs.ruleset`) ไม่แยกด้วยเวอร์ชันแอป
 
 ## 5. Input / การควบคุม
 แตะ/คลิกบนมือถือแนวตั้ง 390x844 เป็นหลัก แถบล่างมีปุ่มแผนผังบ้านข้างสมุดคดี
@@ -38,13 +39,13 @@ core ไม่มีคะแนนเอง คะแนนมาจากม�
 story pack JSON (`public/data/case-flow.json`) และรูปใน `public/img/` ปรับได้โดยไม่แตะโค้ด ดู `docs/design/story-pack-format-th.md`
 
 ## 9. UX / หน้าจอ
-Prologue, Hub, FlowView, Settings, Leaderboard, god admin (Dashboard, Players, Games + หน้าย่อยต่อเกม, Event, Modules)
+Prologue, Hub, FlowView, Settings, Leaderboard. god admin อยู่ในโมดูล `god`
 
 ## 10. Data & telemetry (ฟิลด์บนเซิร์ฟเวอร์)
-D1: `players`, `player_state`, `player_events`, `player_home`, `runs`, `god_login` · localStorage เซฟหลัก
+D1: `players`, `player_state`, `player_events`, `player_home`, `runs` (มีคอลัมน์ `ruleset`), `god_login` · localStorage เซฟหลัก
 
 ## 11. Dependencies + เวอร์ชัน
-ใช้ crossword, jigsaw, slide, stirfry, challenge, event-01 (ดู `module.json`)
+ใช้ crossword, jigsaw, slide, stirfry, challenge, event-01, god (ดู `module.json`)
 
 ## 12. คำถามที่ยังเปิดอยู่ / Backlog
 - **[backlog]** แยก flow engine เป็นโมดูลของตัวเอง
@@ -53,6 +54,7 @@ D1: `players`, `player_state`, `player_events`, `player_home`, `runs`, `god_logi
 ## 13. Changelog (ผูกกับเวอร์ชันโมดูล)
 | เวอร์ชัน | แอป | การเปลี่ยนแปลง |
 |---|---|---|
+| 0.6.11 | 0.6.11 | ลิงก์แชร์ติดกติกา engine+pack, กระดานแยกตาม ruleset, ย้าย god เป็นโมดูล, เปลี่ยนชื่อ edition เป็น pack |
 | 0.6.10 | 0.6.10 | rhythm ชาร์ต seed + ระดับ, ป้าย judgement |
 | 0.6.9 | 0.6.9 | god หน้าย่อยต่อเกม, แท็บ GDD, rhythm engine/edition |
 | 0.6.8 | 0.6.8 | แก้ sw.js syntax |

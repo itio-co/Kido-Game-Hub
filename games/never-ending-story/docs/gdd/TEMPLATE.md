@@ -5,7 +5,7 @@
 
 | ฟิลด์ | ค่า |
 |---|---|
-| kind | core / engine / edition / feature / minigame / event |
+| kind | core / engine / pack / feature / minigame / event / admin |
 | เวอร์ชัน | ตรงกับ `module.json` |
 | อ้างอิง | GDD หลักของโปรเจกต์ `docs/design/never-ending-story-game-spec-v0.4-th.md` |
 
@@ -31,7 +31,7 @@
 ดาว สถิติดีสุด การปลดล็อก
 
 ## 8. Content / config surface
-สิ่งที่ปรับได้โดยไม่แก้โค้ด. **ถ้าเป็น edition:** ระบุ mechanism ที่ใช้ และสิ่งที่ edition ปรับ (theme, art, เสียง, คำ, params)
+สิ่งที่ปรับได้โดยไม่แก้โค้ด. **ถ้าเป็น pack:** ระบุ mechanism ที่ใช้ และสิ่งที่ pack ปรับ (theme, art, เสียง, คำ, params). **กติกาที่กระทบคะแนน** อยู่ใน `ruleset.json` — เปลี่ยนค่าแล้วต้อง bump เวอร์ชันโมดูลและเพิ่มคีย์ใหม่ `npm run check:modules` จะตรวจว่าเวอร์ชันปัจจุบันอยู่ใน registry
 
 ## 9. UX / หน้าจอ
 หน้าจอและสถานะ

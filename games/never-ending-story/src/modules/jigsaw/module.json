@@ -6,7 +6,8 @@
   "description": "Jigsaw puzzle rules and board state.",
   "entry": "src/modules/jigsaw/index.ts",
   "publicEntries": [
-    "src/modules/jigsaw/index.ts"
+    "src/modules/jigsaw/index.ts",
+    "src/modules/jigsaw/ruleset.ts"
   ],
   "dependsOn": {},
   "gdd": "src/modules/jigsaw/GDD.md"

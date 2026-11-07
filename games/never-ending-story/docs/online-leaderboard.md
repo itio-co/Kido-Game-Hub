@@ -10,9 +10,9 @@ API base: `https://games.itio.space/never/api/`. Same-origin only: browser write
 - `GET /api/players/:id` → public profile + verified bests.
 
 ## Runs
-- `POST /api/runs` `{token: "<b64url protobuf>.<tag>"}` (see `challenge-links.md`). Server decodes with the same codec, checks the tag (400 on mismatch), plausibility (game/difficulty, 3 s ≤ time ≤ 1 h, score ≤ (3000 + time bonus) × multiplier), then inserts idempotently by `sessionId`.
+- `POST /api/runs` `{token: "<b64url protobuf>.<tag>"}` (see `challenge-links.md`). Server decodes with the same codec, checks the tag (400 on mismatch), checks `ruleset` against the allowlist (empty = the v0.6.10 ruleset for that game), plausibility (game/difficulty, time and score caps from that ruleset), then inserts idempotently by `sessionId` with `runs.ruleset` set. The app version inside `version` is stored and is **not** used to split boards.
 - With a valid Bearer for the run's `playerId` → `verified=1` (ranked). Wrong token → 401. No token (challenger run embedded in a shared link) → stored `verified=0`, not ranked; a later verified submit of the same session upgrades it.
-- `GET /api/leaderboard?game=cross|jig|slide&difficulty=easy|medium|hard&limit=20` → best verified run per player (score desc, time asc).
+- `GET /api/leaderboard?game=cross|jig|slide|stirfry&difficulty=...&ruleset=rhythm@1.1.0+stirfry@1.2.0&limit=20` → best verified run per player **for that ruleset** (score desc, time asc). Omit `ruleset` to get the v0.6.10 ruleset. Unknown ruleset → 400. Databases created before 0.6.11 need `worker/migrations/002_ruleset.sql` once (backfills existing rows to the current ruleset).
 
 Client: `src/lib/cloudSync.ts`. Finished challenges and opened challenge links are queued in `nesg.runQueue.v1`, retried on startup / `online`; 4xx drops the item. The leaderboard screen has an Online tab and falls back to the device board when the API is unreachable (e.g. rawcdn previews).
 

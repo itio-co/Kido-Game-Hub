@@ -1,8 +1,8 @@
 <script lang="ts">
   import { RhythmGame } from '../rhythm';
-  import { stirfryEdition } from './edition';
+  import { stirfryPack } from './pack';
 
   let { onExit }: { onExit: () => void } = $props();
 </script>
 
-<RhythmGame edition={stirfryEdition} {onExit} />
+<RhythmGame pack={stirfryPack} {onExit} />
