@@ -1,6 +1,6 @@
 {
-  "appVersion": "0.6.7",
-  "generatedAt": "2026-11-07T02:15:54.144Z",
+  "appVersion": "0.6.8",
+  "generatedAt": "2026-11-07T02:24:56.914Z",
   "modules": [
     {
       "id": "challenge",
@@ -13,7 +13,7 @@
         {
           "id": "core",
           "range": ">=0.6.0",
-          "version": "0.6.7",
+          "version": "0.6.8",
           "ok": true
         },
         {
@@ -48,7 +48,7 @@
       "id": "core",
       "name": "Core / main game",
       "kind": "core",
-      "version": "0.6.7",
+      "version": "0.6.8",
       "description": "App shell, hub room, flow engine, save, i18n, cloudSync, prologue, Game of Dev admin.",
       "entry": "src/main.ts",
       "dependsOn": [
@@ -126,7 +126,7 @@
         {
           "id": "core",
           "range": ">=0.6.0",
-          "version": "0.6.7",
+          "version": "0.6.8",
           "ok": true
         },
         {
@@ -202,7 +202,7 @@
         {
           "id": "core",
           "range": ">=0.6.0",
-          "version": "0.6.7",
+          "version": "0.6.8",
           "ok": true
         }
       ],
