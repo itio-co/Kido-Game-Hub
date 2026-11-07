@@ -8,5 +8,6 @@
   "publicEntries": [
     "src/modules/slide/index.ts"
   ],
-  "dependsOn": {}
+  "dependsOn": {},
+  "gdd": "src/modules/slide/GDD.md"
 }

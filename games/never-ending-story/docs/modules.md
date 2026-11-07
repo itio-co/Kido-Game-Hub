@@ -49,3 +49,16 @@ Supported ranges: exact `1.2.3`, `^1.2.3`, `~1.2.3`, `>=1.2.3`, `*` (space-separ
 3. On a major bump, update the `dependsOn` ranges of modules that use it (`npm run check:modules` tells you which).
 4. Core changes bump the app version in `package.json` as before (`v0.6.x`).
 5. Mention `module@version` in the commit message, e.g. `feat(nes): slide@1.1.0 add undo`.
+
+## Mechanisms and editions
+
+A **mechanism** (`kind: "engine"`) owns the rules: timing, judging, combo, scoring, difficulty, run store, and server submission. An **edition** (`kind: "edition"`) reuses one mechanism and supplies only theme, art, Stage component, sounds, copy and params.
+
+- The edition's `module.json` has an `edition` block: `{ "mechanism": "rhythm", "leaderboardId": "stirfry", "storageKey": ..., "route": ..., "params": ... }` and `dependsOn` the mechanism.
+- Rhythm editions implement `RhythmEdition` (`src/modules/rhythm/types.ts`): `id`, `leaderboardId`, `copy` (i18n prefix), `storageKey`, `route`, `params`, `theme`, `Stage` (gets `StageProps`: progress, pressure, combo, beat, last judgement, pulse) and optional hooks `onBeat` / `onJudge` / `onFinish`.
+- Leaderboards are keyed by the edition's `leaderboardId`; each run's `version` records `<app>;<mechanism>@<version>;<edition>`.
+- The registry lists `edition` on editions and `editions` (ids) on mechanisms. `/never/god/games/<id>` shows the relationship.
+
+## GDD per module
+
+Every module has a Thai GDD from `docs/gdd/TEMPLATE.md`, linked by `"gdd"` in `module.json` (core: `docs/gdd/core.md`). `npm run check:modules` fails if a GDD is missing. The registry embeds the markdown; god shows it in the **GDD** tab of `/never/god/modules/<id>` and `/never/god/games/<id>`.

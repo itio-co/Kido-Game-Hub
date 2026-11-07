@@ -14,7 +14,8 @@ const SESSION_MS = 12 * 3600 * 1000;
 const MAX_FAILS = 5;
 const LOCK_MS = 15 * 60 * 1000;
 const ID_RE = /^[A-Za-z0-9-]{8,64}$/;
-const GAMES = ['cross', 'jig', 'slide'];
+const GAMES = ['cross', 'jig', 'slide', 'stirfry'];
+const GAME_DIFFS: Record<string, string[]> = { cross: ['easy', 'medium', 'hard'], jig: ['easy', 'medium', 'hard'], slide: ['easy', 'medium', 'hard'], stirfry: ['normal'] };
 const DIFFS = ['easy', 'medium', 'hard'];
 const DAY = 86400000;
 
@@ -179,11 +180,11 @@ async function games(env: GodEnv): Promise<Response> {
   const stats = (await env.DB.prepare(
     `SELECT game, difficulty, count(*) runs, count(DISTINCT playerId) players, max(score) best, min(timeMs) fastest, avg(score) avg, sum(verified) verified
      FROM runs GROUP BY game, difficulty`).all()).results;
-  return json({ ok: true, games: [...GAMES, 'stirfry'], difficulties: DIFFS, stats });
+  return json({ ok: true, games: GAMES, difficulties: DIFFS, gameDiffs: GAME_DIFFS, stats });
 }
 
 async function board(env: GodEnv, game: string, diff: string): Promise<Response> {
-  if (!GAMES.includes(game) || !DIFFS.includes(diff)) return fail(400, 'bad-game');
+  if (!GAME_DIFFS[game]?.includes(diff)) return fail(400, 'bad-game');
   const { results } = await env.DB.prepare(
     `SELECT r.sessionId, r.playerId, COALESCE(NULLIF(p.nickname,''), r.nickname) nickname, r.score, r.timeMs, r.seed, r.verified, r.integrity_ok, r.version, r.ts
      FROM runs r LEFT JOIN players p ON p.playerId=r.playerId WHERE r.game=? AND r.difficulty=? ORDER BY r.score DESC, r.timeMs ASC LIMIT 200`,

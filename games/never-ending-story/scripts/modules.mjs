@@ -98,6 +98,10 @@ export function buildRegistry() {
     return {
       id: m.id, name: m.name, kind: m.kind, version: m.version, description: m.description, entry: m.entry,
       dependsOn: Object.entries(m.dependsOn ?? {}).map(([id, range]) => ({ id, range, version: versions[id] ?? null, ok: !!versions[id] && satisfies(versions[id], range) })),
+      edition: m.edition ?? null,
+      editions: mods.filter((e) => e.edition?.mechanism === m.id).map((e) => e.id),
+      gdd: m.gdd ?? null,
+      gddMarkdown: m.gdd && fs.existsSync(path.join(ROOT, m.gdd)) ? fs.readFileSync(path.join(ROOT, m.gdd), 'utf8') : null,
       files: files.length, size, hash: hash.digest('hex').slice(0, 12), lastCommit: lastCommit(files),
     };
   });
@@ -109,6 +113,8 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.a
   if (cmd === 'check') {
     const errors = checkBoundaries();
     const reg = buildRegistry();
+    for (const m of reg.modules) if (!m.gddMarkdown) errors.push(`${m.id} has no GDD (set "gdd" in module.json and create the file; template: docs/gdd/TEMPLATE.md)`);
+    for (const m of reg.modules) if (m.edition && !reg.modules.some((x) => x.id === m.edition.mechanism)) errors.push(`${m.id}: unknown mechanism ${m.edition.mechanism}`);
     for (const m of reg.modules) for (const d of m.dependsOn) if (!d.ok) errors.push(`${m.id} needs ${d.id} ${d.range}, found ${d.version}`);
     if (errors.length) { console.error(errors.join('\n')); process.exit(1); }
     console.log(`modules ok: ${reg.modules.map((m) => `${m.id}@${m.version}`).join(', ')}`);

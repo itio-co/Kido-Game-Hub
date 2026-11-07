@@ -8,5 +8,6 @@
   "publicEntries": [
     "src/modules/crossword/index.ts"
   ],
-  "dependsOn": {}
+  "dependsOn": {},
+  "gdd": "src/modules/crossword/GDD.md"
 }

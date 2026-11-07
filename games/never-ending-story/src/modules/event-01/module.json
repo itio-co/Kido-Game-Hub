@@ -16,5 +16,6 @@
   },
   "assets": [
     "public/data/case-flow.json#case-01"
-  ]
+  ],
+  "gdd": "src/modules/event-01/GDD.md"
 }

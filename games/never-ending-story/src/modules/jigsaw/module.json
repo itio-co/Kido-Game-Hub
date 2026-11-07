@@ -8,5 +8,6 @@
   "publicEntries": [
     "src/modules/jigsaw/index.ts"
   ],
-  "dependsOn": {}
+  "dependsOn": {},
+  "gdd": "src/modules/jigsaw/GDD.md"
 }

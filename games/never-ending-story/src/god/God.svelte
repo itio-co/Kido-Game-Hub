@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import { t } from '../lib/i18n';
   import { ApiError, fmtDate, fmtTime, god, short } from './api';
+  import GodModule from './GodModule.svelte';
   import '../app.css';
   import { version } from '../../package.json';
 
@@ -15,6 +16,9 @@
   let password = $state('');
   let loginError = $state('');
   let busy = $state(false);
+  // Path deep links (/never/god/games/stirfry) map onto the hash router.
+  const deep = /\/god\/(.+)$/.exec(location.pathname);
+  if (deep && !location.hash) history.replaceState(null, '', `${location.pathname.slice(0, location.pathname.indexOf('/god/'))}/god#/${deep[1]}`);
   let route = $state(location.hash);
   let drawer = $state(false);
   let data = $state<Row | null>(null);
@@ -27,7 +31,8 @@
   let toast = $state('');
   let renameTo = $state('');
   let confirmText = $state('');
-  const KIND_ORDER = ['core', 'feature', 'minigame', 'event'];
+  const KIND_ORDER = ['core', 'engine', 'edition', 'feature', 'minigame', 'event'];
+  const GAME_MODULE: Record<string, string> = { cross: 'crossword', jig: 'jigsaw', slide: 'slide', stirfry: 'stirfry' };
   let kindFilter = $state('all');
   let collapsed = $state<Record<string, boolean>>({});
   const kindName = (k: string) => (t(`god.mod.kind.${k}`) === `god.mod.kind.${k}` ? k : t(`god.mod.kind.${k}`));
@@ -35,6 +40,7 @@
   const parts = $derived(route.replace(/^#\/?/, '').split('/'));
   const section = $derived<Section>(SECTIONS.includes(parts[0] as Section) ? (parts[0] as Section) : 'dashboard');
   const playerId = $derived(section === 'players' && parts[1] ? decodeURIComponent(parts[1]) : null);
+  const subId = $derived((section === 'games' || section === 'modules') && parts[1] ? decodeURIComponent(parts[1]) : null);
   const modules = $derived<Row[]>(section === 'modules' && Array.isArray(data?.modules) ? data.modules : []);
   const kinds = $derived.by((): string[] => {
     const present = [...new Set(modules.map((m) => String(m.kind)))];
@@ -42,7 +48,7 @@
   });
 
   const gameName = (g: string) => t(`god.game.${g}`);
-  const diffName = (d: string) => t(`challenge.diff.${d}`);
+  const diffName = (d: string) => (d === 'normal' ? t('god.games.normal') : t(`challenge.diff.${d}`));
   function flash(msg: string) { toast = msg; setTimeout(() => (toast = ''), 2500); }
   function errText(e: unknown): string {
     if (e instanceof ApiError) {
@@ -86,7 +92,8 @@
       else if (section === 'players') {
         if (playerId) { detail = await god<Row>(`players/${encodeURIComponent(playerId)}`); renameTo = String(detail.player?.nickname ?? ''); confirmText = ''; }
         else data = await god<Row>(`players?q=${encodeURIComponent(query)}`);
-      } else if (section === 'games') { data = await god<Row>('games'); await loadBoard(); }
+      } else if (subId) { data = null; }
+      else if (section === 'games') { data = await god<Row>('games'); await loadBoard(); }
       else if (section === 'events') data = await god<Row>('events');
       else if (section === 'modules') data = ((await god<Row>('modules')) as Row).registry;
     } catch (e) { loadError = errText(e); }
@@ -229,16 +236,18 @@
             <button type="submit" class="danger" disabled={confirmText.trim() !== short(detail.player.playerId)}>{t('god.player.delete')}</button>
           </form>
         </section>
+      {:else if subId}
+        {#key subId}<GodModule id={subId} onError={(e) => (loadError = errText(e))} />{/key}
       {:else if section === 'games' && data}
         <table class="wide"><thead><tr><th>{t('god.col.game')}</th>{#each DIFFS as d (d)}<th>{diffName(d)}<br /><small>{t('god.games.cell')}</small></th>{/each}</tr></thead>
-          <tbody>{#each data.games as g (g)}<tr><td>{gameName(g)}</td>
-            {#if g === 'stirfry'}<td colspan="3" class="note">{t('god.games.stirfryNote')}</td>
+          <tbody>{#each data.games as g (g)}<tr><td><a href="#/games/{GAME_MODULE[g] ?? g}">{gameName(g)}</a></td>
+            {#if g === 'stirfry'}{@const s = statFor(g, 'normal')}<td colspan="3">{#if s}{t('god.games.normal')}: {s.runs} · {s.players} · <b>{s.best}</b> · {fmtTime(s.fastest)}{:else}–{/if}</td>
             {:else}{#each DIFFS as d (d)}{@const s = statFor(g, d)}<td>{#if s}{s.runs} · {s.players} · <b>{s.best}</b> · {fmtTime(s.fastest)}{:else}–{/if}</td>{/each}{/if}
           </tr>{/each}</tbody></table>
         <h2>{t('god.games.board')}</h2>
         <div class="search">
-          <select bind:value={boardGame} onchange={loadBoard}>{#each ['cross', 'jig', 'slide'] as g (g)}<option value={g}>{gameName(g)}</option>{/each}</select>
-          <select bind:value={boardDiff} onchange={loadBoard}>{#each DIFFS as d (d)}<option value={d}>{diffName(d)}</option>{/each}</select>
+          <select bind:value={boardGame} onchange={() => { boardDiff = boardGame === 'stirfry' ? 'normal' : 'easy'; void loadBoard(); }}>{#each ['cross', 'jig', 'slide', 'stirfry'] as g (g)}<option value={g}>{gameName(g)}</option>{/each}</select>
+          <select bind:value={boardDiff} onchange={loadBoard}>{#each boardGame === 'stirfry' ? ['normal'] : DIFFS as d (d)}<option value={d}>{diffName(d)}</option>{/each}</select>
         </div>
         {#if board}
           <table class="wide"><thead><tr><th>#</th><th>{t('god.col.nick')}</th><th>{t('god.col.score')}</th><th>{t('god.col.time')}</th><th>{t('god.col.verified')}</th><th>{t('god.col.when')}</th><th></th></tr></thead>
@@ -278,7 +287,7 @@
             {#if !collapsed[k]}
               <table class="wide"><thead><tr><th>{t('god.mod.name')}</th><th>{t('god.mod.version')}</th><th>{t('god.mod.deps')}</th><th>{t('god.mod.size')}</th><th>{t('god.mod.hash')}</th><th>{t('god.mod.commit')}</th></tr></thead>
                 <tbody>{#each mods as m (m.id)}
-                  <tr><td><b>{m.name}</b><br /><code>{m.id}</code></td><td><b>{m.version}</b></td>
+                  <tr><td><a href="#/modules/{m.id}"><b>{m.name}</b></a><br /><code>{m.id}</code>{#if m.edition}<br /><small>↳ {m.edition.mechanism}</small>{/if}</td><td><b>{m.version}</b></td>
                     <td>{#each m.dependsOn as d (d.id)}<div class:bad={!d.ok}>{d.ok ? '✓' : '✗'} {d.id} {d.range} <small>({d.version ?? '–'})</small></div>{:else}–{/each}</td>
                     <td>{(m.size / 1024).toFixed(1)} KB<br /><small>{m.files} {t('god.mod.files')}</small></td><td><code>{m.hash}</code></td>
                     <td>{#if m.lastCommit}<code>{m.lastCommit.sha.slice(0, 7)}</code> <small>{fmtDate(Date.parse(m.lastCommit.date))}</small><br /><small>{m.lastCommit.subject}</small>{:else}–{/if}</td></tr>

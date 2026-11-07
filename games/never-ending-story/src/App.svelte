@@ -242,7 +242,7 @@
       <ChallengeView params={challenge} onExit={toPractice} onBoard={() => (window.location.hash = '#/leaderboard')} />
     {/key}
   {:else if showingBoard}
-    <LeaderboardView onExit={toPractice} onPlay={(game) => (window.location.hash = `#/challenge/${game}`)} />
+    <LeaderboardView onExit={toPractice} onPlay={(game) => (window.location.hash = game === 'stirfry' ? '#/play/stirfry' : `#/challenge/${game}`)} />
   {:else if playingStirfry}
     <StirFryGame onExit={() => { window.location.hash = ''; route = ''; void session.go('practice'); }} />
   {:else}
