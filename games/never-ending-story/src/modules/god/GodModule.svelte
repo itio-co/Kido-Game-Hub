@@ -1,6 +1,9 @@
 <script lang="ts">
   /** Sub-page for one game/module: overview, mechanism/pack, rulesets, stats, leaderboard, recent runs, config, GDD. */
   import { t } from '../../lib/i18n';
+  import { imageUrl } from '../../lib/imageUrl';
+  import { CHARACTERS } from '../character';
+  import { ARTWORKS } from '../cutscene';
   import { currentRuleset, moduleRules, supportedRulesets } from '../../lib/rulesetCatalog';
   import { fmtDate, fmtTime, god, short, ApiError } from './api';
   import { renderMarkdown } from './markdown';
@@ -15,7 +18,8 @@
   let reg = $state<Row | null>(null);
   let stats = $state<Row[]>([]);
   let byRuleset = $state<Row[]>([]);
-  let tab = $state<'overview' | 'board' | 'gdd'>('overview');
+  let tab = $state<'overview' | 'board' | 'gdd' | 'gallery'>('overview');
+  let copied = $state('');
   let diff = $state('easy');
   let rulesetFilter = $state('all');
   let rows = $state<Row[] | null>(null);
@@ -32,6 +36,15 @@
   const diffs = $derived(gameKey && !GAME_KEY[id] ? ['easy', 'normal', 'hard'] : DIFFS);
   const modName = (mid: string) => reg?.modules?.find((m: Row) => m.id === mid)?.name ?? mid;
   const diffName = (d: string) => (d === 'normal' ? t('god.games.normal') : t(`challenge.diff.${d}`));
+  const galleryKind = $derived(mod?.kind === 'character' || mod?.kind === 'cutscene');
+  async function copyText(text: string): Promise<void> {
+    try {
+      await navigator.clipboard.writeText(text);
+      copied = text;
+    } catch {
+      copied = '';
+    }
+  }
   const kindName = (k: string) => {
     const key = k === 'edition' ? 'pack' : k;
     return t(`god.mod.kind.${key}`) === `god.mod.kind.${key}` ? key : t(`god.mod.kind.${key}`);
@@ -71,8 +84,8 @@
   <h2 class="title">{mod.name} <code>{mod.id}</code> <span class="tag kind">{kindName(mod.kind)}</span> <b>v{mod.version}</b></h2>
   <p class="note">{mod.description}</p>
   <div class="tabs" role="tablist">
-    {#each ['overview', 'board', 'gdd'] as k (k)}
-      {#if k !== 'board' || gameKey}
+    {#each ['overview', 'board', 'gallery', 'gdd'] as k (k)}
+      {#if (k !== 'board' || gameKey) && (k !== 'gallery' || galleryKind)}
         <button type="button" role="tab" class="chip" class:on={tab === k} aria-selected={tab === k} onclick={() => (tab = k as typeof tab)}>{t(`god.page.${k}`)}</button>
       {/if}
     {/each}
@@ -125,6 +138,46 @@
         <tbody>{#each rows as r, i (r.sessionId)}<tr><td>{i + 1}</td><td><a href="#/players/{encodeURIComponent(r.playerId)}">{r.nickname || short(r.playerId)}</a></td><td>{r.score}</td><td>{fmtTime(r.timeMs)}</td><td>{r.verified ? '✓' : '–'}</td><td>{fmtDate(r.ts)}</td><td><button type="button" class="danger sm" onclick={() => removeRun(r)}>{t('god.games.remove')}</button></td></tr>
         {:else}<tr><td colspan="7">{t('god.empty')}</td></tr>{/each}</tbody></table>
     {:else}<p>{t('god.loading')}</p>{/if}
+  {:else if tab === 'gallery' && mod.kind === 'character'}
+    <div class="cast">
+      {#each CHARACTERS as person (person.id)}
+        <article class="castcard">
+          <img src={imageUrl(person.portraits[0])} alt={t(person.nameKey)} />
+          <h3>{t(person.nameKey)} <code>{person.id}</code></h3>
+          <p>{t(person.roleKey)}</p>
+          <p class="note">{t('god.art.version')} v{person.version} · {t(person.promptSource === 'original' ? 'god.art.original' : 'god.art.reconstructed')}</p>
+          <p class="note">{person.portraits.join(', ')}</p>
+          <h4>{t('god.art.prompt')}</h4>
+          <pre>{person.prompt}</pre>
+          <button type="button" class="chip" onclick={() => copyText(person.prompt)}>{copied === person.prompt ? t('god.art.copied') : t('god.art.copy')}</button>
+          <h4>{t('god.art.negative')}</h4>
+          <pre>{person.negative}</pre>
+          <button type="button" class="chip" onclick={() => copyText(person.negative)}>{copied === person.negative ? t('god.art.copied') : t('god.art.copy')}</button>
+          <h4>{t('god.art.notes')}</h4>
+          <p>{person.styleNotes}</p>
+        </article>
+      {/each}
+    </div>
+  {:else if tab === 'gallery' && mod.kind === 'cutscene'}
+    <div class="cast">
+      {#each ARTWORKS as art (art.id)}
+        <article class="castcard">
+          <img src={imageUrl(art.file)} alt={art.id} />
+          <h3><code>{art.id}</code></h3>
+          <p class="note">{t('god.art.used')}: {art.usedIn.join(', ')}</p>
+          <p class="note">{t('god.art.cast')}: {art.characterIds.join(', ') || '–'}</p>
+          <p class="note">{t('god.art.version')} v{art.version} · {t(art.promptSource === 'original' ? 'god.art.original' : 'god.art.reconstructed')}</p>
+          <h4>{t('god.art.prompt')}</h4>
+          <pre>{art.prompt}</pre>
+          <button type="button" class="chip" onclick={() => copyText(art.prompt)}>{copied === art.prompt ? t('god.art.copied') : t('god.art.copy')}</button>
+          <h4>{t('god.art.negative')}</h4>
+          <pre>{art.negative}</pre>
+          <button type="button" class="chip" onclick={() => copyText(art.negative)}>{copied === art.negative ? t('god.art.copied') : t('god.art.copy')}</button>
+          <h4>{t('god.art.notes')}</h4>
+          <p>{art.styleNotes}</p>
+        </article>
+      {/each}
+    </div>
   {:else if tab === 'gdd'}
     {#if mod.gddMarkdown}
       <p class="note"><code>{mod.gdd}</code></p>
@@ -161,5 +214,10 @@
   .gdd :global(code) { background: #0b1622; padding: 1px 5px; border-radius: 4px; }
   .gdd :global(pre) { background: #0b1622; padding: 10px; border-radius: 8px; overflow: auto; }
   .gdd :global(blockquote) { border-left: 3px solid var(--cyan); margin: 8px 0; padding-left: 10px; opacity: 0.85; }
+  .cast { display: grid; gap: 14px; }
+  .castcard { background: #0f1a27; border: 1px solid #234; border-radius: 12px; padding: 12px; }
+  .castcard img { width: 100%; max-height: 280px; object-fit: cover; border-radius: 8px; background: #000; }
+  .castcard pre { white-space: pre-wrap; overflow-wrap: anywhere; background: #0b1622; padding: 8px; border-radius: 8px; font-size: 0.82em; }
+  .castcard h3, .castcard h4 { margin: 10px 0 4px; }
   @media (max-width: 760px) { table { display: block; overflow-x: auto; white-space: nowrap; } .gdd { padding: 4px 10px 12px; } }
 </style>

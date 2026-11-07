@@ -3,7 +3,7 @@
   "name": "Core / main game",
   "kind": "core",
   "version": "app",
-  "description": "App shell, hub room, save, i18n, cloudSync, prologue. Minigame framework, event framework, and god admin are their own modules.",
+  "description": "App shell, hub room, save, i18n, cloudSync, prologue. Minigames, events, characters, cut scenes, and god admin are their own modules.",
   "entry": "src/main.ts",
   "publicEntries": [
     "src/main.ts"
@@ -17,7 +17,9 @@
     "event-01": "^1.0.0",
     "event-core": "^1.0.0",
     "minigame-core": "^1.0.0",
-    "god": "^1.0.0"
+    "god": "^1.0.0",
+    "character": "^1.0.0",
+    "cutscene": "^1.0.0"
   },
   "paths": [
     "src",

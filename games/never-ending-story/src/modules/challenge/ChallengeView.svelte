@@ -3,6 +3,7 @@
   import { version } from '../../../package.json';
   import { t } from '../../lib/i18n';
   import { imageUrl } from '../../lib/imageUrl';
+  import { artworkFile } from '../cutscene';
   import { nextPhase, RulesetBanner, submitFinishedRun, UnsupportedRuleset } from '../minigame-core';
   import { readPlayerId, setNickname } from '../../lib/playerId';
   import {
@@ -366,7 +367,7 @@
         <div class="jgb" style="grid-template-columns:repeat({b.cols},1fr);grid-template-rows:repeat({b.rows},1fr)">
           {#each Array.from({ length: b.cols * b.rows }, (_, i) => i) as i (i)}
             {#if b.placed.includes(i)}
-              <div class="pc" style="background-image:url('{imageUrl('house-map.jpg')}');background-size:{b.cols * 100}% {b.rows * 100}%;background-position:{(i % b.cols) * (100 / (b.cols - 1))}% {Math.floor(i / b.cols) * (100 / (b.rows - 1))}%"></div>
+              <div class="pc" style="background-image:url('{imageUrl(artworkFile('prologue.house-map'))}');background-size:{b.cols * 100}% {b.rows * 100}%;background-position:{(i % b.cols) * (100 / (b.cols - 1))}% {Math.floor(i / b.cols) * (100 / (b.rows - 1))}%"></div>
             {:else}
               <button type="button" class="hole" aria-label={`slot ${i + 1}`} onclick={() => dropAt(i)}></button>
             {/if}
@@ -375,7 +376,7 @@
         <div class="tray">
           {#each b.tray as p (p)}
             <button type="button" class="pc tp" class:sel={b.sel === p} aria-label={`piece ${p + 1}`} onclick={() => pickPiece(p)}
-              style="background-image:url('{imageUrl('house-map.jpg')}');background-size:{b.cols * 100}% {b.rows * 100}%;background-position:{(p % b.cols) * (100 / (b.cols - 1))}% {Math.floor(p / b.cols) * (100 / (b.rows - 1))}%"></button>
+              style="background-image:url('{imageUrl(artworkFile('prologue.house-map'))}');background-size:{b.cols * 100}% {b.rows * 100}%;background-position:{(p % b.cols) * (100 / (b.cols - 1))}% {Math.floor(p / b.cols) * (100 / (b.rows - 1))}%"></button>
           {/each}
         </div>
       {:else}

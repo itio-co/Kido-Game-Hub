@@ -12,6 +12,8 @@ The game ships as one bundle but the code is split into modules under `src/modul
 | `challenge` | feature | puzzle challenge mode and leaderboards. Stays its own feature and depends on `minigame-core` (see below) |
 | `event-core` | event-core | shared event framework: cutscenes, stage map, case notebook, event HUD, D1 progress document |
 | `event-01` | event | Event 01 content (`case-01`) on top of `event-core` |
+| `character` | character | people already in the story: names, portraits, generation prompts |
+| `cutscene` | cutscene | Cut Scene: prologue, case-01 opening/ending, and room art; people in a frame are character ids |
 
 ## Manifest
 

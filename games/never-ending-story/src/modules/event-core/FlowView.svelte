@@ -8,6 +8,8 @@
   import { t } from '../../lib/i18n';
   import { readEggs } from '../../lib/eggs';
   import { readStirFry } from '../stirfry';
+  import { portraitFile } from '../character';
+  import { artworkFile } from '../cutscene';
   import ComicPanel from './ComicPanel.svelte';
   import ImageScene from './ImageScene.svelte';
   import Minigames from './Minigames.svelte';
@@ -249,7 +251,7 @@
               {/each}
             </div>
           {:else}
-            <div class="mini" style="background-image:url('{imageUrl('house-map.jpg')}')">
+            <div class="mini" style="background-image:url('{imageUrl(artworkFile('prologue.house-map'))}')">
               <button type="button" class:sel={session.picks[index] === 'living'} style="left:10%;top:10%;width:80%;height:35%" aria-label="ห้องนั่งเล่น" onclick={() => session.pickAnswer(index, 'living')}></button>
               <button type="button" class:sel={session.picks[index] === 'study'} style="left:12%;top:46%;width:40%;height:34%" aria-label="ห้องทำงาน" onclick={() => session.pickAnswer(index, 'study')}></button>
               <button type="button" class:sel={session.picks[index] === 'kitchen'} style="left:53%;top:46%;width:35%;height:34%" aria-label="ครัว" onclick={() => session.pickAnswer(index, 'kitchen')}></button>
@@ -323,7 +325,7 @@
   {#if session.eggReveal}
     <div class="egg-modal" role="dialog" aria-label={t('egg.revealTitle')}>
       <div class="egg-card">
-        <img src={imageUrl('egg-young-grandpa.webp')} alt="" />
+        <img src={imageUrl(portraitFile('grandpa-young'))} alt="" />
         <h2>{t('egg.revealTitle')}</h2>
         <p>{t('egg.revealBody')}</p>
         <button type="button" onclick={() => session.closeEgg()}>{t('egg.close')}</button>

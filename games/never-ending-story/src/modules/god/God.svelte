@@ -31,7 +31,7 @@
   let toast = $state('');
   let renameTo = $state('');
   let confirmText = $state('');
-  const KIND_ORDER = ['core', 'minigame-core', 'engine', 'pack', 'feature', 'minigame', 'event-core', 'event', 'admin'];
+  const KIND_ORDER = ['core', 'character', 'cutscene', 'minigame-core', 'engine', 'pack', 'feature', 'minigame', 'event-core', 'event', 'admin'];
   /** Old registries stored kind "edition". Group them with packs. */
   const normalizeKind = (k: string) => (k === 'edition' ? 'pack' : k);
   const packOf = (m: Row) => (m.pack ?? m.edition ?? null) as { mechanism?: string } | null;

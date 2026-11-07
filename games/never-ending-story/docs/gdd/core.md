@@ -3,7 +3,7 @@
 | ฟิลด์ | ค่า |
 |---|---|
 | kind | core |
-| เวอร์ชัน | app (ตาม `package.json`, ตอนนี้ 0.6.12) |
+| เวอร์ชัน | app (ตาม `package.json`, ตอนนี้ 0.6.13) |
 | เทมเพลต | `docs/gdd/TEMPLATE.md` |
 | อ้างอิง | `docs/design/never-ending-story-game-spec-v0.4-th.md` |
 
@@ -54,6 +54,7 @@ D1: `players`, `player_state`, `player_events`, `player_home`, `runs` (มีค
 ## 13. Changelog (ผูกกับเวอร์ชันโมดูล)
 | เวอร์ชัน | แอป | การเปลี่ยนแปลง |
 |---|---|---|
+| 0.6.13 | 0.6.13 | โมดูล character และ cutscene รูปและกติเกมเดิม |
 | 0.6.12 | 0.6.12 | แยก minigame-core กับ event-core ค่ากติกาและ URL เดิม |
 | 0.6.11 | 0.6.11 | ลิงก์แชร์ติดกติกา engine+pack, กระดานแยกตาม ruleset, ย้าย god เป็นโมดูล, เปลี่ยนชื่อ edition เป็น pack |
 | 0.6.10 | 0.6.10 | rhythm ชาร์ต seed + ระดับ, ป้าย judgement |

@@ -3,7 +3,7 @@
 | ฟิลด์ | ค่า |
 |---|---|
 | kind | event |
-| เวอร์ชัน | 1.0.0 |
+| เวอร์ชัน | 1.0.1 |
 | เทมเพลต | `docs/gdd/TEMPLATE.md` |
 | อ้างอิง | `docs/design/never-ending-story-game-spec-v0.4-th.md` |
 
@@ -47,5 +47,6 @@ event-core ^1.0.0, core >=0.6.12, crossword, jigsaw, slide
 ## 13. Changelog (ผูกกับเวอร์ชันโมดูล)
 | เวอร์ชัน | แอป | การเปลี่ยนแปลง |
 |---|---|---|
+| 1.0.1 | 0.6.13 | `EVENT_IMAGES` มาจาก cutscene ชื่อไฟล์ชุดเดิม |
 | 1.0.0 | 0.6.12 | ยังเป็นคอนเทนต์คดี 1 วางบน event-core (`EVENT_ID` case-01, ฉากจบ case-01-ending) ไม่เปลี่ยนข้อมูล |
 | 1.0.0 | 0.6.5 | แยกเป็นโมดูล |

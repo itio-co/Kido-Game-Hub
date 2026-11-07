@@ -3,7 +3,7 @@
 | ฟิลด์ | ค่า |
 |---|---|
 | kind | event-core |
-| เวอร์ชัน | 1.0.0 |
+| เวอร์ชัน | 1.1.0 |
 | เทมเพลต | `docs/gdd/TEMPLATE.md` |
 | อ้างอิง | `docs/design/story-pack-format-th.md` |
 
@@ -54,4 +54,5 @@ core >=0.6.12, minigame-core ^1.0.0, crossword, jigsaw, slide ^1.0.0, stirfry ^1
 ## 13. Changelog (ผูกกับเวอร์ชันโมดูล)
 | เวอร์ชัน | แอป | การเปลี่ยนแปลง |
 |---|---|---|
+| 1.1.0 | 0.6.13 | แผนผังบ้านและสติกเกอร์ตาอ้างผ่าน cutscene กับ character ไฟล์เดิม |
 | 1.0.0 | 0.6.12 | ย้าย flow engine, ฉาก, สมุดคดี และเอกสาร D1 ออกจาก core |

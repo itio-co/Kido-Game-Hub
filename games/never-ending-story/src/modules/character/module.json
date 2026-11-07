@@ -1,0 +1,15 @@
+{
+  "id": "character",
+  "name": "Characters",
+  "kind": "character",
+  "version": "1.0.0",
+  "description": "Registry of the people who already appear in the story: names, roles, reference pictures, and image-generation prompts.",
+  "entry": "src/modules/character/index.ts",
+  "publicEntries": [
+    "src/modules/character/index.ts"
+  ],
+  "dependsOn": {
+    "core": ">=0.6.13"
+  },
+  "gdd": "src/modules/character/GDD.md"
+}

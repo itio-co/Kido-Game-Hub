@@ -1,0 +1,16 @@
+{
+  "id": "cutscene",
+  "name": "Cut Scene",
+  "kind": "cutscene",
+  "version": "1.0.0",
+  "description": "Cut Scene registry: prologue, case-01 opening and ending scenes, and room art already used in the game, with generation prompts. People in a frame are character ids.",
+  "entry": "src/modules/cutscene/index.ts",
+  "publicEntries": [
+    "src/modules/cutscene/index.ts"
+  ],
+  "dependsOn": {
+    "core": ">=0.6.13",
+    "character": "^1.0.0"
+  },
+  "gdd": "src/modules/cutscene/GDD.md"
+}
