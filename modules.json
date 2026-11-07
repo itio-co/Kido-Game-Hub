@@ -1,11 +1,11 @@
 {
-  "appVersion": "0.6.6",
-  "generatedAt": "2026-11-07T02:13:11.857Z",
+  "appVersion": "0.6.7",
+  "generatedAt": "2026-11-07T02:15:54.144Z",
   "modules": [
     {
       "id": "challenge",
       "name": "Challenge mode",
-      "kind": "minigame",
+      "kind": "feature",
       "version": "1.0.0",
       "description": "Seeded challenge runs, scoring, share links, protobuf run token, leaderboard views.",
       "entry": "src/modules/challenge/index.ts",
@@ -13,7 +13,7 @@
         {
           "id": "core",
           "range": ">=0.6.0",
-          "version": "0.6.6",
+          "version": "0.6.7",
           "ok": true
         },
         {
@@ -36,19 +36,19 @@
         }
       ],
       "files": 8,
-      "size": 41186,
-      "hash": "ae9db816b3ca",
+      "size": 41185,
+      "hash": "0b1ce82ab807",
       "lastCommit": {
-        "sha": "4d841f7b4deafccef439b712973743e9dbbafa4d",
-        "date": "2026-11-07T08:50:28+07:00",
-        "subject": "refactor(nes): v0.6.5 modular monolith — src/modules (crossword, jigsaw, slide, stirfry, challenge, event-01 @1.0.0), boundary check, module registry, god Modules page"
+        "sha": "d314bd4728b18ce9ee9837c77ac479f6174c1043",
+        "date": "2026-11-07T09:15:47+07:00",
+        "subject": "feat(nes): v0.6.7 god Modules grouped by kind (chips, collapsible); challenge kind -> feature"
       }
     },
     {
       "id": "core",
       "name": "Core / main game",
       "kind": "core",
-      "version": "0.6.6",
+      "version": "0.6.7",
       "description": "App shell, hub room, flow engine, save, i18n, cloudSync, prologue, Game of Dev admin.",
       "entry": "src/main.ts",
       "dependsOn": [
@@ -90,12 +90,12 @@
         }
       ],
       "files": 68,
-      "size": 700794,
-      "hash": "62e95fb6deec",
+      "size": 703397,
+      "hash": "41e00ae40921",
       "lastCommit": {
-        "sha": "463508882ea10239e8b29254ea605d3ef2e2fadc",
-        "date": "2026-11-07T09:13:03+07:00",
-        "subject": "fix(nes): v0.6.6 god sidebar on the left, mobile drawer slides from left"
+        "sha": "d314bd4728b18ce9ee9837c77ac479f6174c1043",
+        "date": "2026-11-07T09:15:47+07:00",
+        "subject": "feat(nes): v0.6.7 god Modules grouped by kind (chips, collapsible); challenge kind -> feature"
       }
     },
     {
@@ -126,7 +126,7 @@
         {
           "id": "core",
           "range": ">=0.6.0",
-          "version": "0.6.6",
+          "version": "0.6.7",
           "ok": true
         },
         {
@@ -202,7 +202,7 @@
         {
           "id": "core",
           "range": ">=0.6.0",
-          "version": "0.6.6",
+          "version": "0.6.7",
           "ok": true
         }
       ],
