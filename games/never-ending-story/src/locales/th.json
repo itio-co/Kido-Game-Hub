@@ -249,5 +249,8 @@
   "god.mod.kind.core": "แกนหลัก",
   "god.mod.kind.minigame": "มินิเกม",
   "god.mod.kind.event": "อีเวนต์",
-  "god.mod.note": "ดูวิธีเพิ่มเวอร์ชันโมดูลใน docs/modules.md"
+  "god.mod.note": "ดูวิธีเพิ่มเวอร์ชันโมดูลใน docs/modules.md",
+  "god.mod.all": "ทั้งหมด",
+  "god.mod.kind.feature": "ฟีเจอร์",
+  "god.mod.kind.system": "ระบบ"
 }
