@@ -1,19 +1,19 @@
 {
-  "appVersion": "0.6.8",
-  "generatedAt": "2026-11-07T02:24:56.914Z",
+  "appVersion": "0.6.9",
+  "generatedAt": "2026-11-07T02:55:36.124Z",
   "modules": [
     {
       "id": "challenge",
       "name": "Challenge mode",
       "kind": "feature",
-      "version": "1.0.0",
+      "version": "1.1.0",
       "description": "Seeded challenge runs, scoring, share links, protobuf run token, leaderboard views.",
       "entry": "src/modules/challenge/index.ts",
       "dependsOn": [
         {
           "id": "core",
           "range": ">=0.6.0",
-          "version": "0.6.8",
+          "version": "0.6.9",
           "ok": true
         },
         {
@@ -35,20 +35,24 @@
           "ok": true
         }
       ],
+      "edition": null,
+      "editions": [],
+      "gdd": "src/modules/challenge/GDD.md",
+      "gddMarkdown": "# GDD: โหมดท้าเพื่อน (Challenge) (`challenge`)\n\n| ฟิลด์ | ค่า |\n|---|---|\n| kind | feature |\n| เวอร์ชัน | 1.1.0 |\n| เทมเพลต | `docs/gdd/TEMPLATE.md` |\n| อ้างอิง | `docs/design/never-ending-story-game-spec-v0.4-th.md` |\n\n## 1. จุดประสงค์ / Pitch\nทำให้มินิเกมเล่นซ้ำได้แบบมีคะแนน ท้าเพื่อนผ่านลิงก์ และขึ้นกระดานคะแนนออนไลน์\n\n## 2. แฟนตาซีของผู้เล่น\nแข่งกับเพื่อนในปริศนาชุดเดียวกัน\n\n## 3. Core loop\n1. เลือกเกม+ระดับ (seed) 2. เล่น 3. ได้คะแนน 4. แชร์ลิงก์ `#/challenge/<game>/<diff>/<seed>` 5. ส่งคะแนนออนไลน์\n\n## 4. กฎและ invariants\n- seed เดียวกัน = ปริศนาเดียวกัน\n- คะแนนสูงชนะ เท่ากันเวลาน้อยชนะ (`compare`)\n- run token = protobuf + แท็ก SHA-256 6 ไบต์ (`runProto.ts`) ตรวจที่ Worker\n\n## 5. Input / การควบคุม\nปุ่มเริ่ม แชร์ ดูกระดาน\n\n## 6. คะแนนและความยาก\n`scoreFor()` + `DIFF_MULT` + `PAR_SECONDS` (ดู GDD มินิเกม) · ระดับ easy/medium/hard\n\n## 7. Progression\nคะแนนดีสุดต่อเกม/ระดับในเครื่อง + อันดับออนไลน์\n\n## 8. Content / config surface\n`PAR_SECONDS`, `DIFF_MULT`, รายชื่อเกมบนกระดาน (`BOARD_GAMES` ใน `LeaderboardView`) รวม edition ของ rhythm (`stirfry`)\n\n## 9. UX / หน้าจอ\nChallengeView, LeaderboardView (แท็บเกม; stirfry ไม่มีแท็บระดับ)\n\n## 10. Data & telemetry (ฟิลด์บนเซิร์ฟเวอร์)\n`POST /never/api/runs`: sessionId, playerId, game, difficulty, seed, score, timeMs, version, ts, verified, integrity_ok · `GET` leaderboard ต่อ game/difficulty\n\n## 11. Dependencies + เวอร์ชัน\ncore, crossword, jigsaw, slide\n\n## 12. คำถามที่ยังเปิดอยู่ / Backlog\n- **[backlog]** กระดานรายสัปดาห์\n\n## 13. Changelog (ผูกกับเวอร์ชันโมดูล)\n| เวอร์ชัน | แอป | การเปลี่ยนแปลง |\n|---|---|---|\n| 1.1.0 | 0.6.9 | export `packRun`, กระดานรองรับ stirfry |\n| 1.0.0 | 0.6.5 | แยกเป็นโมดูล |\n",
       "files": 8,
-      "size": 41185,
-      "hash": "0b1ce82ab807",
+      "size": 41449,
+      "hash": "b5274cf6d568",
       "lastCommit": {
-        "sha": "d314bd4728b18ce9ee9837c77ac479f6174c1043",
-        "date": "2026-11-07T09:15:47+07:00",
-        "subject": "feat(nes): v0.6.7 god Modules grouped by kind (chips, collapsible); challenge kind -> feature"
+        "sha": "3977e254ecb1e933579d37bbaf123ac7aed4e9cd",
+        "date": "2026-11-07T09:55:23+07:00",
+        "subject": "feat(nes): v0.6.9 stir-fry online scores, photoreal wok frames, rhythm@1.0.0 engine + stirfry@1.1.0 edition, god per-game pages, per-module GDDs"
       }
     },
     {
       "id": "core",
       "name": "Core / main game",
       "kind": "core",
-      "version": "0.6.8",
+      "version": "0.6.9",
       "description": "App shell, hub room, flow engine, save, i18n, cloudSync, prologue, Game of Dev admin.",
       "entry": "src/main.ts",
       "dependsOn": [
@@ -72,14 +76,14 @@
         },
         {
           "id": "stirfry",
-          "range": "^1.0.0",
-          "version": "1.0.0",
+          "range": "^1.1.0",
+          "version": "1.1.0",
           "ok": true
         },
         {
           "id": "challenge",
-          "range": "^1.0.0",
-          "version": "1.0.0",
+          "range": "^1.1.0",
+          "version": "1.1.0",
           "ok": true
         },
         {
@@ -89,13 +93,17 @@
           "ok": true
         }
       ],
-      "files": 68,
-      "size": 703397,
-      "hash": "41e00ae40921",
+      "edition": null,
+      "editions": [],
+      "gdd": "docs/gdd/core.md",
+      "gddMarkdown": "# GDD: Core / เกมหลัก (`core`)\n\n| ฟิลด์ | ค่า |\n|---|---|\n| kind | core |\n| เวอร์ชัน | app (ตาม `package.json`, ตอนนี้ 0.6.9) |\n| เทมเพลต | `docs/gdd/TEMPLATE.md` |\n| อ้างอิง | `docs/design/never-ending-story-game-spec-v0.4-th.md` |\n\n## 1. จุดประสงค์ / Pitch\nเปลือกแอปของ Never Ending Story: ห้องโถงบ้านย่า, flow engine เล่นเนื้อเรื่องจาก story pack, เซฟ, i18n, cloud sync, prologue และหน้า admin `/never/god`\n\n## 2. แฟนตาซีของผู้เล่น\nเป็นหลานที่กลับมาบ้านย่ามะลิ ช่วยย่าไขคดีของเก่าในบ้าน (ย่ามะลิผมสั้นสีเงินปล่อยหลวม ไม่มวยผม)\n\n## 3. Core loop\n1. เข้าเกม → prologue (ครั้งแรก) → ตั้งชื่อ\n2. ห้องโถง: เลือกคดี / แผนผังบ้าน / สมุดคดี / มินิเกม\n3. flow engine เล่นฉาก บทสนทนา หลักฐาน และเรียกมินิเกม\n4. จบคดี → เซฟความคืบหน้า และ sync ขึ้นเซิร์ฟเวอร์\n\n## 4. กฎและ invariants\n- โค้ดเป็นภาษาอังกฤษ ข้อความไทยอยู่เฉพาะ `src/locales/*.json`\n- โมดูลอื่นเข้าถึงกันผ่าน public entry (`index.ts`) เท่านั้น ตรวจด้วย `npm run check:modules`\n- ไม่พิมพ์ player token ลง log\n- `/never/god/*` และ `modules.json` เป็น network-only ใน SW และเป็น admin-only\n\n## 5. Input / การควบคุม\nแตะ/คลิกบนมือถือแนวตั้ง 390x844 เป็นหลัก แถบล่างมีปุ่มแผนผังบ้านข้างสมุดคดี\n\n## 6. คะแนนและความยาก\ncore ไม่มีคะแนนเอง คะแนนมาจากมินิเกม / challenge / rhythm\n\n## 7. Progression\nความคืบหน้าคดี (`save`), `prologueSeen`, ชื่อผู้เล่น, ไอเทมในบ้าน\n\n## 8. Content / config surface\nstory pack JSON (`public/data/case-flow.json`) และรูปใน `public/img/` ปรับได้โดยไม่แตะโค้ด ดู `docs/design/story-pack-format-th.md`\n\n## 9. UX / หน้าจอ\nPrologue, Hub, FlowView, Settings, Leaderboard, god admin (Dashboard, Players, Games + หน้าย่อยต่อเกม, Event, Modules)\n\n## 10. Data & telemetry (ฟิลด์บนเซิร์ฟเวอร์)\nD1: `players`, `player_state`, `player_events`, `player_home`, `runs`, `god_login` · localStorage เซฟหลัก\n\n## 11. Dependencies + เวอร์ชัน\nใช้ crossword, jigsaw, slide, stirfry, challenge, event-01 (ดู `module.json`)\n\n## 12. คำถามที่ยังเปิดอยู่ / Backlog\n- **[backlog]** แยก flow engine เป็นโมดูลของตัวเอง\n- **[backlog]** หลายคดี (event-02+)\n\n## 13. Changelog (ผูกกับเวอร์ชันโมดูล)\n| เวอร์ชัน | แอป | การเปลี่ยนแปลง |\n|---|---|---|\n| 0.6.9 | 0.6.9 | god หน้าย่อยต่อเกม, แท็บ GDD, rhythm engine/edition |\n| 0.6.8 | 0.6.8 | แก้ sw.js syntax |\n| 0.6.5 | 0.6.5 | modular monolith + หน้า Modules |\n| 0.6.4 | 0.6.4 | god admin |\n| 0.6.3 | 0.6.3 | prologue |\n",
+      "files": 70,
+      "size": 718431,
+      "hash": "93f62e98bd7d",
       "lastCommit": {
-        "sha": "d314bd4728b18ce9ee9837c77ac479f6174c1043",
-        "date": "2026-11-07T09:15:47+07:00",
-        "subject": "feat(nes): v0.6.7 god Modules grouped by kind (chips, collapsible); challenge kind -> feature"
+        "sha": "3977e254ecb1e933579d37bbaf123ac7aed4e9cd",
+        "date": "2026-11-07T09:55:23+07:00",
+        "subject": "feat(nes): v0.6.9 stir-fry online scores, photoreal wok frames, rhythm@1.0.0 engine + stirfry@1.1.0 edition, god per-game pages, per-module GDDs"
       }
     },
     {
@@ -106,13 +114,17 @@
       "description": "Thai crossword puzzle rules and board state.",
       "entry": "src/modules/crossword/index.ts",
       "dependsOn": [],
+      "edition": null,
+      "editions": [],
+      "gdd": "src/modules/crossword/GDD.md",
+      "gddMarkdown": "# GDD: ปริศนาอักษรไขว้ (`crossword`)\n\n| ฟิลด์ | ค่า |\n|---|---|\n| kind | minigame |\n| เวอร์ชัน | 1.0.0 |\n| เทมเพลต | `docs/gdd/TEMPLATE.md` |\n| อ้างอิง | `docs/design/never-ending-story-game-spec-v0.4-th.md` |\n\n## 1. จุดประสงค์ / Pitch\nอักษรไขว้คำไทยสั้นๆ\n\n## 2. แฟนตาซีของผู้เล่น\nหลานช่วยย่าแก้ปริศนาของเก่าในบ้าน\n\n## 3. Core loop\n1. เลือกช่อง 2. เลือกตัวอักษรจากแป้น 3. ถูกครบทุกช่อง → ผ่าน\n\n## 4. กฎและ invariants\n- คำตอบอยู่ใน `CROSS_SOLUTION` · `crossCorrect()` ตรวจทุกช่อง\n\n## 5. Input / การควบคุม\nแตะช่องแล้วแตะตัวอักษรบนแป้น (`CROSS_KEYS`)\n\n## 6. คะแนนและความยาก\nสูตร `challenge.scoreFor`: (correct×100 + maxCombo×20 − mistakes×40 − hints×150 + (par − วินาที)×10) × ตัวคูณ (easy 1, medium 1.5, hard 2) · par: 45/75/110 วินาที\n\n## 7. Progression\nใช้ในคดีผ่าน flow engine และในโหมด challenge (คะแนนดีสุดต่อระดับ)\n\n## 8. Content / config surface\nกริด `CROSS_GRID`, หมายเลข `CROSS_NUM`, แป้น `CROSS_KEYS` ใน `puzzle.ts`\n\n## 9. UX / หน้าจอ\nบอร์ดปริศนา ปุ่มคำใบ้ หน้าผลลัพธ์ (ผ่าน challenge)\n\n## 10. Data & telemetry (ฟิลด์บนเซิร์ฟเวอร์)\nแถว `runs` game ตามคีย์ challenge (`cross`/`jig`/`slide`) difficulty easy/medium/hard\n\n## 11. Dependencies + เวอร์ชัน\nไม่มี dependency (ถูกใช้โดย core, challenge, event-01)\n\n## 12. คำถามที่ยังเปิดอยู่ / Backlog\n- **[backlog]** ปริศนาสุ่มจาก seed ทุกระดับ\n\n## 13. Changelog (ผูกกับเวอร์ชันโมดูล)\n| เวอร์ชัน | แอป | การเปลี่ยนแปลง |\n|---|---|---|\n| 1.0.0 | 0.6.5 | แยกกฎเป็นโมดูล |\n",
       "files": 3,
-      "size": 1259,
-      "hash": "ecd570fbb879",
+      "size": 1300,
+      "hash": "148c29569ddb",
       "lastCommit": {
-        "sha": "4d841f7b4deafccef439b712973743e9dbbafa4d",
-        "date": "2026-11-07T08:50:28+07:00",
-        "subject": "refactor(nes): v0.6.5 modular monolith — src/modules (crossword, jigsaw, slide, stirfry, challenge, event-01 @1.0.0), boundary check, module registry, god Modules page"
+        "sha": "3977e254ecb1e933579d37bbaf123ac7aed4e9cd",
+        "date": "2026-11-07T09:55:23+07:00",
+        "subject": "feat(nes): v0.6.9 stir-fry online scores, photoreal wok frames, rhythm@1.0.0 engine + stirfry@1.1.0 edition, god per-game pages, per-module GDDs"
       }
     },
     {
@@ -126,7 +138,7 @@
         {
           "id": "core",
           "range": ">=0.6.0",
-          "version": "0.6.8",
+          "version": "0.6.9",
           "ok": true
         },
         {
@@ -148,13 +160,17 @@
           "ok": true
         }
       ],
+      "edition": null,
+      "editions": [],
+      "gdd": "src/modules/event-01/GDD.md",
+      "gddMarkdown": "# GDD: คดีที่ 1: อัลบั้มครอบครัวที่หายไป (`event-01`)\n\n| ฟิลด์ | ค่า |\n|---|---|\n| kind | event |\n| เวอร์ชัน | 1.0.0 |\n| เทมเพลต | `docs/gdd/TEMPLATE.md` |\n| อ้างอิง | `docs/design/never-ending-story-game-spec-v0.4-th.md` |\n\n## 1. จุดประสงค์ / Pitch\nคดีแรกของเกม: ตามหาอัลบั้มครอบครัวที่หายไปในบ้านย่า\n\n## 2. แฟนตาซีของผู้เล่น\nนักสืบตัวน้อยที่ค้นบ้านย่า เก็บหลักฐาน และฟังเรื่องครอบครัว\n\n## 3. Core loop\n1. รับคดีจากย่า 2. สำรวจห้อง เก็บหลักฐาน 3. แก้มินิเกม (crossword, jigsaw, slide) 4. ตอบคำถาม 5. ฉากจบ\n\n## 4. กฎและ invariants\n- ข้อมูลทั้งหมดอยู่ใน `public/data/case-flow.json` (pages, evidence, slots, scenes, dialogues, games, questions, goals)\n- โค้ดไม่ฝังเนื้อเรื่อง\n\n## 5. Input / การควบคุม\nแตะฉาก / หลักฐาน / ตัวเลือก\n\n## 6. คะแนนและความยาก\nระดับตาม `difficulties` ใน story pack\n\n## 7. Progression\nความคืบหน้าใน `player_events` และ funnel ในหน้า god Event\n\n## 8. Content / config surface\nstory pack JSON (ดู `docs/design/story-pack-format-th.md`, `docs/design/never-ending-story-game-case-01-missing-family-album-th.md`)\n\n## 9. UX / หน้าจอ\nฉากใน FlowView, สมุดคดี, แผนผังบ้าน\n\n## 10. Data & telemetry (ฟิลด์บนเซิร์ฟเวอร์)\n`player_events`: eventId, status, progress_json\n\n## 11. Dependencies + เวอร์ชัน\ncore, crossword, jigsaw, slide\n\n## 12. คำถามที่ยังเปิดอยู่ / Backlog\n- **[backlog]** ใส่ผัดกับย่าในเนื้อเรื่องคดี\n\n## 13. Changelog (ผูกกับเวอร์ชันโมดูล)\n| เวอร์ชัน | แอป | การเปลี่ยนแปลง |\n|---|---|---|\n| 1.0.0 | 0.6.5 | แยกเป็นโมดูล |\n",
       "files": 2,
-      "size": 794,
-      "hash": "6e88aaf3c953",
+      "size": 834,
+      "hash": "054552494a32",
       "lastCommit": {
-        "sha": "4d841f7b4deafccef439b712973743e9dbbafa4d",
-        "date": "2026-11-07T08:50:28+07:00",
-        "subject": "refactor(nes): v0.6.5 modular monolith — src/modules (crossword, jigsaw, slide, stirfry, challenge, event-01 @1.0.0), boundary check, module registry, god Modules page"
+        "sha": "3977e254ecb1e933579d37bbaf123ac7aed4e9cd",
+        "date": "2026-11-07T09:55:23+07:00",
+        "subject": "feat(nes): v0.6.9 stir-fry online scores, photoreal wok frames, rhythm@1.0.0 engine + stirfry@1.1.0 edition, god per-game pages, per-module GDDs"
       }
     },
     {
@@ -165,13 +181,53 @@
       "description": "Jigsaw puzzle rules and board state.",
       "entry": "src/modules/jigsaw/index.ts",
       "dependsOn": [],
+      "edition": null,
+      "editions": [],
+      "gdd": "src/modules/jigsaw/GDD.md",
+      "gddMarkdown": "# GDD: จิ๊กซอว์ (`jigsaw`)\n\n| ฟิลด์ | ค่า |\n|---|---|\n| kind | minigame |\n| เวอร์ชัน | 1.0.0 |\n| เทมเพลต | `docs/gdd/TEMPLATE.md` |\n| อ้างอิง | `docs/design/never-ending-story-game-spec-v0.4-th.md` |\n\n## 1. จุดประสงค์ / Pitch\nต่อภาพถ่ายเก่าของครอบครัว\n\n## 2. แฟนตาซีของผู้เล่น\nหลานช่วยย่าแก้ปริศนาของเก่าในบ้าน\n\n## 3. Core loop\n1. เลือกชิ้น 2. แตะช่องที่ถูก 3. วางครบ → ผ่าน\n\n## 4. กฎและ invariants\n- ชิ้นที่วางแล้วอยู่ใน `placed` · `jigPosition()` คำนวณตำแหน่งภาพของชิ้น\n\n## 5. Input / การควบคุม\nแตะชิ้นแล้วแตะช่อง\n\n## 6. คะแนนและความยาก\nสูตร `challenge.scoreFor`: (correct×100 + maxCombo×20 − mistakes×40 − hints×150 + (par − วินาที)×10) × ตัวคูณ (easy 1, medium 1.5, hard 2) · par: 30/50/90 วินาที\n\n## 7. Progression\nใช้ในคดีผ่าน flow engine และในโหมด challenge (คะแนนดีสุดต่อระดับ)\n\n## 8. Content / config surface\nภาพและจำนวนชิ้นใน `puzzle.ts`\n\n## 9. UX / หน้าจอ\nบอร์ดปริศนา ปุ่มคำใบ้ หน้าผลลัพธ์ (ผ่าน challenge)\n\n## 10. Data & telemetry (ฟิลด์บนเซิร์ฟเวอร์)\nแถว `runs` game ตามคีย์ challenge (`cross`/`jig`/`slide`) difficulty easy/medium/hard\n\n## 11. Dependencies + เวอร์ชัน\nไม่มี dependency (ถูกใช้โดย core, challenge, event-01)\n\n## 12. คำถามที่ยังเปิดอยู่ / Backlog\n- **[backlog]** ปริศนาสุ่มจาก seed ทุกระดับ\n\n## 13. Changelog (ผูกกับเวอร์ชันโมดูล)\n| เวอร์ชัน | แอป | การเปลี่ยนแปลง |\n|---|---|---|\n| 1.0.0 | 0.6.5 | แยกกฎเป็นโมดูล |\n",
       "files": 3,
-      "size": 808,
-      "hash": "9b5c82dd295f",
+      "size": 846,
+      "hash": "cb955cdc6f0f",
       "lastCommit": {
-        "sha": "4d841f7b4deafccef439b712973743e9dbbafa4d",
-        "date": "2026-11-07T08:50:28+07:00",
-        "subject": "refactor(nes): v0.6.5 modular monolith — src/modules (crossword, jigsaw, slide, stirfry, challenge, event-01 @1.0.0), boundary check, module registry, god Modules page"
+        "sha": "3977e254ecb1e933579d37bbaf123ac7aed4e9cd",
+        "date": "2026-11-07T09:55:23+07:00",
+        "subject": "feat(nes): v0.6.9 stir-fry online scores, photoreal wok frames, rhythm@1.0.0 engine + stirfry@1.1.0 edition, god per-game pages, per-module GDDs"
+      }
+    },
+    {
+      "id": "rhythm",
+      "name": "Rhythm tap (mechanism)",
+      "kind": "engine",
+      "version": "1.0.0",
+      "description": "White-label rhythm button-tap engine: beat timing, perfect/good/miss judging, combo, scoring, pressure meter, extra-lane cues, run store, online score submission keyed by edition.",
+      "entry": "src/modules/rhythm/index.ts",
+      "dependsOn": [
+        {
+          "id": "core",
+          "range": ">=0.6.9",
+          "version": "0.6.9",
+          "ok": true
+        },
+        {
+          "id": "challenge",
+          "range": "^1.1.0",
+          "version": "1.1.0",
+          "ok": true
+        }
+      ],
+      "edition": null,
+      "editions": [
+        "stirfry"
+      ],
+      "gdd": "src/modules/rhythm/GDD.md",
+      "gddMarkdown": "# GDD: Rhythm tap (กลไกหลัก) (`rhythm`)\n\n| ฟิลด์ | ค่า |\n|---|---|\n| kind | engine |\n| เวอร์ชัน | 1.0.0 |\n| เทมเพลต | `docs/gdd/TEMPLATE.md` |\n| อ้างอิง | `docs/design/never-ending-story-game-spec-v0.4-th.md` |\n\n## 1. จุดประสงค์ / Pitch\nกลไกจังหวะแบบ white-label: แตะตามจังหวะ + ปุ่มพิเศษเมื่อมีคิว + คุมมาตรแรงดันให้อยู่ในโซน ใช้ซ้ำได้หลายธีมผ่าน *edition*\n\n## 2. แฟนตาซีของผู้เล่น\nผู้เล่นทำงานอย่างหนึ่งให้เข้าจังหวะ (เช่น ผัดกระทะกับย่า) รู้สึกถึงจังหวะและความต่อเนื่อง\n\n## 3. Core loop\n1. นับจังหวะทุก `beatMs`\n2. แตะปุ่มหลักใกล้จังหวะ → perfect / good / miss\n3. คิวพิเศษเด้งมา → แตะปุ่มพิเศษในหน้าต่างเวลา\n4. แรงดันขึ้นเอง แตะแต่ละครั้งลดแรงดัน รักษาให้อยู่ในโซน\n5. progress ถึง 100 หรือหมดเวลา → ผลลัพธ์ + ส่งคะแนน\n\n## 4. กฎและ invariants\n- คะแนนไม่ติดลบ, combo สูงสุด 12 (perfect) / 8 (good)\n- เมื่อคิวพิเศษรออยู่ แตะปุ่มหลักจะไม่ถูกตัดสิน\n- engine ไม่รู้จักธีม: ภาพทั้งหมดมาจาก `edition.Stage` คำทั้งหมดมาจาก prefix `edition.copy`\n- run ถูกเซฟที่ `edition.storageKey` (เล่นต่อได้)\n\n## 5. Input / การควบคุม\nปุ่มหลัก (แตะตามจังหวะ) และปุ่มพิเศษ (เมื่อมีคิว)\n\n## 6. คะแนนและความยาก\n| เหตุการณ์ | คะแนน |\n|---|---|\n| perfect (±`perfectMs` 110) | 80 + โบนัสความแม่น ≤50 + combo×3, progress +4.2 |\n| good (±`goodMs` 200) | 40 + combo, progress +2.4 |\n| miss | −10, combo = 0 |\n| extra-hit (±`extraWindowMs` 480) | 140 + combo×6, progress +9 |\n| ในโซนแรงดัน | +10/วินาที, progress +1.1/วินาที |\n| นอกโซน | −12/วินาที |\n\nมีความยากเดียว `normal` (กระดานคะแนนใช้ `normal`) ค่าตั้งต้นอยู่ใน `DEFAULT_PARAMS`\n\n## 7. Progression\nดาว: 2 ดาว ≥ `stars.two` (900), 3 ดาว ≥ `stars.three` (1400) และต้องทำ progress ครบ · บันทึกคะแนนดีสุดต่อ edition\n\n## 8. Content / config surface\n**edition interface** (`src/modules/rhythm/types.ts` → `RhythmEdition`):\n- `id`, `leaderboardId`, `copy` (prefix i18n), `storageKey`, `route`\n- `params: RhythmParams` (durationSec, beatMs, perfectMs, goodMs, extra*, pressure*, stars)\n- `theme.background`, `theme.accent`\n- `Stage: Component<StageProps>` รับ progress, pressure, pressureZone, combo, beat, extraDue, last (judgement), pulse\n- hooks: `onBeat()`, `onJudge(j)`, `onFinish(score, progress)`\n\n## 9. UX / หน้าจอ\nintro → play (HUD: เวลา, คะแนน, combo, มาตรแรงดัน, Stage, ปุ่ม) → result (ดาว, คะแนนดีสุด, สถานะส่งออนไลน์, ปุ่มกระดานคะแนน)\n\n## 10. Data & telemetry (ฟิลด์บนเซิร์ฟเวอร์)\n`POST /never/api/runs` (Bearer player token) ด้วย protobuf run token: game = `edition.leaderboardId`, difficulty = `normal`, score, timeMs, version = `<app>;rhythm@<ver>;<edition>` จึงบันทึก mechanism และเวอร์ชันไว้ในแถว `runs` · Worker ตรวจ `maxMs` 65 วินาที, `maxScore` 25000\n\n## 11. Dependencies + เวอร์ชัน\ncore >=0.6.9, challenge ^1.1.0 (`packRun`, `submitRun`)\n\n## 12. คำถามที่ยังเปิดอยู่ / Backlog\n- **[backlog]** chart แบบ seed (ตอนนี้คิวพิเศษสุ่มด้วย `Math.random`) เพื่อให้ท้าเพื่อนได้ชาร์ตเดียวกัน\n- **[backlog]** หลายระดับความยาก\n- **[backlog]** เสียง/ดนตรีต่อ edition ผ่าน hook\n\n## 13. Changelog (ผูกกับเวอร์ชันโมดูล)\n| เวอร์ชัน | แอป | การเปลี่ยนแปลง |\n|---|---|---|\n| 1.0.0 | 0.6.9 | แยกจาก stirfry เป็นกลไก white-label |\n",
+      "files": 5,
+      "size": 24337,
+      "hash": "0c953a88c772",
+      "lastCommit": {
+        "sha": "3977e254ecb1e933579d37bbaf123ac7aed4e9cd",
+        "date": "2026-11-07T09:55:23+07:00",
+        "subject": "feat(nes): v0.6.9 stir-fry online scores, photoreal wok frames, rhythm@1.0.0 engine + stirfry@1.1.0 edition, god per-game pages, per-module GDDs"
       }
     },
     {
@@ -182,37 +238,61 @@
       "description": "Sliding-block puzzle rules and board state.",
       "entry": "src/modules/slide/index.ts",
       "dependsOn": [],
+      "edition": null,
+      "editions": [],
+      "gdd": "src/modules/slide/GDD.md",
+      "gddMarkdown": "# GDD: บล็อกเลื่อน (`slide`)\n\n| ฟิลด์ | ค่า |\n|---|---|\n| kind | minigame |\n| เวอร์ชัน | 1.0.0 |\n| เทมเพลต | `docs/gdd/TEMPLATE.md` |\n| อ้างอิง | `docs/design/never-ending-story-game-spec-v0.4-th.md` |\n\n## 1. จุดประสงค์ / Pitch\nเลื่อนบล็อกเพื่อพากุญแจออกทางออก\n\n## 2. แฟนตาซีของผู้เล่น\nหลานช่วยย่าแก้ปริศนาของเก่าในบ้าน\n\n## 3. Core loop\n1. แตะบล็อก 2. บล็อกเลื่อนตามแนว 3. กุญแจ `K` ถึงขอบ → ชนะ\n\n## 4. กฎและ invariants\n- บล็อกซ้อนกันไม่ได้ · `stepBlock()` คืน 0/1/'win'\n\n## 5. Input / การควบคุม\nแตะบล็อกเพื่อเลื่อน\n\n## 6. คะแนนและความยาก\nสูตร `challenge.scoreFor`: (correct×100 + maxCombo×20 − mistakes×40 − hints×150 + (par − วินาที)×10) × ตัวคูณ (easy 1, medium 1.5, hard 2) · par: 40/70/150 วินาที\n\n## 7. Progression\nใช้ในคดีผ่าน flow engine และในโหมด challenge (คะแนนดีสุดต่อระดับ)\n\n## 8. Content / config surface\nตำแหน่งเริ่มต้นใน `freshSlide()`\n\n## 9. UX / หน้าจอ\nบอร์ดปริศนา ปุ่มคำใบ้ หน้าผลลัพธ์ (ผ่าน challenge)\n\n## 10. Data & telemetry (ฟิลด์บนเซิร์ฟเวอร์)\nแถว `runs` game ตามคีย์ challenge (`cross`/`jig`/`slide`) difficulty easy/medium/hard\n\n## 11. Dependencies + เวอร์ชัน\nไม่มี dependency (ถูกใช้โดย core, challenge, event-01)\n\n## 12. คำถามที่ยังเปิดอยู่ / Backlog\n- **[backlog]** ปริศนาสุ่มจาก seed ทุกระดับ\n\n## 13. Changelog (ผูกกับเวอร์ชันโมดูล)\n| เวอร์ชัน | แอป | การเปลี่ยนแปลง |\n|---|---|---|\n| 1.0.0 | 0.6.5 | แยกกฎเป็นโมดูล |\n",
       "files": 3,
-      "size": 2471,
-      "hash": "4a7b9eecfe4d",
+      "size": 2508,
+      "hash": "f26b631eb552",
       "lastCommit": {
-        "sha": "4d841f7b4deafccef439b712973743e9dbbafa4d",
-        "date": "2026-11-07T08:50:28+07:00",
-        "subject": "refactor(nes): v0.6.5 modular monolith — src/modules (crossword, jigsaw, slide, stirfry, challenge, event-01 @1.0.0), boundary check, module registry, god Modules page"
+        "sha": "3977e254ecb1e933579d37bbaf123ac7aed4e9cd",
+        "date": "2026-11-07T09:55:23+07:00",
+        "subject": "feat(nes): v0.6.9 stir-fry online scores, photoreal wok frames, rhythm@1.0.0 engine + stirfry@1.1.0 edition, god per-game pages, per-module GDDs"
       }
     },
     {
       "id": "stirfry",
       "name": "Stir-fry with Grandma",
-      "kind": "minigame",
-      "version": "1.0.0",
-      "description": "Cooking minigame with local best scores.",
+      "kind": "edition",
+      "version": "1.1.0",
+      "description": "Stir-fry with Grandma: rhythm edition with photoreal kitchen/wok art, wok frames mapped to cook progress and hits/misses, Thai copy.",
       "entry": "src/modules/stirfry/index.ts",
       "dependsOn": [
         {
           "id": "core",
-          "range": ">=0.6.0",
-          "version": "0.6.8",
+          "range": ">=0.6.9",
+          "version": "0.6.9",
+          "ok": true
+        },
+        {
+          "id": "rhythm",
+          "range": "^1.0.0",
+          "version": "1.0.0",
           "ok": true
         }
       ],
-      "files": 4,
-      "size": 19441,
-      "hash": "f86427cefc1c",
+      "edition": {
+        "mechanism": "rhythm",
+        "leaderboardId": "stirfry",
+        "storageKey": "nesg.stirfry.v1",
+        "route": "#/play/stirfry",
+        "params": "DEFAULT_PARAMS (60 s, beat 780 ms, perfect ±110 ms, good ±200 ms)",
+        "art": [
+          "public/img/stirfry/kitchen.webp",
+          "wok-raw/half/cooked/burnt/toss.webp"
+        ]
+      },
+      "editions": [],
+      "gdd": "src/modules/stirfry/GDD.md",
+      "gddMarkdown": "# GDD: ผัดกับย่า (Stir-fry with Grandma) (`stirfry`)\n\n| ฟิลด์ | ค่า |\n|---|---|\n| kind | edition (mechanism: `rhythm`) |\n| เวอร์ชัน | 1.1.0 |\n| เทมเพลต | `docs/gdd/TEMPLATE.md` |\n| อ้างอิง | `docs/design/never-ending-story-game-spec-v0.4-th.md` |\n\n## 1. จุดประสงค์ / Pitch\nผัดกระทะกับย่ามะลิให้เข้าจังหวะ ภาพเหมือนจริง อาหารในกระทะเปลี่ยนตามการผัด\n\n## 2. แฟนตาซีของผู้เล่น\nยืนหน้าเตาแก๊สในครัวไทย ผัดไปกับย่า เห็นอาหารสุกขึ้นทีละขั้น\n\n## 3. Core loop\nใช้ core loop ของ `rhythm`: ผัดตามจังหวะ (ปุ่มหลัก) ใส่วัตถุดิบเมื่อย่าบอก (ปุ่มพิเศษ) คุมไฟ (แรงดัน = ความร้อน)\n\n## 4. กฎและ invariants\n- ไม่เปลี่ยนกฎของ rhythm\n- `storageKey` = `nesg.stirfry.v1` เท่าเดิม เซฟเดิมไม่หาย\n- ภาพกระทะ: progress <30 ดิบ, <70 สุกครึ่ง, ≥70 สุก; ความร้อน >78 เริ่มไหม้ (เต็มที่ 96)\n\n## 5. Input / การควบคุม\nปุ่ม \"ผัด\" และ \"ใส่วัตถุดิบ\"\n\n## 6. คะแนนและความยาก\nตาม `rhythm` (`DEFAULT_PARAMS`) กระดานคะแนน `stirfry` / `normal`\n\n## 7. Progression\nดาวและคะแนนดีสุดตาม rhythm แสดงในสมุดของ FlowView\n\n## 8. Content / config surface\n**mechanism:** `rhythm` ^1.0.0. edition ปรับ:\n- theme: `public/img/stirfry/kitchen.webp` (สร้างด้วย GenerateImage)\n- Stage `WokStage.svelte`: `wok-raw/half/cooked/burnt/toss.webp`\n- onJudge → hit: ภาพโยนกระทะ + ไอน้ำ 260 ms; miss: สั่น + โทนแดง 380 ms; ไหม้ >0.3: ควัน\n- คำไทย prefix `stirfry.*` ใน locales\n- params: ค่าตั้งต้นทั้งหมด\n\n## 9. UX / หน้าจอ\nครัวเป็นพื้นหลัง กระทะเต็มกรอบ ปุ่มผัด/ใส่วัตถุดิบด้านล่าง หน้าผลลัพธ์มีปุ่มกระดานคะแนน\n\n## 10. Data & telemetry (ฟิลด์บนเซิร์ฟเวอร์)\nแถว `runs` game = `stirfry`, difficulty = `normal`, version มี `rhythm@x;stirfry`\n\n## 11. Dependencies + เวอร์ชัน\nrhythm ^1.0.0, core >=0.6.9\n\n## 12. คำถามที่ยังเปิดอยู่ / Backlog\n- **[backlog]** หลายเมนู (ภาพวัตถุดิบต่างกัน)\n- **[backlog]** เสียงฉ่า\n\n## 13. Changelog (ผูกกับเวอร์ชันโมดูล)\n| เวอร์ชัน | แอป | การเปลี่ยนแปลง |\n|---|---|---|\n| 1.1.0 | 0.6.9 | คะแนนขึ้นเซิร์ฟเวอร์, ธีมภาพจริง, กระทะเปลี่ยนตามจังหวะ, เป็น edition ของ rhythm |\n| 1.0.0 | 0.6.5 | แยกเป็นโมดูล |\n",
+      "files": 5,
+      "size": 6047,
+      "hash": "f668e2e4b8d0",
       "lastCommit": {
-        "sha": "4d841f7b4deafccef439b712973743e9dbbafa4d",
-        "date": "2026-11-07T08:50:28+07:00",
-        "subject": "refactor(nes): v0.6.5 modular monolith — src/modules (crossword, jigsaw, slide, stirfry, challenge, event-01 @1.0.0), boundary check, module registry, god Modules page"
+        "sha": "3977e254ecb1e933579d37bbaf123ac7aed4e9cd",
+        "date": "2026-11-07T09:55:23+07:00",
+        "subject": "feat(nes): v0.6.9 stir-fry online scores, photoreal wok frames, rhythm@1.0.0 engine + stirfry@1.1.0 edition, god per-game pages, per-module GDDs"
       }
     }
   ]
