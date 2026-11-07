@@ -49,6 +49,7 @@ self.addEventListener('fetch', (event) => {
   if (url.origin !== self.location.origin) return;
   if (url.pathname.endsWith('/sw.js')) return;
   if (url.pathname.includes('/api/')) return; // live API, never cached
+  if (/\/god(\.html)?$/.test(url.pathname)) return; // admin page, always network
   event.respondWith(fromCacheOrNetwork(request));
 });
 
@@ -77,7 +78,7 @@ async function fromCacheOrNetwork(request) {
 }
 
 export async function generatePrecache(outDir) {
-  const files = (await walk(outDir)).filter((file) => path.basename(file) !== 'sw.js').sort();
+  const files = (await walk(outDir)).filter((file) => path.basename(file) !== 'sw.js' && path.basename(file) !== 'god.html').sort();
   const hash = createHash('sha256');
   const urls = [];
   for (const file of files) {

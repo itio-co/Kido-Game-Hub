@@ -25,5 +25,8 @@ export default defineConfig({
   base: './',
   server: { host: true, port: 5173 },
   preview: { host: true, port: 4173 },
-  build: { chunkSizeWarningLimit: 800 },
+  build: {
+    chunkSizeWarningLimit: 800,
+    rollupOptions: { input: { main: 'index.html', god: 'god.html' } },
+  },
 });

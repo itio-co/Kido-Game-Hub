@@ -3,11 +3,13 @@
  * - Static files live in Workers KV (binding ASSETS_KV, key = path under /never, e.g. "/index.html").
  * - Leaderboard API under /never/api backed by D1 (binding DB). See docs/online-leaderboard.md.
  */
+import { godApi } from './god';
 import { decodeRun, tagFor, unb64url, type ChallengeRunPb } from '../src/lib/runProto';
 
 interface Env {
   ASSETS_KV: KVNamespace;
   DB: D1Database;
+  GOD_ADMIN_PASSWORD?: string;
 }
 
 const BASE = '/never';
@@ -132,6 +134,7 @@ async function meApi(req: Request, env: Env, path: string): Promise<Response> {
 
 async function api(req: Request, env: Env, path: string): Promise<Response> {
   if (req.method !== 'GET' && !sameOrigin(req)) return err(403, 'cross-origin');
+  if (path.startsWith('/god/')) return godApi(req, env, path.slice(4));
   const now = Date.now();
 
   if (path === '/players/register' && req.method === 'POST') {
@@ -263,6 +266,16 @@ export default {
     try {
       if (path.startsWith('/api/')) return await api(req, env, path.slice(4));
       if (req.method !== 'GET' && req.method !== 'HEAD') return err(405, 'method');
+      // The admin SPA uses hash routes and relative assets, so keep it at exactly /never/god.
+      if (path.startsWith('/god/')) return Response.redirect(`${url.origin}${BASE}/god${url.search}`, 302);
+      if (path === '/god') {
+        const res = await asset(req, env, '/god.html');
+        const headers = new Headers(res.headers);
+        headers.set('x-robots-tag', 'noindex, nofollow');
+        headers.set('x-frame-options', 'DENY');
+        headers.set('referrer-policy', 'no-referrer');
+        return new Response(res.body, { status: res.status, headers });
+      }
       return await asset(req, env, path);
     } catch {
       return err(500, 'internal');
