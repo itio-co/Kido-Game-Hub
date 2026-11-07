@@ -10,6 +10,7 @@ const RUNQ_KEY = 'nesg.runQueue.v1';
 const META_KEY = 'nesg.sync.v1';
 const STATE_KEYS = ['nesg.player.v1', 'nesg.stirfry.v1', 'nesg.eggs.v1'] as const;
 import { EVENT_ID } from '../modules/event-01';
+import { eventProgressBody } from '../modules/event-core/progress';
 
 type Meta = { stateRev: number; homeRev: number; localAt: number; dirty: boolean };
 type QueuedRun = { token: string; mine: boolean };
@@ -115,14 +116,8 @@ function homeDoc(save: SaveLike): Record<string, unknown> {
   return { roomId: 'player-room', decor: save.player?.decor ?? {}, calendarTheme: save.player?.calendarTheme ?? null, placed: [], unlocked: [] };
 }
 
-function eventDoc(save: SaveLike): { status: 'started' | 'completed'; progress: Record<string, unknown> } | null {
-  const f = save.flow ?? {};
-  const started = (Array.isArray(f.evidence) && f.evidence.length > 0) || f.poster || f.caseDone || f.solved;
-  if (!started) return null;
-  return {
-    status: f.caseDone ? 'completed' : 'started',
-    progress: { evidence: f.evidence, solved: f.solved, deduced: f.deduced, reward: f.reward, posterShown: f.poster, endingSeen: f.caseDone, seen: f.seen },
-  };
+function eventDoc(save: SaveLike) {
+  return eventProgressBody(save.flow);
 }
 
 async function putRev(path: 'state' | 'home', data: unknown, revKey: 'stateRev' | 'homeRev'): Promise<boolean> {

@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { imageUrl } from '../../lib/flow/loadFlow';
-  import type { FlowScene, FlowSpot } from '../../lib/flow/types';
+  import { imageUrl } from '../../lib/imageUrl';
+  import type { FlowScene, FlowSpot } from './types';
 
   let {
     scene,

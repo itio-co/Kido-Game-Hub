@@ -269,6 +269,8 @@
   "god.mod.kind.engine": "engine",
   "god.mod.kind.pack": "pack",
   "god.mod.kind.admin": "admin",
+  "god.mod.kind.minigame-core": "minigame core",
+  "god.mod.kind.event-core": "event core",
   "stirfry.diffLabel": "Difficulty",
   "stirfry.diff.easy": "Easy",
   "stirfry.diff.normal": "Normal",

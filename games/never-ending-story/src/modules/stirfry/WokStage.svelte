@@ -1,6 +1,6 @@
 <script lang="ts">
   /** Stir-fry pack visual: photoreal wok frames driven by the rhythm engine's StageProps. */
-  import { imageUrl } from '../../lib/flow/loadFlow';
+  import { imageUrl } from '../../lib/imageUrl';
   import type { StageProps } from '../rhythm';
   import { cookStage, burntLevel, WOK_FRAMES } from './pack';
   import { stirfryRuleset, STIRFRY_VERSION } from './ruleset';

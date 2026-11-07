@@ -1,4 +1,5 @@
-import { validateEntities } from '../catalog';
+import { validateEntities } from '../../lib/catalog';
+import { imageUrl } from '../../lib/imageUrl';
 import type { CaseFlow, ScreenRegistry } from './types';
 
 export async function loadFlow(): Promise<{ flow: CaseFlow; screens: ScreenRegistry }> {
@@ -15,6 +16,4 @@ export async function loadFlow(): Promise<{ flow: CaseFlow; screens: ScreenRegis
   return { screens: screens as ScreenRegistry, flow: flow as CaseFlow };
 }
 
-export function imageUrl(file: string): string {
-  return `${import.meta.env.BASE_URL}img/${file}`;
-}
+export { imageUrl };

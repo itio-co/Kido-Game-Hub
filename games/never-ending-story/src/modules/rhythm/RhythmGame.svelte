@@ -1,6 +1,5 @@
 <script lang="ts">
   import { onDestroy, onMount } from 'svelte';
-  import { t } from '../../lib/i18n';
   import { version } from '../../../package.json';
   import { readPlayerId, setNickname } from '../../lib/playerId';
   import { clearRun, defaultRun, readRun, recordBest, starsFor, writeRun, type RhythmRun } from './store';
@@ -8,9 +7,8 @@
   import manifest from './module.json';
   import { rhythmRuleset } from './ruleset';
   import { buildChart, chartId, isChartSeed, newChartSeed, paramsFor, parseRhythmHash, rhythmHash, RHYTHM_DIFFICULTIES, type RhythmDifficulty, type RhythmLink } from './chart';
-  import { submitRun } from '../../lib/cloudSync';
-  import { packRun } from '../challenge/proto';
   import { currentRuleset, resolveGame, versionIn } from '../../lib/rulesetCatalog';
+  import { gameCopy, nextPhase, RulesetBanner, submitFinishedRun, UnsupportedRuleset } from '../minigame-core';
 
   let { pack, onExit }: { pack: RhythmPack; onExit: () => void } = $props();
   let run = $state<RhythmRun>(defaultRun());
@@ -26,7 +24,7 @@
   /** Extra-lane cue times (ms from start), fixed by pack + difficulty + seed + the active params. */
   const chart = $derived(engineRules.chart === 'v1' ? buildChart(pack.id, run.difficulty, run.seed, P) : []);
   let playStart = 0;
-  const c = (key: string, vars?: Record<string, string | number>) => t(`${pack.copy}.${key}`, vars);
+  const c = gameCopy(pack.copy);
   let last = $state<Judgement | null>(null);
   let pulse = $state(0);
 
@@ -57,15 +55,12 @@
     const me = readPlayerId();
     const elapsed = Math.round((P.durationSec - run.timeLeft) * 1000);
     const sessionId = typeof crypto !== 'undefined' && 'randomUUID' in crypto ? crypto.randomUUID() : `sf-${Date.now().toString(16)}-${Math.random().toString(16).slice(2, 10)}`;
-    const token = await packRun({
+    const token = await submitFinishedRun({
       sessionId, playerId: me.playerId, nickname: me.nickname ?? '', game: pack.leaderboardId, difficulty: run.difficulty,
       seed: run.seed, score: Math.round(run.score), timeMs: Math.max(engineRules.submit.minMs, elapsed), version: `${version};${rulesetKey}`, ruleset: rulesetKey, timestampMs: Date.now(),
       challengerSessionId: '', challengerNickname: '', challengerScore: 0, challengerTimeMs: 0,
-    }).catch(() => '');
-    if (token) {
-      submitRun(token, true);
-      onlineNote = c('onlineSaved');
-    }
+    });
+    if (token) onlineNote = c('onlineSaved');
   }
 
   const stars = $derived(starsFor(run.score, run.progress, P.stars));
@@ -112,7 +107,9 @@
     const bestStars = run.bestStars;
     const difficulty = run.difficulty;
     const seed = isChartSeed(run.seed) ? run.seed : newChartSeed();
-    run = { ...defaultRun(), timeLeft: P.durationSec, phase: 'play', startedAt: Date.now(), bestScore, bestStars, difficulty, seed, cue: 0 };
+    const phase = nextPhase('ready', 'start');
+    if (phase !== 'play') return;
+    run = { ...defaultRun(), timeLeft: P.durationSec, phase, startedAt: Date.now(), bestScore, bestStars, difficulty, seed, cue: 0 };
     playStart = performance.now();
     nextBeatAt = playStart + P.beatMs;
     nextIngAt = playStart + (chart[0] ?? Infinity);
@@ -122,11 +119,13 @@
 
   function finish(reason: 'done' | 'time'): void {
     if (run.phase !== 'play') return;
+    const phase = nextPhase(run.phase, 'end');
+    if (phase !== 'result') return;
     const best = recordBest(pack.storageKey, run.score, run.progress, P.stars);
     pack.hooks?.onFinish?.(run.score, run.progress);
     run = {
       ...run,
-      phase: 'result',
+      phase,
       timeLeft: reason === 'time' ? 0 : run.timeLeft,
       bestScore: best.bestScore,
       bestStars: best.bestStars,
@@ -334,17 +333,13 @@
     <div class="topmid">
       <h1>{c('title')}</h1>
       <span class="ver">v{version}</span>
-      <span class="ver ruleset" data-testid="ruleset-banner">{t('ruleset.banner', { ruleset: resolution.ok ? rulesetKey : link.ruleset ?? '' })}</span>
+      <RulesetBanner ruleset={resolution.ok ? rulesetKey : link.ruleset ?? ''} />
     </div>
     <span class="time" aria-label="timer">{timeLabel}s</span>
   </header>
 
   {#if !resolution.ok}
-    <div class="panel howto" data-testid="ruleset-unsupported">
-      <p class="vs">{t('ruleset.unsupported', { ruleset: resolution.requested })}</p>
-      <button type="button" class="primary" onclick={playCurrent}>{t('ruleset.playCurrent')}</button>
-      <button type="button" class="ghost" onclick={onExit}>{c('exit')}</button>
-    </div>
+    <UnsupportedRuleset ruleset={resolution.requested} onPlayCurrent={playCurrent} {onExit} exitLabel={c('exit')} />
   {:else if run.phase === 'ready'}
     <div class="panel howto">
       <p class="line">{c('howto1')}</p>

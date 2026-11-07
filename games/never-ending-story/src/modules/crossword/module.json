@@ -9,6 +9,8 @@
     "src/modules/crossword/index.ts",
     "src/modules/crossword/ruleset.ts"
   ],
-  "dependsOn": {},
+  "dependsOn": {
+    "minigame-core": "^1.0.0"
+  },
   "gdd": "src/modules/crossword/GDD.md"
 }

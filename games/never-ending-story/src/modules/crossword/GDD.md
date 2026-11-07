@@ -38,7 +38,7 @@
 แถว `runs` game ตามคีย์ challenge (`cross`/`jig`/`slide`) difficulty easy/medium/hard
 
 ## 11. Dependencies + เวอร์ชัน
-ไม่มี dependency (ถูกใช้โดย core, challenge, event-01)
+minigame-core ^1.0.0 (`crosswordGame`) ถูกใช้โดย challenge และ event-core
 
 ## 12. คำถามที่ยังเปิดอยู่ / Backlog
 - **[backlog]** ปริศนาสุ่มจาก seed ทุกระดับ

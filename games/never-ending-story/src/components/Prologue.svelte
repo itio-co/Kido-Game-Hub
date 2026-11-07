@@ -1,5 +1,5 @@
 <script lang="ts">
-  import ComicPanel from './flow/ComicPanel.svelte';
+  import { ComicPanel } from '../modules/event-core';
   import { t } from '../lib/i18n';
   import { readPlayerId, setNickname } from '../lib/playerId';
   import { NICK_MAX, PROLOGUE_PAGES, nicknameError, suggestNickname } from '../lib/prologue';

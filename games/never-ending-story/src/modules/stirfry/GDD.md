@@ -45,7 +45,7 @@
 แถว `runs` game = `stirfry`, difficulty = easy/normal/hard, seed = seed ของชาร์ต, `ruleset` = `rhythm@<engine>+stirfry@<pack>` (ตอนนี้ `rhythm@1.1.0+stirfry@1.2.0`). `version` มีเวอร์ชันแอปนำหน้า แต่ไม่ได้ใช้แยกกระดาน
 
 ## 11. Dependencies + เวอร์ชัน
-rhythm ^1.1.0, core >=0.6.10
+rhythm ^1.1.0, minigame-core ^1.0.0, core >=0.6.12
 
 ## 12. คำถามที่ยังเปิดอยู่ / Backlog
 - **[backlog]** หลายเมนู (ภาพวัตถุดิบต่างกัน)

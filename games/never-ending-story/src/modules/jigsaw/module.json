@@ -9,6 +9,8 @@
     "src/modules/jigsaw/index.ts",
     "src/modules/jigsaw/ruleset.ts"
   ],
-  "dependsOn": {},
+  "dependsOn": {
+    "minigame-core": "^1.0.0"
+  },
   "gdd": "src/modules/jigsaw/GDD.md"
 }

@@ -2,7 +2,8 @@
   import { onDestroy, onMount } from 'svelte';
   import { version } from '../../../package.json';
   import { t } from '../../lib/i18n';
-  import { imageUrl } from '../../lib/flow/loadFlow';
+  import { imageUrl } from '../../lib/imageUrl';
+  import { nextPhase, RulesetBanner, submitFinishedRun, UnsupportedRuleset } from '../minigame-core';
   import { readPlayerId, setNickname } from '../../lib/playerId';
   import {
     DIFFICULTIES, challengeHash, clearRun, compare, fmtTime, leaderboard, newSeed, readRun,
@@ -15,7 +16,7 @@
   import { slideRules } from '../slide/ruleset';
   import { currentRuleset, resolveGame, versionIn } from '../../lib/rulesetCatalog';
   import { appendRun, newSessionId } from './runLog';
-  import { packRun, unpackRun } from './runProto';
+  import { unpackRun } from './runProto';
   import { submitRun } from '../../lib/cloudSync';
 
   let { params, onExit, onBoard }: { params: ChallengeParams; onExit: () => void; onBoard: () => void } = $props();
@@ -226,21 +227,22 @@
 
   async function finish(): Promise<void> {
     if (run.phase !== 'play') return;
+    const phase = nextPhase(run.phase, 'end');
+    if (phase !== 'result') return;
     const time = Math.floor(run.elapsedMs / 1000);
     run.score = scoreFor(run.game, run.difficulty, run.tally, time, scoring);
-    run.phase = 'result';
+    run.phase = phase;
     const me = readPlayerId();
     const base = { game: run.game, difficulty: run.difficulty, seed: run.seed, at: Date.now() };
     await leaderboard.submit({ ...base, nick: me.nickname ?? '?', playerId: me.playerId, score: run.score, time, source: 'me', ruleset: rulesetKey });
     if (run.from) await leaderboard.submit({ ...base, nick: run.from.nick, playerId: null, score: run.from.score, time: run.from.time, source: 'challenger', ruleset: rulesetKey });
-    lastToken = await packRun({
+    lastToken = await submitFinishedRun({
       sessionId: run.sessionId, playerId: me.playerId, nickname: me.nickname ?? '', game: run.game, difficulty: run.difficulty,
       seed: run.seed, score: run.score, timeMs: run.elapsedMs, version: `${version};${rulesetKey}`, ruleset: rulesetKey, timestampMs: Date.now(),
       challengerSessionId: run.from?.sessionId ?? '', challengerNickname: run.from?.nick ?? '',
       challengerScore: run.from?.score ?? 0, challengerTimeMs: (run.from?.time ?? 0) * 1000,
-    }).catch(() => '');
+    });
     run.token = lastToken;
-    if (lastToken) submitRun(lastToken, true);
     try {
       await appendRun({
         sessionId: run.sessionId, playerId: me.playerId, nickname: me.nickname, game: run.game, difficulty: run.difficulty,
@@ -302,16 +304,13 @@
     <div class="mid">
       <h1>{t('challenge.title')} · {t(`challenge.game.${run.game}`)}</h1>
       <span class="ver">v{version} · {t(`challenge.diff.${run.difficulty}`)} · #{run.seed}</span>
-      <span class="ver" data-testid="ruleset-banner">{t('ruleset.banner', { ruleset: resolution.ok ? rulesetKey : params.ruleset ?? '' })}</span>
+      <RulesetBanner ruleset={resolution.ok ? rulesetKey : params.ruleset ?? ''} />
     </div>
     <button type="button" class="x" aria-label={t('challenge.board')} onclick={onBoard}>🏆</button>
   </div>
 
   {#if !resolution.ok}
-    <div class="body center" data-testid="ruleset-unsupported">
-      <p class="lead">{t('ruleset.unsupported', { ruleset: resolution.requested })}</p>
-      <button type="button" class="primary" onclick={playCurrent}>{t('ruleset.playCurrent')}</button>
-    </div>
+    <UnsupportedRuleset ruleset={resolution.requested} onPlayCurrent={playCurrent} />
   {:else if run.from}
     <div class="banner" data-testid="challenge-banner">
       ⚔️ {t('challenge.from', { nick: run.from.nick, score: run.from.score, time: fmtTime(run.from.time) })}

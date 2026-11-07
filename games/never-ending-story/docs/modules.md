@@ -4,11 +4,14 @@ The game ships as one bundle but the code is split into modules under `src/modul
 
 | id | kind | owns |
 |---|---|---|
-| `core` | core | everything outside `src/modules/` (app shell, hub room, flow engine, save, i18n, cloudSync, prologue, `/never/god`, `worker/`). Its version **is the app version** in `package.json`. |
-| `crossword`, `jigsaw`, `slide` | minigame | puzzle rules + board state |
-| `stirfry` | minigame | Stir-fry with Grandma (component + local save) |
-| `challenge` | feature | challenge mode: seeded runs, scoring, share links, protobuf run token, leaderboard views |
-| `event-01` | event | Event 01 (`case-01`); story data in `public/data/case-flow.json` |
+| `core` | core | app shell, hub room, save, i18n, cloudSync, prologue, `worker/`. Its version **is the app version** in `package.json`. |
+| `minigame-core` | minigame-core | shared minigame framework: lifecycle, play mode, ruleset key, share paths, run token, ruleset HUD shells |
+| `crossword`, `jigsaw`, `slide` | minigame | puzzle rules + board state; depend on `minigame-core` |
+| `rhythm` | engine | rhythm mechanism; depends on `minigame-core` |
+| `stirfry` | pack | Stir-fry with Grandma; depends on `rhythm` and `minigame-core` |
+| `challenge` | feature | puzzle challenge mode and leaderboards. Stays its own feature and depends on `minigame-core` (see below) |
+| `event-core` | event-core | shared event framework: cutscenes, stage map, case notebook, event HUD, D1 progress document |
+| `event-01` | event | Event 01 content (`case-01`) on top of `event-core` |
 
 ## Manifest
 
@@ -59,6 +62,15 @@ A **mechanism** (`kind: "engine"`) owns the rules: timing, judging, combo, scori
 - Leaderboards are keyed by the pack's `leaderboardId` **and** the ruleset (engine version + pack version). The app version is not part of that key.
 - The registry lists `pack` on packs and `packs` (ids) on mechanisms, and still emits `edition` / `editions` as aliases. `/never/god/games/<id>` shows the relationship.
 - God admin is its own module (`kind: "admin"`, `src/modules/god`). The page is still `/never/god` and the API is still `/never/api/god/*`.
+- `npm run check:modules` requires every `minigame`, `engine`, and `pack`, plus the `challenge` feature, to depend on `minigame-core`. Every `event` must depend on `event-core`.
+
+## Why challenge stays a feature
+
+`minigame-core` is the shell every game shares. `challenge` is the crossword/jigsaw/slide product: seeded boards, its scoring `ruleset.json`, the versus banner, and the leaderboard screen. Folding that into the framework would make rhythm and stir-fry depend on puzzle boards. Challenge imports the framework's public entry for paths, phases, the run token, and the ruleset shells.
+
+## Event content vs framework
+
+`event-core` plays whatever story pack is loaded. `event-01` only names the case (`EVENT_ID`, ending id, image list) and the JSON in `public/data/case-flow.json`. The first unlocked event is still `case-01`, and its ending pages are still `case-01-ending`.
 
 ## Rulesets
 

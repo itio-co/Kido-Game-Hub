@@ -1,4 +1,4 @@
-import { imageUrl } from '../../lib/flow/loadFlow';
+import { imageUrl } from '../../lib/imageUrl';
 import { readRun, type RhythmPack } from '../rhythm';
 import { STIRFRY_RULESETS, STIRFRY_VERSION, type StirfryRuleset } from './ruleset';
 import WokStage from './WokStage.svelte';

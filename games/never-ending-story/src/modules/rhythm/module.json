@@ -10,8 +10,8 @@
     "src/modules/rhythm/ruleset.ts"
   ],
   "dependsOn": {
-    "core": ">=0.6.11",
-    "challenge": "^1.1.0"
+    "core": ">=0.6.12",
+    "minigame-core": "^1.0.0"
   },
   "gdd": "src/modules/rhythm/GDD.md"
 }

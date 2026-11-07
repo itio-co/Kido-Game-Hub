@@ -1,5 +1,5 @@
 // Ruleset pins on share links: canonical key, versionless legacy, unsupported versions.
-import { canonicalRuleset, parseRuleset, resolveRuleset, supportedKeys, type ModuleRules } from '../src/lib/ruleset.ts';
+import { canonicalRuleset, parseRuleset, resolveRuleset, supportedKeys, type ModuleRules } from '../src/modules/minigame-core/ruleset.ts';
 
 declare const process: { exitCode?: number };
 let failed = 0;

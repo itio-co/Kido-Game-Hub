@@ -1,4 +1,11 @@
 /** Public entry of the `rhythm` mechanism (white-label tap-on-the-beat engine). */
+import { defineMinigame } from '../minigame-core/framework';
+
+export const rhythmGame = defineMinigame({
+  id: 'rhythm',
+  kind: 'engine',
+  modes: ['practice', 'challenge'],
+});
 export { default as RhythmGame } from './RhythmGame.svelte';
 export { DEFAULT_PARAMS, type Judgement, type RhythmPack, type RhythmParams, type StageProps } from './types';
 export { rhythmRuleset, RHYTHM_RULESETS, RHYTHM_VERSION, type RhythmRuleset, type RhythmScoring } from './ruleset';

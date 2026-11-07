@@ -1,7 +1,7 @@
 <script lang="ts">
-  import { imageUrl } from '../../lib/flow/loadFlow';
-  import { CROSS_GRID, CROSS_KEYS, CROSS_NUM, FAKE_TIME, jigPosition } from '../../lib/flow/puzzles';
-  import type { FlowSession } from '../../lib/flow/session.svelte';
+  import { imageUrl } from '../../lib/imageUrl';
+  import { CROSS_GRID, CROSS_KEYS, CROSS_NUM, FAKE_TIME, jigPosition } from './puzzles';
+  import type { FlowSession } from './session.svelte';
 
   let { session }: { session: FlowSession } = $props();
 
