@@ -294,13 +294,13 @@
   button.sm { padding: 4px 8px; font-size: 0.85em; }
   .gerr { color: #ff9a9a; }
   .warn { color: #ffd479; }
-  .shell { display: grid; grid-template-columns: 1fr 220px; grid-template-rows: auto 1fr; min-height: 100vh; }
+  .shell { display: grid; grid-template-columns: 220px 1fr; grid-template-rows: auto 1fr; min-height: 100vh; }
   header { grid-column: 1 / -1; display: flex; gap: 12px; align-items: center; padding: 12px 20px; border-bottom: 1px solid #234; background: #0b1520; }
   header b { color: var(--cyan); font-size: 1.2em; }
   .crumb { opacity: 0.7; }
-  .burger { display: none; margin-left: auto; }
-  .content { padding: 20px; overflow-x: auto; min-width: 0; }
-  nav { border-left: 1px solid #234; background: #0b1520; padding: 16px 12px; display: flex; flex-direction: column; gap: 6px; }
+  .burger { display: none; order: -1; }
+  .content { grid-column: 2; grid-row: 2; padding: 20px; overflow-x: auto; min-width: 0; }
+  nav { grid-column: 1; grid-row: 2; border-right: 1px solid #234; background: #0b1520; padding: 16px 12px; display: flex; flex-direction: column; gap: 6px; }
   nav a { padding: 10px 14px; border-radius: 10px; color: var(--ink); text-decoration: none; }
   nav a.on { background: #12324a; color: var(--cyan); font-weight: 700; }
   nav .logout { margin-top: auto; background: transparent; }
@@ -339,9 +339,9 @@
   @media (max-width: 760px) {
     .shell { grid-template-columns: 1fr; }
     .burger { display: block; }
-    .content { padding: 12px; }
+    .content { grid-column: 1; padding: 12px; }
     .two { grid-template-columns: 1fr; }
-    nav { position: fixed; top: 0; right: 0; bottom: 0; width: 240px; z-index: 30; transform: translateX(100%); transition: transform 0.2s; }
+    nav { position: fixed; top: 0; left: 0; bottom: 0; width: 240px; z-index: 30; transform: translateX(-100%); transition: transform 0.2s; }
     nav.open { transform: none; }
     .scrim-god { display: block; position: fixed; inset: 0; z-index: 29; background: rgba(0, 0, 0, 0.5); border: 0; border-radius: 0; }
     table.wide { display: block; overflow-x: auto; white-space: nowrap; }
