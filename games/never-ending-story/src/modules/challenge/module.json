@@ -16,7 +16,8 @@
     "minigame-core": "^1.0.0",
     "crossword": "^1.0.0",
     "jigsaw": "^1.0.0",
-    "slide": "^1.0.0"
+    "slide": "^1.0.0",
+    "cutscene": "^1.0.0"
   },
   "gdd": "src/modules/challenge/GDD.md"
 }
