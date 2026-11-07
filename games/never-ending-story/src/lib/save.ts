@@ -10,6 +10,7 @@ export function defaultSave(): SaveV1 {
     version: 1,
     player: {
       onboardingComplete: false,
+      prologueSeen: false,
       textSize: 'md',
       soundEnabled: false,
       calendarTheme: null,
@@ -66,6 +67,7 @@ export function readSave(): SaveV1 {
       version: 1,
       player: {
         onboardingComplete: player.onboardingComplete === true,
+        prologueSeen: player.prologueSeen === true,
         textSize,
         soundEnabled: player.soundEnabled === true,
         calendarTheme: typeof player.calendarTheme === 'string' ? player.calendarTheme : null,

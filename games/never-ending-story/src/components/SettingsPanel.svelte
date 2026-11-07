@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from '../lib/i18n';
   import type { TextSize } from '../lib/types';
 
   let {
@@ -7,12 +8,14 @@
     onTextSize,
     onSound,
     onClose,
+    onReplayPrologue,
   }: {
     textSize: TextSize;
     soundEnabled: boolean;
     onTextSize: (size: TextSize) => void;
     onSound: (enabled: boolean) => void;
     onClose: () => void;
+    onReplayPrologue?: () => void;
   } = $props();
 
   const sizes: { id: TextSize; label: string }[] = [
@@ -52,6 +55,9 @@
       </button>
     </div>
     <p class="note">ยังไม่มีเสียงในหน้านี้ สวิตช์ถูกจำไว้ในเครื่อง</p>
+    {#if onReplayPrologue}
+      <button type="button" class="toggle" data-testid="replay-prologue" onclick={onReplayPrologue}>{t('settings.replayPrologue')}</button>
+    {/if}
     <button type="button" class="close" onclick={onClose}>ปิด</button>
   </dialog>
 </div>

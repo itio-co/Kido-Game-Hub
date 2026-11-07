@@ -6,6 +6,7 @@
   import FlowView from './components/flow/FlowView.svelte';
   import Hud from './components/Hud.svelte';
   import Onboarding from './components/Onboarding.svelte';
+  import Prologue from './components/Prologue.svelte';
   import RoomView from './components/RoomView.svelte';
   import ShowcaseView from './components/ShowcaseView.svelte';
   import SettingsPanel from './components/SettingsPanel.svelte';
@@ -36,6 +37,14 @@
   let hintTimer = 0;
   let hintTier = 0;
   let route = $state(window.location.hash);
+  // Prologue only on a plain home entry, never for deep links (challenge, practice, leaderboard...).
+  const homeEntry = ['', '#', '#/'].includes(window.location.hash);
+  let showPrologue = $state(homeEntry && !save.player.prologueSeen);
+  function finishPrologue(): void {
+    showPrologue = false;
+    save.player.prologueSeen = true;
+    commit();
+  }
   const showcasing = $derived(route.startsWith('#/showcase'));
   const editing = $derived(route.startsWith('#/editor'));
   const playingStirfry = $derived(route.startsWith('#/play/stirfry'));
@@ -295,6 +304,7 @@
         onTextSize={setTextSize}
         onSound={setSound}
         onClose={() => (overlay = null)}
+        onReplayPrologue={() => { overlay = null; showPrologue = true; }}
       />
     {:else if overlay === 'calendar' && calendar && session.screen === 'player-room'}
       <CalendarPanel
@@ -317,8 +327,12 @@
       />
     {/if}
 
-    {#if showTutor && session.screen === 'player-room' && !overlay}
+    {#if showTutor && session.screen === 'player-room' && !overlay && !showPrologue}
       <Onboarding steps={room.onboarding} index={tutorIndex} onNext={finishTutor} />
+    {/if}
+
+    {#if showPrologue && session.screen === 'player-room'}
+      <Prologue onDone={finishPrologue} />
     {/if}
 
     {#if session.toastText || toast}

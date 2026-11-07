@@ -7,6 +7,7 @@
   import { t } from '../../lib/i18n';
   import { readEggs } from '../../lib/eggs';
   import { readStirFry } from '../../lib/stirfrySave';
+  import ComicPanel from './ComicPanel.svelte';
   import ImageScene from './ImageScene.svelte';
   import Minigames from './Minigames.svelte';
 
@@ -108,21 +109,17 @@
       {/each}
     </div>
   {:else if (session.screen === 'cutscene' || session.screen === 'ending-comic') && cut}
-    <button type="button" class="cs" onclick={() => session.nextPage()}>
-      <img src={imageUrl(cut.image)} alt="" />
-      {#each cut.lines as line (line.id)}
-        <span class="bub" style="left:{line.x}%;top:{line.y}%;max-width:{line.w}%"><b>{line.who}</b>{loc(line.text)}</span>
-      {/each}
-      <span class="cap">{loc(cut.caption)}</span>
-      <span class="tapnext">
-        {#if session.screen === 'ending-comic'}
-          {session.page < pages.length - 1 ? t('ending.tapNext') : t('ending.tapDone')}
-        {:else}
-          {session.page < pages.length - 1 ? 'แตะเพื่ออ่านต่อ' : 'แตะเพื่อเริ่มคดี'}
-        {/if}
-      </span>
-      <span class="dots">{#each pages as _, index (index)}<i class:on={index === session.page}></i>{/each}</span>
-    </button>
+    <ComicPanel
+      image={cut.image}
+      lines={cut.lines.map((line) => ({ ...line, text: loc(line.text) }))}
+      caption={loc(cut.caption)}
+      tapLabel={session.screen === 'ending-comic'
+        ? (session.page < pages.length - 1 ? t('ending.tapNext') : t('ending.tapDone'))
+        : (session.page < pages.length - 1 ? 'แตะเพื่ออ่านต่อ' : 'แตะเพื่อเริ่มคดี')}
+      count={pages.length}
+      index={session.page}
+      onNext={() => session.nextPage()}
+    />
     {#if session.page > 0}
       <button type="button" class="prev" onclick={() => session.prevPage()}>{session.screen === 'ending-comic' ? t('ending.prev') : 'ก่อนหน้า'}</button>
     {/if}
@@ -346,15 +343,6 @@
   .evt small { font-size: var(--fs-sm); }
   .badge, .lock { position: absolute; z-index: 1; top: 8px; left: 8px; background: #ffcf4a; color: #3a2a00; border-radius: 8px; padding: 2px 8px; font-weight: 800; font-size: var(--fs-sm); }
   .lock { top: 36%; left: 50%; transform: translate(-50%, -50%); background: transparent; color: #fff; font-size: calc(var(--fs) + 8px); }
-  .cs { position: absolute; inset: 0; border: 0; padding: 0; background: #000; }
-  .cs img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-  .bub { position: absolute; background: #fff; color: #2b2233; border-radius: 16px; padding: 8px 12px; font-size: var(--fs); line-height: 1.4; text-align: left; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35); }
-  .bub b { display: block; font-size: var(--fs-sm); color: #b0567a; }
-  .cap { position: absolute; left: 4%; right: 4%; bottom: 96px; background: #fff6dc; color: #3a2a10; border-radius: 10px; padding: 10px 12px; font-size: var(--fs); line-height: 1.45; text-align: left; }
-  .tapnext { position: absolute; right: 12px; bottom: 64px; color: #fff; font-size: var(--fs-sm); }
-  .dots { position: absolute; left: 0; right: 0; bottom: 34px; display: flex; justify-content: center; gap: 8px; }
-  .dots i { width: 9px; height: 9px; border-radius: 50%; background: rgba(255, 255, 255, 0.4); }
-  .dots i.on { background: #fff; }
   .skip, .prev { position: absolute; z-index: 6; bottom: 16px; background: rgba(0, 0, 0, 0.55); color: #fff; border: 0; border-radius: 16px; padding: 8px 14px; font-size: var(--fs-sm); font-weight: 700; }
   .skip { right: 12px; }
   .prev { left: 84px; }

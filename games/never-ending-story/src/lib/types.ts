@@ -232,6 +232,8 @@ export type TextSize = 'sm' | 'md' | 'lg';
 /** Player perception and preferences. Kept apart from shared case facts. */
 export type PlayerProfile = {
   onboardingComplete: boolean;
+  /** Home-entry prologue was shown (or skipped). */
+  prologueSeen: boolean;
   textSize: TextSize;
   soundEnabled: boolean;
   calendarTheme: string | null;
