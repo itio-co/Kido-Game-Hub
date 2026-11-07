@@ -61,7 +61,19 @@ async function tokenOk(env: Env, playerId: string, token: string | null): Promis
   return !!row?.token_hash && row.token_hash === (await sha256Hex(token));
 }
 
+/** Stir-fry (rhythm minigame): one 60 s round, no seed/difficulty ("normal"). Generous cap above the best possible play. */
+const STIRFRY = { difficulty: 'normal', maxMs: 65_000, maxScore: 25_000 };
+export const BOARD_GAMES: Record<string, string[]> = { cross: DIFFS, jig: DIFFS, slide: DIFFS, stirfry: [STIRFRY.difficulty] };
+
 function plausible(r: ChallengeRunPb): string | null {
+  if (r.game === 'stirfry') {
+    if (r.difficulty !== STIRFRY.difficulty) return 'bad game/difficulty';
+    if (!ID_RE.test(r.sessionId) || !ID_RE.test(r.playerId)) return 'bad ids';
+    if (r.timeMs < 3000 || r.timeMs > STIRFRY.maxMs) return 'implausible time';
+    if (r.score < 0 || r.score > STIRFRY.maxScore) return 'implausible score';
+    if (r.timestampMs && r.timestampMs > Date.now() + 86_400_000) return 'future timestamp';
+    return null;
+  }
   if (!GAMES.includes(r.game) || !DIFFS.includes(r.difficulty)) return 'bad game/difficulty';
   if (!ID_RE.test(r.sessionId) || !ID_RE.test(r.playerId)) return 'bad ids';
   if (r.timeMs < 3000 || r.timeMs > 3_600_000) return 'implausible time';
@@ -222,7 +234,7 @@ async function api(req: Request, env: Env, path: string): Promise<Response> {
     const u = new URL(req.url);
     const game = u.searchParams.get('game') ?? 'cross';
     const diff = u.searchParams.get('difficulty') ?? 'easy';
-    if (!GAMES.includes(game) || !DIFFS.includes(diff)) return err(400, 'bad game/difficulty');
+    if (!BOARD_GAMES[game]?.includes(diff)) return err(400, 'bad game/difficulty');
     const limit = Math.min(100, Math.max(1, Number(u.searchParams.get('limit')) || 20));
     const { results } = await env.DB.prepare(
       `SELECT x.playerId, COALESCE(NULLIF(p.nickname,''), x.nickname) AS nickname, x.score, x.timeMs, x.seed, x.ts
@@ -266,15 +278,17 @@ export default {
     try {
       if (path.startsWith('/api/')) return await api(req, env, path.slice(4));
       if (req.method !== 'GET' && req.method !== 'HEAD') return err(405, 'method');
-      // The admin SPA uses hash routes and relative assets, so keep it at exactly /never/god.
-      if (path.startsWith('/god/')) return Response.redirect(`${url.origin}${BASE}/god${url.search}`, 302);
-      if (path === '/god') {
+      // Admin SPA: /never/god and deep links /never/god/<section>/<id>. Relative asset URLs are rewritten to absolute /never/ paths.
+      if (path === '/god' || path.startsWith('/god/')) {
         const res = await asset(req, env, '/god.html');
         const headers = new Headers(res.headers);
         headers.set('x-robots-tag', 'noindex, nofollow');
         headers.set('x-frame-options', 'DENY');
         headers.set('referrer-policy', 'no-referrer');
-        return new Response(res.body, { status: res.status, headers });
+        headers.delete('etag');
+        if (res.status !== 200) return new Response(res.body, { status: res.status, headers });
+        const html = (await res.text()).replace(/(src|href)="\.\//g, `$1="${BASE}/`);
+        return new Response(req.method === 'HEAD' ? null : html, { status: 200, headers });
       }
       if (path === '/modules.json') return new Response('Not found', { status: 404 }); // admin-only via /api/god/modules
       return await asset(req, env, path);

@@ -52,7 +52,7 @@ self.addEventListener('fetch', (event) => {
   if (url.pathname.includes('/api/')) return; // live API, never cached
   const file = url.pathname.split('/').pop() || '';
   // Admin page + module registry: always network, never cached.
-  if (file === 'god' || file === 'god.html' || file === 'modules.json') return;
+  if (file === 'god' || file === 'god.html' || file === 'modules.json' || url.pathname.includes('/god/')) return;
   // HTML / navigations: network-first so a new deploy shows immediately; cache is the offline fallback.
   if (request.mode === 'navigate' || file === '' || file.endsWith('.html')) {
     event.respondWith(networkFirst(request));

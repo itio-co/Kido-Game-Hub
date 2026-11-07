@@ -1,14 +1,27 @@
 {
   "id": "stirfry",
   "name": "Stir-fry with Grandma",
-  "kind": "minigame",
-  "version": "1.0.0",
-  "description": "Cooking minigame with local best scores.",
+  "kind": "edition",
+  "version": "1.1.0",
+  "description": "Stir-fry with Grandma: rhythm edition with photoreal kitchen/wok art, wok frames mapped to cook progress and hits/misses, Thai copy.",
   "entry": "src/modules/stirfry/index.ts",
   "publicEntries": [
     "src/modules/stirfry/index.ts"
   ],
   "dependsOn": {
-    "core": ">=0.6.0"
-  }
+    "core": ">=0.6.9",
+    "rhythm": "^1.0.0"
+  },
+  "edition": {
+    "mechanism": "rhythm",
+    "leaderboardId": "stirfry",
+    "storageKey": "nesg.stirfry.v1",
+    "route": "#/play/stirfry",
+    "params": "DEFAULT_PARAMS (60 s, beat 780 ms, perfect ±110 ms, good ±200 ms)",
+    "art": [
+      "public/img/stirfry/kitchen.webp",
+      "wok-raw/half/cooked/burnt/toss.webp"
+    ]
+  },
+  "gdd": "src/modules/stirfry/GDD.md"
 }

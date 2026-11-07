@@ -1,6 +1,5 @@
-const KEY = 'nesg.stirfry.v1';
-
-export type StirFryRun = {
+/** Generic run/best-score store for a rhythm edition (one localStorage key per edition). */
+export type RhythmRun = {
   phase: 'ready' | 'play' | 'result';
   timeLeft: number;
   score: number;
@@ -17,7 +16,7 @@ export type StirFryRun = {
   endReason: 'done' | 'time' | null;
 };
 
-export function defaultRun(): StirFryRun {
+export function defaultRun(): RhythmRun {
   return {
     phase: 'ready',
     timeLeft: 60,
@@ -40,7 +39,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return !!value && typeof value === 'object' && !Array.isArray(value);
 }
 
-export function readStirFry(): StirFryRun {
+export function readRun(KEY: string): RhythmRun {
   try {
     const raw = localStorage.getItem(KEY);
     if (!raw) return defaultRun();
@@ -68,26 +67,27 @@ export function readStirFry(): StirFryRun {
   }
 }
 
-export function writeStirFry(run: StirFryRun): void {
+export function writeRun(KEY: string, run: RhythmRun): void {
   localStorage.setItem(KEY, JSON.stringify(run));
 }
 
-export function clearStirFry(): void {
-  const cur = readStirFry();
-  writeStirFry({ ...defaultRun(), bestScore: cur.bestScore, bestStars: cur.bestStars });
+export function clearRun(KEY: string): void {
+  const cur = readRun(KEY);
+  writeRun(KEY, { ...defaultRun(), bestScore: cur.bestScore, bestStars: cur.bestStars });
 }
 
-export function starsFor(score: number, progress: number): 1 | 2 | 3 {
-  if (progress >= 100 && score >= 1400) return 3;
-  if (progress >= 100 || score >= 900) return 2;
+/** Stars from score + progress; thresholds come from the edition params. */
+export function starsFor(score: number, progress: number, stars: { two: number; three: number } = { two: 900, three: 1400 }): 1 | 2 | 3 {
+  if (progress >= 100 && score >= stars.three) return 3;
+  if (progress >= 100 || score >= stars.two) return 2;
   return 1;
 }
 
-export function recordBest(score: number, progress: number): { bestScore: number; bestStars: 0 | 1 | 2 | 3 } {
-  const cur = readStirFry();
-  const stars = starsFor(score, progress);
+export function recordBest(KEY: string, score: number, progress: number, thresholds?: { two: number; three: number }): { bestScore: number; bestStars: 0 | 1 | 2 | 3 } {
+  const cur = readRun(KEY);
+  const stars = starsFor(score, progress, thresholds);
   const bestScore = Math.max(cur.bestScore || 0, score);
   const bestStars = Math.max(cur.bestStars || 0, stars) as 0 | 1 | 2 | 3;
-  writeStirFry({ ...cur, phase: 'result', score, progress, bestScore, bestStars });
+  writeRun(KEY, { ...cur, phase: 'result', score, progress, bestScore, bestStars });
   return { bestScore, bestStars };
 }

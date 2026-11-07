@@ -4,9 +4,11 @@
   import { onlineTop, type OnlineRow } from '../../lib/cloudSync';
   import { CHALLENGE_GAMES, DIFFICULTIES, fmtTime, leaderboard, type ChallengeGame, type Difficulty, type LeaderEntry } from './challenge';
 
-  let { onExit, onPlay }: { onExit: () => void; onPlay: (game: ChallengeGame) => void } = $props();
+  type BoardGame = ChallengeGame | 'stirfry';
+  let { onExit, onPlay }: { onExit: () => void; onPlay: (game: BoardGame) => void } = $props();
 
-  let game = $state<ChallengeGame>('cross');
+  const BOARD_GAMES: BoardGame[] = [...CHALLENGE_GAMES, 'stirfry'];
+  let game = $state<BoardGame>('cross');
   let diff = $state<Difficulty>('easy');
   let rows = $state<LeaderEntry[]>([]);
   let scope = $state<'online' | 'local'>('online');
@@ -16,6 +18,7 @@
 
   $effect(() => {
     const g = game, d = diff;
+    if (g === 'stirfry') { rows = []; return; }
     void leaderboard.top(g, d).then((list) => (rows = list));
   });
 
@@ -23,7 +26,7 @@
     const g = game, d = diff;
     if (scope !== 'online') return;
     loading = true;
-    void onlineTop(g, d).then((list) => {
+    void onlineTop(g, g === 'stirfry' ? 'normal' : d).then((list) => {
       online = list;
       loading = false;
       if (list === null) scope = 'local'; // offline / preview host: fall back to this device's board
@@ -43,15 +46,17 @@
     <button type="button" class:on={scope === 'local'} onclick={() => (scope = 'local')}>📱 {t('board.local')}</button>
   </div>
   <div class="tabs">
-    {#each CHALLENGE_GAMES as g (g)}
+    {#each BOARD_GAMES as g (g)}
       <button type="button" class:on={game === g} onclick={() => (game = g)}>{t(`challenge.game.${g}`)}</button>
     {/each}
   </div>
+  {#if game !== 'stirfry'}
   <div class="tabs small">
     {#each DIFFICULTIES as d (d)}
       <button type="button" class:on={diff === d} onclick={() => (diff = d)}>{t(`challenge.diff.${d}`)}</button>
     {/each}
   </div>
+  {/if}
   {#if scope === 'online'}
   <ol class="list" data-testid="board-online">
     {#each online ?? [] as r, i (r.playerId)}
