@@ -1,0 +1,12 @@
+{
+  "id": "jigsaw",
+  "name": "Jigsaw",
+  "kind": "minigame",
+  "version": "1.0.0",
+  "description": "Jigsaw puzzle rules and board state.",
+  "entry": "src/modules/jigsaw/index.ts",
+  "publicEntries": [
+    "src/modules/jigsaw/index.ts"
+  ],
+  "dependsOn": {}
+}

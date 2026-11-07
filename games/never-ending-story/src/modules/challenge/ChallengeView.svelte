@@ -8,9 +8,9 @@
     DIFFICULTIES, PAR_SECONDS, challengeHash, clearRun, compare, fmtTime, leaderboard, newSeed, readRun,
     rng, scoreFor, shareUrl, shuffle, writeRun,
     type ChallengeParams, type Difficulty, type Tally,
-  } from '../../lib/challenge';
-  import { appendRun, newSessionId } from '../../lib/runLog';
-  import { packRun, unpackRun } from '../../lib/runProto';
+  } from './challenge';
+  import { appendRun, newSessionId } from './runLog';
+  import { packRun, unpackRun } from './runProto';
   import { submitRun } from '../../lib/cloudSync';
 
   let { params, onExit, onBoard }: { params: ChallengeParams; onExit: () => void; onBoard: () => void } = $props();

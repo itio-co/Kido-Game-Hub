@@ -4,7 +4,7 @@
  * - Leaderboard API under /never/api backed by D1 (binding DB). See docs/online-leaderboard.md.
  */
 import { godApi } from './god';
-import { decodeRun, tagFor, unb64url, type ChallengeRunPb } from '../src/lib/runProto';
+import { decodeRun, tagFor, unb64url, type ChallengeRunPb } from '../src/modules/challenge/proto';
 
 interface Env {
   ASSETS_KV: KVNamespace;
@@ -276,6 +276,7 @@ export default {
         headers.set('referrer-policy', 'no-referrer');
         return new Response(res.body, { status: res.status, headers });
       }
+      if (path === '/modules.json') return new Response('Not found', { status: 404 }); // admin-only via /api/god/modules
       return await asset(req, env, path);
     } catch {
       return err(500, 'internal');

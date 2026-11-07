@@ -11,7 +11,7 @@
     starsFor,
     writeStirFry,
     type StirFryRun,
-  } from '../../lib/stirfrySave';
+  } from './stirfrySave';
 
   let { onExit }: { onExit: () => void } = $props();
 

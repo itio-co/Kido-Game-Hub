@@ -2,6 +2,31 @@ import { defineConfig, type Plugin } from 'vite';
 import { svelte } from '@sveltejs/vite-plugin-svelte';
 import { editorFilesPlugin } from './scripts/editorFilesPlugin.mjs';
 
+function modulesPlugin(): Plugin {
+  return {
+    name: 'nesg-modules',
+    async buildStart() {
+      // @ts-expect-error module has no types
+      const mod = (await import('./scripts/modules.mjs')) as { checkBoundaries(): string[] };
+      const errors = mod.checkBoundaries();
+      if (errors.length) this.error(`module boundary violations:\n${errors.join('\n')}`);
+    },
+    async generateBundle() {
+      // @ts-expect-error module has no types
+      const mod = (await import('./scripts/modules.mjs')) as { buildRegistry(): unknown };
+      this.emitFile({ type: 'asset', fileName: 'modules.json', source: JSON.stringify(mod.buildRegistry(), null, 2) });
+    },
+    configureServer(server) {
+      server.middlewares.use('/modules.json', async (_req, res) => {
+        // @ts-expect-error module has no types
+        const mod = (await import('./scripts/modules.mjs')) as { buildRegistry(): unknown };
+        res.setHeader('content-type', 'application/json');
+        res.end(JSON.stringify(mod.buildRegistry()));
+      });
+    },
+  };
+}
+
 function precachePlugin(): Plugin {
   let outDir = '';
   return {
@@ -21,7 +46,7 @@ function precachePlugin(): Plugin {
 }
 
 export default defineConfig({
-  plugins: [svelte(), precachePlugin(), editorFilesPlugin()],
+  plugins: [svelte(), modulesPlugin(), precachePlugin(), editorFilesPlugin()],
   base: './',
   server: { host: true, port: 5173 },
   preview: { host: true, port: 4173 },

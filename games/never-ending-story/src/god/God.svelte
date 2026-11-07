@@ -6,8 +6,8 @@
   import { version } from '../../package.json';
 
   type Row = Record<string, any>;
-  type Section = 'dashboard' | 'players' | 'games' | 'events';
-  const SECTIONS: Section[] = ['dashboard', 'players', 'games', 'events'];
+  type Section = 'dashboard' | 'players' | 'games' | 'events' | 'modules';
+  const SECTIONS: Section[] = ['dashboard', 'players', 'games', 'events', 'modules'];
   const DIFFS = ['easy', 'medium', 'hard'];
 
   let authed = $state<boolean | null>(null);
@@ -79,6 +79,7 @@
         else data = await god<Row>(`players?q=${encodeURIComponent(query)}`);
       } else if (section === 'games') { data = await god<Row>('games'); await loadBoard(); }
       else if (section === 'events') data = await god<Row>('events');
+      else if (section === 'modules') data = ((await god<Row>('modules')) as Row).registry;
     } catch (e) { loadError = errText(e); }
   }
 
@@ -251,6 +252,16 @@
           </section>
         {:else}<p>{t('god.empty')}</p>{/each}
         <p class="note">{t('god.events.note')}</p>
+      {:else if section === 'modules' && data}
+        <p class="note">{t('god.mod.app', { v: data.appVersion, at: fmtDate(Date.parse(data.generatedAt)) })}</p>
+        <table class="wide"><thead><tr><th>{t('god.mod.name')}</th><th>{t('god.mod.kind')}</th><th>{t('god.mod.version')}</th><th>{t('god.mod.deps')}</th><th>{t('god.mod.size')}</th><th>{t('god.mod.hash')}</th><th>{t('god.mod.commit')}</th></tr></thead>
+          <tbody>{#each data.modules as m (m.id)}
+            <tr><td><b>{m.name}</b><br /><code>{m.id}</code></td><td><span class="tag kind">{t(`god.mod.kind.${m.kind}`)}</span></td><td><b>{m.version}</b></td>
+              <td>{#each m.dependsOn as d (d.id)}<div class:bad={!d.ok}>{d.ok ? '✓' : '✗'} {d.id} {d.range} <small>({d.version ?? '–'})</small></div>{:else}–{/each}</td>
+              <td>{(m.size / 1024).toFixed(1)} KB<br /><small>{m.files} {t('god.mod.files')}</small></td><td><code>{m.hash}</code></td>
+              <td>{#if m.lastCommit}<code>{m.lastCommit.sha.slice(0, 7)}</code> <small>{fmtDate(Date.parse(m.lastCommit.date))}</small><br /><small>{m.lastCommit.subject}</small>{:else}–{/if}</td></tr>
+          {/each}</tbody></table>
+        <p class="note">{t('god.mod.note')}</p>
       {:else if !loadError}
         <p class="center">{t('god.loading')}</p>
       {/if}
@@ -309,6 +320,8 @@
   .note { opacity: 0.6; font-size: 0.85em; }
   .search { display: flex; gap: 8px; margin: 8px 0 16px; flex-wrap: wrap; }
   .search input { flex: 1; min-width: 160px; }
+  .bad { color: #ff9a9a; }
+  .tag.kind { background: #12324a; color: var(--cyan); margin: 0; }
   .tag { margin-left: 6px; font-size: 0.75em; padding: 1px 6px; border-radius: 6px; background: #3a3020; color: #ffd479; }
   dl { display: grid; grid-template-columns: max-content 1fr; gap: 4px 12px; font-size: 0.9em; }
   dt { opacity: 0.7; }

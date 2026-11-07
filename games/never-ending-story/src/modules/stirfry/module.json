@@ -1,0 +1,14 @@
+{
+  "id": "stirfry",
+  "name": "Stir-fry with Grandma",
+  "kind": "minigame",
+  "version": "1.0.0",
+  "description": "Cooking minigame with local best scores.",
+  "entry": "src/modules/stirfry/index.ts",
+  "publicEntries": [
+    "src/modules/stirfry/index.ts"
+  ],
+  "dependsOn": {
+    "core": ">=0.6.0"
+  }
+}

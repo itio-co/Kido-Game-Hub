@@ -1,0 +1,18 @@
+{
+  "id": "challenge",
+  "name": "Challenge mode",
+  "kind": "minigame",
+  "version": "1.0.0",
+  "description": "Seeded challenge runs, scoring, share links, protobuf run token, leaderboard views.",
+  "entry": "src/modules/challenge/index.ts",
+  "publicEntries": [
+    "src/modules/challenge/index.ts",
+    "src/modules/challenge/proto.ts"
+  ],
+  "dependsOn": {
+    "core": ">=0.6.0",
+    "crossword": "^1.0.0",
+    "jigsaw": "^1.0.0",
+    "slide": "^1.0.0"
+  }
+}

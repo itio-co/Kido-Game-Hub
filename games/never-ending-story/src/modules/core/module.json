@@ -1,0 +1,24 @@
+{
+  "id": "core",
+  "name": "Core / main game",
+  "kind": "core",
+  "version": "app",
+  "description": "App shell, hub room, flow engine, save, i18n, cloudSync, prologue, Game of Dev admin.",
+  "entry": "src/main.ts",
+  "publicEntries": [
+    "src/main.ts"
+  ],
+  "dependsOn": {
+    "crossword": "^1.0.0",
+    "jigsaw": "^1.0.0",
+    "slide": "^1.0.0",
+    "stirfry": "^1.0.0",
+    "challenge": "^1.0.0",
+    "event-01": "^1.0.0"
+  },
+  "paths": [
+    "src",
+    "!src/modules/*/",
+    "worker"
+  ]
+}

@@ -6,7 +6,7 @@
   import type { FlowSpot } from '../../lib/flow/types';
   import { t } from '../../lib/i18n';
   import { readEggs } from '../../lib/eggs';
-  import { readStirFry } from '../../lib/stirfrySave';
+  import { readStirFry } from '../../modules/stirfry';
   import ComicPanel from './ComicPanel.svelte';
   import ImageScene from './ImageScene.svelte';
   import Minigames from './Minigames.svelte';

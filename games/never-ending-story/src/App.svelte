@@ -12,10 +12,8 @@
   import SettingsPanel from './components/SettingsPanel.svelte';
   import Sheet from './components/Sheet.svelte';
   import VersionBadge from './components/VersionBadge.svelte';
-  import StirFryGame from './components/minigames/StirFryGame.svelte';
-  import ChallengeView from './components/minigames/ChallengeView.svelte';
-  import LeaderboardView from './components/minigames/LeaderboardView.svelte';
-  import { parseChallengeHash } from './lib/challenge';
+  import { StirFryGame } from './modules/stirfry';
+  import { ChallengeView, LeaderboardView, parseChallengeHash } from './modules/challenge';
   import { loadFlow } from './lib/flow/loadFlow';
   import { createFlow } from './lib/flow/session.svelte';
   import { loadPlayerRoom } from './lib/loadRoom';

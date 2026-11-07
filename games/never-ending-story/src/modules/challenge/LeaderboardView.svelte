@@ -2,7 +2,7 @@
   import { t } from '../../lib/i18n';
   import { readPlayerId } from '../../lib/playerId';
   import { onlineTop, type OnlineRow } from '../../lib/cloudSync';
-  import { CHALLENGE_GAMES, DIFFICULTIES, fmtTime, leaderboard, type ChallengeGame, type Difficulty, type LeaderEntry } from '../../lib/challenge';
+  import { CHALLENGE_GAMES, DIFFICULTIES, fmtTime, leaderboard, type ChallengeGame, type Difficulty, type LeaderEntry } from './challenge';
 
   let { onExit, onPlay }: { onExit: () => void; onPlay: (game: ChallengeGame) => void } = $props();
 

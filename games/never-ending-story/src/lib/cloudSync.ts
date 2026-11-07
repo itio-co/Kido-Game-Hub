@@ -9,7 +9,7 @@ const TOKEN_KEY = 'nesg.playerToken.v1';
 const RUNQ_KEY = 'nesg.runQueue.v1';
 const META_KEY = 'nesg.sync.v1';
 const STATE_KEYS = ['nesg.player.v1', 'nesg.stirfry.v1', 'nesg.eggs.v1'] as const;
-const EVENT_ID = 'case-01';
+import { EVENT_ID } from '../modules/event-01';
 
 type Meta = { stateRev: number; homeRev: number; localAt: number; dirty: boolean };
 type QueuedRun = { token: string; mine: boolean };

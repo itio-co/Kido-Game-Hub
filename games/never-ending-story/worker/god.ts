@@ -5,6 +5,7 @@
  */
 export interface GodEnv {
   DB: D1Database;
+  ASSETS_KV: KVNamespace;
   GOD_ADMIN_PASSWORD?: string;
 }
 
@@ -241,5 +242,9 @@ export async function godApi(req: Request, env: GodEnv, path: string): Promise<R
     return r.meta.changes ? json({ ok: true }) : fail(404, 'not-found');
   }
   if (path === '/events' && req.method === 'GET') return events(env);
+  if (path === '/modules' && req.method === 'GET') {
+    const reg = await env.ASSETS_KV.get('/modules.json', 'json');
+    return reg ? json({ ok: true, registry: reg }) : fail(404, 'no-registry');
+  }
   return fail(404, 'no-such-endpoint');
 }

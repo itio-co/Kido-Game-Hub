@@ -235,5 +235,19 @@
   "god.step.deduced": "deduced",
   "god.step.solved": "solved",
   "god.step.reward": "reward",
-  "god.step.completed": "completed"
+  "god.step.completed": "completed",
+  "god.nav.modules": "Modules",
+  "god.mod.app": "Game (core) v{v} · built {at}",
+  "god.mod.name": "Module",
+  "god.mod.kind": "Kind",
+  "god.mod.version": "Version",
+  "god.mod.deps": "Depends on",
+  "god.mod.size": "Source size",
+  "god.mod.hash": "Build hash",
+  "god.mod.commit": "Last change",
+  "god.mod.files": "files",
+  "god.mod.kind.core": "core",
+  "god.mod.kind.minigame": "minigame",
+  "god.mod.kind.event": "event",
+  "god.mod.note": "See docs/modules.md for how to bump a module version"
 }
