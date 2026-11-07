@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { t } from './lib/i18n';
   import EditorView from './components/EditorView.svelte';
   import CalendarPanel from './components/CalendarPanel.svelte';
   import FlowView from './components/flow/FlowView.svelte';
@@ -272,10 +273,19 @@
       </svg>
     </button>
 
-    {#if session.showCaseUi}
-      <button type="button" class="case" data-testid="case-notebook" onclick={() => (session.screen === 'notebook' ? session.back() : session.go('notebook'))}>
-        {room.hud.caseLabel}
-      </button>
+    {#if session.showCaseUi || (session.context === 'event' && session.scene?.map)}
+      <div class="bottom-actions">
+        {#if session.context === 'event' && session.scene?.map}
+          <button type="button" class="case mapbtn" data-testid="house-map-btn" onclick={() => session.go('house-map')}>
+            {t('hud.houseMap')}
+          </button>
+        {/if}
+        {#if session.showCaseUi}
+          <button type="button" class="case" data-testid="case-notebook" onclick={() => (session.screen === 'notebook' ? session.back() : session.go('notebook'))}>
+            {room.hud.caseLabel}
+          </button>
+        {/if}
+      </div>
     {/if}
 
     {#if overlay === 'settings'}
@@ -321,6 +331,16 @@
   .phone.wide { width: 100vw; }
   .room-layer { position: absolute; inset: 0; }
   .room-layer.hidden { visibility: hidden; pointer-events: none; }
+  .bottom-actions {
+    position: absolute;
+    z-index: 7;
+    right: 12px;
+    bottom: calc(14px + env(safe-area-inset-bottom));
+    display: flex;
+    gap: 8px;
+    align-items: flex-end;
+  }
+  .bottom-actions .case { position: static; }
   .flow-sub {
     position: absolute;
     z-index: 5;

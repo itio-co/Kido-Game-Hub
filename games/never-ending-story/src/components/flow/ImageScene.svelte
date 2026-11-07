@@ -12,7 +12,6 @@
     labelFor,
     onSpot,
     onMiss,
-    onMap,
   }: {
     scene: FlowScene;
     image: string;
@@ -23,7 +22,6 @@
     labelFor: (spot: FlowSpot) => string;
     onSpot: (spot: FlowSpot) => void;
     onMiss: () => void;
-    onMap: (() => void) | null;
   } = $props();
 
   const width = $derived(scene.contain ? 864 : 720);
@@ -79,9 +77,6 @@
       </g>
     {/each}
   </svg>
-  {#if onMap}
-    <button type="button" class="mapbtn" onclick={onMap}>แผนผังบ้าน</button>
-  {/if}
 </div>
 
 <style>
@@ -96,17 +91,4 @@
   .lbl { pointer-events: none; }
   .lbl rect { fill: rgba(6, 30, 48, 0.94); stroke: #39e0ff; stroke-width: 3; }
   .lbl text { fill: #eaf6ff; font-family: "Noto Sans Thai", "Noto Sans", sans-serif; font-weight: 700; }
-  .mapbtn {
-    position: absolute;
-    z-index: 4;
-    top: 58px;
-    left: 12px;
-    background: rgba(6, 30, 48, 0.9);
-    border: 1px solid #39e0ff;
-    color: #fff;
-    border-radius: 16px;
-    padding: 8px 12px;
-    font-size: var(--fs-sm);
-    font-weight: 700;
-  }
 </style>

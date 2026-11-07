@@ -127,5 +127,6 @@
   "board.online": "Online",
   "board.local": "This device",
   "board.loading": "Loading…",
-  "board.onlineNote": "Best run per player, verified players only"
+  "board.onlineNote": "Best run per player, verified players only",
+  "hud.houseMap": "House map"
 }

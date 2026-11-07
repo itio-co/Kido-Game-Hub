@@ -87,7 +87,6 @@
       {labelFor}
       onSpot={(spot) => session.tapSpot(spot)}
       onMiss={() => session.clearSpot()}
-      onMap={session.scene.map ? () => session.go('house-map') : null}
     />
   {:else if session.screen === 'event-select'}
     <div class="evlist">
