@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import type { PlayerRoom, Vec3 } from './types';
 import { dispatch, handlerFor } from './props/register';
 import type { Build } from './props/kit';
+import { t } from './i18n/core.ts';
 
 export type RoomView = {
   resize: () => void;
@@ -65,7 +66,7 @@ export function mountRoom(canvas: HTMLCanvasElement, room: PlayerRoom): RoomView
   const build: Build = { geos: [], mats: [], textures: [], matCache: new Map() };
   const root = new THREE.Group();
   for (const obj of room.objects) {
-    if (handlerFor(obj.kind).role !== 'scene') throw new Error(`${obj.slug} ไม่อยู่ชั้นบนของฉาก`);
+    if (handlerFor(obj.kind).role !== 'scene') throw new Error(t('game.error.notSceneLevel', { slug: obj.slug }));
     dispatch(build, root, obj);
   }
   scene.add(root);

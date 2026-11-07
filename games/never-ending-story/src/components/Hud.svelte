@@ -1,6 +1,8 @@
 <script lang="ts">
   let {
     title,
+    status = '',
+    demo = false,
     hintLabel,
     settingsLabel,
     showHint = true,
@@ -8,6 +10,10 @@
     onSettings,
   }: {
     title: string;
+    /** Scene status (time · evidence · mission). When set it takes the pill's first line and the place name drops to a smaller second line. */
+    status?: string;
+    /** The DEMO ribbon is up: pull the settings button out from under it. */
+    demo?: boolean;
     hintLabel: string;
     settingsLabel: string;
     showHint?: boolean;
@@ -16,7 +22,7 @@
   } = $props();
 </script>
 
-<header class="hud">
+<header class="hud" class:demo>
   {#if showHint}
     <button type="button" class="icon" aria-label={hintLabel} onclick={onHint}>
       <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
@@ -38,9 +44,16 @@
   {:else}
     <span class="spacer" aria-hidden="true"></span>
   {/if}
-  <span class="rule"></span>
-  <span class="place">{title}</span>
-  <span class="rule"></span>
+  {#if status}
+    <div class="titles" title={status}>
+      <span class="hud-status">{status}</span>
+      <span class="place-sub">{title}</span>
+    </div>
+  {:else}
+    <span class="rule"></span>
+    <span class="place">{title}</span>
+    <span class="rule"></span>
+  {/if}
   <button type="button" class="icon" aria-label={settingsLabel} onclick={onSettings}>
     <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
       <circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="1.7" />

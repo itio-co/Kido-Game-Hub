@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { mountNightstandStage, type NightstandVariant } from '../lib/nightstandStage';
+  import { t } from '../lib/i18n/core';
 
   let { variant = 'lowpoly', orbit = false }: { variant?: NightstandVariant; orbit?: boolean } = $props();
   let canvas = $state<HTMLCanvasElement>();
@@ -13,7 +14,7 @@
 </script>
 
 <div class="stage">
-  <canvas bind:this={canvas} aria-label={orbit ? 'หมุนตู้ข้างเตียง' : 'ตู้ข้างเตียงสามมิติ'}></canvas>
+  <canvas bind:this={canvas} aria-label={orbit ? t('game.nightstand.orbit') : t('game.nightstand.view')}></canvas>
 </div>
 
 <style>

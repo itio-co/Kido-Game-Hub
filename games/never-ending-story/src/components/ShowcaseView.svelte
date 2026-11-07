@@ -4,6 +4,8 @@
   import NightstandView from './NightstandView.svelte';
   import type { NightstandVariant } from '../lib/nightstandStage';
   import { findAsset } from '../lib/showcaseAssets';
+  import { t } from '../lib/i18n/core';
+  import { tx } from '../lib/i18n/content';
 
   let { room }: { room: PlayerRoom } = $props();
 
@@ -16,16 +18,18 @@
 
   const initial: NightstandVariant = location.hash.includes('model=master') ? 'master' : 'lowpoly';
   let variant = $state<NightstandVariant>(initial);
-  const variants = (findAsset('player-room/nightstand')?.variants ?? []).map((v) => ({
-    id: v.id as NightstandVariant,
-    label: v.label,
-  }));
+  const variants = $derived(
+    (findAsset('player-room/nightstand')?.variants ?? []).map((v) => ({
+      id: v.id as NightstandVariant,
+      label: v.label,
+    })),
+  );
 </script>
 
 <div class="showcase">
   <header>
-    <p class="kicker">มุมออกแบบ</p>
-    <h1>{nightstand?.title ?? 'ตู้ข้างเตียง'}</h1>
+    <p class="kicker">{t('game.showcase.kicker')}</p>
+    <h1>{nightstand ? tx(nightstand, 'title') : t('asset.nightstand.title')}</h1>
   </header>
 
   {#if nightstand}
@@ -36,7 +40,7 @@
       <div><dt>slug</dt><dd>{nightstand.slug}</dd></div>
     </dl>
 
-    <div class="toggle" role="radiogroup" aria-label="รุ่นโมเดล">
+    <div class="toggle" role="radiogroup" aria-label={t('game.showcase.variants')}>
       {#each variants as v (v.id)}
         <button
           type="button"
@@ -50,7 +54,7 @@
     </div>
 
     <section>
-      <h2>ตู้ข้างเตียง</h2>
+      <h2>{t('asset.nightstand.title')}</h2>
       <div class="frame table-frame">
         {#key variant}
           <CompareSlider src={mock}>
@@ -60,11 +64,11 @@
       </div>
     </section>
 
-    <a class="edit-link" href="#/editor?asset=player-room/nightstand&model={variant}" data-editor-link>✎ แก้โมเดลนี้ (3D editor)</a>
+    <a class="edit-link" href="#/editor?asset=player-room/nightstand&model={variant}" data-editor-link>{t('game.showcase.edit')}</a>
 
     <section>
-      <h2>หมุนดู</h2>
-      <p class="hint">ลากเพื่อหมุน ภาพไม่หมุนเอง</p>
+      <h2>{t('game.showcase.orbit')}</h2>
+      <p class="hint">{t('game.showcase.orbitHint')}</p>
       <div class="frame orbit-frame">
         {#key variant}
           <NightstandView {variant} orbit />

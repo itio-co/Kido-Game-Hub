@@ -1,8 +1,39 @@
+import { format } from './i18n/core.ts';
 import type { FlowProgress, SaveV1, TextSize } from './types';
 
 export const SAVE_KEY = 'nesg.player.v1';
 
 const SIZES: TextSize[] = ['sm', 'md', 'lg'];
+
+export const DIFFICULTIES = ['easy', 'medium', 'hard'] as const;
+export type Difficulty = (typeof DIFFICULTIES)[number];
+
+/** Decor ids placed by rewards. Older saves stored a display label instead. */
+export const DECOR_IDS = ['photo'] as const;
+
+/**
+ * Difficulty is stored as an English id. Saves from before 0.2.11 stored the
+ * Thai label; map it back through the Thai locale table.
+ */
+export function migrateDifficulty(value: unknown): Difficulty {
+  if (typeof value !== 'string') return 'medium';
+  for (const id of DIFFICULTIES) {
+    if (value === id || value === format('th', `game.difficulty.${id}`) || value === format('en', `game.difficulty.${id}`)) {
+      return id;
+    }
+  }
+  return 'medium';
+}
+
+/** Old saves stored the shown label (e.g. a camera emoji and a name); map any filled slot to its id. */
+export function migrateDecor(decor: Record<string, unknown>): Record<string, string | null> {
+  const out: Record<string, string | null> = {};
+  for (const [slot, value] of Object.entries(decor)) {
+    if (typeof value !== 'string' || value === '') out[slot] = null;
+    else out[slot] = (DECOR_IDS as readonly string[]).includes(value) ? value : 'photo';
+  }
+  return out;
+}
 
 export function defaultSave(): SaveV1 {
   return {
@@ -32,7 +63,7 @@ export function defaultFlow(): FlowProgress {
     solved: false,
     deduced: false,
     reward: false,
-    difficulty: 'ปานกลาง',
+    difficulty: 'medium',
     played: [],
     seen: [],
     levels: { cross: [], jig: [], slide: [] },
@@ -57,7 +88,7 @@ export function readSave(): SaveV1 {
     const levels = isRecord(flow.levels) ? flow.levels : {};
     const stars = (value: unknown): number[] => (Array.isArray(value) ? value.filter((item) => typeof item === 'number') : []);
     const textSize = SIZES.includes(player.textSize as TextSize) ? (player.textSize as TextSize) : 'md';
-    const decor = isRecord(player.decor) ? (player.decor as Record<string, string | null>) : {};
+    const decor = isRecord(player.decor) ? migrateDecor(player.decor) : {};
     return {
       version: 1,
       player: {
@@ -82,7 +113,7 @@ export function readSave(): SaveV1 {
         solved: flow.solved === true,
         deduced: flow.deduced === true,
         reward: flow.reward === true,
-        difficulty: typeof flow.difficulty === 'string' ? flow.difficulty : 'ปานกลาง',
+        difficulty: migrateDifficulty(flow.difficulty),
         played: Array.isArray(flow.played) ? flow.played.filter((id) => typeof id === 'string') : [],
         seen: Array.isArray(flow.seen) ? flow.seen.filter((id) => typeof id === 'string') : [],
         levels: {

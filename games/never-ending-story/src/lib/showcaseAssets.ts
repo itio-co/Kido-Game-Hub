@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { t, type MessageKey } from './i18n/core.ts';
 
 /**
  * Models shown in the showcase (#/showcase) and editable in the model editor (#/editor).
@@ -54,33 +55,55 @@ const BASE = import.meta.env.BASE_URL;
 function nightstandKeyPoints(): { id: string; label: string; p: [number, number, number] }[] {
   const [W, D, H, T, L, O] = [61, 40.5, 55, 6.6, 7.5, 0.9];
   const [x0, x1, y0, y1] = [-W / 2, W / 2, -D / 2, D / 2];
-  return [
-    { id: 'FLT', label: 'มุมบน หน้า-ซ้าย', p: [x0, y0, H] },
-    { id: 'FRT', label: 'มุมบน หน้า-ขวา', p: [x1, y0, H] },
-    { id: 'BLT', label: 'มุมบน หลัง-ซ้าย', p: [x0, y1, H] },
-    { id: 'BRT', label: 'มุมบน หลัง-ขวา', p: [x1, y1, H] },
-    { id: 'FLB', label: 'ใต้ท็อป หน้า-ซ้าย', p: [x0, y0, H - T] },
-    { id: 'FRB', label: 'ใต้ท็อป หน้า-ขวา', p: [x1, y0, H - T] },
-    { id: 'BRB', label: 'ใต้ท็อป หลัง-ขวา', p: [x1, y1, H - T] },
-    { id: 'FLlegTL', label: 'ขาหน้าซ้าย บน-นอก', p: [x0 + O, y0 + O, H - T] },
-    { id: 'FLlegTR', label: 'ขาหน้าซ้าย บน-ใน', p: [x0 + O + L, y0 + O, H - T] },
-    { id: 'FLfoot', label: 'ขาหน้าซ้าย ปลายล่าง', p: [x0 + O, y0 + O, 0] },
-    { id: 'FRlegTL', label: 'ขาหน้าขวา บน-ใน', p: [x1 - O - L, y0 + O, H - T] },
-    { id: 'FRlegTR', label: 'ขาหน้าขวา บน-นอก', p: [x1 - O, y0 + O, H - T] },
-    { id: 'FRfoot', label: 'ขาหน้าขวา ปลายล่าง', p: [x1 - O, y0 + O, 0] },
-    { id: 'BRfoot', label: 'ขาหลังขวา ปลายล่าง', p: [x1 - O, y1 - O, 0] },
-    { id: 'BLfootL', label: 'ขาหลังซ้าย ปลายล่าง', p: [x0 + O, y1 - O - L, 0] },
+  const points: { id: string; p: [number, number, number] }[] = [
+    { id: 'FLT', p: [x0, y0, H] },
+    { id: 'FRT', p: [x1, y0, H] },
+    { id: 'BLT', p: [x0, y1, H] },
+    { id: 'BRT', p: [x1, y1, H] },
+    { id: 'FLB', p: [x0, y0, H - T] },
+    { id: 'FRB', p: [x1, y0, H - T] },
+    { id: 'BRB', p: [x1, y1, H - T] },
+    { id: 'FLlegTL', p: [x0 + O, y0 + O, H - T] },
+    { id: 'FLlegTR', p: [x0 + O + L, y0 + O, H - T] },
+    { id: 'FLfoot', p: [x0 + O, y0 + O, 0] },
+    { id: 'FRlegTL', p: [x1 - O - L, y0 + O, H - T] },
+    { id: 'FRlegTR', p: [x1 - O, y0 + O, H - T] },
+    { id: 'FRfoot', p: [x1 - O, y0 + O, 0] },
+    { id: 'BRfoot', p: [x1 - O, y1 - O, 0] },
+    { id: 'BLfootL', p: [x0 + O, y1 - O - L, 0] },
   ];
+  // Labels are getters so they follow the active locale.
+  return points.map((point) => ({
+    ...point,
+    get label() {
+      return t(`asset.nightstand.point.${point.id}` as MessageKey);
+    },
+  }));
 }
 
 export const SHOWCASE_ASSETS: ShowcaseAsset[] = [
   {
     id: '3a07eebc-03c1-421c-87a7-7e6d0037ceae',
     slug: 'player-room/nightstand',
-    title: 'ตู้ข้างเตียง',
+    get title() {
+      return t('asset.nightstand.title');
+    },
     variants: [
-      { id: 'lowpoly', label: 'Low-poly (เกม)', url: `${BASE}models/nightstand.glb`, flat: true },
-      { id: 'master', label: 'Master', url: `${BASE}models/nightstand-master.glb` },
+      {
+        id: 'lowpoly',
+        get label() {
+          return t('asset.nightstand.variant.lowpoly');
+        },
+        url: `${BASE}models/nightstand.glb`,
+        flat: true,
+      },
+      {
+        id: 'master',
+        get label() {
+          return t('asset.nightstand.variant.master');
+        },
+        url: `${BASE}models/nightstand-master.glb`,
+      },
     ],
     ref: {
       src: `${BASE}showcase/nightstand-ref.png`,

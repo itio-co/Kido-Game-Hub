@@ -38,8 +38,8 @@ assert.equal(editsFileName('master'), 'master.edits.json');
 ok('file name whitelist');
 
 // ---------- serialisation ----------
-const a = { z: 1, a: { y: [1, 2, 3], b: -0, c: undefined }, m: [[1, 2], [3, 4]], s: 'ไทย', n: NaN };
-const b = { s: 'ไทย', m: [[1, 2], [3, 4]], a: { b: 0, y: [1, 2, 3] }, z: 1, n: null };
+const a = { z: 1, a: { y: [1, 2, 3], b: -0, c: undefined }, m: [[1, 2], [3, 4]], s: '\u0e44\u0e17\u0e22', n: NaN };
+const b = { s: '\u0e44\u0e17\u0e22', m: [[1, 2], [3, 4]], a: { b: 0, y: [1, 2, 3] }, z: 1, n: null };
 assert.equal(stableStringify(a), stableStringify(b));
 assert.ok(sameData(a, b));
 const text = stableStringify(a);

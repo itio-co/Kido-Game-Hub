@@ -1,6 +1,8 @@
 <script lang="ts">
   import { imageUrl } from '../../lib/flow/loadFlow';
   import { LEVEL_COUNT, LEVEL_THEME } from '../../lib/flow/puzzles';
+  import { t, type MessageKey } from '../../lib/i18n/core';
+  import { tx } from '../../lib/i18n/content';
   import type { FlowSession } from '../../lib/flow/session.svelte';
   import type { FlowSpot } from '../../lib/flow/types';
   import ImageScene from './ImageScene.svelte';
@@ -10,16 +12,17 @@
 
   const pages = $derived(session.flow?.pages.filter((item) => item.eventId === 'case-01') ?? []);
   const cut = $derived(pages[session.page] ?? null);
-  const groups = ['ทั้งหมด', 'คำ', 'ภาพ', 'ตรรกะ'];
+  const groups = ['all', 'word', 'picture', 'logic'] as const;
+  const groupLabel = (group: string): string => t(`game.practice.group.${group}` as MessageKey);
   const livingMarks: Record<number, string> = { 12: '💐', 22: '⭕' };
   const firstWeekday = new Date(2026, 9, 1).getDay();
   const dayCount = 31;
 
   function labelFor(spot: FlowSpot): string {
-    if (spot.slug !== 'flow/star-box/lock') return spot.title;
-    if (session.solved) return 'เปิดแล้ว';
-    if (session.deduced) return 'เล่นเลื่อนบล็อก';
-    return 'ตัวล็อก (ต้องสรุปคดีก่อน)';
+    if (spot.slug !== 'flow/star-box/lock') return tx(spot, 'title');
+    if (session.solved) return t('game.lock.opened');
+    if (session.deduced) return t('game.lock.play');
+    return t('game.lock.locked');
   }
 
   function sceneImage(): string {
@@ -50,19 +53,19 @@
     />
   {:else if session.screen === 'event-select'}
     <div class="evlist">
-      <p class="evh">ออกจากห้องแล้ว จะไปไหนดีนะ?</p>
+      <p class="evh">{t('game.event.heading')}</p>
       {#each session.flow?.events ?? [] as event (event.id)}
         {@const open = !event.unlockAfter}
         <button type="button" class="evcard" class:off={!open} onclick={() => session.openEvent(event.eventId)}>
           <img src={imageUrl(event.cover)} alt="" />
           {#if open}
-            <span class="badge">{event.eventId === 'case-01' && session.solved ? 'ไขแล้ว · เล่นซ้ำได้' : 'ใหม่'}</span>
+            <span class="badge">{event.eventId === 'case-01' && session.solved ? t('game.event.solved') : t('game.event.new')}</span>
           {:else}
-            <span class="lock">ล็อก</span>
+            <span class="lock">{t('game.event.locked')}</span>
           {/if}
           <span class="evt">
-            <b>{open ? event.title : '???'}</b>
-            <small>{open ? event.subtitle : session.solved && event.unlockAfter === 'case-01' ? 'เร็ว ๆ นี้' : event.lockedHint}</small>
+            <b>{open ? tx(event, 'title') : '???'}</b>
+            <small>{open ? tx(event, 'subtitle') : session.solved && event.unlockAfter === 'case-01' ? t('game.flow.comingSoon') : tx(event, 'lockedHint')}</small>
           </span>
         </button>
       {/each}
@@ -71,45 +74,45 @@
     <button type="button" class="cs" onclick={() => session.nextPage()}>
       <img src={imageUrl(cut.image)} alt="" />
       {#each cut.lines as line (line.id)}
-        <span class="bub" style="left:{line.x}%;top:{line.y}%;max-width:{line.w}%"><b>{line.who}</b>{line.text}</span>
+        <span class="bub" style="left:{line.x}%;top:{line.y}%;max-width:{line.w}%"><b>{tx(line, 'who')}</b>{tx(line, 'text')}</span>
       {/each}
-      <span class="cap">{cut.caption}</span>
-      <span class="tapnext">{session.page < pages.length - 1 ? 'แตะเพื่ออ่านต่อ' : 'แตะเพื่อเริ่มคดี'}</span>
+      <span class="cap">{tx(cut, 'caption')}</span>
+      <span class="tapnext">{session.page < pages.length - 1 ? t('game.cutscene.tapNext') : t('game.cutscene.tapStart')}</span>
       <span class="dots">{#each pages as _, index (index)}<i class:on={index === session.page}></i>{/each}</span>
     </button>
     {#if session.page > 0}
-      <button type="button" class="prev" onclick={() => session.prevPage()}>ก่อนหน้า</button>
+      <button type="button" class="prev" onclick={() => session.prevPage()}>{t('game.cutscene.prev')}</button>
     {/if}
-    <button type="button" class="skip" onclick={() => session.skipCutscene()}>ข้าม</button>
+    <button type="button" class="skip" onclick={() => session.skipCutscene()}>{t('game.cutscene.skip')}</button>
   {:else if session.screen === 'difficulty'}
     <div class="pick">
-      <h1>เลือกระดับความยากของคดีนี้</h1>
-      <p>เลือกได้ใหม่ทุกครั้งที่เริ่มคดี ไม่มีจำกัดเวลา</p>
+      <h1>{t('game.difficulty.heading')}</h1>
+      <p>{t('game.sub.difficulty')}</p>
       {#each session.flow?.difficulties ?? [] as name (name)}
-        <button type="button" onclick={() => session.pickDifficulty(name)}>{name}</button>
+        <button type="button" data-difficulty={name} onclick={() => session.pickDifficulty(name)}>{t(`game.difficulty.${name}` as MessageKey)}</button>
       {/each}
     </div>
   {:else if session.screen === 'practice'}
     <div class="pgrid">
       <div class="chips">
         {#each groups as group (group)}
-          <button type="button" class:on={session.category === group} onclick={() => session.setCategory(group)}>{group}</button>
+          <button type="button" class:on={session.category === group} data-group={group} onclick={() => session.setCategory(group)}>{groupLabel(group)}</button>
         {/each}
       </div>
       <div class="cards">
-        {#each (session.flow?.practice ?? []).filter((game) => session.category === 'ทั้งหมด' || game.group === session.category) as game (game.id)}
+        {#each (session.flow?.practice ?? []).filter((game) => session.category === 'all' || game.group === session.category) as game (game.id)}
           {@const on = session.played.includes(game.slug)}
           {@const row = game.game === 'cross' || game.game === 'jig' || game.game === 'slide' ? session.levels[game.game] : []}
           {@const total = row.reduce((sum, value) => sum + (value || 0), 0)}
           <button type="button" class="gcard" class:off={!on} onclick={() => session.openPractice(game.slug)}>
-            {#if on && !session.seen.includes(game.slug)}<i class="new">ใหม่</i>{/if}
-            <span class="gic">{on ? game.icon : 'ล็อก'}</span>
-            <b>{game.title}{game.future ? ' (ตัวอย่าง)' : ''}</b>
-            <small>{game.group}</small>
+            {#if on && !session.seen.includes(game.slug)}<i class="new">{t('game.event.new')}</i>{/if}
+            <span class="gic">{on ? game.icon : t('game.event.locked')}</span>
+            <b>{tx(game, 'title')}{game.future ? t('game.practice.sample') : ''}</b>
+            <small>{groupLabel(game.group)}</small>
             {#if on}
               <small>⭐ {total}/{3 * LEVEL_COUNT}</small>
             {:else}
-              <small>ปลดล็อกจากคดี {game.caseNo}{game.future ? ' (ตัวอย่างอนาคต)' : ''}</small>
+              <small>{t('game.practice.unlockFrom', { caseNo: game.caseNo })}{game.future ? t('game.practice.futureSample') : ''}</small>
             {/if}
           </button>
         {/each}
@@ -131,68 +134,69 @@
             style="left:{levelX(index)}%;top:{levelY(index)}px"
             onclick={() => session.openLevel(index)}
           >
-            <b>{open ? index + 1 : 'ล็อก'}</b>
+            <b>{open ? index + 1 : t('game.event.locked')}</b>
             {#if stars}<span>{'⭐'.repeat(stars)}{'☆'.repeat(3 - stars)}</span>{/if}
           </button>
         {/each}
-        <p class="lvtitle" style="top:{levelHeight - 60}px">{theme.icon} เริ่มต้น</p>
+        <p class="lvtitle" style="top:{levelHeight - 60}px">{theme.icon} {t('game.level.start')}</p>
       </div>
     </div>
   {:else if session.screen === 'notebook'}
     <div class="note-list">
-      <h1>สมุดคดี: อัลบั้มครอบครัวที่หายไป</h1>
+      <h1>{t('game.notebook.heading')}</h1>
       <ul>
         {#each session.flow?.evidence ?? [] as item (item.id)}
           <li class:have={session.evidence.includes(item.code)}>
-            {session.evidence.includes(item.code) ? `พบ ${item.code}` : `${item.code} ยังไม่พบ`}
-            {#if session.evidence.includes(item.code)}<span>{item.text}</span>{/if}
+            {session.evidence.includes(item.code) ? t('game.notebook.found', { code: item.code }) : t('game.notebook.missing', { code: item.code })}
+            {#if session.evidence.includes(item.code)}<span>{tx(item, 'text')}</span>{/if}
           </li>
         {/each}
       </ul>
       {#if session.deduced}
-        <p>สรุปคดีแล้ว ไปเปิดกล่องในห้องทำงาน</p>
+        <p>{t('game.notebook.deduced')}</p>
       {:else if session.evidence.includes('E01') && session.evidence.includes('E02') && session.evidence.includes('E04')}
-        <button type="button" class="mgbtn" onclick={() => session.go('case-board')}>สรุปคดี (3 คำถาม)</button>
+        <button type="button" class="mgbtn" onclick={() => session.go('case-board')}>{t('game.notebook.solve')}</button>
       {:else}
-        <p>เก็บหลักฐาน E01, E02, E04 ให้ครบเพื่อสรุปคดี</p>
+        <p>{t('game.notebook.collect')}</p>
       {/if}
     </div>
   {:else if session.screen === 'case-board'}
     <div class="deduce">
       {#each session.flow?.questions ?? [] as question, index (question.id)}
         <section class:ok={session.marks[index] === 1} class:bad={session.marks[index] === -1}>
-          <h2>{question.prompt} {session.marks[index] === 1 ? 'ถูก' : ''}</h2>
+          <h2>{tx(question, 'prompt')} {session.marks[index] === 1 ? t('game.case.correct') : ''}</h2>
           {#if question.mode === 'portrait'}
             <div class="row">
               {#each question.answers as answer (answer.id)}
                 <button type="button" class="por" class:sel={session.picks[index] === answer.value} style="background-image:url('{answer.image ? imageUrl(answer.image) : ''}')" onclick={() => session.pickAnswer(index, answer.value ?? '')}>
-                  <span>{answer.title}</span>
+                  <span>{tx(answer, 'title')}</span>
                 </button>
               {/each}
             </div>
           {:else if question.mode === 'chips'}
             <div class="row">
               {#each question.answers as answer (answer.id)}
-                <button type="button" class="ch" class:sel={session.picks[index] === answer.value} onclick={() => session.pickAnswer(index, answer.value ?? '')}>{answer.title}</button>
+                <button type="button" class="ch" class:sel={session.picks[index] === answer.value} onclick={() => session.pickAnswer(index, answer.value ?? '')}>{tx(answer, 'title')}</button>
               {/each}
             </div>
           {:else}
             <div class="mini" style="background-image:url('{imageUrl('house-map.jpg')}')">
-              <button type="button" class:sel={session.picks[index] === 'living'} style="left:10%;top:10%;width:80%;height:35%" aria-label="ห้องนั่งเล่น" onclick={() => session.pickAnswer(index, 'living')}></button>
-              <button type="button" class:sel={session.picks[index] === 'study'} style="left:12%;top:46%;width:40%;height:34%" aria-label="ห้องทำงาน" onclick={() => session.pickAnswer(index, 'study')}></button>
-              <button type="button" class:sel={session.picks[index] === 'kitchen'} style="left:53%;top:46%;width:35%;height:34%" aria-label="ครัว" onclick={() => session.pickAnswer(index, 'kitchen')}></button>
+              <button type="button" class:sel={session.picks[index] === 'living'} style="left:10%;top:10%;width:80%;height:35%" aria-label={t('game.case.room.living')} onclick={() => session.pickAnswer(index, 'living')}></button>
+              <button type="button" class:sel={session.picks[index] === 'study'} style="left:12%;top:46%;width:40%;height:34%" aria-label={t('game.case.room.study')} onclick={() => session.pickAnswer(index, 'study')}></button>
+              <button type="button" class:sel={session.picks[index] === 'kitchen'} style="left:53%;top:46%;width:35%;height:34%" aria-label={t('game.case.room.kitchen')} onclick={() => session.pickAnswer(index, 'kitchen')}></button>
             </div>
-            <p>{question.answers.find((answer) => answer.value === session.picks[index])?.title ?? 'แตะห้องบนแผนผัง'}</p>
+            {@const picked = question.answers.find((answer) => answer.value === session.picks[index])}
+            <p>{picked ? tx(picked, 'title') : t('game.case.tapMap')}</p>
           {/if}
           <div class="row proof">
-            <span>หลักฐาน</span>
+            <span>{t('game.case.evidence')}</span>
             {#each session.evidence.filter((code) => code !== 'E05') as code (code)}
               <button type="button" class="evc" class:sel={session.proof[index] === code} onclick={() => session.pickProof(index, code)}>{code}</button>
             {/each}
           </div>
         </section>
       {/each}
-      <button type="button" class="mgbtn" onclick={() => session.gradeCase()}>ยืนยันข้อสรุป</button>
+      <button type="button" class="mgbtn" onclick={() => session.gradeCase()}>{t('game.case.confirm')}</button>
     </div>
   {:else if session.screen === 'crossword' || session.screen === 'jigsaw' || session.screen === 'slide'}
     <Minigames {session} />
@@ -211,33 +215,33 @@
 
   {#if session.overlay}
     <div class="time-sheet">
-      <button type="button" class="calx" aria-label="ปิด" onclick={() => session.closeOverlay()}>✕</button>
+      <button type="button" class="calx" aria-label={t('game.common.close')} onclick={() => session.closeOverlay()}>✕</button>
       <div class="calc">
         {#if session.overlay === 'calendar'}
-          <div class="calh"><span>ปฏิทินของย่ามะลิ</span><small>ตุลาคม 2569</small></div>
+          <div class="calh"><span>{t('game.calendar.grandmaTitle')}</span><small>{t('game.calendar.month')}</small></div>
           <div class="calg">
-            {#each ['อา', 'จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส'] as name (name)}<div class="dw">{name}</div>{/each}
+            {#each t('game.calendar.weekdays').split(' ') as name, index (index)}<div class="dw">{name}</div>{/each}
             {#each Array.from({ length: firstWeekday }) as _, index (index)}<div></div>{/each}
             {#each Array.from({ length: dayCount }, (_, index) => index + 1) as day (day)}
               <div class="d" class:m={livingMarks[day]} class:t={day === 22}>{day}{#if livingMarks[day]}<i>{livingMarks[day]}</i>{/if}</div>
             {/each}
           </div>
           <ul>
-            <li><b>12 ต.ค.</b> วันครบรอบแต่งงานของปู่กับย่า</li>
-            <li class="clue"><button type="button" onclick={() => session.showToast('ย่าเขียนไว้เองว่าบ่ายนี้น้ารินมาเก็บบ้าน — ใครอาจย้ายอัลบั้มนะ?')}>⭕ <b>22 ต.ค.</b> วงแดงวันนี้: บ่ายนี้ รินมาช่วยเก็บกวาดบ้าน</button></li>
+            <li><b>{t('game.calendar.anniversaryDate')}</b> {t('game.calendar.anniversary')}</li>
+            <li class="clue"><button type="button" onclick={() => session.showToast(t('game.calendar.clueToast'))}>⭕ <b>{t('game.calendar.clueDate')}</b> {t('game.calendar.clue')}</button></li>
           </ul>
-          <button type="button" class="link" onclick={() => session.openDayTravel()}>ย้อนวันด้วยปฏิทิน</button>
+          <button type="button" class="link" onclick={() => session.openDayTravel()}>{t('game.calendar.travelDay')}</button>
         {:else}
-          <div class="calh"><span>{session.overlay === 'clock' ? 'นาฬิกา: ย้อนชั่วโมง' : 'ปฏิทิน: ย้อนวัน'}</span><small>พลังย้อนเวลา</small></div>
+          <div class="calh"><span>{session.overlay === 'clock' ? t('game.time.clock') : t('game.time.day')}</span><small>{t('game.time.power')}</small></div>
           <ul>
             {#each (session.flow?.slots ?? []).filter((item) => session.overlay === 'day' || item.part === 'hour') as item (item.id)}
               {@const open = !item.unlockBy || session.evidence.includes(item.unlockBy)}
               <li>
                 <button type="button" class:locked={!open} onclick={() => session.chooseSlot(item.slot)}>
                   {#if open}
-                    {item.slot === session.slot ? '▶ ' : ''}{item.title}
+                    {item.slot === session.slot ? '▶ ' : ''}{tx(item, 'title')}
                   {:else}
-                    ??? — {item.hint}
+                    ??? — {tx(item, 'hint')}
                   {/if}
                 </button>
               </li>

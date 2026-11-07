@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { t } from '../lib/i18n/core';
+
   let {
     title,
     body,
@@ -21,6 +23,6 @@
     {#if actionLabel && onAction}
       <button type="button" class="close action" onclick={onAction}>{actionLabel}</button>
     {/if}
-    <button type="button" class="close" onclick={onClose}>ปิด</button>
+    <button type="button" class="close" onclick={onClose}>{t('game.common.close')}</button>
   </dialog>
 </div>

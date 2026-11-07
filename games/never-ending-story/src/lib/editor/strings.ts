@@ -1,687 +1,9 @@
 /**
- * User-facing strings of the editor features added in v0.2.9 (guide lines, VP modes, edge alignment,
- * object/room groups, source-file save).
- *
- * i18n prep: English is the source. `MESSAGES` is a flat table of dotted English keys, each with an English and a
- * Thai value, so a later i18n PR can dump it straight into `src/locales/en.json` / `th.json` (see `localeTable`).
- * Parameters use `{name}` placeholders. The UI currently renders `LOCALE` (Thai). Components and state modules use
- * the typed `T` facade below and must not carry inline Thai for these features.
+ * Typed facade over the editor strings. The text itself lives in `src/locales/<locale>.json` (English is the source
+ * language; keys are dotted English). Constant entries are getters so they re-read the active locale on every access
+ * and Svelte re-renders when the editor language is switched.
  */
-
-export type Locale = 'en' | 'th';
-/** Locale rendered today (the app is Thai-only until the i18n PR). */
-export const LOCALE: Locale = 'th';
-
-export const MESSAGES = {
-  // --- common -------------------------------------------------------------------------------------------------
-  'editor.common.on': { en: 'on', th: 'เปิด' },
-  'editor.common.off': { en: 'off', th: 'ปิด' },
-  'editor.common.lines': { en: '{n} lines', th: '{n} เส้น' },
-  'editor.common.undo': { en: '↶ Undo', th: '↶ ย้อน' },
-  'editor.common.redo': { en: '↷ Redo', th: '↷ ทำซ้ำ' },
-  'editor.common.redoNext': { en: '↷ Redo', th: '↷ ทำต่อ' },
-  'editor.common.undoAria': { en: 'Undo', th: 'ย้อน (Undo)' },
-  'editor.common.redoAria': { en: 'Redo', th: 'ทำซ้ำ (Redo)' },
-  // --- stage zoom / pan (mock-up + camera-match views) ---------------------------------------------------------
-  'editor.stage.zoomIn': { en: 'Zoom in', th: 'ซูมเข้า' },
-  'editor.stage.zoomOut': { en: 'Zoom out', th: 'ซูมออก' },
-  'editor.stage.fit': { en: 'Fit to screen', th: 'พอดีจอ' },
-  'editor.stage.zoomLabel': { en: 'Zoom {pct}%', th: 'ซูม {pct}%' },
-  'editor.stage.mockHint': {
-    en: 'Zoom: mouse wheel / pinch · Pan: middle-drag, Shift+middle-drag or Space+drag / two-finger drag · Fit: ⤢ or double-click / double-tap empty space · Frame Selected: ◎, numpad . / F or double-tap a part · Frame All: Home · Object crop: ▣. The model stays locked to the mock-up camera.',
-    th: 'ซูม: ลูกกลิ้งเมาส์ / ถ่างสองนิ้ว · เลื่อนภาพ: ลากปุ่มกลาง, Shift+ลากปุ่มกลาง หรือกด Space ค้างแล้วลาก / ลากสองนิ้ว · พอดีจอ: ⤢ หรือดับเบิลคลิก / แตะสองครั้งที่พื้นที่ว่าง · ซูมไปชิ้นที่เลือก (Frame Selected): ◎, ปุ่มจุดบนแป้นตัวเลข / F หรือแตะสองครั้งที่ชิ้นส่วน · ดูทั้งโมเดล (Frame All): Home · ครอปวัตถุ: ▣ โมเดลยังล็อกกับกล้องของภาพ Mock-up',
-  },
-  'editor.stage.focus': { en: 'Focus', th: 'โฟกัส' },
-  'editor.stage.focusTitle': {
-    en: 'Frame Selected: the selected part (whole model if none) · numpad . / F · double-tap a part',
-    th: 'ซูมให้ชิ้นส่วนที่เลือกเต็มจอ (Frame Selected · ทั้งโมเดลถ้าไม่ได้เลือก) · ปุ่มจุดบนแป้นตัวเลข / F · แตะสองครั้งที่ชิ้นส่วน',
-  },
-  'editor.stage.crop': { en: 'Object crop', th: 'ครอปวัตถุ' },
-  'editor.stage.cropTitle': {
-    en: "Jump to the asset's mock-up crop (the object) — Fit shows the whole image",
-    th: 'ไปที่กรอบครอปของภาพ Mock-up (ตัววัตถุ) — พอดีจอจะแสดงทั้งภาพ',
-  },
-  'editor.stage.follow': { en: 'Follow selection', th: 'ตามชิ้นที่เลือก' },
-  'editor.stage.followTitle': {
-    en: 'Re-frame the view whenever the selected part changes',
-    th: 'ซูมไปที่ชิ้นส่วนใหม่ทุกครั้งที่เปลี่ยนการเลือก',
-  },
-  'editor.common.mm': { en: '{v} mm', th: '{v} มม.' },
-
-  // --- part origin (Blender: Set Origin / Affect Only Origins / 3D cursor) -------------------------------------
-  'editor.origin.heading': { en: 'Origin', th: 'จุดกำเนิด (Origin)' },
-  'editor.origin.options': { en: 'Options', th: 'ตัวเลือก (Options)' },
-  'editor.origin.transform': { en: 'Transform', th: 'การแปลง (Transform)' },
-  'editor.origin.affectOnly': { en: 'Affect Only', th: 'มีผลเฉพาะ (Affect Only)' },
-  'editor.origin.origins': { en: 'Origins', th: 'จุดกำเนิด (Origins)' },
-  'editor.origin.affect': { en: 'Affect Only Origins', th: 'ย้ายเฉพาะจุดกำเนิด (Affect Only Origins)' },
-  'editor.origin.affectTitle': {
-    en: 'Options › Transform › Affect Only Origins: the move tool and G move only the origin, the part stays put · snaps to vertices, edge midpoints, face centres, box corners/centre and the grid · hold Alt for free movement',
-    th: 'ตัวเลือก › การแปลง › ย้ายเฉพาะจุดกำเนิด (Affect Only Origins): ลูกศรและปุ่ม G ย้ายแค่จุดกำเนิด ชิ้นส่วนอยู่ที่เดิม · ดูดเข้าจุดยอด กึ่งกลางขอบ กลางหน้า มุม/กลางกล่อง และกริด · กด Alt ค้างเพื่อย้ายอิสระ',
-  },
-  'editor.origin.affectOnHint': {
-    en: 'Affect Only Origins: drag the arrows or press G to move the origin (rotating / scaling origins is not supported)',
-    th: 'ย้ายเฉพาะจุดกำเนิด (Affect Only Origins): ลากลูกศรหรือกด G เพื่อย้ายจุดกำเนิด (ยังหมุน / ย่อขยายจุดกำเนิดไม่ได้)',
-  },
-  'editor.origin.noRotate': {
-    en: 'Rotating / scaling origins is not supported — turn off Affect Only Origins',
-    th: 'ยังหมุน / ย่อขยายจุดกำเนิดไม่ได้ — ปิด "ย้ายเฉพาะจุดกำเนิด (Affect Only Origins)" ก่อน',
-  },
-  'editor.origin.toast': { en: 'Affect Only Origins {state}', th: 'ย้ายเฉพาะจุดกำเนิด (Affect Only Origins) {state}' },
-  'editor.origin.setOrigin': { en: 'Set Origin', th: 'ตั้งจุดกำเนิด (Set Origin)' },
-  'editor.origin.toGeometry': { en: 'Origin to Geometry', th: 'จุดกำเนิดไปกลางชิ้น (Origin to Geometry)' },
-  'editor.origin.toCursor': { en: 'Origin to 3D Cursor', th: 'จุดกำเนิดไปที่เคอร์เซอร์ 3D (Origin to 3D Cursor)' },
-  'editor.origin.geometryToOrigin': { en: 'Geometry to Origin', th: 'ย้ายชิ้นมาที่จุดกำเนิด (Geometry to Origin)' },
-  'editor.origin.toBottom': { en: 'Origin to Bottom', th: 'จุดกำเนิดไปกลางฐาน (Origin to Bottom)' },
-  'editor.origin.reset': { en: 'Reset Origin', th: 'คืนจุดกำเนิดเดิม (Reset Origin)' },
-  'editor.origin.local': { en: 'Local', th: 'ในชิ้น (Local)' },
-  'editor.origin.world': { en: 'Global', th: 'ในฉาก (Global)' },
-  'editor.origin.localSub': {
-    en: 'Origin, cm · local: part axes, from the original GLB origin',
-    th: 'จุดกำเนิด (ซม.) · ในชิ้น: แกนของชิ้นส่วน วัดจากจุดกำเนิดเดิมใน GLB',
-  },
-  'editor.origin.worldSub': {
-    en: 'Origin, cm · global: scene axes (X right, Y up, Z front)',
-    th: 'จุดกำเนิด (ซม.) · ในฉาก: แกนของฉาก (X ขวา, Y ขึ้น, Z หน้า)',
-  },
-  'editor.origin.spaceAria': { en: 'Origin coordinates', th: 'พิกัดจุดกำเนิด' },
-  'editor.origin.snapped': { en: 'Origin snapped to {what}', th: 'จุดกำเนิดดูดเข้า{what}' },
-  'editor.origin.kind.vertex': { en: 'a vertex', th: 'จุดยอด (vertex)' },
-  'editor.origin.kind.edge': { en: 'an edge midpoint', th: 'กึ่งกลางขอบ (edge)' },
-  'editor.origin.kind.face': { en: 'a face centre', th: 'กลางหน้า (face)' },
-  'editor.origin.kind.bbox': { en: 'the bounding box', th: 'มุม/กลางกล่อง (bounding box)' },
-  'editor.origin.kind.grid': { en: 'the grid', th: 'กริด (grid)' },
-  'editor.cursor.place': { en: 'Place 3D Cursor', th: 'วางเคอร์เซอร์ 3D (Place 3D Cursor)' },
-  'editor.cursor.placeTitle': {
-    en: 'Place 3D Cursor: tap / click a surface (desktop: Shift+right-click anywhere) · Shift+C puts it back at the world origin',
-    th: 'วางเคอร์เซอร์ 3D (Place 3D Cursor): แตะ / คลิกที่ผิวโมเดล (คอมพิวเตอร์: Shift+คลิกขวา) · Shift+C คืนไปจุดศูนย์กลางโลก',
-  },
-  'editor.cursor.hint': { en: 'Tap a surface to place the 3D cursor', th: 'แตะที่ผิวโมเดลเพื่อวางเคอร์เซอร์ 3D (3D Cursor)' },
-  'editor.cursor.reset': { en: 'Cursor to World Origin', th: 'เคอร์เซอร์ 3D กลับจุดศูนย์กลางโลก (Cursor to World Origin)' },
-  // --- transform tools + Blender modal G / R / S ------------------------------------------------------------------
-  'editor.tool.aria': { en: 'Tools', th: 'เครื่องมือ (Tools)' },
-  'editor.tool.move': { en: 'Move', th: 'ย้าย' },
-  'editor.tool.rotate': { en: 'Rotate', th: 'หมุน' },
-  'editor.tool.scale': { en: 'Scale', th: 'ขนาด' },
-  'editor.tool.moveTitle': { en: 'Move (G)', th: 'ย้าย (Move · G)' },
-  'editor.tool.rotateTitle': { en: 'Rotate (R)', th: 'หมุน (Rotate · R)' },
-  'editor.tool.scaleTitle': { en: 'Scale (S)', th: 'ย่อขยาย (Scale · S)' },
-  'editor.modal.grab': { en: 'Move', th: 'ย้าย (Move)' },
-  'editor.modal.rotate': { en: 'Rotate', th: 'หมุน (Rotate)' },
-  'editor.modal.scale': { en: 'Scale', th: 'ย่อขยาย (Scale)' },
-  'editor.modal.originOnly': { en: 'origin only', th: 'เฉพาะจุดกำเนิด (origin only)' },
-  'editor.modal.free': { en: 'Dx {x}  Dy {y}  Dz {z}', th: 'Dx {x}  Dy {y}  Dz {z}' },
-  'editor.modal.dist': { en: 'D: {v}', th: 'ระยะ (D): {v}' },
-  'editor.modal.rot': { en: 'Rot: {v}', th: 'มุม (Rot): {v}' },
-  'editor.modal.factor': { en: 'Scale: {v}', th: 'สเกล (Scale): {v}' },
-  'editor.modal.along': { en: 'along {space} {axis}', th: 'ตามแกน {axis} {space}' },
-  'editor.modal.global': { en: 'global', th: 'ของฉาก (global)' },
-  'editor.modal.local': { en: 'local', th: 'ของชิ้น (local)' },
-  'editor.modal.keys': {
-    en: '[LMB / Enter] Confirm · [RMB / Esc] Cancel · [X] [Y] [Z] Axis (twice: local) · [Ctrl] Snap {snap} · [Shift] Precision · [0-9 . -] Type a value',
-    th: '[คลิกซ้าย / Enter] ยืนยัน (Confirm) · [คลิกขวา / Esc] ยกเลิก (Cancel) · [X] [Y] [Z] ล็อกแกน (กดซ้ำ: แกนของชิ้น) · [Ctrl] แม่เหล็ก (Snap) {snap} · [Shift] ละเอียด (Precision) · [0-9 . -] พิมพ์ตัวเลข',
-  },
-  'editor.keys.tip': {
-    en: 'Blender keys: G / R / S move · rotate · scale, then X / Y / Z for an axis, type a value, click / Enter to confirm, right-click / Esc to cancel · Shift+D duplicate · X / Delete delete · A select the whole object · Alt+A deselect · Alt+G / R / S clear the whole-object location / rotation / scale · N sidebar · numpad . / F frame selected · Home frame all · Shift+right-click 3D cursor · Shift+C reset cursor · middle-drag orbit, Shift+middle-drag pan, wheel zoom',
-    th: 'ปุ่มแบบ Blender: G / R / S ย้าย · หมุน · ย่อขยาย แล้วกด X / Y / Z ล็อกแกน พิมพ์ตัวเลขได้ คลิก / Enter ยืนยัน คลิกขวา / Esc ยกเลิก · Shift+D ทำสำเนา (Duplicate) · X / Delete ลบ · A เลือกทั้งชิ้นงาน · Alt+A ยกเลิกการเลือก · Alt+G / R / S ล้างตำแหน่ง / การหมุน / สเกลของทั้งชิ้นงาน · N แถบข้าง (Sidebar) · ปุ่มจุดบนแป้นตัวเลข / F ซูมไปชิ้นที่เลือก (Frame Selected) · Home ดูทั้งหมด (Frame All) · Shift+คลิกขวา วางเคอร์เซอร์ 3D · Shift+C คืนเคอร์เซอร์ · ลากปุ่มกลางหมุนมุมมอง Shift+ลากปุ่มกลางเลื่อน ลูกกลิ้งซูม',
-  },
-  'editor.del.confirm': { en: 'Delete?', th: 'ลบชิ้นนี้? (Delete)' },
-  'editor.del.ok': { en: 'Delete', th: 'ลบ (Delete)' },
-  'editor.del.cancel': { en: 'Cancel', th: 'ยกเลิก' },
-  'editor.select.all': { en: 'Whole object selected (A) · Alt+A deselect', th: 'เลือกทั้งชิ้นงานแล้ว (Select All · A) · Alt+A ยกเลิกการเลือก' },
-  // --- whole-object placement (Blender Object mode on the asset's root) -------------------------------------------
-  'editor.place.scope': { en: 'Selection scope', th: 'ขอบเขตการเลือก (Selection scope)' },
-  'editor.place.scopePart': { en: 'Part', th: 'ชิ้นส่วน (Part)' },
-  'editor.place.scopeObject': { en: 'Whole object', th: 'ทั้งชิ้นงาน (Whole object)' },
-  'editor.place.scopePartTitle': { en: 'Clicks select single parts', th: 'คลิกแล้วเลือกทีละชิ้นส่วน (Part)' },
-  'editor.place.scopeObjectTitle': {
-    en: 'Clicks select the whole object (Object mode on the root) · A',
-    th: 'คลิกแล้วเลือกทั้งชิ้นงาน (Object mode ที่ root) · A',
-  },
-  'editor.place.rootRow': { en: 'Whole object', th: 'ทั้งชิ้นงาน (Whole object)' },
-  'editor.place.rootRowSub': { en: 'root · {name}', th: 'root · {name}' },
-  'editor.place.heading': { en: 'Whole object · Object mode', th: 'ทั้งชิ้นงาน · Object mode' },
-  'editor.place.location': { en: 'Location (cm)', th: 'ตำแหน่ง (Location · ซม.)' },
-  'editor.place.rotation': { en: 'Rotation (°, XYZ Euler)', th: 'การหมุน (Rotation · องศา, XYZ Euler)' },
-  'editor.place.scale': { en: 'Scale (uniform)', th: 'สเกล (Scale · ทุกแกนเท่ากัน)' },
-  'editor.place.dims': { en: 'Dimensions {x} × {y} × {z} cm · base Z {base} cm', th: 'ขนาด (Dimensions) {x} × {y} × {z} ซม. · ฐานสูงจากพื้น {base} ซม.' },
-  'editor.place.scaleLocked': { en: 'Scale locked', th: 'ล็อกสเกล (Scale locked)' },
-  'editor.place.scaleUnlock': { en: 'Unlock scale', th: 'ปลดล็อกสเกล (Unlock scale)' },
-  'editor.place.scaleWarn': {
-    en: 'Scaling the whole object changes its real-world size (the furniture would no longer be its real size). Unlock only if you mean it.',
-    th: 'ย่อขยายทั้งชิ้นงานจะเปลี่ยนขนาดจริงของวัตถุ (เฟอร์นิเจอร์จะไม่เท่าของจริงแล้ว) ปลดล็อกเฉพาะเมื่อตั้งใจจริง ๆ',
-  },
-  'editor.place.scaleBlocked': {
-    en: 'Scale is locked: it changes the real-world size. Unlock it with the lock icon in the sidebar.',
-    th: 'สเกลถูกล็อกอยู่ เพราะจะเปลี่ยนขนาดจริงของวัตถุ ปลดล็อกได้ที่ไอคอนแม่กุญแจในแถบข้าง',
-  },
-  'editor.place.floorSnap': { en: 'Snap base to floor (Z = 0)', th: 'ดูดฐานลงพื้น (Snap base to floor · Z = 0)' },
-  'editor.place.floorSnapTitle': {
-    en: 'While moving / rotating the whole object with snapping on, a base within 3 cm of the floor lands exactly on it (Ctrl toggles snapping)',
-    th: 'ระหว่างย้าย / หมุนทั้งชิ้นงานโดยเปิดแม่เหล็ก ถ้าฐานห่างพื้นไม่เกิน 3 ซม. จะวางลงพื้นพอดี (Ctrl สลับแม่เหล็ก)',
-  },
-  'editor.place.dropToFloor': { en: 'Put base on floor', th: 'วางฐานลงพื้น (Z = 0)' },
-  'editor.place.clear': { en: 'Clear: Location (Alt+G) · Rotation (Alt+R) · Scale (Alt+S)', th: 'ล้างค่า (Clear): ตำแหน่ง (Alt+G) · การหมุน (Alt+R) · สเกล (Alt+S)' },
-  'editor.place.clearLocation': { en: 'Clear Location', th: 'ล้างตำแหน่ง (Clear Location)' },
-  'editor.place.clearRotation': { en: 'Clear Rotation', th: 'ล้างการหมุน (Clear Rotation)' },
-  'editor.place.clearScale': { en: 'Clear Scale', th: 'ล้างสเกล (Clear Scale)' },
-  'editor.place.cleared': { en: '{what} cleared', th: '{what} แล้ว' },
-  'editor.place.cameraNote': {
-    en: 'The mock-up camera stays fixed: moving the whole object moves it within the mock-up view (the camera-match solve works in the object frame).',
-    th: 'กล้องของภาพ Mock-up อยู่กับที่ การย้ายทั้งชิ้นงานจะทำให้วัตถุขยับในภาพ Mock-up (การจับมุมกล้องคำนวณในกรอบของวัตถุ)',
-  },
-  'editor.place.bake': { en: 'Bake placement into the parts', th: 'ฝังตำแหน่งวางลงในชิ้นส่วน (Bake)' },
-  'editor.place.bakeTitle': {
-    en: 'Off (default): the placement becomes the GLB root node transform. On: it is applied to the top-level nodes instead.',
-    th: 'ปิด (ค่าเริ่มต้น): ตำแหน่งวางเป็น transform ของ root node ใน GLB · เปิด: ใส่ลงในชิ้นส่วนบนสุดแทน',
-  },
-  'editor.place.axisX': { en: 'X', th: 'X' },
-  'editor.place.axisY': { en: 'Y', th: 'Y' },
-  'editor.place.axisZ': { en: 'Z', th: 'Z' },
-  // --- part panel labels (Blender axes: X right, Y back, Z up) ------------------------------------------------------
-  'editor.part.position': { en: 'Location (cm)', th: 'ตำแหน่ง (ซม.)' },
-  'editor.part.size': { en: 'Dimensions (cm)', th: 'ขนาด (ซม.)' },
-  'editor.part.rotation': { en: 'Rotation (°)', th: 'หมุน (องศา)' },
-  'editor.part.posX': { en: 'X left–right', th: 'X ซ้าย–ขวา' },
-  'editor.part.posZ': { en: 'Z up–down', th: 'Z สูง–ต่ำ' },
-  'editor.part.posY': { en: '−Y front–back', th: '−Y หน้า–หลัง' },
-  'editor.part.width': { en: 'Width (X)', th: 'กว้าง (X)' },
-  'editor.part.height': { en: 'Height (Z)', th: 'สูง (Z)' },
-  'editor.part.depth': { en: 'Depth (Y)', th: 'ลึก (Y)' },
-  'editor.part.rotX': { en: 'X', th: 'X' },
-  'editor.part.rotZ': { en: 'Z', th: 'Z' },
-  'editor.part.rotY': { en: '−Y', th: '−Y' },
-  'editor.sidebar.toast': { en: 'Sidebar {state}', th: 'แถบข้าง (Sidebar) {state}' },
-
-  // --- master guide lines (one or two per axis per group) --------------------------------------------------------
-  'cameraMatch.master.set': { en: '★ Set as master', th: '★ ตั้งเป็นเส้นหลัก' },
-  'cameraMatch.master.setTitle': {
-    en: 'Make the selected {axis} line the master of its axis',
-    th: 'ให้เส้น {axis} ที่เลือกเป็นเส้นหลักของแกนนี้',
-  },
-  'cameraMatch.master.label': { en: '★ Master {axis}', th: '★ เส้นหลัก {axis}' },
-  'cameraMatch.master.selectAria': { en: 'Master line of axis {axis}', th: 'เส้นหลักของแกน {axis}' },
-  'cameraMatch.master.option': { en: 'Line {name}', th: 'เส้น {name}' },
-  'cameraMatch.master.cycle': { en: '⟳ Next', th: '⟳ ถัดไป' },
-  'cameraMatch.master.cycleAria': { en: 'Make the next {axis} line the master', th: 'เลื่อนเส้นหลักแกน {axis} ไปเส้นถัดไป' },
-  'cameraMatch.master.isMaster': { en: '★ Master of axis {axis}', th: '★ เส้นหลักของแกน {axis}' },
-  'cameraMatch.master.setToast': {
-    en: '★ Line {name} is now the master of axis {axis}',
-    th: '★ เส้น {name} เป็นเส้นหลักของแกน {axis} แล้ว',
-  },
-  'cameraMatch.master.promoted': {
-    en: 'Deleted the master of axis {axis} — line {name} (lowest residual) is the new master',
-    th: 'ลบเส้นหลักแกน {axis} แล้ว — เส้น {name} (คลาดเคลื่อนน้อยสุด) เป็นเส้นหลักแทน',
-  },
-  'cameraMatch.master.onlyMaster': {
-    en: 'Only the master so far — add another {axis} line',
-    th: 'มีแต่เส้นหลัก — เพิ่มเส้น {axis} อีกเส้น',
-  },
-  'cameraMatch.master.menuAria': { en: 'Line actions', th: 'คำสั่งของเส้น' },
-  'cameraMatch.master.menuClose': { en: 'Close', th: 'ปิด' },
-  'cameraMatch.master.legend': { en: '★ Master', th: '★ เส้นหลัก' },
-  'cameraMatch.master.deleteSelected': { en: 'Delete selected line', th: 'ลบเส้นที่เลือก' },
-  'cameraMatch.master.legendText': {
-    en: ': the reference line of its axis — the vanishing point lies on it (parallel: its direction); a converging axis may have two (★1 ★2): the VP is then exactly their intersection and the other lines only show residuals · Merge / Parallel / edge snapping never move a master · ★ toggles it here, or long-press / right-click a line',
-    th: ': เส้นอ้างอิงของแกน — จุดลับตาอยู่บนแนวเส้นนี้ (ขนาน: ใช้ทิศของมัน) แกนที่มีจุดลับตาตั้งได้ 2 เส้น (★1 ★2): จุดลับตาคือจุดตัดของสองเส้นนี้พอดี เส้นอื่นแค่แสดงค่าคลาด · ปุ่มรวม/ขนาน/ดูดเข้าขอบภาพไม่ขยับเส้นหลัก · กด ★ เพื่อเปิด/ปิดได้ที่นี่ หรือกดค้าง/คลิกขวาที่เส้น',
-  },
-  'cameraMatch.master.label2': { en: '★2 {axis}', th: '★2 {axis}' },
-  'cameraMatch.master.select2Aria': { en: 'Second master line of axis {axis}', th: 'เส้นหลักเส้นที่ 2 ของแกน {axis}' },
-  'cameraMatch.master.none': { en: '— none', th: '— ไม่มี' },
-  'cameraMatch.master.toggleSet': { en: '★ Master', th: '★ เส้นหลัก' },
-  'cameraMatch.master.toggleUnset': { en: '☆ Unset master', th: '☆ เลิกเป็นเส้นหลัก' },
-  'cameraMatch.master.toggleTitle': {
-    en: 'Toggle the selected {axis} line as a master (a converging axis can have two: the VP is their intersection)',
-    th: 'เปิด/ปิดเส้น {axis} ที่เลือกเป็นเส้นหลัก (แกนที่มีจุดลับตาตั้งได้ 2 เส้น: จุดลับตาคือจุดตัด)',
-  },
-  'cameraMatch.master.isMaster1': { en: '★1 Master of axis {axis}', th: '★1 เส้นหลักของแกน {axis}' },
-  'cameraMatch.master.isMaster2': { en: '★2 Second master of axis {axis}', th: '★2 เส้นหลักเส้นที่ 2 ของแกน {axis}' },
-  'cameraMatch.master.addSecond': { en: '★ Add as second master', th: '★ เพิ่มเป็นเส้นหลักเส้นที่ 2' },
-  'cameraMatch.master.replaceOldest': { en: '★ Set as master (replaces {name})', th: '★ ตั้งเป็นเส้นหลัก (แทน {name})' },
-  'cameraMatch.master.secondToast': {
-    en: '★2 Line {name} is the second master of axis {axis} — the vanishing point is now exactly where the two masters cross',
-    th: '★2 เส้น {name} เป็นเส้นหลักเส้นที่ 2 ของแกน {axis} — จุดลับตาคือจุดตัดของเส้นหลักทั้งสองพอดี',
-  },
-  'cameraMatch.master.replacedOldestToast': {
-    en: 'Axis {axis} already had two masters — {old} (the oldest) is a normal line again; masters are now {m1} and {m2}',
-    th: 'แกน {axis} มีเส้นหลักครบ 2 เส้นแล้ว — {old} (เก่าสุด) กลับเป็นเส้นธรรมดา ตอนนี้เส้นหลักคือ {m1} และ {m2}',
-  },
-  'cameraMatch.master.parallelOne': {
-    en: 'Parallel axis {axis}: one master defines the direction — line {name} is now its only master',
-    th: 'แกน {axis} แบบขนาน: ใช้เส้นหลักเส้นเดียวกำหนดทิศ — เส้น {name} เป็นเส้นหลักเส้นเดียวของแกนนี้',
-  },
-  'cameraMatch.master.parallelIgnored': {
-    en: 'Parallel axis: only ★1 sets the direction — ★2 ({name}) is ignored until the axis converges again',
-    th: 'แกนขนาน: ใช้แค่ ★1 กำหนดทิศ — ★2 ({name}) ไม่ถูกใช้จนกว่าแกนจะกลับเป็นแบบมีจุดลับตา',
-  },
-  'cameraMatch.master.unsetToast': { en: 'Line {name} is no longer a master of axis {axis}', th: 'เส้น {name} ไม่ใช่เส้นหลักของแกน {axis} แล้ว' },
-  'cameraMatch.master.keepOne': {
-    en: 'Axis {axis} needs a master — make another line the master first',
-    th: 'แกน {axis} ต้องมีเส้นหลัก — ตั้งเส้นอื่นเป็นเส้นหลักก่อน',
-  },
-  'cameraMatch.master.degenerate': {
-    en: 'Solve skipped: the vanishing points give a degenerate camera (nearly parallel masters?) — the camera is kept',
-    th: 'ไม่คำนวณกล้อง: จุดลับตาทำให้กล้องผิดรูป (เส้นหลักเกือบขนานกัน?) — คงกล้องเดิมไว้',
-  },
-  'cameraMatch.master.nearParallel': {
-    en: '⚠ The two masters of axis {axis} are nearly parallel ({deg}) — their crossing point (the VP) is unstable',
-    th: '⚠ เส้นหลักสองเส้นของแกน {axis} เกือบขนานกัน ({deg}) — จุดตัด (จุดลับตา) ไม่นิ่ง',
-  },
-  'cameraMatch.master.edgeKept': { en: ' · {n} master lines kept (masters never move)', th: ' · คงเส้นหลักไว้ {n} เส้น (เส้นหลักไม่ถูกขยับ)' },
-
-  // --- overlay show modes ---------------------------------------------------------------------------------------
-  'cameraMatch.showModes.drag': { en: 'While dragging', th: 'ขณะลาก' },
-  'cameraMatch.showModes.always': { en: 'Always', th: 'เปิดตลอด' },
-  'cameraMatch.showModes.off': { en: 'Off', th: 'ปิด' },
-
-  // --- object / room groups -------------------------------------------------------------------------------------
-  'cameraMatch.groups.object': { en: 'object', th: 'วัตถุ' },
-  'cameraMatch.groups.room': { en: 'room', th: 'ห้อง' },
-  'cameraMatch.groups.pickerAria': { en: 'Image', th: 'ภาพที่ใช้' },
-  'cameraMatch.groups.cropButton': { en: 'Crop · object', th: 'ภาพครอป · วัตถุ' },
-  'cameraMatch.groups.wideButton': { en: 'Full mock-up · room', th: 'Mock-up เต็ม · ห้อง' },
-  'cameraMatch.groups.cropToast': { en: 'Object lines (crop)', th: 'เส้นวัตถุ (ภาพครอป)' },
-  'cameraMatch.groups.wideToast': { en: 'Room lines (full mock-up)', th: 'เส้นห้อง (Mock-up เต็ม)' },
-  'cameraMatch.groups.editing': { en: 'Editing', th: 'กำลังแก้' },
-  'cameraMatch.groups.lineOf': { en: '{group} lines', th: 'เส้น{group}' },
-  'cameraMatch.groups.count': { en: '({n} lines)', th: '({n} เส้น)' },
-  'cameraMatch.groups.otherCount': { en: '{n} {group} lines', th: 'เส้น{group} {n} เส้น' },
-  'cameraMatch.groups.roomHowTo': {
-    en: 'Trace walls, floor, ceiling, door/window frames',
-    th: 'วาดตามผนัง พื้น เพดาน ขอบประตู/หน้าต่าง',
-  },
-  'cameraMatch.groups.objectHowTo': { en: 'Trace the edges of the object', th: 'วาดตามขอบของวัตถุ' },
-  'cameraMatch.groups.sharedCamera': { en: 'Both sets share one camera', th: 'ทั้งสองชุดใช้กล้องตัวเดียวกัน' },
-  'cameraMatch.groups.ghost': { en: '👻 Faint {group} lines {state}', th: '👻 เส้น{group}จาง ๆ {state}' },
-  'cameraMatch.groups.rays': { en: '↔ Full rays {state}', th: '↔ เส้นต่อถึงขอบ {state}' },
-  'cameraMatch.groups.roomSeedNote': {
-    en: 'Place room lines yourself along walls, floor, ceiling, door (the current camera does not know the room shape)',
-    th: 'เส้นห้องวางเองตามขอบผนัง พื้น เพดาน ประตู (กล้องปัจจุบันไม่รู้รูปทรงห้อง)',
-  },
-
-  // --- line snapping --------------------------------------------------------------------------------------------
-  'cameraMatch.snap.label': { en: 'Line snap', th: 'แม่เหล็กเส้น' },
-  'cameraMatch.snap.title': { en: 'Line snap (hold Alt = off temporarily)', th: 'แม่เหล็กเส้น (Alt ค้าง = ปิดชั่วคราว)' },
-  'cameraMatch.snap.button': { en: '🧲 Line snap {state}', th: '🧲 แม่เหล็กเส้น {state}' },
-  'cameraMatch.snap.toast': { en: 'Line snap: {state}', th: 'แม่เหล็กเส้น: {state}' },
-  'cameraMatch.snap.unlink': { en: 'Unlink corners', th: 'แยกมุมที่เชื่อม' },
-  'cameraMatch.snap.unlinked': { en: 'Unlinked the corners of the selected line', th: 'แยกมุมของเส้นที่เลือกแล้ว' },
-  'cameraMatch.snap.undoLinesAria': { en: 'Undo line edit', th: 'ย้อนการแก้เส้น' },
-  'cameraMatch.snap.redoLinesAria': { en: 'Redo line edit', th: 'ทำซ้ำการแก้เส้น' },
-  'cameraMatch.snap.kinds.endpoint': { en: 'corner', th: 'มุม' },
-  'cameraMatch.snap.kinds.intersection': { en: 'intersection', th: 'จุดตัด' },
-  'cameraMatch.snap.kinds.segment': { en: 'on line', th: 'บนเส้น' },
-  'cameraMatch.snap.cornerSplit': {
-    en: 'Corner split — this line end now moves freely',
-    th: 'แยกมุมแล้ว — ปลายเส้นนี้ลากได้อิสระ',
-  },
-  'cameraMatch.snap.cornerLinked': {
-    en: 'Corner linked — the ends move together (long-press the corner to split)',
-    th: 'เชื่อมมุมแล้ว — ลากไปด้วยกัน (กดค้างที่มุมเพื่อแยก)',
-  },
-  'cameraMatch.snap.dragLineAria': { en: 'Drag whole line', th: 'ลากทั้งเส้น' },
-  'cameraMatch.snap.endpointAria': { en: 'Line end', th: 'ปลายเส้น' },
-  'cameraMatch.snap.tipDrag': {
-    en: 'Drag a line end (or the whole line) near a line of another axis to snap to its end, intersection or segment · snapped ends become ',
-    th: 'ลากปลายเส้น (หรือลากทั้งเส้น) ไปใกล้เส้นแกนอื่น จะดูดติดปลายเส้น จุดตัด หรือบนเส้น · ปลายที่ดูดติดกันจะ',
-  },
-  'cameraMatch.snap.tipLinked': { en: 'one shared corner', th: 'เชื่อมเป็นมุมเดียว' },
-  'cameraMatch.snap.tipLinkedRest': { en: ' (yellow box) and move together · ', th: ' (กรอบเหลือง) ลากไปด้วยกัน · ' },
-  'cameraMatch.snap.tipHold': { en: 'Long-press', th: 'กดค้าง' },
-  'cameraMatch.snap.tipHoldRest': {
-    en: ' a corner to split it · hold Alt while dragging to turn snapping off temporarily',
-    th: 'ที่มุมเพื่อแยก · กด Alt ค้างขณะลากเพื่อปิดแม่เหล็กชั่วคราว',
-  },
-  'cameraMatch.snap.tipLinkedEnds': { en: ' · {n} linked ends', th: ' · เชื่อมอยู่ {n} ปลาย' },
-
-  // --- vanishing points -----------------------------------------------------------------------------------------
-  'cameraMatch.vp.heading': { en: 'Consolidated vanishing points', th: 'จุดลับตารวม' },
-  'cameraMatch.vp.headingNote': { en: '(best point from all lines of each axis)', th: '(หาจุดที่ดีที่สุดจากทุกเส้นของแกน)' },
-  'cameraMatch.vp.parallelTag': { en: ' · ∞ parallel', th: ' · ∞ ขนาน' },
-  'cameraMatch.vp.outliers': { en: ' · ⚠ {n} outlier lines', th: ' · ⚠ {n} เส้นเพี้ยน' },
-  'cameraMatch.vp.needTwo': { en: 'Needs at least 2 lines', th: 'ต้องมีอย่างน้อย 2 เส้น' },
-  'cameraMatch.vp.consolidateAxis': { en: 'Merge {axis}', th: 'รวม {axis}' },
-  'cameraMatch.vp.parallelAxis': { en: 'Parallel {axis}', th: 'ขนาน {axis}' },
-  'cameraMatch.vp.consolidateTitle': {
-    en: 'Merge all lines into one vanishing point (auto mode)',
-    th: 'รวมทุกเส้นเข้าจุดลับตาเดียว (โหมดอัตโนมัติ)',
-  },
-  'cameraMatch.vp.parallelTitle': {
-    en: 'Make all lines parallel along their mean direction (vanishing point at ∞)',
-    th: 'ทำให้ทุกเส้นขนานกันตามทิศเฉลี่ย (จุดลับตาที่ ∞)',
-  },
-  'cameraMatch.vp.hintFar': { en: 'vanishing point is {diag} image diagonals away', th: 'จุดลับตาไกล {diag} ทแยงภาพ' },
-  'cameraMatch.vp.hintCheap': { en: 'parallel costs almost no accuracy ({deg})', th: 'ขนานแทบไม่เสียความแม่น ({deg})' },
-  'cameraMatch.vp.hint': {
-    en: '💡 Axis {axis} looks parallel — {why} · tap to use "Parallel {axis}"',
-    th: '💡 แกน {axis} น่าจะขนาน — {why} · แตะเพื่อใช้ "ขนาน {axis}"',
-  },
-  'cameraMatch.vp.consolidateAll': { en: '🎯 Merge vanishing points', th: '🎯 รวมจุดลับตา' },
-  'cameraMatch.vp.lock': { en: '🔒 Lock to vanishing point {state}', th: '🔒 ล็อกเข้าจุดลับตา {state}' },
-  'cameraMatch.vp.lockToastOn': {
-    en: 'Lock to vanishing point: on (axes with 3+ lines)',
-    th: 'ล็อกเข้าจุดลับตา: เปิด (แกนที่มี 3 เส้นขึ้นไป)',
-  },
-  'cameraMatch.vp.lockToastOff': { en: 'Lock to vanishing point: off', th: 'ล็อกเข้าจุดลับตา: ปิด' },
-  'cameraMatch.vp.legendColor': {
-    en: 'Line outline = angle off the vanishing point:',
-    th: 'สีขอบเส้น = มุมเพี้ยนจากจุดลับตา:',
-  },
-  'cameraMatch.vp.legendOutlier': { en: '⚠ = gross outlier (excluded)', th: '⚠ = เส้นเพี้ยนมาก (ไม่นำมาคิด)' },
-  'cameraMatch.vp.legendConsolidate': { en: 'Merge vanishing points', th: 'รวมจุดลับตา' },
-  'cameraMatch.vp.legendConsolidateText': {
-    en: ' rotates every line about its midpoint (or its linked corner) through one point',
-    th: 'หมุนทุกเส้นรอบจุดกึ่งกลาง (หรือรอบมุมที่เชื่อม) ให้ผ่านจุดเดียวกัน',
-  },
-  'cameraMatch.vp.legendLock': { en: 'Lock', th: 'ล็อก' },
-  'cameraMatch.vp.legendLockText': {
-    en: ': a dragged line end keeps the line pointing at the vanishing point of the other lines',
-    th: ': ลากปลายเส้นแล้วเส้นยังชี้ไปจุดลับตาของเส้นอื่น',
-  },
-  'cameraMatch.vp.legendParallel': { en: 'Parallel', th: 'ขนาน' },
-  'cameraMatch.vp.legendParallelText': {
-    en: ': vanishing point at ∞ (e.g. the Z axis of a level camera, no pitch) — the camera is constrained so that axis is parallel to the image · two parallel axes (one-point perspective) need a locked lens or point pairs',
-    th: ': จุดลับตาอยู่ที่ ∞ (เช่น แกน Z ของกล้องที่ตั้งตรง ไม่ก้ม/เงย) — กล้องจะถูกบังคับให้แกนนั้นขนานกับภาพ · ขนาน 2 แกน (ทัศนมิติจุดเดียว) ต้องล็อกเลนส์หรือใช้คู่จุด',
-  },
-  'cameraMatch.vp.overlayParallel': { en: '∞ {axis} parallel', th: '∞ {axis} ขนาน' },
-  'cameraMatch.vp.axisName': { en: ' on axis {axis}', th: ' แกน {axis}' },
-  'cameraMatch.vp.sameAxis': { en: ' on the same axis', th: 'ในแกนเดียวกัน' },
-  'cameraMatch.vp.needTwoBeforeParallel': {
-    en: 'Needs at least 2 lines{name} before making them parallel',
-    th: 'ต้องมีอย่างน้อย 2 เส้น{name} ก่อนทำให้ขนาน',
-  },
-  'cameraMatch.vp.needTwoBeforeConsolidate': {
-    en: 'Needs at least 2 lines{name} before merging vanishing points',
-    th: 'ต้องมีอย่างน้อย 2 เส้น{name} ก่อนรวมจุดลับตา',
-  },
-  'cameraMatch.vp.madeParallel': {
-    en: 'Lines{name} made parallel · adjusted {n} lines to the mean direction (vanishing point at ∞)',
-    th: 'ทำให้เส้น{name} ขนานกันแล้ว · ปรับ {n} เส้นตามทิศเฉลี่ย (จุดลับตาที่ ∞)',
-  },
-  'cameraMatch.vp.alreadyParallel': { en: 'Lines{name} are already parallel', th: 'เส้น{name} ขนานกันอยู่แล้ว' },
-  'cameraMatch.vp.consolidated': {
-    en: 'Merged vanishing point{name} · adjusted {n} lines to pass through one point',
-    th: 'รวมจุดลับตา{name}แล้ว · ปรับ {n} เส้นให้ผ่านจุดลับตาเดียวกัน',
-  },
-  'cameraMatch.vp.alreadyConsolidated': {
-    en: 'Lines{name} already pass through one vanishing point',
-    th: 'เส้น{name}ผ่านจุดลับตาเดียวกันอยู่แล้ว',
-  },
-  'cameraMatch.vp.skippedLinked': {
-    en: ' · skipped {n} lines (both ends linked — unlink first)',
-    th: ' · ข้าม {n} เส้น (ปลายทั้งสองเชื่อมมุมอยู่ — แยกมุมก่อน)',
-  },
-  'cameraMatch.vp.skipBothLinked': { en: 'both ends linked', th: 'ปลายทั้งสองเชื่อมมุมอยู่' },
-  'cameraMatch.vp.skipPivotAtVp': { en: 'pivot is at the vanishing point', th: 'จุดหมุนอยู่ที่จุดลับตา' },
-  'cameraMatch.vp.onePointNoLens': {
-    en: 'Two parallel axes (one-point perspective): the lens cannot be found from lines — lock the lens or use point pairs',
-    th: 'แกนขนาน 2 แกน (ทัศนมิติจุดเดียว) หาเลนส์จากเส้นไม่ได้ — ล็อกเลนส์ หรือใช้คู่จุดแทน',
-  },
-  'cameraMatch.vp.oneRealVpNoLens': {
-    en: 'Only one finite vanishing point: the lens cannot be found from lines — add lines on another axis, lock the lens or use point pairs',
-    th: 'มีจุดลับตาจริงแค่แกนเดียว หาเลนส์จากเส้นไม่ได้ — เพิ่มเส้นอีกแกน ล็อกเลนส์ หรือใช้คู่จุด',
-  },
-  'cameraMatch.vp.principalNeedsThree': {
-    en: 'The principal point needs three finite vanishing points (an axis is parallel)',
-    th: 'หาจุดกึ่งกลางภาพต้องใช้จุดลับตาจริงครบ 3 แกน (มีแกนขนานอยู่)',
-  },
-
-  // --- line detection (edge view → guide-line candidates) -------------------------------------------------------
-  'cameraMatch.detect.heading': { en: 'Detect lines', th: 'ตรวจหาเส้น' },
-  'cameraMatch.detect.headingNote': { en: '(straight edges → candidate guide lines)', th: '(ขอบตรงในภาพ → เส้นนำสายตาที่เสนอ)' },
-  'cameraMatch.detect.run': { en: '🔍 Detect lines', th: '🔍 ตรวจหาเส้น' },
-  'cameraMatch.detect.runTitle': {
-    en: 'Find straight edges in this view and propose them as guide lines (also runs when image edges are set to Always)',
-    th: 'หาขอบตรงในภาพนี้แล้วเสนอเป็นเส้นนำสายตา (ทำงานเองด้วยเมื่อเลือกแสดงขอบภาพ “ตลอด”)',
-  },
-  'cameraMatch.detect.running': { en: 'Detecting lines… {pct}%', th: 'กำลังตรวจหาเส้น… {pct}%' },
-  'cameraMatch.detect.found': {
-    en: '{n} candidates (X {x} · Y {y} · Z {z} · no axis {u}) — click one to accept · 1/2/3 sets its axis · Esc clears',
-    th: 'พบ {n} เส้น (X {x} · Y {y} · Z {z} · ยังไม่มีแกน {u}) — คลิกเพื่อรับ · 1/2/3 เปลี่ยนแกน · Esc ล้าง',
-  },
-  'cameraMatch.detect.none': { en: 'No straight edges found — try a shorter minimum length', th: 'ไม่พบขอบตรง — ลองลดความยาวขั้นต่ำ' },
-  'cameraMatch.detect.minLen': { en: 'Min length {px} px', th: 'ยาวอย่างน้อย {px} px' },
-  'cameraMatch.detect.acceptAll': { en: 'Accept all {axis}', th: 'รับทั้งหมดแกน {axis}' },
-  'cameraMatch.detect.acceptedAll': { en: '{n} lines added on {axis}', th: 'เพิ่ม {n} เส้นบนแกน {axis}' },
-  'cameraMatch.detect.accepted': { en: 'Added {name} from a detected edge', th: 'เพิ่ม {name} จากขอบที่ตรวจพบ' },
-  'cameraMatch.detect.needAxis': {
-    en: 'This candidate has no axis yet: hover it and press 1/2/3, or right-click it',
-    th: 'เส้นนี้ยังไม่มีแกน: ชี้เมาส์แล้วกด 1/2/3 หรือคลิกขวา',
-  },
-  'cameraMatch.detect.clear': { en: 'Clear candidates', th: 'ล้างเส้นที่เสนอ' },
-  'cameraMatch.detect.cleared': { en: 'Candidates cleared', th: 'ล้างเส้นที่เสนอแล้ว' },
-  'cameraMatch.detect.axisSet': { en: 'Candidate → {axis}', th: 'เส้นที่เสนอ → แกน {axis}' },
-  'cameraMatch.detect.chooserAria': { en: 'Axis of the candidate line', th: 'แกนของเส้นที่เสนอ' },
-  'cameraMatch.detect.chooserAccept': { en: 'Accept as {axis}', th: 'รับเป็นแกน {axis}' },
-  'cameraMatch.detect.legend': {
-    en: 'Dashed thin lines = detected candidates in the axis colour (grey = no axis yet). They are not saved until you accept them.',
-    th: 'เส้นประบาง = เส้นที่ตรวจพบ สีตามแกน (สีเทา = ยังไม่มีแกน) จะยังไม่ถูกบันทึกจนกว่าจะกดรับ',
-  },
-
-  // --- axis origin (where the world / object origin sits in the mock-up) ----------------------------------------
-  'cameraMatch.axisOrigin.heading': { en: 'Axis origin', th: 'จุดกำเนิดแกน' },
-  'cameraMatch.axisOrigin.headingNote': { en: '(where X, Y and Z meet in the image)', th: '(จุดที่แกน X, Y, Z มาบรรจบกันในภาพ)' },
-  'cameraMatch.axisOrigin.notSet': { en: 'Not set — the model origin keeps its current pixel', th: 'ยังไม่ได้ตั้ง — จุดกำเนิดของโมเดลอยู่ที่พิกเซลเดิม' },
-  'cameraMatch.axisOrigin.setAt': { en: 'Origin at ({x}, {y}) px', th: 'จุดกำเนิดที่ ({x}, {y}) px' },
-  'cameraMatch.axisOrigin.fromOther': {
-    en: 'Using the {group} origin (none set on this view)',
-    th: 'ใช้จุดกำเนิดของ{group} (มุมมองนี้ยังไม่ได้ตั้ง)',
-  },
-  'cameraMatch.axisOrigin.candidates': { en: '{n} corner candidates', th: 'มุมที่เสนอ {n} จุด' },
-  'cameraMatch.axisOrigin.noCandidates': {
-    en: 'No corner where X, Y and Z lines meet yet — draw or accept lines through a corner',
-    th: 'ยังไม่มีมุมที่เส้น X, Y, Z มาบรรจบกัน — วาดหรือรับเส้นที่ผ่านมุม',
-  },
-  'cameraMatch.axisOrigin.useDetected': { en: 'Include detected lines', th: 'รวมเส้นที่ตรวจพบ' },
-  'cameraMatch.axisOrigin.place': { en: 'Set origin', th: 'ตั้งจุดกำเนิด' },
-  'cameraMatch.axisOrigin.placeTitle': {
-    en: 'Origin mode: click a corner marker (or any point — it snaps to line crossings) or drag the ringed handle. Esc ends.',
-    th: 'โหมดจุดกำเนิด: คลิกมุมที่เสนอ (หรือจุดใดก็ได้ — จะดูดเข้าจุดตัดของเส้น) หรือลากวงแหวน กด Esc เพื่อจบ',
-  },
-  'cameraMatch.axisOrigin.modeOn': {
-    en: 'Click a corner (or drag the ringed handle) to set the axis origin · Alt = no snap · Esc to finish',
-    th: 'คลิกมุม (หรือลากวงแหวน) เพื่อตั้งจุดกำเนิดแกน · Alt = ไม่ดูด · Esc เพื่อจบ',
-  },
-  'cameraMatch.axisOrigin.clear': { en: 'Clear origin', th: 'ล้างจุดกำเนิด' },
-  'cameraMatch.axisOrigin.cleared': { en: 'Axis origin cleared', th: 'ล้างจุดกำเนิดแกนแล้ว' },
-  'cameraMatch.axisOrigin.set': { en: 'Axis origin set — the world origin now sits on that pixel', th: 'ตั้งจุดกำเนิดแกนแล้ว — จุดกำเนิดของโลกอยู่ที่พิกเซลนั้น' },
-  'cameraMatch.axisOrigin.setNoCam': {
-    en: 'Axis origin stored; the camera will use it after the next line solve',
-    th: 'เก็บจุดกำเนิดแกนแล้ว กล้องจะใช้หลังคำนวณจากเส้นครั้งถัดไป',
-  },
-  'cameraMatch.axisOrigin.flip': { en: '±{axis}', th: '±{axis}' },
-  'cameraMatch.axisOrigin.flipTitle': {
-    en: 'Flip the {axis} direction (turns {other} with it so the axes stay right-handed)',
-    th: 'กลับทิศแกน {axis} (แกน {other} กลับตามด้วยเพื่อให้ยังเป็นระบบมือขวา)',
-  },
-  'cameraMatch.axisOrigin.flipped': { en: 'Flipped {a} and {b} (180° turn about {c})', th: 'กลับทิศ {a} และ {b} แล้ว (หมุน 180° รอบ {c})' },
-  'cameraMatch.axisOrigin.objectNote': {
-    en: 'Object view: the model origin (its pivot with the default whole-object placement) sits on this corner. Move the object with G afterwards if needed.',
-    th: 'มุมมองวัตถุ: จุดกำเนิดของโมเดล (pivot เมื่อใช้ตำแหน่งวัตถุค่าเริ่มต้น) จะอยู่ที่มุมนี้ ย้ายวัตถุด้วย G ภายหลังได้',
-  },
-  'cameraMatch.axisOrigin.roomNote': {
-    en: 'Room view: the world origin sits on this corner; the object keeps its placement relative to it.',
-    th: 'มุมมองห้อง: จุดกำเนิดของโลกอยู่ที่มุมนี้ วัตถุยังคงตำแหน่งเดิมเทียบกับจุดนี้',
-  },
-  'cameraMatch.axisOrigin.legend': {
-    en: 'Small 3-colour corners = candidates (click to use). Drag the ringed handle to move the origin; it snaps to corners and line crossings, Alt = no snap. Tripod: X red, Y green, Z blue.',
-    th: 'มุมเล็กสามสี = จุดที่เสนอ (คลิกเพื่อใช้) ลากวงแหวน เพื่อย้ายจุดกำเนิด จะดูดเข้ามุมและจุดตัดของเส้น กด Alt = ไม่ดูด ขาตั้งสามแกน: X แดง, Y เขียว, Z น้ำเงิน',
-  },
-  'cameraMatch.axisOrigin.candAria': { en: 'Corner candidate {i}', th: 'มุมที่เสนอ {i}' },
-  'cameraMatch.axisOrigin.handleAria': { en: 'Axis origin handle', th: 'ที่จับจุดกำเนิดแกน' },
-
-  // --- edge alignment -------------------------------------------------------------------------------------------
-  'cameraMatch.edges.heading': { en: 'Line vs image edges', th: 'เทียบเส้นกับขอบภาพ' },
-  'cameraMatch.edges.headingNote': { en: '(guide line ↔ real edges in the mock-up)', th: '(เส้นนำสายตา ↔ ขอบจริงใน Mock-up)' },
-  'cameraMatch.edges.loading': { en: 'Finding image edges…', th: 'กำลังหาขอบภาพ…' },
-  'cameraMatch.edges.showAria': { en: 'Show image edges', th: 'แสดงขอบภาพ' },
-  'cameraMatch.edges.line': { en: 'Line', th: 'เส้น' },
-  'cameraMatch.edges.none': { en: 'No edge found', th: 'ไม่พบขอบ' },
-  'cameraMatch.edges.noneNearLine': { en: 'No image edge near the line', th: 'ไม่พบขอบภาพใกล้เส้น' },
-  'cameraMatch.edges.offBy': { en: '{px} off the image edge', th: 'ห่างขอบภาพ {px}' },
-  'cameraMatch.edges.score': { en: 'score {score}% · edge found {coverage}%', th: 'คะแนน {score}% · เจอขอบ {coverage}%' },
-  'cameraMatch.edges.snapped': { en: ' · snapped', th: ' · ดูดแล้ว' },
-  'cameraMatch.edges.loupeSnapped': { en: 'image edge', th: 'ขอบภาพ' },
-  'cameraMatch.edges.loupeOff': { en: '{px} off edge', th: 'ห่างขอบ {px}' },
-  'cameraMatch.edges.refineSelected': { en: '🧷 Snap to image edge (selected line)', th: '🧷 ดูดเข้าขอบภาพ (เส้นที่เลือก)' },
-  'cameraMatch.edges.refineAll': { en: 'All lines', th: 'ทุกเส้น' },
-  'cameraMatch.edges.snapWhileDrag': { en: 'Snap while dragging {state}', th: 'ดูดขณะลาก {state}' },
-  'cameraMatch.edges.snapWhileDragToastOn': {
-    en: 'Snap to image edge while dragging: on (Alt = off temporarily)',
-    th: 'ดูดเข้าขอบภาพขณะลาก: เปิด (Alt = ปิดชั่วคราว)',
-  },
-  'cameraMatch.edges.snapWhileDragToastOff': { en: 'Snap to image edge while dragging: off', th: 'ดูดเข้าขอบภาพขณะลาก: ปิด' },
-  'cameraMatch.edges.legendLead': {
-    en: 'The image dims and detected edges glow · short ticks from line to edge = actual offset:',
-    th: 'ภาพจะมืดลงและขอบที่ตรวจพบเรืองแสง · ขีดสั้น ๆ จากเส้นไปขอบ = ระยะห่างจริง:',
-  },
-  'cameraMatch.edges.legendRefine': { en: 'Snap to image edge', th: 'ดูดเข้าขอบภาพ' },
-  'cameraMatch.edges.legendRefineText': {
-    en: ' fits the line to edges within ±8 px (linked corners stay put), undoable',
-    th: 'ฟิตเส้นเข้ากับขอบในแถบ ±8 px (มุมที่เชื่อมอยู่ไม่ขยับ) ย้อนได้',
-  },
-  'cameraMatch.edges.bothLinked': { en: 'Both ends linked — not moved', th: 'ปลายทั้งสองเชื่อมมุมอยู่ — ไม่ขยับ' },
-  'cameraMatch.edges.noClearEdge': {
-    en: 'No clear image edge in the band around the line',
-    th: 'ไม่พบขอบภาพที่ชัดพอในแถบรอบเส้น',
-  },
-  'cameraMatch.edges.refinedOne': { en: 'Snapped to image edge · offset {before} → {after}', th: 'ดูดเข้าขอบภาพแล้ว · ห่าง {before} → {after}' },
-  'cameraMatch.edges.alreadyOnEdge': { en: 'Already on the image edge', th: 'อยู่บนขอบภาพแล้ว' },
-  'cameraMatch.edges.preparing': { en: 'Preparing image edges… try again', th: 'กำลังเตรียมขอบภาพ… ลองอีกครั้ง' },
-  'cameraMatch.edges.selectFirst': {
-    en: 'Select a line first (tap it) or press “All lines”',
-    th: 'เลือกเส้นก่อน (แตะเส้น) หรือกด “ทุกเส้น”',
-  },
-  'cameraMatch.edges.refinedMany': {
-    en: 'Snapped {n} lines to image edges · mean offset {before} → {after} px',
-    th: 'ดูดเข้าขอบภาพแล้ว {n} เส้น · ห่างขอบเฉลี่ย {before} → {after} px',
-  },
-  'cameraMatch.edges.nothingToRefine': {
-    en: 'Lines are already on image edges, or no clear edge is near them',
-    th: 'เส้นอยู่บนขอบภาพแล้ว หรือไม่พบขอบที่ชัดพอใกล้เส้น',
-  },
-  'cameraMatch.edges.skippedLinked': { en: ' · skipped {n} lines (both ends linked)', th: ' · ข้าม {n} เส้น (ปลายทั้งสองเชื่อมมุม)' },
-
-  // --- model difference view ------------------------------------------------------------------------------------
-  'cameraMatch.diff.aria': { en: 'Difference view', th: 'โหมดเทียบความต่าง' },
-  'cameraMatch.diff.label': {
-    en: 'Difference view against the model (model ⊖ image: match = dark, mismatch = bright) · default off',
-    th: 'โหมดเทียบความต่างกับโมเดล (โมเดล ⊖ ภาพ: ตรงกัน = มืด, เพี้ยน = เรืองแสง) · ค่าเริ่มต้น ปิด',
-  },
-  'cameraMatch.diff.badge': { en: 'Difference', th: 'เทียบความต่าง' },
-  'cameraMatch.diff.solveFailed': { en: 'Camera solve failed · using the last one', th: 'คำนวณกล้องไม่สำเร็จ · ใช้ค่าล่าสุด' },
-
-  // --- object ↔ room ------------------------------------------------------------------------------------------
-  'cameraMatch.room.aligned': {
-    en: 'Object aligned with the room (same X/Y axes as the walls)',
-    th: 'วัตถุวางตรงกับห้อง (แกน X/Y เดียวกับผนัง)',
-  },
-  'cameraMatch.room.yawLead': { en: 'Object rotated from the room by', th: 'วัตถุหมุนจากแนวห้อง' },
-  'cameraMatch.room.yawRest': {
-    en: '(about Z) · only vertical/horizon/lens are shared · rotate the model {deg}° about Z when placing it in the room (in the export)',
-    th: '(รอบแกน Z) · ใช้ร่วมกันแค่แนวตั้ง/เส้นขอบฟ้า/เลนส์ · ตอนวางโมเดลในห้องให้หมุน Z {deg}° (อยู่ในไฟล์ส่งออก)',
-  },
-  'cameraMatch.room.agreement': { en: 'Object ↔ room agreement', th: 'ความสอดคล้อง วัตถุ↔ห้อง' },
-  'cameraMatch.room.bandGood': { en: '✔ Match', th: '✔ ตรงกัน' },
-  'cameraMatch.room.bandWarn': { en: '≈ Close', th: '≈ ใกล้เคียง' },
-  'cameraMatch.room.bandBad': { en: '✖ Mismatch', th: '✖ ไม่ตรง' },
-  'cameraMatch.room.max': { en: ' · max {deg}', th: ' · สูงสุด {deg}' },
-  'cameraMatch.room.drawBoth': {
-    en: 'Draw both object (crop) and room (full mock-up) lines to check that they agree',
-    th: 'วาดเส้นทั้งวัตถุ (ภาพครอป) และห้อง (Mock-up เต็ม) เพื่อตรวจว่าตรงกันไหม',
-  },
-  'cameraMatch.room.highlighted': {
-    en: 'Highlighted the {n} worst lines of axis {axis}',
-    th: 'ไฮไลต์ {n} เส้นที่เพี้ยนที่สุดของแกน {axis}',
-  },
-  'cameraMatch.room.needTwoBoth': { en: 'Needs ≥ 2 lines in both sets', th: 'ต้องมี ≥ 2 เส้นทั้งสองชุด' },
-  'cameraMatch.room.diffParallel': { en: '∞ direction difference', th: 'มุมต่างของทิศ ∞' },
-  'cameraMatch.room.diffVp': { en: 'vanishing point difference', th: 'มุมต่างของจุดลับตา' },
-  'cameraMatch.room.notParallel': { en: ' · ⚠ {groups} lines not parallel', th: ' · ⚠ เส้น{groups}ไม่ขนาน' },
-  'cameraMatch.room.showLines': { en: 'Show lines', th: 'ดูเส้น' },
-  'cameraMatch.room.lenses': { en: 'Lens: object {obj} · room {room}', th: 'เลนส์ วัตถุ {obj} · ห้อง {room}' },
-  'cameraMatch.room.legendAngle': { en: 'Angle difference:', th: 'มุมต่าง:' },
-  'cameraMatch.room.legendLens': { en: 'Lens difference', th: 'เลนส์ต่าง' },
-  'cameraMatch.room.legendTap': {
-    en: 'Tap an axis to highlight its worst lines (both sets)',
-    th: 'แตะแกนเพื่อไฮไลต์เส้นที่เพี้ยนที่สุด (ทั้งสองชุด)',
-  },
-  'cameraMatch.room.solvedFromLines': { en: 'Solved from lines{groups} · lens {lens} mm{yaw}{extra}', th: 'คำนวณจากเส้นแล้ว{groups} · เลนส์ {lens} มม.{yaw}{extra}' },
-  'cameraMatch.room.solvedGroupsTag': { en: ' (object + room)', th: ' (วัตถุ+ห้อง)' },
-  'cameraMatch.room.solvedYawTag': { en: ' · object yaw {deg}°', th: ' · วัตถุหมุน {deg}°' },
-  'cameraMatch.room.solvedExtraTag': { en: ' · {extra}', th: ' · {extra}' },
-  'cameraMatch.room.needTwoInTwoAxes': { en: 'Needs at least 2 lines in 2 axes', th: 'ต้องมีเส้นอย่างน้อย 2 เส้น ใน 2 แกน' },
-  'cameraMatch.room.solveFailed': { en: 'Solve failed', th: 'คำนวณไม่สำเร็จ' },
-  'cameraMatch.room.needXYBoth': {
-    en: 'Needs X/Y lines in both object and room to find the yaw (keeping the previous one)',
-    th: 'ต้องมีเส้นแกน X/Y ทั้งในวัตถุและห้อง จึงจะหามุมหมุนได้ (ใช้มุมเดิม)',
-  },
-
-  // --- source files (dev save API) ------------------------------------------------------------------------------
-  'editor.files.openedDraft': { en: 'Opened your unsaved work (stored on this device)', th: 'เปิดงานที่แก้ค้างไว้ (บันทึกในเครื่องนี้)' },
-  'editor.files.openedFile': { en: 'Opened the work from the source files', th: 'เปิดงานจากไฟล์ต้นฉบับ' },
-  'editor.files.statusNew': { en: 'new file', th: 'ไฟล์ใหม่' },
-  'editor.files.statusModified': { en: 'differs from file', th: 'แก้ต่างจากไฟล์' },
-  'editor.files.noApi': {
-    en: 'Saving to files works under npm run dev — use the download buttons for now',
-    th: 'บันทึกลงไฟล์ได้เมื่อรัน npm run dev — ตอนนี้ใช้ปุ่มดาวน์โหลดไฟล์แทน',
-  },
-  'editor.files.glbFailed': { en: 'GLB export failed', th: 'ส่งออก GLB ไม่สำเร็จ' },
-  'editor.files.nothingToSave': {
-    en: 'Source files already match the work — nothing to save',
-    th: 'ไฟล์ต้นฉบับตรงกับงานแล้ว ไม่มีอะไรต้องบันทึก',
-  },
-  'editor.files.saveFailed': { en: 'Saving to files failed: {err}', th: 'บันทึกลงไฟล์ไม่สำเร็จ: {err}' },
-  'editor.files.saved': { en: 'Saved {n} files — ready to commit', th: 'บันทึกลงไฟล์แล้ว {n} ไฟล์ — commit ได้เลย' },
-  'editor.files.revertConfirm': {
-    en: 'Revert to the source files? Work not saved to files will be lost',
-    th: 'กลับไปใช้ไฟล์ต้นฉบับ? งานที่ยังไม่บันทึกลงไฟล์จะหายไป',
-  },
-  'editor.files.reverted': { en: 'Reverted to the source files', th: 'กลับไปใช้ไฟล์ต้นฉบับแล้ว' },
-  'editor.files.downloaded': { en: 'Downloaded {name} — put it in {dir}', th: 'ดาวน์โหลด {name} แล้ว — วางไว้ใน {dir}' },
-  'editor.files.copyFailed': { en: 'Could not copy — select the text and copy it yourself', th: 'คัดลอกไม่ได้ — เลือกข้อความแล้วคัดลอกเอง' },
-  'editor.files.unsaved': { en: '● Unsaved work (not in the source files)', th: '● มีงานที่ยังไม่บันทึกลงไฟล์' },
-  'editor.files.saveButton': { en: '💾 Save to source files', th: '💾 บันทึกลงไฟล์ต้นฉบับ' },
-  'editor.files.saving': { en: 'Saving…', th: 'กำลังบันทึก…' },
-  'editor.files.keepDraft': { en: 'Keep my work', th: 'ใช้งานที่ค้างไว้ต่อ' },
-  'editor.files.revert': { en: 'Revert to files', th: 'กลับไปใช้ไฟล์' },
-  'editor.files.heading': { en: 'Source files (committable)', th: 'ไฟล์ต้นฉบับ (commit ได้)' },
-  'editor.files.download': { en: 'Download', th: 'ดาวน์โหลด' },
-  'editor.files.inSync': { en: '✓ Work matches the source files', th: '✓ งานตรงกับไฟล์ต้นฉบับ' },
-  'editor.files.noFilesYet': { en: ' (no files yet — nothing edited)', th: ' (ยังไม่มีไฟล์ — ยังไม่ได้แก้อะไร)' },
-  'editor.files.includeGlb': { en: 'Include', th: 'รวม' },
-  'editor.files.includeGlbNote': { en: '(edited model)', th: '(โมเดลที่แก้แล้ว)' },
-  'editor.files.savedList': { en: 'Saved:', th: 'บันทึกแล้ว:' },
-  'editor.files.thenCommit': { en: 'then commit with:', th: 'แล้ว commit ด้วย:' },
-  'editor.files.copied': { en: 'Copied ✓', th: 'คัดลอกแล้ว ✓' },
-  'editor.files.copyCommand': { en: 'Copy command', th: 'คัดลอกคำสั่ง' },
-  'editor.files.devHintLead': { en: 'You can save straight to files when this page is opened from', th: 'บันทึกลงไฟล์โดยตรงได้เมื่อเปิดหน้านี้จาก' },
-  'editor.files.devHintIn': { en: '(in the folder', th: '(ในโฟลเดอร์' },
-  'editor.files.devHintThen': { en: ') — for now, download and put the files in', th: ') — ตอนนี้กดดาวน์โหลดแล้ววางไฟล์ไว้ใน' },
-  'editor.files.devHintTail': { en: 'yourself', th: 'เองได้' },
-} as const satisfies Record<string, Record<Locale, string>>;
-
-export type MessageKey = keyof typeof MESSAGES;
-type Params = Record<string, string | number>;
-
-/** Format `key` in `locale`, replacing `{name}` placeholders (unknown placeholders are left as is). */
-export function format(locale: Locale, key: MessageKey, params?: Params): string {
-  const s: string = MESSAGES[key][locale];
-  return params ? s.replace(/\{(\w+)\}/g, (m, k: string) => (k in params ? String(params[k]) : m)) : s;
-}
-
-/** Format in the current UI locale. */
-export const t = (key: MessageKey, params?: Params): string => format(LOCALE, key, params);
-
-/** Flat `{ key: text }` table for one locale — the shape of `src/locales/<locale>.json`. */
-export function localeTable(locale: Locale): Record<MessageKey, string> {
-  const out = {} as Record<MessageKey, string>;
-  for (const k of Object.keys(MESSAGES) as MessageKey[]) out[k] = MESSAGES[k][locale];
-  return out;
-}
-
-// ---------------------------------------------------------------------------------------------------------------
-// Typed facade used by components/state modules (kept so call sites stay short and parameter names checked).
+import { t } from '../i18n/core.ts';
 
 const AXES = ['X', 'Y', 'Z'] as const;
 const onOff = (on: boolean): string => t(on ? 'editor.common.on' : 'editor.common.off');
@@ -689,77 +11,175 @@ const st = (on: boolean) => ({ state: onOff(on) });
 
 export const T = {
   common: {
-    on: t('editor.common.on'),
-    off: t('editor.common.off'),
+    get on() {
+      return t('editor.common.on');
+    },
+    get off() {
+      return t('editor.common.off');
+    },
     onOff,
     lines: (n: number) => t('editor.common.lines', { n }),
-    undo: t('editor.common.undo'),
-    redo: t('editor.common.redo'),
-    redoNext: t('editor.common.redoNext'),
-    undoAria: t('editor.common.undoAria'),
-    redoAria: t('editor.common.redoAria'),
+    get undo() {
+      return t('editor.common.undo');
+    },
+    get redo() {
+      return t('editor.common.redo');
+    },
+    get redoNext() {
+      return t('editor.common.redoNext');
+    },
+    get undoAria() {
+      return t('editor.common.undoAria');
+    },
+    get redoAria() {
+      return t('editor.common.redoAria');
+    },
     mm: (v: string | number) => t('editor.common.mm', { v }),
   },
 
   /** 2D view-window zoom / pan of the mock-up and camera-match stage. */
   stage: {
-    zoomIn: t('editor.stage.zoomIn'),
-    zoomOut: t('editor.stage.zoomOut'),
-    fit: t('editor.stage.fit'),
+    get zoomIn() {
+      return t('editor.stage.zoomIn');
+    },
+    get zoomOut() {
+      return t('editor.stage.zoomOut');
+    },
+    get fit() {
+      return t('editor.stage.fit');
+    },
     zoomLabel: (pct: number) => t('editor.stage.zoomLabel', { pct }),
-    mockHint: t('editor.stage.mockHint'),
-    focus: t('editor.stage.focus'),
-    focusTitle: t('editor.stage.focusTitle'),
-    crop: t('editor.stage.crop'),
-    cropTitle: t('editor.stage.cropTitle'),
-    follow: t('editor.stage.follow'),
-    followTitle: t('editor.stage.followTitle'),
+    get mockHint() {
+      return t('editor.stage.mockHint');
+    },
+    get focus() {
+      return t('editor.stage.focus');
+    },
+    get focusTitle() {
+      return t('editor.stage.focusTitle');
+    },
+    get crop() {
+      return t('editor.stage.crop');
+    },
+    get cropTitle() {
+      return t('editor.stage.cropTitle');
+    },
+    get follow() {
+      return t('editor.stage.follow');
+    },
+    get followTitle() {
+      return t('editor.stage.followTitle');
+    },
   },
 
   /** Part origin: Set Origin, Affect Only Origins and the 3D cursor (Blender names). */
   origin: {
-    heading: t('editor.origin.heading'),
-    options: t('editor.origin.options'),
-    transform: t('editor.origin.transform'),
-    affectOnly: t('editor.origin.affectOnly'),
-    origins: t('editor.origin.origins'),
-    affect: t('editor.origin.affect'),
-    affectTitle: t('editor.origin.affectTitle'),
-    affectOnHint: t('editor.origin.affectOnHint'),
-    noRotate: t('editor.origin.noRotate'),
+    get heading() {
+      return t('editor.origin.heading');
+    },
+    get options() {
+      return t('editor.origin.options');
+    },
+    get transform() {
+      return t('editor.origin.transform');
+    },
+    get affectOnly() {
+      return t('editor.origin.affectOnly');
+    },
+    get origins() {
+      return t('editor.origin.origins');
+    },
+    get affect() {
+      return t('editor.origin.affect');
+    },
+    get affectTitle() {
+      return t('editor.origin.affectTitle');
+    },
+    get affectOnHint() {
+      return t('editor.origin.affectOnHint');
+    },
+    get noRotate() {
+      return t('editor.origin.noRotate');
+    },
     toast: (on: boolean) => t('editor.origin.toast', st(on)),
-    setOrigin: t('editor.origin.setOrigin'),
-    toGeometry: t('editor.origin.toGeometry'),
-    toCursor: t('editor.origin.toCursor'),
-    geometryToOrigin: t('editor.origin.geometryToOrigin'),
-    toBottom: t('editor.origin.toBottom'),
-    reset: t('editor.origin.reset'),
-    local: t('editor.origin.local'),
-    world: t('editor.origin.world'),
-    localSub: t('editor.origin.localSub'),
-    worldSub: t('editor.origin.worldSub'),
-    spaceAria: t('editor.origin.spaceAria'),
+    get setOrigin() {
+      return t('editor.origin.setOrigin');
+    },
+    get toGeometry() {
+      return t('editor.origin.toGeometry');
+    },
+    get toCursor() {
+      return t('editor.origin.toCursor');
+    },
+    get geometryToOrigin() {
+      return t('editor.origin.geometryToOrigin');
+    },
+    get toBottom() {
+      return t('editor.origin.toBottom');
+    },
+    get reset() {
+      return t('editor.origin.reset');
+    },
+    get local() {
+      return t('editor.origin.local');
+    },
+    get world() {
+      return t('editor.origin.world');
+    },
+    get localSub() {
+      return t('editor.origin.localSub');
+    },
+    get worldSub() {
+      return t('editor.origin.worldSub');
+    },
+    get spaceAria() {
+      return t('editor.origin.spaceAria');
+    },
     snapped: (kind: 'vertex' | 'edge' | 'face' | 'bbox' | 'grid') => t('editor.origin.snapped', { what: t(`editor.origin.kind.${kind}`) }),
   },
   cursor: {
-    place: t('editor.cursor.place'),
-    placeTitle: t('editor.cursor.placeTitle'),
-    hint: t('editor.cursor.hint'),
-    reset: t('editor.cursor.reset'),
+    get place() {
+      return t('editor.cursor.place');
+    },
+    get placeTitle() {
+      return t('editor.cursor.placeTitle');
+    },
+    get hint() {
+      return t('editor.cursor.hint');
+    },
+    get reset() {
+      return t('editor.cursor.reset');
+    },
   },
   tool: {
-    aria: t('editor.tool.aria'),
-    move: t('editor.tool.move'),
-    rotate: t('editor.tool.rotate'),
-    scale: t('editor.tool.scale'),
-    moveTitle: t('editor.tool.moveTitle'),
-    rotateTitle: t('editor.tool.rotateTitle'),
-    scaleTitle: t('editor.tool.scaleTitle'),
+    get aria() {
+      return t('editor.tool.aria');
+    },
+    get move() {
+      return t('editor.tool.move');
+    },
+    get rotate() {
+      return t('editor.tool.rotate');
+    },
+    get scale() {
+      return t('editor.tool.scale');
+    },
+    get moveTitle() {
+      return t('editor.tool.moveTitle');
+    },
+    get rotateTitle() {
+      return t('editor.tool.rotateTitle');
+    },
+    get scaleTitle() {
+      return t('editor.tool.scaleTitle');
+    },
   },
   /** Status / header text of a running G / R / S modal transform. */
   modal: {
     name: (kind: 'grab' | 'rotate' | 'scale') => t(`editor.modal.${kind}`),
-    originOnly: t('editor.modal.originOnly'),
+    get originOnly() {
+      return t('editor.modal.originOnly');
+    },
     free: (x: string, y: string, z: string) => t('editor.modal.free', { x, y, z }),
     dist: (v: string) => t('editor.modal.dist', { v }),
     rot: (v: string) => t('editor.modal.rot', { v }),
@@ -767,343 +187,731 @@ export const T = {
     along: (space: 'global' | 'local', axis: string) => t('editor.modal.along', { space: t(`editor.modal.${space}`), axis }),
     keys: (snapOn: boolean) => t('editor.modal.keys', { snap: onOff(snapOn) }),
   },
-  keysTip: t('editor.keys.tip'),
-  del: {
-    confirm: t('editor.del.confirm'),
-    ok: t('editor.del.ok'),
-    cancel: t('editor.del.cancel'),
+  get keysTip() {
+    return t('editor.keys.tip');
   },
-  selectAll: t('editor.select.all'),
+  del: {
+    get confirm() {
+      return t('editor.del.confirm');
+    },
+    get ok() {
+      return t('editor.del.ok');
+    },
+    get cancel() {
+      return t('editor.del.cancel');
+    },
+  },
+  get selectAll() {
+    return t('editor.select.all');
+  },
   /** Whole-object placement (Object mode on the root). */
   place: {
-    scope: t('editor.place.scope'),
-    scopePart: t('editor.place.scopePart'),
-    scopeObject: t('editor.place.scopeObject'),
-    scopePartTitle: t('editor.place.scopePartTitle'),
-    scopeObjectTitle: t('editor.place.scopeObjectTitle'),
-    rootRow: t('editor.place.rootRow'),
+    get scope() {
+      return t('editor.place.scope');
+    },
+    get scopePart() {
+      return t('editor.place.scopePart');
+    },
+    get scopeObject() {
+      return t('editor.place.scopeObject');
+    },
+    get scopePartTitle() {
+      return t('editor.place.scopePartTitle');
+    },
+    get scopeObjectTitle() {
+      return t('editor.place.scopeObjectTitle');
+    },
+    get rootRow() {
+      return t('editor.place.rootRow');
+    },
     rootRowSub: (name: string) => t('editor.place.rootRowSub', { name }),
-    heading: t('editor.place.heading'),
-    location: t('editor.place.location'),
-    rotation: t('editor.place.rotation'),
-    scale: t('editor.place.scale'),
+    get heading() {
+      return t('editor.place.heading');
+    },
+    get location() {
+      return t('editor.place.location');
+    },
+    get rotation() {
+      return t('editor.place.rotation');
+    },
+    get scale() {
+      return t('editor.place.scale');
+    },
     dims: (x: string, y: string, z: string, base: string) => t('editor.place.dims', { x, y, z, base }),
-    scaleLocked: t('editor.place.scaleLocked'),
-    scaleUnlock: t('editor.place.scaleUnlock'),
-    scaleWarn: t('editor.place.scaleWarn'),
-    scaleBlocked: t('editor.place.scaleBlocked'),
-    floorSnap: t('editor.place.floorSnap'),
-    floorSnapTitle: t('editor.place.floorSnapTitle'),
-    dropToFloor: t('editor.place.dropToFloor'),
-    clear: t('editor.place.clear'),
+    get scaleLocked() {
+      return t('editor.place.scaleLocked');
+    },
+    get scaleUnlock() {
+      return t('editor.place.scaleUnlock');
+    },
+    get scaleWarn() {
+      return t('editor.place.scaleWarn');
+    },
+    get scaleBlocked() {
+      return t('editor.place.scaleBlocked');
+    },
+    get floorSnap() {
+      return t('editor.place.floorSnap');
+    },
+    get floorSnapTitle() {
+      return t('editor.place.floorSnapTitle');
+    },
+    get dropToFloor() {
+      return t('editor.place.dropToFloor');
+    },
+    get clear() {
+      return t('editor.place.clear');
+    },
     clearOf: (kind: 'position' | 'rotation' | 'scale') =>
       t(kind === 'position' ? 'editor.place.clearLocation' : kind === 'rotation' ? 'editor.place.clearRotation' : 'editor.place.clearScale'),
     cleared: (what: string) => t('editor.place.cleared', { what }),
-    cameraNote: t('editor.place.cameraNote'),
-    bake: t('editor.place.bake'),
-    bakeTitle: t('editor.place.bakeTitle'),
-    axes: [t('editor.place.axisX'), t('editor.place.axisY'), t('editor.place.axisZ')],
+    get cameraNote() {
+      return t('editor.place.cameraNote');
+    },
+    get bake() {
+      return t('editor.place.bake');
+    },
+    get bakeTitle() {
+      return t('editor.place.bakeTitle');
+    },
+    get axes() {
+      return [t('editor.place.axisX'), t('editor.place.axisY'), t('editor.place.axisZ')];
+    },
   },
   /** Part panel labels, Blender axis names; fields stay in glTF order (x, y = up, z = front). */
   part: {
-    position: t('editor.part.position'),
-    size: t('editor.part.size'),
-    rotation: t('editor.part.rotation'),
-    posLabels: [t('editor.part.posX'), t('editor.part.posZ'), t('editor.part.posY')],
-    sizeLabels: [t('editor.part.width'), t('editor.part.height'), t('editor.part.depth')],
-    rotLabels: [t('editor.part.rotX'), t('editor.part.rotZ'), t('editor.part.rotY')],
+    get position() {
+      return t('editor.part.position');
+    },
+    get size() {
+      return t('editor.part.size');
+    },
+    get rotation() {
+      return t('editor.part.rotation');
+    },
+    get posLabels() {
+      return [t('editor.part.posX'), t('editor.part.posZ'), t('editor.part.posY')];
+    },
+    get sizeLabels() {
+      return [t('editor.part.width'), t('editor.part.height'), t('editor.part.depth')];
+    },
+    get rotLabels() {
+      return [t('editor.part.rotX'), t('editor.part.rotZ'), t('editor.part.rotY')];
+    },
   },
   sidebarToast: (on: boolean) => t('editor.sidebar.toast', st(on)),
 
   /** Showing an overlay: while dragging / always / never. */
   showModes: {
-    drag: t('cameraMatch.showModes.drag'),
-    always: t('cameraMatch.showModes.always'),
-    off: t('cameraMatch.showModes.off'),
+    get drag() {
+      return t('editor.match.showModes.drag');
+    },
+    get always() {
+      return t('editor.match.showModes.always');
+    },
+    get off() {
+      return t('editor.match.showModes.off');
+    },
   },
 
   groups: {
-    object: t('cameraMatch.groups.object'),
-    room: t('cameraMatch.groups.room'),
-    pickerAria: t('cameraMatch.groups.pickerAria'),
-    cropButton: t('cameraMatch.groups.cropButton'),
-    wideButton: t('cameraMatch.groups.wideButton'),
-    cropToast: t('cameraMatch.groups.cropToast'),
-    wideToast: t('cameraMatch.groups.wideToast'),
-    editing: t('cameraMatch.groups.editing'),
-    lineOf: (group: string) => t('cameraMatch.groups.lineOf', { group }),
-    count: (n: number) => t('cameraMatch.groups.count', { n }),
-    otherCount: (group: string, n: number) => t('cameraMatch.groups.otherCount', { group, n }),
-    roomHowTo: t('cameraMatch.groups.roomHowTo'),
-    objectHowTo: t('cameraMatch.groups.objectHowTo'),
-    sharedCamera: t('cameraMatch.groups.sharedCamera'),
-    ghost: (group: string, on: boolean) => t('cameraMatch.groups.ghost', { group, ...st(on) }),
-    rays: (on: boolean) => t('cameraMatch.groups.rays', st(on)),
-    roomSeedNote: t('cameraMatch.groups.roomSeedNote'),
+    get object() {
+      return t('editor.match.groups.object');
+    },
+    get room() {
+      return t('editor.match.groups.room');
+    },
+    get pickerAria() {
+      return t('editor.match.groups.pickerAria');
+    },
+    get cropButton() {
+      return t('editor.match.groups.cropButton');
+    },
+    get wideButton() {
+      return t('editor.match.groups.wideButton');
+    },
+    get cropToast() {
+      return t('editor.match.groups.cropToast');
+    },
+    get wideToast() {
+      return t('editor.match.groups.wideToast');
+    },
+    get editing() {
+      return t('editor.match.groups.editing');
+    },
+    lineOf: (group: string) => t('editor.match.groups.lineOf', { group }),
+    count: (n: number) => t('editor.match.groups.count', { n }),
+    otherCount: (group: string, n: number) => t('editor.match.groups.otherCount', { group, n }),
+    get roomHowTo() {
+      return t('editor.match.groups.roomHowTo');
+    },
+    get objectHowTo() {
+      return t('editor.match.groups.objectHowTo');
+    },
+    get sharedCamera() {
+      return t('editor.match.groups.sharedCamera');
+    },
+    ghost: (group: string, on: boolean) => t('editor.match.groups.ghost', { group, ...st(on) }),
+    rays: (on: boolean) => t('editor.match.groups.rays', st(on)),
+    get roomSeedNote() {
+      return t('editor.match.groups.roomSeedNote');
+    },
   },
 
   snap: {
-    label: t('cameraMatch.snap.label'),
-    title: t('cameraMatch.snap.title'),
-    button: (on: boolean) => t('cameraMatch.snap.button', st(on)),
-    toast: (on: boolean) => t('cameraMatch.snap.toast', st(on)),
-    unlink: t('cameraMatch.snap.unlink'),
-    unlinked: t('cameraMatch.snap.unlinked'),
-    undoLinesAria: t('cameraMatch.snap.undoLinesAria'),
-    redoLinesAria: t('cameraMatch.snap.redoLinesAria'),
-    kinds: {
-      endpoint: t('cameraMatch.snap.kinds.endpoint'),
-      intersection: t('cameraMatch.snap.kinds.intersection'),
-      segment: t('cameraMatch.snap.kinds.segment'),
+    get label() {
+      return t('editor.match.snap.label');
     },
-    cornerSplit: t('cameraMatch.snap.cornerSplit'),
-    cornerLinked: t('cameraMatch.snap.cornerLinked'),
-    dragLineAria: t('cameraMatch.snap.dragLineAria'),
-    endpointAria: t('cameraMatch.snap.endpointAria'),
-    tipDrag: t('cameraMatch.snap.tipDrag'),
-    tipLinked: t('cameraMatch.snap.tipLinked'),
-    tipLinkedRest: t('cameraMatch.snap.tipLinkedRest'),
-    tipHold: t('cameraMatch.snap.tipHold'),
-    tipHoldRest: t('cameraMatch.snap.tipHoldRest'),
-    tipLinkedEnds: (n: number) => t('cameraMatch.snap.tipLinkedEnds', { n }),
+    get title() {
+      return t('editor.match.snap.title');
+    },
+    button: (on: boolean) => t('editor.match.snap.button', st(on)),
+    toast: (on: boolean) => t('editor.match.snap.toast', st(on)),
+    get unlink() {
+      return t('editor.match.snap.unlink');
+    },
+    get unlinked() {
+      return t('editor.match.snap.unlinked');
+    },
+    get undoLinesAria() {
+      return t('editor.match.snap.undoLinesAria');
+    },
+    get redoLinesAria() {
+      return t('editor.match.snap.redoLinesAria');
+    },
+    kinds: {
+      get endpoint() {
+        return t('editor.match.snap.kinds.endpoint');
+      },
+      get intersection() {
+        return t('editor.match.snap.kinds.intersection');
+      },
+      get segment() {
+        return t('editor.match.snap.kinds.segment');
+      },
+    },
+    get cornerSplit() {
+      return t('editor.match.snap.cornerSplit');
+    },
+    get cornerLinked() {
+      return t('editor.match.snap.cornerLinked');
+    },
+    get dragLineAria() {
+      return t('editor.match.snap.dragLineAria');
+    },
+    get endpointAria() {
+      return t('editor.match.snap.endpointAria');
+    },
+    get tipDrag() {
+      return t('editor.match.snap.tipDrag');
+    },
+    get tipLinked() {
+      return t('editor.match.snap.tipLinked');
+    },
+    get tipLinkedRest() {
+      return t('editor.match.snap.tipLinkedRest');
+    },
+    get tipHold() {
+      return t('editor.match.snap.tipHold');
+    },
+    get tipHoldRest() {
+      return t('editor.match.snap.tipHoldRest');
+    },
+    tipLinkedEnds: (n: number) => t('editor.match.snap.tipLinkedEnds', { n }),
   },
 
   /** Master guide line per axis. `name` = a line label such as "X2". */
   master: {
-    set: t('cameraMatch.master.set'),
-    setTitle: (axis: string) => t('cameraMatch.master.setTitle', { axis }),
-    label: (axis: string) => t('cameraMatch.master.label', { axis }),
-    selectAria: (axis: string) => t('cameraMatch.master.selectAria', { axis }),
-    option: (name: string) => t('cameraMatch.master.option', { name }),
-    cycle: t('cameraMatch.master.cycle'),
-    cycleAria: (axis: string) => t('cameraMatch.master.cycleAria', { axis }),
-    isMaster: (axis: string) => t('cameraMatch.master.isMaster', { axis }),
-    setToast: (name: string, axis: string) => t('cameraMatch.master.setToast', { name, axis }),
-    promoted: (name: string, axis: string) => t('cameraMatch.master.promoted', { name, axis }),
-    onlyMaster: (axis: string) => t('cameraMatch.master.onlyMaster', { axis }),
-    menuAria: t('cameraMatch.master.menuAria'),
-    menuClose: t('cameraMatch.master.menuClose'),
-    legend: t('cameraMatch.master.legend'),
-    legendText: t('cameraMatch.master.legendText'),
-    deleteSelected: t('cameraMatch.master.deleteSelected'),
-    label2: (axis: string) => t('cameraMatch.master.label2', { axis }),
-    select2Aria: (axis: string) => t('cameraMatch.master.select2Aria', { axis }),
-    none: t('cameraMatch.master.none'),
-    toggleSet: t('cameraMatch.master.toggleSet'),
-    toggleUnset: t('cameraMatch.master.toggleUnset'),
-    toggleTitle: (axis: string) => t('cameraMatch.master.toggleTitle', { axis }),
-    isMaster1: (axis: string) => t('cameraMatch.master.isMaster1', { axis }),
-    isMaster2: (axis: string) => t('cameraMatch.master.isMaster2', { axis }),
-    addSecond: t('cameraMatch.master.addSecond'),
-    replaceOldest: (name: string) => t('cameraMatch.master.replaceOldest', { name }),
-    secondToast: (name: string, axis: string) => t('cameraMatch.master.secondToast', { name, axis }),
-    replacedOldestToast: (old: string, m1: string, m2: string, axis: string) => t('cameraMatch.master.replacedOldestToast', { old, m1, m2, axis }),
-    parallelOne: (name: string, axis: string) => t('cameraMatch.master.parallelOne', { name, axis }),
-    parallelIgnored: (name: string) => t('cameraMatch.master.parallelIgnored', { name }),
-    unsetToast: (name: string, axis: string) => t('cameraMatch.master.unsetToast', { name, axis }),
-    keepOne: (axis: string) => t('cameraMatch.master.keepOne', { axis }),
-    nearParallel: (axis: string, deg: string) => t('cameraMatch.master.nearParallel', { axis, deg }),
-    degenerate: t('cameraMatch.master.degenerate'),
-    edgeKept: (n: number) => t('cameraMatch.master.edgeKept', { n }),
+    get set() {
+      return t('editor.match.master.set');
+    },
+    setTitle: (axis: string) => t('editor.match.master.setTitle', { axis }),
+    label: (axis: string) => t('editor.match.master.label', { axis }),
+    selectAria: (axis: string) => t('editor.match.master.selectAria', { axis }),
+    option: (name: string) => t('editor.match.master.option', { name }),
+    get cycle() {
+      return t('editor.match.master.cycle');
+    },
+    cycleAria: (axis: string) => t('editor.match.master.cycleAria', { axis }),
+    isMaster: (axis: string) => t('editor.match.master.isMaster', { axis }),
+    setToast: (name: string, axis: string) => t('editor.match.master.setToast', { name, axis }),
+    promoted: (name: string, axis: string) => t('editor.match.master.promoted', { name, axis }),
+    onlyMaster: (axis: string) => t('editor.match.master.onlyMaster', { axis }),
+    get menuAria() {
+      return t('editor.match.master.menuAria');
+    },
+    get menuClose() {
+      return t('editor.match.master.menuClose');
+    },
+    get legend() {
+      return t('editor.match.master.legend');
+    },
+    get legendText() {
+      return t('editor.match.master.legendText');
+    },
+    get deleteSelected() {
+      return t('editor.match.master.deleteSelected');
+    },
+    label2: (axis: string) => t('editor.match.master.label2', { axis }),
+    select2Aria: (axis: string) => t('editor.match.master.select2Aria', { axis }),
+    get none() {
+      return t('editor.match.master.none');
+    },
+    get toggleSet() {
+      return t('editor.match.master.toggleSet');
+    },
+    get toggleUnset() {
+      return t('editor.match.master.toggleUnset');
+    },
+    toggleTitle: (axis: string) => t('editor.match.master.toggleTitle', { axis }),
+    isMaster1: (axis: string) => t('editor.match.master.isMaster1', { axis }),
+    isMaster2: (axis: string) => t('editor.match.master.isMaster2', { axis }),
+    get addSecond() {
+      return t('editor.match.master.addSecond');
+    },
+    replaceOldest: (name: string) => t('editor.match.master.replaceOldest', { name }),
+    secondToast: (name: string, axis: string) => t('editor.match.master.secondToast', { name, axis }),
+    replacedOldestToast: (old: string, m1: string, m2: string, axis: string) => t('editor.match.master.replacedOldestToast', { old, m1, m2, axis }),
+    parallelOne: (name: string, axis: string) => t('editor.match.master.parallelOne', { name, axis }),
+    parallelIgnored: (name: string) => t('editor.match.master.parallelIgnored', { name }),
+    unsetToast: (name: string, axis: string) => t('editor.match.master.unsetToast', { name, axis }),
+    keepOne: (axis: string) => t('editor.match.master.keepOne', { axis }),
+    nearParallel: (axis: string, deg: string) => t('editor.match.master.nearParallel', { axis, deg }),
+    get degenerate() {
+      return t('editor.match.master.degenerate');
+    },
+    edgeKept: (n: number) => t('editor.match.master.edgeKept', { n }),
   },
 
   vp: {
-    heading: t('cameraMatch.vp.heading'),
-    headingNote: t('cameraMatch.vp.headingNote'),
-    parallelTag: t('cameraMatch.vp.parallelTag'),
-    outliers: (n: number) => t('cameraMatch.vp.outliers', { n }),
-    needTwo: t('cameraMatch.vp.needTwo'),
-    consolidateAxis: (axis: string) => t('cameraMatch.vp.consolidateAxis', { axis }),
-    parallelAxis: (axis: string) => t('cameraMatch.vp.parallelAxis', { axis }),
-    consolidateTitle: t('cameraMatch.vp.consolidateTitle'),
-    parallelTitle: t('cameraMatch.vp.parallelTitle'),
-    hintFar: (diag: string) => t('cameraMatch.vp.hintFar', { diag }),
-    hintCheap: (deg: string) => t('cameraMatch.vp.hintCheap', { deg }),
-    hint: (axis: string, why: string) => t('cameraMatch.vp.hint', { axis, why }),
-    consolidateAll: t('cameraMatch.vp.consolidateAll'),
-    lock: (on: boolean) => t('cameraMatch.vp.lock', st(on)),
-    lockToast: (on: boolean) => t(on ? 'cameraMatch.vp.lockToastOn' : 'cameraMatch.vp.lockToastOff'),
-    legendColor: t('cameraMatch.vp.legendColor'),
-    legendOutlier: t('cameraMatch.vp.legendOutlier'),
-    legendConsolidate: t('cameraMatch.vp.legendConsolidate'),
-    legendConsolidateText: t('cameraMatch.vp.legendConsolidateText'),
-    legendLock: t('cameraMatch.vp.legendLock'),
-    legendLockText: t('cameraMatch.vp.legendLockText'),
-    legendParallel: t('cameraMatch.vp.legendParallel'),
-    legendParallelText: t('cameraMatch.vp.legendParallelText'),
-    overlayParallel: (axis: string) => t('cameraMatch.vp.overlayParallel', { axis }),
+    get heading() {
+      return t('editor.match.vp.heading');
+    },
+    get headingNote() {
+      return t('editor.match.vp.headingNote');
+    },
+    get parallelTag() {
+      return t('editor.match.vp.parallelTag');
+    },
+    outliers: (n: number) => t('editor.match.vp.outliers', { n }),
+    get needTwo() {
+      return t('editor.match.vp.needTwo');
+    },
+    consolidateAxis: (axis: string) => t('editor.match.vp.consolidateAxis', { axis }),
+    parallelAxis: (axis: string) => t('editor.match.vp.parallelAxis', { axis }),
+    get consolidateTitle() {
+      return t('editor.match.vp.consolidateTitle');
+    },
+    get parallelTitle() {
+      return t('editor.match.vp.parallelTitle');
+    },
+    hintFar: (diag: string) => t('editor.match.vp.hintFar', { diag }),
+    hintCheap: (deg: string) => t('editor.match.vp.hintCheap', { deg }),
+    hint: (axis: string, why: string) => t('editor.match.vp.hint', { axis, why }),
+    get consolidateAll() {
+      return t('editor.match.vp.consolidateAll');
+    },
+    lock: (on: boolean) => t('editor.match.vp.lock', st(on)),
+    lockToast: (on: boolean) => t(on ? 'editor.match.vp.lockToastOn' : 'editor.match.vp.lockToastOff'),
+    get legendColor() {
+      return t('editor.match.vp.legendColor');
+    },
+    get legendOutlier() {
+      return t('editor.match.vp.legendOutlier');
+    },
+    get legendConsolidate() {
+      return t('editor.match.vp.legendConsolidate');
+    },
+    get legendConsolidateText() {
+      return t('editor.match.vp.legendConsolidateText');
+    },
+    get legendLock() {
+      return t('editor.match.vp.legendLock');
+    },
+    get legendLockText() {
+      return t('editor.match.vp.legendLockText');
+    },
+    get legendParallel() {
+      return t('editor.match.vp.legendParallel');
+    },
+    get legendParallelText() {
+      return t('editor.match.vp.legendParallelText');
+    },
+    overlayParallel: (axis: string) => t('editor.match.vp.overlayParallel', { axis }),
     // consolidate() results
-    axisName: (axis: number) => t('cameraMatch.vp.axisName', { axis: AXES[axis] ?? '?' }),
+    axisName: (axis: number) => t('editor.match.vp.axisName', { axis: AXES[axis] ?? '?' }),
     needTwoBefore: (name: string, parallel: boolean) =>
-      t(parallel ? 'cameraMatch.vp.needTwoBeforeParallel' : 'cameraMatch.vp.needTwoBeforeConsolidate', {
-        name: name || t('cameraMatch.vp.sameAxis'),
+      t(parallel ? 'editor.match.vp.needTwoBeforeParallel' : 'editor.match.vp.needTwoBeforeConsolidate', {
+        name: name || t('editor.match.vp.sameAxis'),
       }),
-    madeParallel: (name: string, n: number) => t('cameraMatch.vp.madeParallel', { name, n }),
-    alreadyParallel: (name: string) => t('cameraMatch.vp.alreadyParallel', { name }),
-    consolidated: (name: string, n: number) => t('cameraMatch.vp.consolidated', { name, n }),
-    alreadyConsolidated: (name: string) => t('cameraMatch.vp.alreadyConsolidated', { name }),
-    skippedLinked: (n: number) => t('cameraMatch.vp.skippedLinked', { n }),
-    skipBothLinked: t('cameraMatch.vp.skipBothLinked'),
-    skipPivotAtVp: t('cameraMatch.vp.skipPivotAtVp'),
+    madeParallel: (name: string, n: number) => t('editor.match.vp.madeParallel', { name, n }),
+    alreadyParallel: (name: string) => t('editor.match.vp.alreadyParallel', { name }),
+    consolidated: (name: string, n: number) => t('editor.match.vp.consolidated', { name, n }),
+    alreadyConsolidated: (name: string) => t('editor.match.vp.alreadyConsolidated', { name }),
+    skippedLinked: (n: number) => t('editor.match.vp.skippedLinked', { n }),
+    get skipBothLinked() {
+      return t('editor.match.vp.skipBothLinked');
+    },
+    get skipPivotAtVp() {
+      return t('editor.match.vp.skipPivotAtVp');
+    },
     // solver messages
-    onePointNoLens: t('cameraMatch.vp.onePointNoLens'),
-    oneRealVpNoLens: t('cameraMatch.vp.oneRealVpNoLens'),
-    principalNeedsThree: t('cameraMatch.vp.principalNeedsThree'),
+    get onePointNoLens() {
+      return t('editor.match.vp.onePointNoLens');
+    },
+    get oneRealVpNoLens() {
+      return t('editor.match.vp.oneRealVpNoLens');
+    },
+    get principalNeedsThree() {
+      return t('editor.match.vp.principalNeedsThree');
+    },
   },
 
   /** Line detection on the edge view (candidates → guide lines). */
   detect: {
-    heading: t('cameraMatch.detect.heading'),
-    headingNote: t('cameraMatch.detect.headingNote'),
-    run: t('cameraMatch.detect.run'),
-    runTitle: t('cameraMatch.detect.runTitle'),
-    running: (pct: number) => t('cameraMatch.detect.running', { pct }),
-    found: (n: number, x: number, y: number, z: number, u: number) => t('cameraMatch.detect.found', { n, x, y, z, u }),
-    none: t('cameraMatch.detect.none'),
-    minLen: (px: number) => t('cameraMatch.detect.minLen', { px }),
-    acceptAll: (axis: string) => t('cameraMatch.detect.acceptAll', { axis }),
-    acceptedAll: (n: number, axis: string) => t('cameraMatch.detect.acceptedAll', { n, axis }),
-    accepted: (name: string) => t('cameraMatch.detect.accepted', { name }),
-    needAxis: t('cameraMatch.detect.needAxis'),
-    clear: t('cameraMatch.detect.clear'),
-    cleared: t('cameraMatch.detect.cleared'),
-    axisSet: (axis: string) => t('cameraMatch.detect.axisSet', { axis }),
-    chooserAria: t('cameraMatch.detect.chooserAria'),
-    chooserAccept: (axis: string) => t('cameraMatch.detect.chooserAccept', { axis }),
-    legend: t('cameraMatch.detect.legend'),
+    get heading() {
+      return t('editor.match.detect.heading');
+    },
+    get headingNote() {
+      return t('editor.match.detect.headingNote');
+    },
+    get run() {
+      return t('editor.match.detect.run');
+    },
+    get runTitle() {
+      return t('editor.match.detect.runTitle');
+    },
+    running: (pct: number) => t('editor.match.detect.running', { pct }),
+    found: (n: number, x: number, y: number, z: number, u: number) => t('editor.match.detect.found', { n, x, y, z, u }),
+    get none() {
+      return t('editor.match.detect.none');
+    },
+    minLen: (px: number) => t('editor.match.detect.minLen', { px }),
+    acceptAll: (axis: string) => t('editor.match.detect.acceptAll', { axis }),
+    acceptedAll: (n: number, axis: string) => t('editor.match.detect.acceptedAll', { n, axis }),
+    accepted: (name: string) => t('editor.match.detect.accepted', { name }),
+    get needAxis() {
+      return t('editor.match.detect.needAxis');
+    },
+    get clear() {
+      return t('editor.match.detect.clear');
+    },
+    get cleared() {
+      return t('editor.match.detect.cleared');
+    },
+    axisSet: (axis: string) => t('editor.match.detect.axisSet', { axis }),
+    get chooserAria() {
+      return t('editor.match.detect.chooserAria');
+    },
+    chooserAccept: (axis: string) => t('editor.match.detect.chooserAccept', { axis }),
+    get legend() {
+      return t('editor.match.detect.legend');
+    },
   },
 
   /** Axis origin of the mock-up view (not the part origin, T.origin). */
   axisOrigin: {
-    heading: t('cameraMatch.axisOrigin.heading'),
-    headingNote: t('cameraMatch.axisOrigin.headingNote'),
-    notSet: t('cameraMatch.axisOrigin.notSet'),
-    setAt: (x: number, y: number) => t('cameraMatch.axisOrigin.setAt', { x, y }),
-    fromOther: (group: string) => t('cameraMatch.axisOrigin.fromOther', { group }),
-    candidates: (n: number) => t('cameraMatch.axisOrigin.candidates', { n }),
-    noCandidates: t('cameraMatch.axisOrigin.noCandidates'),
-    useDetected: t('cameraMatch.axisOrigin.useDetected'),
-    place: t('cameraMatch.axisOrigin.place'),
-    placeTitle: t('cameraMatch.axisOrigin.placeTitle'),
-    modeOn: t('cameraMatch.axisOrigin.modeOn'),
-    clear: t('cameraMatch.axisOrigin.clear'),
-    cleared: t('cameraMatch.axisOrigin.cleared'),
-    set: t('cameraMatch.axisOrigin.set'),
-    setNoCam: t('cameraMatch.axisOrigin.setNoCam'),
-    flip: (axis: string) => t('cameraMatch.axisOrigin.flip', { axis }),
-    flipTitle: (axis: string, other: string) => t('cameraMatch.axisOrigin.flipTitle', { axis, other }),
-    flipped: (a: string, b: string, c: string) => t('cameraMatch.axisOrigin.flipped', { a, b, c }),
-    objectNote: t('cameraMatch.axisOrigin.objectNote'),
-    roomNote: t('cameraMatch.axisOrigin.roomNote'),
-    legend: t('cameraMatch.axisOrigin.legend'),
-    candAria: (i: number) => t('cameraMatch.axisOrigin.candAria', { i }),
-    handleAria: t('cameraMatch.axisOrigin.handleAria'),
+    get heading() {
+      return t('editor.match.axisOrigin.heading');
+    },
+    get headingNote() {
+      return t('editor.match.axisOrigin.headingNote');
+    },
+    get notSet() {
+      return t('editor.match.axisOrigin.notSet');
+    },
+    setAt: (x: number, y: number) => t('editor.match.axisOrigin.setAt', { x, y }),
+    fromOther: (group: string) => t('editor.match.axisOrigin.fromOther', { group }),
+    candidates: (n: number) => t('editor.match.axisOrigin.candidates', { n }),
+    get noCandidates() {
+      return t('editor.match.axisOrigin.noCandidates');
+    },
+    get useDetected() {
+      return t('editor.match.axisOrigin.useDetected');
+    },
+    get place() {
+      return t('editor.match.axisOrigin.place');
+    },
+    get placeTitle() {
+      return t('editor.match.axisOrigin.placeTitle');
+    },
+    get modeOn() {
+      return t('editor.match.axisOrigin.modeOn');
+    },
+    get clear() {
+      return t('editor.match.axisOrigin.clear');
+    },
+    get cleared() {
+      return t('editor.match.axisOrigin.cleared');
+    },
+    get set() {
+      return t('editor.match.axisOrigin.set');
+    },
+    get setNoCam() {
+      return t('editor.match.axisOrigin.setNoCam');
+    },
+    flip: (axis: string) => t('editor.match.axisOrigin.flip', { axis }),
+    flipTitle: (axis: string, other: string) => t('editor.match.axisOrigin.flipTitle', { axis, other }),
+    flipped: (a: string, b: string, c: string) => t('editor.match.axisOrigin.flipped', { a, b, c }),
+    get objectNote() {
+      return t('editor.match.axisOrigin.objectNote');
+    },
+    get roomNote() {
+      return t('editor.match.axisOrigin.roomNote');
+    },
+    get legend() {
+      return t('editor.match.axisOrigin.legend');
+    },
+    candAria: (i: number) => t('editor.match.axisOrigin.candAria', { i }),
+    get handleAria() {
+      return t('editor.match.axisOrigin.handleAria');
+    },
   },
 
   edges: {
-    heading: t('cameraMatch.edges.heading'),
-    headingNote: t('cameraMatch.edges.headingNote'),
-    loading: t('cameraMatch.edges.loading'),
-    showAria: t('cameraMatch.edges.showAria'),
-    line: t('cameraMatch.edges.line'),
-    none: t('cameraMatch.edges.none'),
-    noneNearLine: t('cameraMatch.edges.noneNearLine'),
-    offBy: (px: string) => t('cameraMatch.edges.offBy', { px }),
-    score: (score: number, coverage: number) => t('cameraMatch.edges.score', { score, coverage }),
-    snapped: t('cameraMatch.edges.snapped'),
-    loupeSnapped: t('cameraMatch.edges.loupeSnapped'),
-    loupeOff: (px: string) => t('cameraMatch.edges.loupeOff', { px }),
-    refineSelected: t('cameraMatch.edges.refineSelected'),
-    refineAll: t('cameraMatch.edges.refineAll'),
-    snapWhileDrag: (on: boolean) => t('cameraMatch.edges.snapWhileDrag', st(on)),
+    get heading() {
+      return t('editor.match.edges.heading');
+    },
+    get headingNote() {
+      return t('editor.match.edges.headingNote');
+    },
+    get loading() {
+      return t('editor.match.edges.loading');
+    },
+    get showAria() {
+      return t('editor.match.edges.showAria');
+    },
+    get line() {
+      return t('editor.match.edges.line');
+    },
+    get none() {
+      return t('editor.match.edges.none');
+    },
+    get noneNearLine() {
+      return t('editor.match.edges.noneNearLine');
+    },
+    offBy: (px: string) => t('editor.match.edges.offBy', { px }),
+    score: (score: number, coverage: number) => t('editor.match.edges.score', { score, coverage }),
+    get snapped() {
+      return t('editor.match.edges.snapped');
+    },
+    get loupeSnapped() {
+      return t('editor.match.edges.loupeSnapped');
+    },
+    loupeOff: (px: string) => t('editor.match.edges.loupeOff', { px }),
+    get refineSelected() {
+      return t('editor.match.edges.refineSelected');
+    },
+    get refineAll() {
+      return t('editor.match.edges.refineAll');
+    },
+    snapWhileDrag: (on: boolean) => t('editor.match.edges.snapWhileDrag', st(on)),
     snapWhileDragToast: (on: boolean) =>
-      t(on ? 'cameraMatch.edges.snapWhileDragToastOn' : 'cameraMatch.edges.snapWhileDragToastOff'),
-    legendLead: t('cameraMatch.edges.legendLead'),
-    legendRefine: t('cameraMatch.edges.legendRefine'),
-    legendRefineText: t('cameraMatch.edges.legendRefineText'),
+      t(on ? 'editor.match.edges.snapWhileDragToastOn' : 'editor.match.edges.snapWhileDragToastOff'),
+    get legendLead() {
+      return t('editor.match.edges.legendLead');
+    },
+    get legendRefine() {
+      return t('editor.match.edges.legendRefine');
+    },
+    get legendRefineText() {
+      return t('editor.match.edges.legendRefineText');
+    },
     // edgeAlign / refine results
-    bothLinked: t('cameraMatch.edges.bothLinked'),
-    noClearEdge: t('cameraMatch.edges.noClearEdge'),
-    refinedOne: (before: string, after: string) => t('cameraMatch.edges.refinedOne', { before, after }),
-    alreadyOnEdge: t('cameraMatch.edges.alreadyOnEdge'),
-    preparing: t('cameraMatch.edges.preparing'),
-    selectFirst: t('cameraMatch.edges.selectFirst'),
-    refinedMany: (n: number, before: string, after: string) => t('cameraMatch.edges.refinedMany', { n, before, after }),
-    nothingToRefine: t('cameraMatch.edges.nothingToRefine'),
-    skippedLinked: (n: number) => t('cameraMatch.edges.skippedLinked', { n }),
+    get bothLinked() {
+      return t('editor.match.edges.bothLinked');
+    },
+    get noClearEdge() {
+      return t('editor.match.edges.noClearEdge');
+    },
+    refinedOne: (before: string, after: string) => t('editor.match.edges.refinedOne', { before, after }),
+    get alreadyOnEdge() {
+      return t('editor.match.edges.alreadyOnEdge');
+    },
+    get preparing() {
+      return t('editor.match.edges.preparing');
+    },
+    get selectFirst() {
+      return t('editor.match.edges.selectFirst');
+    },
+    refinedMany: (n: number, before: string, after: string) => t('editor.match.edges.refinedMany', { n, before, after }),
+    get nothingToRefine() {
+      return t('editor.match.edges.nothingToRefine');
+    },
+    skippedLinked: (n: number) => t('editor.match.edges.skippedLinked', { n }),
   },
 
   diff: {
-    aria: t('cameraMatch.diff.aria'),
-    label: t('cameraMatch.diff.label'),
-    badge: t('cameraMatch.diff.badge'),
-    solveFailed: t('cameraMatch.diff.solveFailed'),
+    get aria() {
+      return t('editor.match.diff.aria');
+    },
+    get label() {
+      return t('editor.match.diff.label');
+    },
+    get badge() {
+      return t('editor.match.diff.badge');
+    },
+    get solveFailed() {
+      return t('editor.match.diff.solveFailed');
+    },
   },
 
   room: {
-    aligned: t('cameraMatch.room.aligned'),
-    yawLead: t('cameraMatch.room.yawLead'),
-    yawRest: (deg: string) => t('cameraMatch.room.yawRest', { deg }),
-    agreement: t('cameraMatch.room.agreement'),
-    bandGood: t('cameraMatch.room.bandGood'),
-    bandWarn: t('cameraMatch.room.bandWarn'),
-    bandBad: t('cameraMatch.room.bandBad'),
-    max: (deg: string) => t('cameraMatch.room.max', { deg }),
-    drawBoth: t('cameraMatch.room.drawBoth'),
-    highlighted: (n: number, axis: string) => t('cameraMatch.room.highlighted', { n, axis }),
-    needTwoBoth: t('cameraMatch.room.needTwoBoth'),
-    diffParallel: t('cameraMatch.room.diffParallel'),
-    diffVp: t('cameraMatch.room.diffVp'),
-    notParallel: (groups: string) => t('cameraMatch.room.notParallel', { groups }),
-    showLines: t('cameraMatch.room.showLines'),
-    lenses: (obj: string, room: string) => t('cameraMatch.room.lenses', { obj, room }),
-    legendAngle: t('cameraMatch.room.legendAngle'),
-    legendLens: t('cameraMatch.room.legendLens'),
-    legendTap: t('cameraMatch.room.legendTap'),
+    get aligned() {
+      return t('editor.match.room.aligned');
+    },
+    get yawLead() {
+      return t('editor.match.room.yawLead');
+    },
+    yawRest: (deg: string) => t('editor.match.room.yawRest', { deg }),
+    get agreement() {
+      return t('editor.match.room.agreement');
+    },
+    get bandGood() {
+      return t('editor.match.room.bandGood');
+    },
+    get bandWarn() {
+      return t('editor.match.room.bandWarn');
+    },
+    get bandBad() {
+      return t('editor.match.room.bandBad');
+    },
+    max: (deg: string) => t('editor.match.room.max', { deg }),
+    get drawBoth() {
+      return t('editor.match.room.drawBoth');
+    },
+    highlighted: (n: number, axis: string) => t('editor.match.room.highlighted', { n, axis }),
+    get needTwoBoth() {
+      return t('editor.match.room.needTwoBoth');
+    },
+    get diffParallel() {
+      return t('editor.match.room.diffParallel');
+    },
+    get diffVp() {
+      return t('editor.match.room.diffVp');
+    },
+    notParallel: (groups: string) => t('editor.match.room.notParallel', { groups }),
+    get showLines() {
+      return t('editor.match.room.showLines');
+    },
+    lenses: (obj: string, room: string) => t('editor.match.room.lenses', { obj, room }),
+    get legendAngle() {
+      return t('editor.match.room.legendAngle');
+    },
+    get legendLens() {
+      return t('editor.match.room.legendLens');
+    },
+    get legendTap() {
+      return t('editor.match.room.legendTap');
+    },
     solvedFromLines: (groups: boolean, lens: string, yaw: string | null, extra: string | null) =>
-      t('cameraMatch.room.solvedFromLines', {
-        groups: groups ? t('cameraMatch.room.solvedGroupsTag') : '',
+      t('editor.match.room.solvedFromLines', {
+        groups: groups ? t('editor.match.room.solvedGroupsTag') : '',
         lens,
-        yaw: yaw === null ? '' : t('cameraMatch.room.solvedYawTag', { deg: yaw }),
-        extra: extra ? t('cameraMatch.room.solvedExtraTag', { extra }) : '',
+        yaw: yaw === null ? '' : t('editor.match.room.solvedYawTag', { deg: yaw }),
+        extra: extra ? t('editor.match.room.solvedExtraTag', { extra }) : '',
       }),
-    needTwoInTwoAxes: t('cameraMatch.room.needTwoInTwoAxes'),
-    solveFailed: t('cameraMatch.room.solveFailed'),
-    needXYBoth: t('cameraMatch.room.needXYBoth'),
+    get needTwoInTwoAxes() {
+      return t('editor.match.room.needTwoInTwoAxes');
+    },
+    get solveFailed() {
+      return t('editor.match.room.solveFailed');
+    },
+    get needXYBoth() {
+      return t('editor.match.room.needXYBoth');
+    },
   },
 
   files: {
-    openedDraft: t('editor.files.openedDraft'),
-    openedFile: t('editor.files.openedFile'),
-    statusNew: t('editor.files.statusNew'),
-    statusModified: t('editor.files.statusModified'),
-    noApi: t('editor.files.noApi'),
-    glbFailed: t('editor.files.glbFailed'),
-    nothingToSave: t('editor.files.nothingToSave'),
+    get openedDraft() {
+      return t('editor.files.openedDraft');
+    },
+    get openedFile() {
+      return t('editor.files.openedFile');
+    },
+    get statusNew() {
+      return t('editor.files.statusNew');
+    },
+    get statusModified() {
+      return t('editor.files.statusModified');
+    },
+    get noApi() {
+      return t('editor.files.noApi');
+    },
+    get glbFailed() {
+      return t('editor.files.glbFailed');
+    },
+    get nothingToSave() {
+      return t('editor.files.nothingToSave');
+    },
     saveFailed: (err: string) => t('editor.files.saveFailed', { err }),
     saved: (n: number) => t('editor.files.saved', { n }),
-    revertConfirm: t('editor.files.revertConfirm'),
-    reverted: t('editor.files.reverted'),
+    get revertConfirm() {
+      return t('editor.files.revertConfirm');
+    },
+    get reverted() {
+      return t('editor.files.reverted');
+    },
     downloaded: (name: string, dir: string) => t('editor.files.downloaded', { name, dir }),
-    copyFailed: t('editor.files.copyFailed'),
-    unsaved: t('editor.files.unsaved'),
-    saveButton: t('editor.files.saveButton'),
-    saving: t('editor.files.saving'),
-    keepDraft: t('editor.files.keepDraft'),
-    revert: t('editor.files.revert'),
-    heading: t('editor.files.heading'),
-    download: t('editor.files.download'),
-    inSync: t('editor.files.inSync'),
-    noFilesYet: t('editor.files.noFilesYet'),
-    includeGlb: t('editor.files.includeGlb'),
-    includeGlbNote: t('editor.files.includeGlbNote'),
-    savedList: t('editor.files.savedList'),
-    thenCommit: t('editor.files.thenCommit'),
-    copied: t('editor.files.copied'),
-    copyCommand: t('editor.files.copyCommand'),
-    devHintLead: t('editor.files.devHintLead'),
-    devHintIn: t('editor.files.devHintIn'),
-    devHintThen: t('editor.files.devHintThen'),
-    devHintTail: t('editor.files.devHintTail'),
+    get copyFailed() {
+      return t('editor.files.copyFailed');
+    },
+    get unsaved() {
+      return t('editor.files.unsaved');
+    },
+    get saveButton() {
+      return t('editor.files.saveButton');
+    },
+    get saving() {
+      return t('editor.files.saving');
+    },
+    get keepDraft() {
+      return t('editor.files.keepDraft');
+    },
+    get revert() {
+      return t('editor.files.revert');
+    },
+    get heading() {
+      return t('editor.files.heading');
+    },
+    get download() {
+      return t('editor.files.download');
+    },
+    get inSync() {
+      return t('editor.files.inSync');
+    },
+    get noFilesYet() {
+      return t('editor.files.noFilesYet');
+    },
+    get includeGlb() {
+      return t('editor.files.includeGlb');
+    },
+    get includeGlbNote() {
+      return t('editor.files.includeGlbNote');
+    },
+    get savedList() {
+      return t('editor.files.savedList');
+    },
+    get thenCommit() {
+      return t('editor.files.thenCommit');
+    },
+    get copied() {
+      return t('editor.files.copied');
+    },
+    get copyCommand() {
+      return t('editor.files.copyCommand');
+    },
+    get devHintLead() {
+      return t('editor.files.devHintLead');
+    },
+    get devHintIn() {
+      return t('editor.files.devHintIn');
+    },
+    get devHintThen() {
+      return t('editor.files.devHintThen');
+    },
+    get devHintTail() {
+      return t('editor.files.devHintTail');
+    },
   },
 } as const;

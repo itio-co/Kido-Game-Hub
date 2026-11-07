@@ -8,15 +8,16 @@
   .ver {
     position: absolute;
     z-index: 40;
-    top: calc(4px + env(safe-area-inset-top));
-    right: 6px;
+    /* Bottom-left edge, under the back button: in the top-right corner it sat on the settings button and the DEMO ribbon. */
+    bottom: env(safe-area-inset-bottom);
+    left: 12px;
     margin: 0;
-    font-size: 13px;
+    font-size: 10px;
     font-weight: 700;
     line-height: 1.2;
     color: #fff;
     background: rgba(0, 0, 0, 0.55);
-    padding: 2px 7px;
+    padding: 1px 6px;
     border-radius: 8px;
     pointer-events: none;
   }

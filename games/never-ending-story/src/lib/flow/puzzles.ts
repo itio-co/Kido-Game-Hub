@@ -1,3 +1,4 @@
+import { t, type MessageKey } from '../i18n/core.ts';
 import type { PuzzleKey } from './types';
 
 export type CrossState = { fill: Record<string, string>; sel: string };
@@ -5,13 +6,37 @@ export type JigState = { placed: number[]; sel: number | null };
 export type SlideBlock = { r: number; c: number; len: number; v: 0 | 1; col: string; key?: boolean; label: string };
 export type SlideState = Record<'A' | 'B' | 'K', SlideBlock>;
 
-export const CROSS_SOLUTION: Record<string, string> = { '2,2': 'ง', '2,3': 'า', '2,4': 'ม' };
-export const CROSS_GRID = ['ดาว##', '##า##', '##งาม'];
+/**
+ * The crossword is language-specific, so its grid and letter keys live in the
+ * locale files ('game.crossword.grid', rows split by '|', '#' = blocked cell;
+ * 'game.crossword.keys', letters split by spaces). Every locale uses the same
+ * shape: 1 across (row 0), 2 down (column 2), 3 across (row 2, to be solved).
+ */
 export const CROSS_NUM: Record<string, number> = { '0,0': 1, '0,2': 2, '2,2': 3 };
-export const CROSS_KEYS = ['ง', 'า', 'ม', 'า', 'ว', 'ด', 'ส', 'ล'];
+/** Cells shown pre-filled (1 across and the middle of 2 down). */
+const CROSS_GIVEN = ['0,0', '0,1', '0,2', '1,2'];
+/** Cells the player fills (3 across). */
+const CROSS_BLANK = ['2,2', '2,3', '2,4'];
+
+export function crossGrid(): string[] {
+  return t('game.crossword.grid').split('|');
+}
+
+export function crossKeys(): string[] {
+  return t('game.crossword.keys').split(' ');
+}
+
+function crossLetter(cell: string): string {
+  const [row, col] = cell.split(',').map(Number);
+  return Array.from(crossGrid()[row] ?? '')[col] ?? '';
+}
+
+export function crossSolution(): Record<string, string> {
+  return Object.fromEntries(CROSS_BLANK.map((cell) => [cell, crossLetter(cell)]));
+}
 
 export function freshCross(): CrossState {
-  return { fill: { '0,0': 'ด', '0,1': 'า', '0,2': 'ว', '1,2': 'า' }, sel: '2,3' };
+  return { fill: Object.fromEntries(CROSS_GIVEN.map((cell) => [cell, crossLetter(cell)])), sel: '2,3' };
 }
 
 export function freshJig(): JigState {
@@ -27,7 +52,7 @@ export function freshSlide(): SlideState {
 }
 
 export function crossCorrect(fill: Record<string, string>): boolean {
-  return Object.entries(CROSS_SOLUTION).every(([key, letter]) => fill[key] === letter);
+  return Object.entries(crossSolution()).every(([key, letter]) => fill[key] === letter);
 }
 
 export function jigPosition(index: number): string {
@@ -98,12 +123,7 @@ export function cloneSlide(state: SlideState): SlideState {
 
 export function practiceSetup(game: PuzzleKey, level: number, cross: CrossState, jig: JigState, slide: SlideState): void {
   if (game === 'cross') {
-    const given: [string, string][] = [
-      ['0,0', 'ด'],
-      ['0,1', 'า'],
-      ['0,2', 'ว'],
-      ['1,2', 'า'],
-    ];
+    const given: [string, string][] = CROSS_GIVEN.map((cell) => [cell, crossLetter(cell)]);
     cross.fill = Object.fromEntries(given.slice(0, Math.max(0, 5 - level)));
     cross.sel = '2,2';
   }
@@ -135,21 +155,21 @@ export function starText(hints: number): string {
 
 export const LEVEL_COUNT = 14;
 
-export const LEVEL_THEME: Record<PuzzleKey, { name: string; bg: string; path: string; icon: string }> = {
+export const LEVEL_THEME: Record<PuzzleKey, { nameKey: MessageKey; bg: string; path: string; icon: string }> = {
   cross: {
-    name: 'ครอสเวิร์ด',
+    nameKey: 'game.puzzle.crossword',
     bg: 'repeating-linear-gradient(0deg,#f7f3e6 0 27px,#b9d3e8 27px 28px)',
     path: '#2b4a6b',
     icon: '📰',
   },
   jig: {
-    name: 'จิ๊กซอว์',
+    nameKey: 'game.puzzle.jigsaw',
     bg: 'radial-gradient(circle at 30% 20%,#f3e7c9,#d9c39a)',
     path: '#7a5a2e',
     icon: '🗺',
   },
   slide: {
-    name: 'เลื่อนบล็อก',
+    nameKey: 'game.puzzle.slide',
     bg: 'repeating-linear-gradient(90deg,#a8743f 0 46px,#9a6836 46px 92px)',
     path: '#3b2412',
     icon: '🧩',

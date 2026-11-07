@@ -26,6 +26,7 @@ import {
 import { blenderValues, camFromMatched, camJson, focalFromLens, fullExport, hfovDeg, lensMm, type ViewRect } from './cameraMatch';
 import type { DisplayMode } from './modelEditor';
 import { T } from './strings';
+import { t } from '../i18n/core';
 import { camToObject, camToWorld, placeToLocal, type Placement } from './placement';
 import { anchorCam, axisScreenDir, depthOf, flipAxisR, keepAnchorAt, originCandidates, snapOrigin, type OriginCandidate, type OriginSeg } from './originMatch';
 import { frameWindow, FOCUS_PAD, type Box2 } from './viewFrame';
@@ -938,7 +939,7 @@ export class MatchState {
     const prior = this.camObj;
     const res = this.jointSolve(prior);
     if (!res.cam) {
-      this.say(res.message ?? 'คำนวณไม่สำเร็จ');
+      this.say(res.message ?? t('editor.match.solve.failed'));
       return false;
     }
     let cam = res.cam;
@@ -1331,22 +1332,22 @@ export class MatchState {
   }
   solvePosition(): boolean {
     if (this.completePairs.length < 2) {
-      this.say('ต้องมีคู่จุดครบอย่างน้อย 2 คู่');
+      this.say(t('editor.match.pairs.needTwo'));
       return false;
     }
     const cam = solvePosition(this.camObj, this.completePairs);
     if (!cam) {
-      this.say('คำนวณตำแหน่งไม่ได้ ลองเลือกจุดที่ห่างกันมากขึ้น');
+      this.say(t('editor.match.pairs.positionFailed'));
       return false;
     }
     this.cam = this.toWorld(cam);
-    this.say('ตั้งตำแหน่ง/ระยะกล้องจากคู่จุดแล้ว');
+    this.say(t('editor.match.pairs.positionSet'));
     return true;
   }
   solveAll(): boolean {
     const n = this.completePairs.length;
     if (n < 4) {
-      this.say('คำนวณละเอียดต้องมีคู่จุดอย่างน้อย 4 คู่');
+      this.say(t('editor.match.pairs.refineNeedsFour'));
       return false;
     }
     const usePrincipal = this.principal === 'free' && n >= 6;
@@ -1355,7 +1356,7 @@ export class MatchState {
     start = solvePosition(start, this.completePairs) ?? start;
     const cam = solveFull(start, this.refineLines(), this.completePairs, { fixedF: this.lockLens, principal: usePrincipal, parallel: this.parallelAxes });
     this.cam = this.toWorld(cam);
-    this.say(`ปรับละเอียดแล้ว (${n} คู่${usePrincipal ? ' + จุดกึ่งกลางภาพ' : ''})`);
+    this.say(t('editor.match.pairs.refined', { n, principal: usePrincipal ? t('editor.match.pairs.refinedPrincipalTag') : '' }));
     return true;
   }
   /** Only the selected parameters, keeping the rest (used after numeric edits). */
@@ -1370,7 +1371,7 @@ export class MatchState {
     // full-image centre when the principal mode is 'center'
     // the stored camera belongs to the model at the origin: keep that view of the (placed) object
     this.cam = this.toWorld(clone(this.stored));
-    this.say('กลับเป็นกล้องที่บันทึกไว้กับโมเดล');
+    this.say(t('editor.match.camera.resetToStored'));
   }
 
   // ---------- numeric values ----------

@@ -105,16 +105,16 @@ function visit(value: unknown, path: string, found: Found[], problems: string[])
     const slug = value.slug;
     const titleEn = value.titleEn;
 
-    if (typeof id !== 'string' || !UUID_V4.test(id)) problems.push(`${label}: id ต้องเป็น UUID v4 ที่เก็บในไฟล์`);
+    if (typeof id !== 'string' || !UUID_V4.test(id)) problems.push(`${label}: id must be a UUID v4 stored in the file`);
     if (typeof kind !== 'string' || !KIND_SET.has(kind)) {
-      problems.push(`${label}: ไม่รู้จักชนิด ${String(kind)}`);
+      problems.push(`${label}: unknown kind ${String(kind)}`);
     }
-    if (typeof title !== 'string' || title.trim() === '') problems.push(`${label}: ต้องมีชื่อ title`);
+    if (typeof title !== 'string' || title.trim() === '') problems.push(`${label}: title is required`);
     if (titleEn !== undefined && (typeof titleEn !== 'string' || titleEn.trim() === '')) {
-      problems.push(`${label}: titleEn ต้องเป็นข้อความ`);
+      problems.push(`${label}: titleEn must be a string`);
     }
     if (typeof slug !== 'string' || !SLUG.test(slug)) {
-      problems.push(`${label}: slug ต้องเป็น kebab-case คั่นด้วย /`);
+      problems.push(`${label}: slug must be kebab-case segments separated by /`);
     }
 
     if (
@@ -153,7 +153,7 @@ function checkSameRowStacks(value: unknown, problems: string[]): void {
       if (!isRecord(book)) continue;
       if (typeof book.stackOn === 'string' && !seen.includes(book.stackOn)) {
         const label = typeof book.slug === 'string' ? book.slug : String(book.id);
-        problems.push(`${label}: stackOn ต้องชี้หนังสือเล่มที่อยู่ก่อนหน้าในแถวเดียวกัน`);
+        problems.push(`${label}: stackOn must point to an earlier book in the same row`);
       }
       if (typeof book.id === 'string') seen.push(book.id);
     }
@@ -166,13 +166,13 @@ function checkSameRowStacks(value: unknown, problems: string[]): void {
 /** Validate authored ids, kinds, titles, and slugs. Returns a lookup index. */
 export function validateRoom(data: unknown): SceneCatalog {
   const problems: string[] = [];
-  if (!isRecord(data)) throw new RoomDataError(['ไฟล์ห้องไม่ถูกต้อง']);
+  if (!isRecord(data)) throw new RoomDataError(['invalid room file']);
 
-  if (data.kind !== 'room') problems.push('รากของไฟล์ต้องเป็น kind room');
-  if (!isRecord(data.camera)) problems.push('ห้องต้องมี camera');
-  if (!Array.isArray(data.objects)) problems.push('ห้องต้องมี objects');
-  if (!Array.isArray(data.hotspots)) problems.push('ห้องต้องมี hotspots');
-  if (!isRecord(data.hud) || typeof data.hud.hintTarget !== 'string') problems.push('hud.hintTarget ต้องชี้ id ของจุดโต้ตอบ');
+  if (data.kind !== 'room') problems.push('the file root must be kind room');
+  if (!isRecord(data.camera)) problems.push('the room needs a camera');
+  if (!Array.isArray(data.objects)) problems.push('the room needs objects');
+  if (!Array.isArray(data.hotspots)) problems.push('the room needs hotspots');
+  if (!isRecord(data.hud) || typeof data.hud.hintTarget !== 'string') problems.push('hud.hintTarget must point to a hotspot id');
 
   const found: Found[] = [];
   visit(data, 'room', found, problems);
@@ -182,11 +182,11 @@ export function validateRoom(data: unknown): SceneCatalog {
   const seenSlug = new Map<string, string>();
   for (const entry of found) {
     const prevId = seenId.get(entry.id);
-    if (prevId) problems.push(`id ซ้ำ ${entry.id} (${prevId} และ ${entry.slug})`);
+    if (prevId) problems.push(`duplicate id ${entry.id} (${prevId} and ${entry.slug})`);
     else seenId.set(entry.id, entry.slug);
 
     const prevSlug = seenSlug.get(entry.slug);
-    if (prevSlug) problems.push(`slug ซ้ำ ${entry.slug}`);
+    if (prevSlug) problems.push(`duplicate slug ${entry.slug}`);
     else seenSlug.set(entry.slug, entry.id);
   }
 
@@ -208,15 +208,15 @@ export function validateRoom(data: unknown): SceneCatalog {
 
   for (const ref of refs) {
     const target = seenId.get(ref.id);
-    if (!target) problems.push(`${ref.from}: ${ref.field} ชี้ id ที่ไม่มีอยู่ (${ref.id})`);
+    if (!target) problems.push(`${ref.from}: ${ref.field} points to a missing id (${ref.id})`);
   }
 
   const calendars = found.filter((entry) => entry.kind === 'calendar');
-  if (calendars.length !== 1) problems.push('ห้องต้องมีปฏิทินเพียงใบเดียว');
+  if (calendars.length !== 1) problems.push('the room must have exactly one calendar');
   const hint = typeof data.hud === 'object' && data.hud && typeof (data.hud as { hintTarget?: string }).hintTarget === 'string'
     ? found.find((entry) => entry.id === (data.hud as { hintTarget: string }).hintTarget)
     : undefined;
-  if (hint && hint.kind !== 'hotspot') problems.push('hintTarget ต้องเป็นชนิด hotspot');
+  if (hint && hint.kind !== 'hotspot') problems.push('hintTarget must be a hotspot');
 
   if (problems.length) throw new RoomDataError(problems);
   return new SceneCatalog(found);
@@ -225,8 +225,8 @@ export function validateRoom(data: unknown): SceneCatalog {
 /** Identity check for a data file that is not the 3D room. */
 export function validateEntities(data: unknown, rootKind: string): SceneCatalog {
   const problems: string[] = [];
-  if (!isRecord(data)) throw new RoomDataError(['ไฟล์ข้อมูลไม่ถูกต้อง']);
-  if (data.kind !== rootKind) problems.push(`รากของไฟล์ต้องเป็น kind ${rootKind}`);
+  if (!isRecord(data)) throw new RoomDataError(['invalid data file']);
+  if (data.kind !== rootKind) problems.push(`the file root must be kind ${rootKind}`);
 
   const found: Found[] = [];
   visit(data, rootKind, found, problems);
@@ -235,16 +235,16 @@ export function validateEntities(data: unknown, rootKind: string): SceneCatalog 
   const seenSlug = new Map<string, string>();
   for (const entry of found) {
     const prevId = seenId.get(entry.id);
-    if (prevId) problems.push(`id ซ้ำ ${entry.id} (${prevId} และ ${entry.slug})`);
+    if (prevId) problems.push(`duplicate id ${entry.id} (${prevId} and ${entry.slug})`);
     else seenId.set(entry.id, entry.slug);
     const prevSlug = seenSlug.get(entry.slug);
-    if (prevSlug) problems.push(`slug ซ้ำ ${entry.slug}`);
+    if (prevSlug) problems.push(`duplicate slug ${entry.slug}`);
     else seenSlug.set(entry.slug, entry.id);
   }
 
   for (const entry of found) {
     if (typeof entry.node.targetId === 'string' && !seenId.has(entry.node.targetId)) {
-      problems.push(`${entry.slug}: targetId ชี้ id ที่ไม่มีอยู่ (${entry.node.targetId})`);
+      problems.push(`${entry.slug}: targetId points to a missing id (${entry.node.targetId})`);
     }
   }
 
