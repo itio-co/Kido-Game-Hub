@@ -1,6 +1,6 @@
 {
-  "appVersion": "0.6.11",
-  "generatedAt": "2026-11-07T03:41:51.092Z",
+  "appVersion": "0.6.12",
+  "generatedAt": "2026-11-07T04:22:29.663Z",
   "modules": [
     {
       "id": "challenge",
@@ -12,8 +12,14 @@
       "dependsOn": [
         {
           "id": "core",
-          "range": ">=0.6.11",
-          "version": "0.6.11",
+          "range": ">=0.6.12",
+          "version": "0.6.12",
+          "ok": true
+        },
+        {
+          "id": "minigame-core",
+          "range": "^1.0.0",
+          "version": "1.0.0",
           "ok": true
         },
         {
@@ -44,22 +50,22 @@
         "1.1.0"
       ],
       "gdd": "src/modules/challenge/GDD.md",
-      "gddMarkdown": "# GDD: โหมดท้าเพื่อน (Challenge) (`challenge`)\n\n| ฟิลด์ | ค่า |\n|---|---|\n| kind | feature |\n| เวอร์ชัน | 1.1.0 |\n| เทมเพลต | `docs/gdd/TEMPLATE.md` |\n| อ้างอิง | `docs/design/never-ending-story-game-spec-v0.4-th.md` |\n\n## 1. จุดประสงค์ / Pitch\nทำให้มินิเกมเล่นซ้ำได้แบบมีคะแนน ท้าเพื่อนผ่านลิงก์ และขึ้นกระดานคะแนนออนไลน์\n\n## 2. แฟนตาซีของผู้เล่น\nแข่งกับเพื่อนในปริศนาชุดเดียวกัน\n\n## 3. Core loop\n1. เลือกเกม+ระดับ (seed) 2. เล่น 3. ได้คะแนน 4. แชร์ลิงก์ `#/challenge/<game>/<diff>/<seed>/<ruleset>` เช่น `challenge@1.1.0+crossword@1.0.0` 5. ส่งคะแนนออนไลน์พร้อม `ruleset`\n\n## 4. กฎและ invariants\n- seed เดียวกัน = ปริศนาเดียวกัน\n- คะแนนสูงชนะ เท่ากันเวลาน้อยชนะ (`compare`)\n- run token = protobuf + แท็ก SHA-256 6 ไบต์ (`runProto.ts`) ตรวจที่ Worker\n\n## 5. Input / การควบคุม\nปุ่มเริ่ม แชร์ ดูกระดาน\n\n## 6. คะแนนและความยาก\n`scoreFor()` อ่าน `ruleset.json` คีย์ 1.1.0 (`correct` 100, `combo` 20, `mistake` 40, `hint` 150, `timeBonus` 10, `mult`, `par`) · ระดับ easy/medium/hard · จำนวนคำ/กริด/จำนวนสลับของแต่ละเกมอยู่ใน ruleset ของมินิเกมนั้น ไม่ได้อยู่ในไฟล์นี้\n\n## 7. Progression\nคะแนนดีสุดต่อเกม/ระดับในเครื่อง + อันดับออนไลน์\n\n## 8. Content / config surface\n`ruleset.json`, รายชื่อเกมบนกระดาน (`BOARD_GAMES` ใน `LeaderboardView`) รวม pack ของ rhythm (`stirfry`) · ป้ายกระดานแสดงกติกาที่กำลังดู\n\n## 9. UX / หน้าจอ\nChallengeView, LeaderboardView (แท็บเกม; stirfry ใช้ระดับ easy/normal/hard) · แบนเนอร์แสดงกติกา · ลิงก์ที่อ้างเวอร์ชันที่ไม่มีใน registry ขึ้นข้อความแล้วให้เล่นกติกาปัจจุบัน\n\n## 10. Data & telemetry (ฟิลด์บนเซิร์ฟเวอร์)\n`POST /never/api/runs`: sessionId, playerId, game, difficulty, seed, score, timeMs, version, **ruleset**, ts, verified, integrity_ok · `GET` leaderboard ต่อ game + difficulty + ruleset (เวอร์ชันแอปไม่แยกกระดาน) · ruleset ว่างในโทเคนเก่า = กติกา 0.6.10\n\n## 11. Dependencies + เวอร์ชัน\ncore, crossword, jigsaw, slide\n\n## 12. คำถามที่ยังเปิดอยู่ / Backlog\n- **[backlog]** กระดานรายสัปดาห์\n\n## 13. Changelog (ผูกกับเวอร์ชันโมดูล)\n| เวอร์ชัน | แอป | การเปลี่ยนแปลง |\n|---|---|---|\n| 1.1.0 | 0.6.11 | ตรึงสูตรคะแนน 1.1.0 ใน ruleset.json (ตัวเลขไม่เปลี่ยน), ลิงก์และกระดานติดกติกา |\n| 1.1.0 | 0.6.9 | export `packRun`, กระดานรองรับ stirfry |\n| 1.0.0 | 0.6.5 | แยกเป็นโมดูล |\n",
+      "gddMarkdown": "# GDD: โหมดท้าเพื่อน (Challenge) (`challenge`)\n\n| ฟิลด์ | ค่า |\n|---|---|\n| kind | feature |\n| เวอร์ชัน | 1.1.0 |\n| เทมเพลต | `docs/gdd/TEMPLATE.md` |\n| อ้างอิง | `docs/design/never-ending-story-game-spec-v0.4-th.md` |\n\n## 1. จุดประสงค์ / Pitch\nทำให้มินิเกมเล่นซ้ำได้แบบมีคะแนน ท้าเพื่อนผ่านลิงก์ และขึ้นกระดานคะแนนออนไลน์\n\n## 2. แฟนตาซีของผู้เล่น\nแข่งกับเพื่อนในปริศนาชุดเดียวกัน\n\n## 3. Core loop\n1. เลือกเกม+ระดับ (seed) 2. เล่น 3. ได้คะแนน 4. แชร์ลิงก์ `#/challenge/<game>/<diff>/<seed>/<ruleset>` เช่น `challenge@1.1.0+crossword@1.0.0` 5. ส่งคะแนนออนไลน์พร้อม `ruleset`\n\n## 4. กฎและ invariants\n- seed เดียวกัน = ปริศนาเดียวกัน\n- คะแนนสูงชนะ เท่ากันเวลาน้อยชนะ (`compare`)\n- run token = protobuf + แท็ก SHA-256 6 ไบต์ (`runProto.ts`) ตรวจที่ Worker\n\n## 5. Input / การควบคุม\nปุ่มเริ่ม แชร์ ดูกระดาน\n\n## 6. คะแนนและความยาก\n`scoreFor()` อ่าน `ruleset.json` คีย์ 1.1.0 (`correct` 100, `combo` 20, `mistake` 40, `hint` 150, `timeBonus` 10, `mult`, `par`) · ระดับ easy/medium/hard · จำนวนคำ/กริด/จำนวนสลับของแต่ละเกมอยู่ใน ruleset ของมินิเกมนั้น ไม่ได้อยู่ในไฟล์นี้\n\n## 7. Progression\nคะแนนดีสุดต่อเกม/ระดับในเครื่อง + อันดับออนไลน์\n\n## 8. Content / config surface\n`ruleset.json`, รายชื่อเกมบนกระดาน (`BOARD_GAMES` ใน `LeaderboardView`) รวม pack ของ rhythm (`stirfry`) · ป้ายกระดานแสดงกติกาที่กำลังดู\n\n## 9. UX / หน้าจอ\nChallengeView, LeaderboardView (แท็บเกม; stirfry ใช้ระดับ easy/normal/hard) · แบนเนอร์แสดงกติกา · ลิงก์ที่อ้างเวอร์ชันที่ไม่มีใน registry ขึ้นข้อความแล้วให้เล่นกติกาปัจจุบัน\n\n## 10. Data & telemetry (ฟิลด์บนเซิร์ฟเวอร์)\n`POST /never/api/runs`: sessionId, playerId, game, difficulty, seed, score, timeMs, version, **ruleset**, ts, verified, integrity_ok · `GET` leaderboard ต่อ game + difficulty + ruleset (เวอร์ชันแอปไม่แยกกระดาน) · ruleset ว่างในโทเคนเก่า = กติกา 0.6.10\n\n## 11. Dependencies + เวอร์ชัน\nminigame-core ^1.0.0 (ลิงก์, เฟสจบรอบ, โทเคน, เปลือกกติกา), core, crossword, jigsaw, slide\n\nโหมด challenge ไม่ถูกยุบเข้า minigame-core เพราะกระดานปริศนาและสูตรคะแนนเป็นของฟีเจอร์นี้ rhythm ไม่ควรต้องดึง crossword มาด้วย\n\n## 12. คำถามที่ยังเปิดอยู่ / Backlog\n- **[backlog]** กระดานรายสัปดาห์\n\n## 13. Changelog (ผูกกับเวอร์ชันโมดูล)\n| เวอร์ชัน | แอป | การเปลี่ยนแปลง |\n|---|---|---|\n| 1.1.0 | 0.6.11 | ตรึงสูตรคะแนน 1.1.0 ใน ruleset.json (ตัวเลขไม่เปลี่ยน), ลิงก์และกระดานติดกติกา |\n| 1.1.0 | 0.6.9 | export `packRun`, กระดานรองรับ stirfry |\n| 1.0.0 | 0.6.5 | แยกเป็นโมดูล |\n",
       "files": 10,
-      "size": 47090,
-      "hash": "f9f92e9c11af",
+      "size": 43129,
+      "hash": "610fc8d13afa",
       "lastCommit": {
-        "sha": "8bd1cf2cddb08dfde8f6fb4573b27d2eb644bf77",
-        "date": "2026-11-07T03:40:36Z",
-        "subject": "feat(nes): v0.6.11 ruleset share links, pack rename, god module"
+        "sha": "a3e0936826b1669059d4cf6db566614d61e8ad9f",
+        "date": "2026-11-07T04:21:01Z",
+        "subject": "feat(nes): v0.6.12 extract minigame-core and event-core"
       }
     },
     {
       "id": "core",
       "name": "Core / main game",
       "kind": "core",
-      "version": "0.6.11",
-      "description": "App shell, hub room, flow engine, save, i18n, cloudSync, prologue. God admin lives in the god module.",
+      "version": "0.6.12",
+      "description": "App shell, hub room, save, i18n, cloudSync, prologue. Minigame framework, event framework, and god admin are their own modules.",
       "entry": "src/main.ts",
       "dependsOn": [
         {
@@ -99,6 +105,18 @@
           "ok": true
         },
         {
+          "id": "event-core",
+          "range": "^1.0.0",
+          "version": "1.0.0",
+          "ok": true
+        },
+        {
+          "id": "minigame-core",
+          "range": "^1.0.0",
+          "version": "1.0.0",
+          "ok": true
+        },
+        {
           "id": "god",
           "range": "^1.0.0",
           "version": "1.0.0",
@@ -112,14 +130,14 @@
       "ruleset": false,
       "rulesets": null,
       "gdd": "docs/gdd/core.md",
-      "gddMarkdown": "# GDD: Core / เกมหลัก (`core`)\n\n| ฟิลด์ | ค่า |\n|---|---|\n| kind | core |\n| เวอร์ชัน | app (ตาม `package.json`, ตอนนี้ 0.6.11) |\n| เทมเพลต | `docs/gdd/TEMPLATE.md` |\n| อ้างอิง | `docs/design/never-ending-story-game-spec-v0.4-th.md` |\n\n## 1. จุดประสงค์ / Pitch\nเปลือกแอปของ Never Ending Story: ห้องโถงบ้านย่า, flow engine เล่นเนื้อเรื่องจาก story pack, เซฟ, i18n, cloud sync, prologue. หน้า admin `/never/god` อยู่โมดูล `god`\n\n## 2. แฟนตาซีของผู้เล่น\nเป็นหลานที่กลับมาบ้านย่ามะลิ ช่วยย่าไขคดีของเก่าในบ้าน (ย่ามะลิผมสั้นสีเงินปล่อยหลวม ไม่มวยผม)\n\n## 3. Core loop\n1. เข้าเกม → prologue (ครั้งแรก) → ตั้งชื่อ\n2. ห้องโถง: เลือกคดี / แผนผังบ้าน / สมุดคดี / มินิเกม\n3. flow engine เล่นฉาก บทสนทนา หลักฐาน และเรียกมินิเกม\n4. จบคดี → เซฟความคืบหน้า และ sync ขึ้นเซิร์ฟเวอร์\n\n## 4. กฎและ invariants\n- โค้ดเป็นภาษาอังกฤษ ข้อความไทยอยู่เฉพาะ `src/locales/*.json`\n- โมดูลอื่นเข้าถึงกันผ่าน public entry (`index.ts`) เท่านั้น ตรวจด้วย `npm run check:modules`\n- ไม่พิมพ์ player token ลง log\n- `/never/god/*` และ `modules.json` เป็น network-only ใน SW และเป็น admin-only (โค้ดอยู่โมดูล `god`)\n- กระดานคะแนนแยกด้วยกติกา (`runs.ruleset`) ไม่แยกด้วยเวอร์ชันแอป\n\n## 5. Input / การควบคุม\nแตะ/คลิกบนมือถือแนวตั้ง 390x844 เป็นหลัก แถบล่างมีปุ่มแผนผังบ้านข้างสมุดคดี\n\n## 6. คะแนนและความยาก\ncore ไม่มีคะแนนเอง คะแนนมาจากมินิเกม / challenge / rhythm\n\n## 7. Progression\nความคืบหน้าคดี (`save`), `prologueSeen`, ชื่อผู้เล่น, ไอเทมในบ้าน\n\n## 8. Content / config surface\nstory pack JSON (`public/data/case-flow.json`) และรูปใน `public/img/` ปรับได้โดยไม่แตะโค้ด ดู `docs/design/story-pack-format-th.md`\n\n## 9. UX / หน้าจอ\nPrologue, Hub, FlowView, Settings, Leaderboard. god admin อยู่ในโมดูล `god`\n\n## 10. Data & telemetry (ฟิลด์บนเซิร์ฟเวอร์)\nD1: `players`, `player_state`, `player_events`, `player_home`, `runs` (มีคอลัมน์ `ruleset`), `god_login` · localStorage เซฟหลัก\n\n## 11. Dependencies + เวอร์ชัน\nใช้ crossword, jigsaw, slide, stirfry, challenge, event-01, god (ดู `module.json`)\n\n## 12. คำถามที่ยังเปิดอยู่ / Backlog\n- **[backlog]** แยก flow engine เป็นโมดูลของตัวเอง\n- **[backlog]** หลายคดี (event-02+)\n\n## 13. Changelog (ผูกกับเวอร์ชันโมดูล)\n| เวอร์ชัน | แอป | การเปลี่ยนแปลง |\n|---|---|---|\n| 0.6.11 | 0.6.11 | ลิงก์แชร์ติดกติกา engine+pack, กระดานแยกตาม ruleset, ย้าย god เป็นโมดูล, เปลี่ยนชื่อ edition เป็น pack |\n| 0.6.10 | 0.6.10 | rhythm ชาร์ต seed + ระดับ, ป้าย judgement |\n| 0.6.9 | 0.6.9 | god หน้าย่อยต่อเกม, แท็บ GDD, rhythm engine/edition |\n| 0.6.8 | 0.6.8 | แก้ sw.js syntax |\n| 0.6.5 | 0.6.5 | modular monolith + หน้า Modules |\n| 0.6.4 | 0.6.4 | god admin |\n| 0.6.3 | 0.6.3 | prologue |\n",
-      "files": 67,
-      "size": 677152,
-      "hash": "ec257e68a1c8",
+      "gddMarkdown": "# GDD: Core / เกมหลัก (`core`)\n\n| ฟิลด์ | ค่า |\n|---|---|\n| kind | core |\n| เวอร์ชัน | app (ตาม `package.json`, ตอนนี้ 0.6.12) |\n| เทมเพลต | `docs/gdd/TEMPLATE.md` |\n| อ้างอิง | `docs/design/never-ending-story-game-spec-v0.4-th.md` |\n\n## 1. จุดประสงค์ / Pitch\nเปลือกแอปของ Never Ending Story: ห้องโถงบ้านย่า, เซฟ, i18n, cloud sync, prologue. เฟรมมินิเกมอยู่ `minigame-core` เฟรมเหตุการณ์อยู่ `event-core` หน้า admin อยู่โมดูล `god`\n\n## 2. แฟนตาซีของผู้เล่น\nเป็นหลานที่กลับมาบ้านย่ามะลิ ช่วยย่าไขคดีของเก่าในบ้าน (ย่ามะลิผมสั้นสีเงินปล่อยหลวม ไม่มวยผม)\n\n## 3. Core loop\n1. เข้าเกม → prologue (ครั้งแรก) → ตั้งชื่อ\n2. ห้องโถง: เลือกคดี / แผนผังบ้าน / สมุดคดี / มินิเกม\n3. `event-core` เล่นฉาก บทสนทนา หลักฐาน และเรียกมินิเกม\n4. จบคดี → เซฟความคืบหน้า และ sync ขึ้นเซิร์ฟเวอร์\n\n## 4. กฎและ invariants\n- โค้ดเป็นภาษาอังกฤษ ข้อความไทยอยู่เฉพาะ `src/locales/*.json`\n- โมดูลอื่นเข้าถึงกันผ่าน public entry (`index.ts`) เท่านั้น ตรวจด้วย `npm run check:modules`\n- ไม่พิมพ์ player token ลง log\n- `/never/god/*` และ `modules.json` เป็น network-only ใน SW และเป็น admin-only (โค้ดอยู่โมดูล `god`)\n- กระดานคะแนนแยกด้วยกติกา (`runs.ruleset`) ไม่แยกด้วยเวอร์ชันแอป\n\n## 5. Input / การควบคุม\nแตะ/คลิกบนมือถือแนวตั้ง 390x844 เป็นหลัก แถบล่างมีปุ่มแผนผังบ้านข้างสมุดคดี\n\n## 6. คะแนนและความยาก\ncore ไม่มีคะแนนเอง คะแนนมาจากมินิเกม / challenge / rhythm\n\n## 7. Progression\nความคืบหน้าคดี (`save`), `prologueSeen`, ชื่อผู้เล่น, ไอเทมในบ้าน\n\n## 8. Content / config surface\nstory pack JSON (`public/data/case-flow.json`) และรูปใน `public/img/` ปรับได้โดยไม่แตะโค้ด ดู `docs/design/story-pack-format-th.md`\n\n## 9. UX / หน้าจอ\nPrologue, Hub, FlowView, Settings, Leaderboard. god admin อยู่ในโมดูล `god`\n\n## 10. Data & telemetry (ฟิลด์บนเซิร์ฟเวอร์)\nD1: `players`, `player_state`, `player_events`, `player_home`, `runs` (มีคอลัมน์ `ruleset`), `god_login` · localStorage เซฟหลัก\n\n## 11. Dependencies + เวอร์ชัน\nใช้ minigame-core, event-core, crossword, jigsaw, slide, stirfry, challenge, event-01, god (ดู `module.json`)\n\n## 12. คำถามที่ยังเปิดอยู่ / Backlog\n- **[backlog]** แยก flow engine เป็นโมดูลของตัวเอง\n- **[backlog]** หลายคดี (event-02+)\n\n## 13. Changelog (ผูกกับเวอร์ชันโมดูล)\n| เวอร์ชัน | แอป | การเปลี่ยนแปลง |\n|---|---|---|\n| 0.6.12 | 0.6.12 | แยก minigame-core กับ event-core ค่ากติกาและ URL เดิม |\n| 0.6.11 | 0.6.11 | ลิงก์แชร์ติดกติกา engine+pack, กระดานแยกตาม ruleset, ย้าย god เป็นโมดูล, เปลี่ยนชื่อ edition เป็น pack |\n| 0.6.10 | 0.6.10 | rhythm ชาร์ต seed + ระดับ, ป้าย judgement |\n| 0.6.9 | 0.6.9 | god หน้าย่อยต่อเกม, แท็บ GDD, rhythm engine/edition |\n| 0.6.8 | 0.6.8 | แก้ sw.js syntax |\n| 0.6.5 | 0.6.5 | modular monolith + หน้า Modules |\n| 0.6.4 | 0.6.4 | god admin |\n| 0.6.3 | 0.6.3 | prologue |\n",
+      "files": 60,
+      "size": 595824,
+      "hash": "fa395b6fed67",
       "lastCommit": {
-        "sha": "8bd1cf2cddb08dfde8f6fb4573b27d2eb644bf77",
-        "date": "2026-11-07T03:40:36Z",
-        "subject": "feat(nes): v0.6.11 ruleset share links, pack rename, god module"
+        "sha": "a3e0936826b1669059d4cf6db566614d61e8ad9f",
+        "date": "2026-11-07T04:21:01Z",
+        "subject": "feat(nes): v0.6.12 extract minigame-core and event-core"
       }
     },
     {
@@ -129,7 +147,14 @@
       "version": "1.0.0",
       "description": "Thai crossword puzzle rules and board state.",
       "entry": "src/modules/crossword/index.ts",
-      "dependsOn": [],
+      "dependsOn": [
+        {
+          "id": "minigame-core",
+          "range": "^1.0.0",
+          "version": "1.0.0",
+          "ok": true
+        }
+      ],
       "pack": null,
       "packs": [],
       "edition": null,
@@ -139,14 +164,14 @@
         "1.0.0"
       ],
       "gdd": "src/modules/crossword/GDD.md",
-      "gddMarkdown": "# GDD: ปริศนาอักษรไขว้ (`crossword`)\n\n| ฟิลด์ | ค่า |\n|---|---|\n| kind | minigame |\n| เวอร์ชัน | 1.0.0 |\n| เทมเพลต | `docs/gdd/TEMPLATE.md` |\n| อ้างอิง | `docs/design/never-ending-story-game-spec-v0.4-th.md` |\n\n## 1. จุดประสงค์ / Pitch\nอักษรไขว้คำไทยสั้นๆ\n\n## 2. แฟนตาซีของผู้เล่น\nหลานช่วยย่าแก้ปริศนาของเก่าในบ้าน\n\n## 3. Core loop\n1. เลือกช่อง 2. เลือกตัวอักษรจากแป้น 3. ถูกครบทุกช่อง → ผ่าน\n\n## 4. กฎและ invariants\n- คำตอบอยู่ใน `CROSS_SOLUTION` · `crossCorrect()` ตรวจทุกช่อง\n\n## 5. Input / การควบคุม\nแตะช่องแล้วแตะตัวอักษรบนแป้น (`CROSS_KEYS`)\n\n## 6. คะแนนและความยาก\nสูตรอยู่ใน `challenge` ruleset 1.1.0 · โหมด challenge สุ่มคำตาม `ruleset.json` 1.0.0: จำนวนคำ 3/5/7, ตัวลวง 0/2/4, คลัง 12 คำ · par: 45/75/110 วินาที · เปลี่ยนจำนวนคำต้อง bump โมดูลนี้และเพิ่มคีย์ ruleset\n\n## 7. Progression\nใช้ในคดีผ่าน flow engine และในโหมด challenge (คะแนนดีสุดต่อระดับ)\n\n## 8. Content / config surface\nกริด `CROSS_GRID`, หมายเลข `CROSS_NUM`, แป้น `CROSS_KEYS` ใน `puzzle.ts`\n\n## 9. UX / หน้าจอ\nบอร์ดปริศนา ปุ่มคำใบ้ หน้าผลลัพธ์ (ผ่าน challenge)\n\n## 10. Data & telemetry (ฟิลด์บนเซิร์ฟเวอร์)\nแถว `runs` game ตามคีย์ challenge (`cross`/`jig`/`slide`) difficulty easy/medium/hard\n\n## 11. Dependencies + เวอร์ชัน\nไม่มี dependency (ถูกใช้โดย core, challenge, event-01)\n\n## 12. คำถามที่ยังเปิดอยู่ / Backlog\n- **[backlog]** ปริศนาสุ่มจาก seed ทุกระดับ\n\n## 13. Changelog (ผูกกับเวอร์ชันโมดูล)\n| เวอร์ชัน | แอป | การเปลี่ยนแปลง |\n|---|---|---|\n| 1.0.0 | 0.6.5 | แยกกฎเป็นโมดูล |\n",
+      "gddMarkdown": "# GDD: ปริศนาอักษรไขว้ (`crossword`)\n\n| ฟิลด์ | ค่า |\n|---|---|\n| kind | minigame |\n| เวอร์ชัน | 1.0.0 |\n| เทมเพลต | `docs/gdd/TEMPLATE.md` |\n| อ้างอิง | `docs/design/never-ending-story-game-spec-v0.4-th.md` |\n\n## 1. จุดประสงค์ / Pitch\nอักษรไขว้คำไทยสั้นๆ\n\n## 2. แฟนตาซีของผู้เล่น\nหลานช่วยย่าแก้ปริศนาของเก่าในบ้าน\n\n## 3. Core loop\n1. เลือกช่อง 2. เลือกตัวอักษรจากแป้น 3. ถูกครบทุกช่อง → ผ่าน\n\n## 4. กฎและ invariants\n- คำตอบอยู่ใน `CROSS_SOLUTION` · `crossCorrect()` ตรวจทุกช่อง\n\n## 5. Input / การควบคุม\nแตะช่องแล้วแตะตัวอักษรบนแป้น (`CROSS_KEYS`)\n\n## 6. คะแนนและความยาก\nสูตรอยู่ใน `challenge` ruleset 1.1.0 · โหมด challenge สุ่มคำตาม `ruleset.json` 1.0.0: จำนวนคำ 3/5/7, ตัวลวง 0/2/4, คลัง 12 คำ · par: 45/75/110 วินาที · เปลี่ยนจำนวนคำต้อง bump โมดูลนี้และเพิ่มคีย์ ruleset\n\n## 7. Progression\nใช้ในคดีผ่าน flow engine และในโหมด challenge (คะแนนดีสุดต่อระดับ)\n\n## 8. Content / config surface\nกริด `CROSS_GRID`, หมายเลข `CROSS_NUM`, แป้น `CROSS_KEYS` ใน `puzzle.ts`\n\n## 9. UX / หน้าจอ\nบอร์ดปริศนา ปุ่มคำใบ้ หน้าผลลัพธ์ (ผ่าน challenge)\n\n## 10. Data & telemetry (ฟิลด์บนเซิร์ฟเวอร์)\nแถว `runs` game ตามคีย์ challenge (`cross`/`jig`/`slide`) difficulty easy/medium/hard\n\n## 11. Dependencies + เวอร์ชัน\nminigame-core ^1.0.0 (`crosswordGame`) ถูกใช้โดย challenge และ event-core\n\n## 12. คำถามที่ยังเปิดอยู่ / Backlog\n- **[backlog]** ปริศนาสุ่มจาก seed ทุกระดับ\n\n## 13. Changelog (ผูกกับเวอร์ชันโมดูล)\n| เวอร์ชัน | แอป | การเปลี่ยนแปลง |\n|---|---|---|\n| 1.0.0 | 0.6.5 | แยกกฎเป็นโมดูล |\n",
       "files": 5,
-      "size": 2023,
-      "hash": "023fe9f06888",
+      "size": 2278,
+      "hash": "f107ceba6061",
       "lastCommit": {
-        "sha": "8bd1cf2cddb08dfde8f6fb4573b27d2eb644bf77",
-        "date": "2026-11-07T03:40:36Z",
-        "subject": "feat(nes): v0.6.11 ruleset share links, pack rename, god module"
+        "sha": "a3e0936826b1669059d4cf6db566614d61e8ad9f",
+        "date": "2026-11-07T04:21:01Z",
+        "subject": "feat(nes): v0.6.12 extract minigame-core and event-core"
       }
     },
     {
@@ -159,8 +184,14 @@
       "dependsOn": [
         {
           "id": "core",
-          "range": ">=0.6.0",
-          "version": "0.6.11",
+          "range": ">=0.6.12",
+          "version": "0.6.12",
+          "ok": true
+        },
+        {
+          "id": "event-core",
+          "range": "^1.0.0",
+          "version": "1.0.0",
           "ok": true
         },
         {
@@ -189,14 +220,76 @@
       "ruleset": false,
       "rulesets": null,
       "gdd": "src/modules/event-01/GDD.md",
-      "gddMarkdown": "# GDD: คดีที่ 1: อัลบั้มครอบครัวที่หายไป (`event-01`)\n\n| ฟิลด์ | ค่า |\n|---|---|\n| kind | event |\n| เวอร์ชัน | 1.0.0 |\n| เทมเพลต | `docs/gdd/TEMPLATE.md` |\n| อ้างอิง | `docs/design/never-ending-story-game-spec-v0.4-th.md` |\n\n## 1. จุดประสงค์ / Pitch\nคดีแรกของเกม: ตามหาอัลบั้มครอบครัวที่หายไปในบ้านย่า\n\n## 2. แฟนตาซีของผู้เล่น\nนักสืบตัวน้อยที่ค้นบ้านย่า เก็บหลักฐาน และฟังเรื่องครอบครัว\n\n## 3. Core loop\n1. รับคดีจากย่า 2. สำรวจห้อง เก็บหลักฐาน 3. แก้มินิเกม (crossword, jigsaw, slide) 4. ตอบคำถาม 5. ฉากจบ\n\n## 4. กฎและ invariants\n- ข้อมูลทั้งหมดอยู่ใน `public/data/case-flow.json` (pages, evidence, slots, scenes, dialogues, games, questions, goals)\n- โค้ดไม่ฝังเนื้อเรื่อง\n\n## 5. Input / การควบคุม\nแตะฉาก / หลักฐาน / ตัวเลือก\n\n## 6. คะแนนและความยาก\nระดับตาม `difficulties` ใน story pack\n\n## 7. Progression\nความคืบหน้าใน `player_events` และ funnel ในหน้า god Event\n\n## 8. Content / config surface\nstory pack JSON (ดู `docs/design/story-pack-format-th.md`, `docs/design/never-ending-story-game-case-01-missing-family-album-th.md`)\n\n## 9. UX / หน้าจอ\nฉากใน FlowView, สมุดคดี, แผนผังบ้าน\n\n## 10. Data & telemetry (ฟิลด์บนเซิร์ฟเวอร์)\n`player_events`: eventId, status, progress_json\n\n## 11. Dependencies + เวอร์ชัน\ncore, crossword, jigsaw, slide\n\n## 12. คำถามที่ยังเปิดอยู่ / Backlog\n- **[backlog]** ใส่ผัดกับย่าในเนื้อเรื่องคดี\n\n## 13. Changelog (ผูกกับเวอร์ชันโมดูล)\n| เวอร์ชัน | แอป | การเปลี่ยนแปลง |\n|---|---|---|\n| 1.0.0 | 0.6.5 | แยกเป็นโมดูล |\n",
+      "gddMarkdown": "# GDD: คดีที่ 1: อัลบั้มครอบครัวที่หายไป (`event-01`)\n\n| ฟิลด์ | ค่า |\n|---|---|\n| kind | event |\n| เวอร์ชัน | 1.0.0 |\n| เทมเพลต | `docs/gdd/TEMPLATE.md` |\n| อ้างอิง | `docs/design/never-ending-story-game-spec-v0.4-th.md` |\n\n## 1. จุดประสงค์ / Pitch\nคดีแรกของเกม: ตามหาอัลบั้มครอบครัวที่หายไปในบ้านย่า\n\n## 2. แฟนตาซีของผู้เล่น\nนักสืบตัวน้อยที่ค้นบ้านย่า เก็บหลักฐาน และฟังเรื่องครอบครัว\n\n## 3. Core loop\n1. รับคดีจากย่า 2. สำรวจห้อง เก็บหลักฐาน 3. แก้มินิเกม (crossword, jigsaw, slide) 4. ตอบคำถาม 5. ฉากจบ\n\n## 4. กฎและ invariants\n- ข้อมูลทั้งหมดอยู่ใน `public/data/case-flow.json` (pages, evidence, slots, scenes, dialogues, games, questions, goals)\n- โค้ดไม่ฝังเนื้อเรื่อง\n\n## 5. Input / การควบคุม\nแตะฉาก / หลักฐาน / ตัวเลือก\n\n## 6. คะแนนและความยาก\nระดับตาม `difficulties` ใน story pack\n\n## 7. Progression\nความคืบหน้าใน `player_events` และ funnel ในหน้า god Event\n\n## 8. Content / config surface\nstory pack JSON (ดู `docs/design/story-pack-format-th.md`, `docs/design/never-ending-story-game-case-01-missing-family-album-th.md`)\n\n## 9. UX / หน้าจอ\nเนื้อหานี้เล่นผ่าน `event-core` (`FlowView`): ฉากตัด, แผนผังบ้าน, สมุดคดี, มินิเกม crossword / jigsaw / slide\n\n## 10. Data & telemetry (ฟิลด์บนเซิร์ฟเวอร์)\n`player_events`: eventId, status, progress_json\n\n## 11. Dependencies + เวอร์ชัน\nevent-core ^1.0.0, core >=0.6.12, crossword, jigsaw, slide\n\n## 12. คำถามที่ยังเปิดอยู่ / Backlog\n- **[backlog]** ใส่ผัดกับย่าในเนื้อเรื่องคดี\n\n## 13. Changelog (ผูกกับเวอร์ชันโมดูล)\n| เวอร์ชัน | แอป | การเปลี่ยนแปลง |\n|---|---|---|\n| 1.0.0 | 0.6.12 | ยังเป็นคอนเทนต์คดี 1 วางบน event-core (`EVENT_ID` case-01, ฉากจบ case-01-ending) ไม่เปลี่ยนข้อมูล |\n| 1.0.0 | 0.6.5 | แยกเป็นโมดูล |\n",
       "files": 2,
-      "size": 834,
-      "hash": "054552494a32",
+      "size": 1049,
+      "hash": "e4ec2254f21e",
       "lastCommit": {
-        "sha": "3977e254ecb1e933579d37bbaf123ac7aed4e9cd",
-        "date": "2026-11-07T09:55:23+07:00",
-        "subject": "feat(nes): v0.6.9 stir-fry online scores, photoreal wok frames, rhythm@1.0.0 engine + stirfry@1.1.0 edition, god per-game pages, per-module GDDs"
+        "sha": "a3e0936826b1669059d4cf6db566614d61e8ad9f",
+        "date": "2026-11-07T04:21:01Z",
+        "subject": "feat(nes): v0.6.12 extract minigame-core and event-core"
+      }
+    },
+    {
+      "id": "event-core",
+      "name": "Event framework",
+      "kind": "event-core",
+      "version": "1.0.0",
+      "description": "Shared event framework: lifecycle, cutscenes, stage map, case notebook, event HUD, and the D1 progress document. Story packs such as event-01 supply the content.",
+      "entry": "src/modules/event-core/index.ts",
+      "dependsOn": [
+        {
+          "id": "core",
+          "range": ">=0.6.12",
+          "version": "0.6.12",
+          "ok": true
+        },
+        {
+          "id": "minigame-core",
+          "range": "^1.0.0",
+          "version": "1.0.0",
+          "ok": true
+        },
+        {
+          "id": "crossword",
+          "range": "^1.0.0",
+          "version": "1.0.0",
+          "ok": true
+        },
+        {
+          "id": "jigsaw",
+          "range": "^1.0.0",
+          "version": "1.0.0",
+          "ok": true
+        },
+        {
+          "id": "slide",
+          "range": "^1.0.0",
+          "version": "1.0.0",
+          "ok": true
+        },
+        {
+          "id": "stirfry",
+          "range": "^1.1.0",
+          "version": "1.2.0",
+          "ok": true
+        }
+      ],
+      "pack": null,
+      "packs": [],
+      "edition": null,
+      "editions": [],
+      "ruleset": false,
+      "rulesets": null,
+      "gdd": "src/modules/event-core/GDD.md",
+      "gddMarkdown": "# GDD: แกนอีเวนต์ (`event-core`)\n\n| ฟิลด์ | ค่า |\n|---|---|\n| kind | event-core |\n| เวอร์ชัน | 1.0.0 |\n| เทมเพลต | `docs/gdd/TEMPLATE.md` |\n| อ้างอิง | `docs/design/story-pack-format-th.md` |\n\n## 1. จุดประสงค์ / Pitch\nเฟรมเวิร์กของทุกคดี: เปิด story pack, ฉากตัด, แผนผังบ้าน, สมุดคดี, HUD ของเหตุการณ์, มินิเกมในคดี และเอกสารความคืบหน้าที่ขึ้น D1\n\n## 2. แฟนตาซีของผู้เล่น\nหลานเดินในบ้านย่า เก็บหลักฐาน เปิดสมุดคดี แล้วเล่นมินิเกมที่ติดอยู่ในฉาก เนื้อเรื่องมาจากแพ็กอย่าง event-01\n\n## 3. Core loop\n1. `loadFlow` โหลด `screens.json` + `case-flow.json`\n2. `createFlow` จำหน้าจอ หลักฐาน เวลา และด่านฝึก\n3. `FlowView` วาดฉาก ฮอตสปอต ตัดฉาก (`ComicPanel`) แผนที่ด่าน และสมุดคดี\n4. `primaryEventId` คือเหตุการณ์ที่ไม่มี `unlockAfter` ฉากจบคือ `endingIdFor`\n5. `eventProgressBody` สร้างก้อนที่ `cloudSync` ส่ง `PUT /players/me/events/:id`\n\n## 4. กฎและ invariants\n- โค้ดเฟรมเวิร์กไม่ฝังบทคดี ข้อความที่ยังฝังใน `FlowView` / `Minigames` เป็นสำเนาเดิมของ UI ก่อนแยกโมดูล\n- เหตุการณ์แรกในข้อมูลปัจจุบันคือ `case-01` ฉากจบ `case-01-ending` เหมือนเดิม\n- สมุดคดีโชว์เมื่อ `showCaseUi` (context เป็น event และไม่ใช่โหมดฝึก)\n- `playMode` คืน practice / story / challenge ตาม context ไม่เปลี่ยนเส้นทางหน้าจอ\n\n## 5. Input / การควบคุม\nแตะฮอตสปอต เลือกบทพูด พลิกหน้าการ์ตูน ปุ่มย้อน สมุดคดี ด่านฝึก บนจอแนวตั้ง\n\n## 6. คะแนนและความยาก\nมินิเกมในคดีใช้ดาวจากจำนวนคำใบ้ (`starCount`) ไม่ส่งกระดานออนไลน์ ระดับความยากเลือกในฉาก difficulty ของแพ็ก\n\n## 7. Progression\nหลักฐาน, ไขคดี, โปสเตอร์, ด่านฝึก เก็บในเซฟเดิม (`flow` ใน `nesg.player.v1`)\n\n## 8. Content / config surface\nstory pack JSON รูปใน `public/img/` แพ็ก event-01 กำหนด `EVENT_ID`\n\n## 9. UX / หน้าจอ\n`FlowView` รวมแผนผังบ้าน ห้อง สมุดคดี กระดานคดี ฉากจบ และ `Minigames` (crossword, jigsaw, slide)\n\n## 10. Data & telemetry (ฟิลด์บนเซิร์ฟเวอร์)\n`eventProgressBody` ให้ `{ status, progress: { evidence, solved, deduced, reward, posterShown, endingSeen, seen } }` เหมือนเดิม ตาราง `player_events` ไม่เปลี่ยน\n\n## 11. Dependencies + เวอร์ชัน\ncore >=0.6.12, minigame-core ^1.0.0, crossword, jigsaw, slide ^1.0.0, stirfry ^1.1.0 (สมุดคดีอ่านสถิติผัด)\n\n## 12. คำถามที่ยังเปิดอยู่ / Backlog\n- **[backlog]** ย้ายข้อความไทยที่ยังฝังใน FlowView เข้า locales\n- **[backlog]** ให้แพ็กเหตุการณ์ถัดไปลงทะเบียนโดยไม่แก้เฟรมเวิร์ก\n\n## 13. Changelog (ผูกกับเวอร์ชันโมดูล)\n| เวอร์ชัน | แอป | การเปลี่ยนแปลง |\n|---|---|---|\n| 1.0.0 | 0.6.12 | ย้าย flow engine, ฉาก, สมุดคดี และเอกสาร D1 ออกจาก core |\n",
+      "files": 12,
+      "size": 81315,
+      "hash": "522a114df914",
+      "lastCommit": {
+        "sha": "a3e0936826b1669059d4cf6db566614d61e8ad9f",
+        "date": "2026-11-07T04:21:01Z",
+        "subject": "feat(nes): v0.6.12 extract minigame-core and event-core"
       }
     },
     {
@@ -210,7 +303,7 @@
         {
           "id": "core",
           "range": ">=0.6.11",
-          "version": "0.6.11",
+          "version": "0.6.12",
           "ok": true
         }
       ],
@@ -223,12 +316,12 @@
       "gdd": "src/modules/god/GDD.md",
       "gddMarkdown": "# GDD: God admin (`god`)\n\n| ฟิลด์ | ค่า |\n|---|---|\n| kind | admin |\n| เวอร์ชัน | 1.0.0 |\n| เทมเพลต | `docs/gdd/TEMPLATE.md` |\n| อ้างอิง | `docs/modules.md` |\n\n## 1. จุดประสงค์ / Pitch\nหน้าแอดมิน `/never/god` และ API `/never/api/god/*` สำหรับดูผู้เล่น รอบคะแนน อีเวนต์ และทะเบียนโมดูล แยกจาก core ใน 0.6.11 โดยพฤติกรรมและการล็อกอินไม่เปลี่ยน\n\n## 2. แฟนตาซีของผู้เล่น\nไม่มีฝั่งผู้เล่น ใช้โดยคนดูแลเกม\n\n## 3. Core loop\n1. เปิด `/never/god` 2. ใส่รหัส `GOD_ADMIN_PASSWORD` 3. ได้คุกกี้เซสชัน 12 ชม. 4. ดูแดชบอร์ด / ผู้เล่น / เกม / อีเวนต์ / โมดูล\n\n## 4. กฎและ invariants\n- รหัสผ่านไม่ถูกเก็บใน JS เซสชันเป็นคุกกี้ `nes_god` (HttpOnly, Secure, SameSite=Strict, path `/never`) ลงนาม HMAC\n- ล็อกอินผิด 5 ครั้งล็อก 15 นาทีต่อ IP (IPv6 ใช้ prefix /64) ตาราง `god_login`\n- ไม่เลือกและไม่ส่ง `token_hash`\n- ชนิดโมดูล `edition` ใน registry เก่าถูกจัดกลุ่มเป็น `pack`\n- เกมย่อยแสดงกติกาที่ build นี้เล่นได้ และจำนวนรอบต่อ `ruleset` จาก D1\n\n## 5. Input / การควบคุม\nฟอร์มรหัสผ่าน เมนูด้านข้าง แท็บ ช่องค้นหา ปุ่มลบรอบ (มี confirm) ใช้ได้บนจอ 390px (ตารางเลื่อนข้าง)\n\n## 6. คะแนนและความยาก\nไม่ให้คะแนน แสดงสถิติรายระดับและรายกติกา\n\n## 7. Progression\nไม่มี\n\n## 8. Content / config surface\nรหัสผ่านเป็น secret ของ Worker ไม่ได้อยู่ใน repo ทะเบียนโมดูลมาจาก `dist/modules.json` ผ่าน `GET /never/api/god/modules`\n\n## 9. UX / หน้าจอ\n`God.svelte` + `GodModule.svelte` บูตจาก `main.ts` (`god.html`)\n\n- `#/dashboard` จำนวนผู้เล่น รอบ คน active\n- `#/players` และ `#/players/<id>`\n- `#/games` และ `#/games/<moduleId>`: ภาพรวม, กระดาน, GDD, ตารางกติกา (runs / players)\n- `#/events` กรวยคดี\n- `#/modules` จัดกลุ่มตาม kind รวม `admin` และ `pack`\n\n## 10. Data & telemetry (ฟิลด์บนเซิร์ฟเวอร์)\n`server.ts` ตอบใต้ `/never/api/god` (auth เดิม):\n\n| เมธอด | เส้นทาง | ทำอะไร |\n|---|---|---|\n| POST | `/login` `/logout` | เซสชัน |\n| GET | `/me` `/dashboard` `/players` `/players/:id` | อ่าน |\n| PATCH/DELETE | `/players/:id` | เปลี่ยนชื่อ / ลบ |\n| GET | `/games` | สถิติรายระดับ + `byRuleset` |\n| GET | `/games/:game/board?difficulty=&ruleset=` | กระดาน `ruleset` ว่าง = ทุกรอบ |\n| DELETE | `/runs/:sessionId` | ลบรอบ |\n| GET | `/events` `/modules` | กรวยคดี / registry |\n\n## 11. Dependencies + เวอร์ชัน\ncore >=0.6.11 (`i18n`, catalog กติกา) Worker (`worker/index.ts`) เรียก `godApi` จาก public entry `server.ts`\n\n## 12. คำถามที่ยังเปิดอยู่ / Backlog\n- **[backlog]** สิทธิ์มากกว่าหนึ่งคน\n\n## 13. Changelog (ผูกกับเวอร์ชันโมดูล)\n| เวอร์ชัน | แอป | การเปลี่ยนแปลง |\n|---|---|---|\n| 1.0.0 | 0.6.11 | ย้ายออกจาก core, kind `admin`, แสดงกติกาและจำนวนรอบต่อเวอร์ชัน |\n",
       "files": 8,
-      "size": 57660,
-      "hash": "58fa23e76f97",
+      "size": 57691,
+      "hash": "48ed06e5668c",
       "lastCommit": {
-        "sha": "8bd1cf2cddb08dfde8f6fb4573b27d2eb644bf77",
-        "date": "2026-11-07T03:40:36Z",
-        "subject": "feat(nes): v0.6.11 ruleset share links, pack rename, god module"
+        "sha": "a3e0936826b1669059d4cf6db566614d61e8ad9f",
+        "date": "2026-11-07T04:21:01Z",
+        "subject": "feat(nes): v0.6.12 extract minigame-core and event-core"
       }
     },
     {
@@ -238,7 +331,14 @@
       "version": "1.0.0",
       "description": "Jigsaw puzzle rules and board state.",
       "entry": "src/modules/jigsaw/index.ts",
-      "dependsOn": [],
+      "dependsOn": [
+        {
+          "id": "minigame-core",
+          "range": "^1.0.0",
+          "version": "1.0.0",
+          "ok": true
+        }
+      ],
       "pack": null,
       "packs": [],
       "edition": null,
@@ -248,14 +348,46 @@
         "1.0.0"
       ],
       "gdd": "src/modules/jigsaw/GDD.md",
-      "gddMarkdown": "# GDD: จิ๊กซอว์ (`jigsaw`)\n\n| ฟิลด์ | ค่า |\n|---|---|\n| kind | minigame |\n| เวอร์ชัน | 1.0.0 |\n| เทมเพลต | `docs/gdd/TEMPLATE.md` |\n| อ้างอิง | `docs/design/never-ending-story-game-spec-v0.4-th.md` |\n\n## 1. จุดประสงค์ / Pitch\nต่อภาพถ่ายเก่าของครอบครัว\n\n## 2. แฟนตาซีของผู้เล่น\nหลานช่วยย่าแก้ปริศนาของเก่าในบ้าน\n\n## 3. Core loop\n1. เลือกชิ้น 2. แตะช่องที่ถูก 3. วางครบ → ผ่าน\n\n## 4. กฎและ invariants\n- ชิ้นที่วางแล้วอยู่ใน `placed` · `jigPosition()` คำนวณตำแหน่งภาพของชิ้น\n\n## 5. Input / การควบคุม\nแตะชิ้นแล้วแตะช่อง\n\n## 6. คะแนนและความยาก\nสูตรอยู่ใน `challenge` ruleset 1.1.0 · โหมด challenge ใช้กริดจาก `ruleset.json` 1.0.0: 3×3 / 3×4 / 4×4 · par: 30/50/90 วินาที · เปลี่ยนกริดต้อง bump โมดูลนี้และเพิ่มคีย์ ruleset\n\n## 7. Progression\nใช้ในคดีผ่าน flow engine และในโหมด challenge (คะแนนดีสุดต่อระดับ)\n\n## 8. Content / config surface\nภาพและจำนวนชิ้นใน `puzzle.ts`\n\n## 9. UX / หน้าจอ\nบอร์ดปริศนา ปุ่มคำใบ้ หน้าผลลัพธ์ (ผ่าน challenge)\n\n## 10. Data & telemetry (ฟิลด์บนเซิร์ฟเวอร์)\nแถว `runs` game ตามคีย์ challenge (`cross`/`jig`/`slide`) difficulty easy/medium/hard\n\n## 11. Dependencies + เวอร์ชัน\nไม่มี dependency (ถูกใช้โดย core, challenge, event-01)\n\n## 12. คำถามที่ยังเปิดอยู่ / Backlog\n- **[backlog]** ปริศนาสุ่มจาก seed ทุกระดับ\n\n## 13. Changelog (ผูกกับเวอร์ชันโมดูล)\n| เวอร์ชัน | แอป | การเปลี่ยนแปลง |\n|---|---|---|\n| 1.0.0 | 0.6.5 | แยกกฎเป็นโมดูล |\n",
+      "gddMarkdown": "# GDD: จิ๊กซอว์ (`jigsaw`)\n\n| ฟิลด์ | ค่า |\n|---|---|\n| kind | minigame |\n| เวอร์ชัน | 1.0.0 |\n| เทมเพลต | `docs/gdd/TEMPLATE.md` |\n| อ้างอิง | `docs/design/never-ending-story-game-spec-v0.4-th.md` |\n\n## 1. จุดประสงค์ / Pitch\nต่อภาพถ่ายเก่าของครอบครัว\n\n## 2. แฟนตาซีของผู้เล่น\nหลานช่วยย่าแก้ปริศนาของเก่าในบ้าน\n\n## 3. Core loop\n1. เลือกชิ้น 2. แตะช่องที่ถูก 3. วางครบ → ผ่าน\n\n## 4. กฎและ invariants\n- ชิ้นที่วางแล้วอยู่ใน `placed` · `jigPosition()` คำนวณตำแหน่งภาพของชิ้น\n\n## 5. Input / การควบคุม\nแตะชิ้นแล้วแตะช่อง\n\n## 6. คะแนนและความยาก\nสูตรอยู่ใน `challenge` ruleset 1.1.0 · โหมด challenge ใช้กริดจาก `ruleset.json` 1.0.0: 3×3 / 3×4 / 4×4 · par: 30/50/90 วินาที · เปลี่ยนกริดต้อง bump โมดูลนี้และเพิ่มคีย์ ruleset\n\n## 7. Progression\nใช้ในคดีผ่าน flow engine และในโหมด challenge (คะแนนดีสุดต่อระดับ)\n\n## 8. Content / config surface\nภาพและจำนวนชิ้นใน `puzzle.ts`\n\n## 9. UX / หน้าจอ\nบอร์ดปริศนา ปุ่มคำใบ้ หน้าผลลัพธ์ (ผ่าน challenge)\n\n## 10. Data & telemetry (ฟิลด์บนเซิร์ฟเวอร์)\nแถว `runs` game ตามคีย์ challenge (`cross`/`jig`/`slide`) difficulty easy/medium/hard\n\n## 11. Dependencies + เวอร์ชัน\nminigame-core ^1.0.0 (`jigsawGame`) ถูกใช้โดย challenge และ event-core\n\n## 12. คำถามที่ยังเปิดอยู่ / Backlog\n- **[backlog]** ปริศนาสุ่มจาก seed ทุกระดับ\n\n## 13. Changelog (ผูกกับเวอร์ชันโมดูล)\n| เวอร์ชัน | แอป | การเปลี่ยนแปลง |\n|---|---|---|\n| 1.0.0 | 0.6.5 | แยกกฎเป็นโมดูล |\n",
       "files": 5,
-      "size": 1475,
-      "hash": "d8da80a7a466",
+      "size": 1722,
+      "hash": "47f6c85a677d",
       "lastCommit": {
-        "sha": "8bd1cf2cddb08dfde8f6fb4573b27d2eb644bf77",
-        "date": "2026-11-07T03:40:36Z",
-        "subject": "feat(nes): v0.6.11 ruleset share links, pack rename, god module"
+        "sha": "a3e0936826b1669059d4cf6db566614d61e8ad9f",
+        "date": "2026-11-07T04:21:01Z",
+        "subject": "feat(nes): v0.6.12 extract minigame-core and event-core"
+      }
+    },
+    {
+      "id": "minigame-core",
+      "name": "Minigame framework",
+      "kind": "minigame-core",
+      "version": "1.0.0",
+      "description": "Shared minigame framework: run lifecycle, practice/story/challenge mode, ruleset key, share-link paths, run token, result submission, and the ruleset HUD shells. Puzzle challenge stays a feature on top of this.",
+      "entry": "src/modules/minigame-core/index.ts",
+      "dependsOn": [
+        {
+          "id": "core",
+          "range": ">=0.6.12",
+          "version": "0.6.12",
+          "ok": true
+        }
+      ],
+      "pack": null,
+      "packs": [],
+      "edition": null,
+      "editions": [],
+      "ruleset": false,
+      "rulesets": null,
+      "gdd": "src/modules/minigame-core/GDD.md",
+      "gddMarkdown": "# GDD: แกนมินิเกม (`minigame-core`)\n\n| ฟิลด์ | ค่า |\n|---|---|\n| kind | minigame-core |\n| เวอร์ชัน | 1.0.0 |\n| เทมเพลต | `docs/gdd/TEMPLATE.md` |\n| อ้างอิง | `docs/modules.md` |\n\n## 1. จุดประสงค์ / Pitch\nเฟรมเวิร์กที่มินิเกม กลไก rhythm แพ็ก และโหมด challenge ใช้ร่วมกัน: ช่วงชีวิตของรอบ คีย์กติกา ลิงก์แชร์ โทเคนคะแนน และเปลือก HUD ของกติกา\n\n## 2. แฟนตาซีของผู้เล่น\nผู้เล่นไม่เห็นโมดูลนี้ตรงๆ เห็นป้ายกติกา ลิงก์ท้าเพื่อน และผลส่งคะแนนเหมือนเดิม\n\n## 3. Core loop\n1. `defineMinigame` ลงทะเบียนโมดูล (โหมด practice / story / challenge)\n2. `minigameRoute` แยกแฮช `#/challenge` `#/play/` `#/leaderboard`\n3. `nextPhase` เปลี่ยน ready → play → result (มี pause/resume ใน API)\n4. `seededPath` + `withChallenger` สร้างลิงก์\n5. `submitFinishedRun` แพ็ก protobuf แล้วเข้าคิว `POST /api/runs`\n\n## 4. กฎและ invariants\n- ไม่มีตัวเลขเกมของตัวเอง ไม่มี `ruleset.json` การเปลี่ยนพารามิเตอร์เกมยังอยู่ที่โมดูลนั้น\n- ลิงก์และโทเคนได้ไบต์เดิม: `runProto.ts` ย้ายมาที่นี่ `challenge/proto.ts` ส่งต่อให้ Worker\n- คีย์กติกาเรียงชื่อโมดูล (`canonicalRuleset`) เหมือน `src/lib/ruleset.ts` ซึ่ง re-export จากที่นี่\n- ปุ่ม pause ยังไม่ขึ้นบนจอ เกมเรียก `nextPhase(..., 'end')` ตอนจบรอบเท่านั้น\n\n## 5. Input / การควบคุม\n`RulesetBanner` และ `UnsupportedRuleset` เป็นเปลือกที่ใช้ใน rhythm และ challenge ปุ่มเล่นกติกาปัจจุบันกับออก\n\n## 6. คะแนนและความยาก\nไม่คำนวณคะแนน ส่งรายงานที่เกมคำนวณแล้ว (`ChallengeRunPb`) พร้อม `ruleset`\n\n## 7. Progression\nไม่มีดาวของตัวเอง\n\n## 8. Content / config surface\nไม่มี เกมส่ง `gameCopy(prefix)` ไปอ่าน `src/locales`\n\n## 9. UX / หน้าจอ\nป้าย `data-testid=\"ruleset-banner\"` และการ์ด `data-testid=\"ruleset-unsupported\"`\n\n## 10. Data & telemetry (ฟิลด์บนเซิร์ฟเวอร์)\nฟิลด์ protobuf เดิม (ดู `proto/challenge_run.proto`) รวม `ruleset` ช่อง 15 คอลัมน์ D1 ไม่เปลี่ยน\n\n## 11. Dependencies + เวอร์ชัน\ncore >=0.6.12\n\n## 12. คำถามที่ยังเปิดอยู่ / Backlog\n- **[backlog]** ปุ่มพักรอบที่ใช้ `nextPhase(..., 'pause')` จริงบน HUD\n- **[backlog]** รวมหน้าผลลัพธ์ของ puzzle กับ rhythm ให้เป็นเชลล์เดียวทั้งก้อน\n\n## 13. Changelog (ผูกกับเวอร์ชันโมดูล)\n| เวอร์ชัน | แอป | การเปลี่ยนแปลง |\n|---|---|---|\n| 1.0.0 | 0.6.12 | แยกเฟรมเวิร์กจาก challenge/rhythm โดยไม่เปลี่ยนตัวเลขกติกา |\n",
+      "files": 12,
+      "size": 14633,
+      "hash": "33c239a42e27",
+      "lastCommit": {
+        "sha": "a3e0936826b1669059d4cf6db566614d61e8ad9f",
+        "date": "2026-11-07T04:21:01Z",
+        "subject": "feat(nes): v0.6.12 extract minigame-core and event-core"
       }
     },
     {
@@ -268,14 +400,14 @@
       "dependsOn": [
         {
           "id": "core",
-          "range": ">=0.6.11",
-          "version": "0.6.11",
+          "range": ">=0.6.12",
+          "version": "0.6.12",
           "ok": true
         },
         {
-          "id": "challenge",
-          "range": "^1.1.0",
-          "version": "1.1.0",
+          "id": "minigame-core",
+          "range": "^1.0.0",
+          "version": "1.0.0",
           "ok": true
         }
       ],
@@ -292,14 +424,14 @@
         "1.1.0"
       ],
       "gdd": "src/modules/rhythm/GDD.md",
-      "gddMarkdown": "# GDD: Rhythm tap (กลไกหลัก) (`rhythm`)\n\n| ฟิลด์ | ค่า |\n|---|---|\n| kind | engine |\n| เวอร์ชัน | 1.1.0 |\n| เทมเพลต | `docs/gdd/TEMPLATE.md` |\n| อ้างอิง | `docs/design/never-ending-story-game-spec-v0.4-th.md` |\n\n## 1. จุดประสงค์ / Pitch\nกลไกจังหวะแบบ white-label: แตะตามจังหวะ + ปุ่มพิเศษเมื่อมีคิว + คุมมาตรแรงดันให้อยู่ในโซน ใช้ซ้ำได้หลายธีมผ่าน *pack*\n\n## 2. แฟนตาซีของผู้เล่น\nผู้เล่นทำงานอย่างหนึ่งให้เข้าจังหวะ (เช่น ผัดกระทะกับย่า) รู้สึกถึงจังหวะและความต่อเนื่อง\n\n## 3. Core loop\n1. นับจังหวะทุก `beatMs`\n2. แตะปุ่มหลักใกล้จังหวะ → perfect / good / miss\n3. คิวพิเศษเด้งมาตาม **ชาร์ต** (กำหนดจาก seed) → แตะปุ่มพิเศษในหน้าต่างเวลา\n4. แรงดันขึ้นเอง แตะแต่ละครั้งลดแรงดัน รักษาให้อยู่ในโซน\n5. progress ถึง 100 หรือหมดเวลา → ผลลัพธ์ + ส่งคะแนน\n\n## 4. กฎและ invariants\n- คะแนนไม่ติดลบ, combo สูงสุด 12 (perfect) / 8 (good)\n- เมื่อคิวพิเศษรออยู่ แตะปุ่มหลักจะไม่ถูกตัดสิน\n- engine ไม่รู้จักธีม: ภาพทั้งหมดมาจาก `pack.Stage` คำทั้งหมดมาจาก prefix `pack.copy`\n- run ถูกเซฟที่ `pack.storageKey` (เล่นต่อได้) พร้อม difficulty, seed และ index ของคิวถัดไป\n- **ชาร์ตกำหนดตายตัว:** `buildChart(packId, difficulty, seed, params)` ใช้ mulberry32 กับ FNV-1a ของ `pack|difficulty|seed` → pack + ระดับ + seed + params เดียวกัน = ลำดับเวลาคิวเดียวกันทุกเครื่อง (`chartId()` เป็นลายนิ้วมือของชาร์ต)\n- **กติกาอยู่ที่ `ruleset.json`:** เวอร์ชัน 1.1.0 เก็บ `params`, `tuning` (easy/normal/hard), `scoring` และ `chart: v1`. เปลี่ยนค่าพวกนี้ต้อง bump เป็น 1.2.0 แล้วเพิ่มคีย์ใหม่ ทิ้งคีย์ 1.1.0 ไว้ให้ลิงก์เก่าเล่นได้ `check:modules` บังคับว่า `module.json` version ต้องมีในไฟล์นี้\n- ป้าย judgement ใหม่แทนป้ายเดิมทันที (miss ไม่ค้าง Perfect!) และ Stage ยกเลิกท่าทางเดิมทันที\n\n## 5. Input / การควบคุม\nปุ่มหลัก (แตะตามจังหวะ) และปุ่มพิเศษ (เมื่อมีคิว)\n\n## 6. คะแนนและความยาก\n| เหตุการณ์ | คะแนน |\n|---|---|\n| perfect (±`perfectMs` 110) | 80 + โบนัสความแม่น ≤50 + combo×3, progress +4.2 |\n| good (±`goodMs` 200) | 40 + combo, progress +2.4 |\n| miss | −10, combo = 0 |\n| extra-hit (±`extraWindowMs` 480) | 140 + combo×6, progress +9 |\n| ในโซนแรงดัน | +10/วินาที, progress +1.1/วินาที |\n| นอกโซน | −12/วินาที |\n\nระดับ `easy` / `normal` / `hard` (`paramsFor`): easy = จังหวะ ×1.15, หน้าต่างตัดสิน ×1.25, ช่องว่างคิว ×1.2, แรงดันขึ้น ×0.8 · hard = ×0.85, ×0.8, ×0.8, ×1.25 · ค่าตั้งต้นอยู่ใน `DEFAULT_PARAMS`\n\n## 7. Progression\nดาว: 2 ดาว ≥ `stars.two` (900), 3 ดาว ≥ `stars.three` (1400) และต้องทำ progress ครบ · บันทึกคะแนนดีสุดต่อ pack\n\n## 8. Content / config surface\n**pack interface** (`src/modules/rhythm/types.ts` → `RhythmPack`):\n- `id`, `leaderboardId`, `copy` (prefix i18n), `storageKey`, `route`\n- `params: RhythmParams` (durationSec, beatMs, perfectMs, goodMs, extra*, pressure*, stars)\n- `theme.background`, `theme.accent`\n- `Stage: Component<StageProps>` รับ progress, pressure, pressureZone, combo, beat, extraDue, last (judgement), pulse\n- hooks: `onBeat()`, `onJudge(j)`, `onFinish(score, progress)`\n\n## 9. UX / หน้าจอ\nintro (เลือกระดับ, ชาร์ต #seed, สุ่มชาร์ตใหม่, แชร์ลิงก์ชาร์ต, ป้ายท้าจากเพื่อน) → play (HUD: เวลา, คะแนน, combo, มาตรแรงดัน, Stage, ปุ่ม) → result (ดาว, คะแนนดีสุด, สถานะส่งออนไลน์, ปุ่มกระดานคะแนน)\n\n## 10. Data & telemetry (ฟิลด์บนเซิร์ฟเวอร์)\n`POST /never/api/runs` (Bearer player token) ด้วย protobuf run token: game = `pack.leaderboardId`, difficulty = ระดับที่เลือก, **seed = seed ของชาร์ต**, score, timeMs, `version` = `<app>;<ruleset>` (แอปไว้ดูอย่างเดียว ไม่ใช้แยกกระดาน), **`ruleset` = `rhythm@<engine>+<pack>@<packVer>`** เช่น `rhythm@1.1.0+stirfry@1.2.0` เก็บในคอลัมน์ `runs.ruleset` · Worker ตรวจว่า ruleset อยู่ใน allowlist, difficulty ∈ easy/normal/hard, seed เป็นจำนวนเต็ม 1..2^31−1, เวลาและคะแนนไม่เกินค่าใน ruleset (`minMs` 3000, `slackSec` 5, `maxScore` 25000)\n\nลิงก์ท้า: `<pack.route>/<difficulty>/<seed>[/rhythm@1.1.0+<pack>@<ver>][/vs/<nick>?score=&time=]` (`parseRhythmHash` / `rhythmHash`). ไม่มี segment กติกา = กติกาสมัยแอป 0.6.10 (`rhythm@1.1.0` + pack legacy). กติกาที่ไม่มีใน registry แสดงข้อความใน locale แล้วให้เล่นกติกาปัจจุบันแทน\n\n## 11. Dependencies + เวอร์ชัน\ncore >=0.6.11, challenge ^1.1.0 (`packRun`, `submitRun`)\n\n## 12. คำถามที่ยังเปิดอยู่ / Backlog\n- **[backlog]** เซิร์ฟเวอร์ replay ชาร์ตจาก seed เพื่อตรวจคะแนนสูงสุดที่เป็นไปได้\n- **[backlog]** คะแนนดีสุดแยกตามระดับในเครื่อง\n- **[backlog]** เสียง/ดนตรีต่อ pack ผ่าน hook\n\n## 13. Changelog (ผูกกับเวอร์ชันโมดูล)\n| เวอร์ชัน | แอป | การเปลี่ยนแปลง |\n|---|---|---|\n| 1.1.0 | 0.6.11 | ค่าเกมเท่า 0.6.10 แต่ถูกตรึงใน `ruleset.json` ลิงก์แชร์ติด `rhythm@1.1.0` คู่กับเวอร์ชัน pack กระดานแยกตามกติกานี้ |\n| 1.1.0 | 0.6.10 | ชาร์ตแบบ seed, ระดับ easy/normal/hard, ลิงก์ท้า, seed ใน run token, ป้าย judgement ไม่ค้าง |\n| 1.0.0 | 0.6.9 | แยกจาก stirfry เป็นกลไก white-label |\n",
+      "gddMarkdown": "# GDD: Rhythm tap (กลไกหลัก) (`rhythm`)\n\n| ฟิลด์ | ค่า |\n|---|---|\n| kind | engine |\n| เวอร์ชัน | 1.1.0 |\n| เทมเพลต | `docs/gdd/TEMPLATE.md` |\n| อ้างอิง | `docs/design/never-ending-story-game-spec-v0.4-th.md` |\n\n## 1. จุดประสงค์ / Pitch\nกลไกจังหวะแบบ white-label: แตะตามจังหวะ + ปุ่มพิเศษเมื่อมีคิว + คุมมาตรแรงดันให้อยู่ในโซน ใช้ซ้ำได้หลายธีมผ่าน *pack*\n\n## 2. แฟนตาซีของผู้เล่น\nผู้เล่นทำงานอย่างหนึ่งให้เข้าจังหวะ (เช่น ผัดกระทะกับย่า) รู้สึกถึงจังหวะและความต่อเนื่อง\n\n## 3. Core loop\n1. นับจังหวะทุก `beatMs`\n2. แตะปุ่มหลักใกล้จังหวะ → perfect / good / miss\n3. คิวพิเศษเด้งมาตาม **ชาร์ต** (กำหนดจาก seed) → แตะปุ่มพิเศษในหน้าต่างเวลา\n4. แรงดันขึ้นเอง แตะแต่ละครั้งลดแรงดัน รักษาให้อยู่ในโซน\n5. progress ถึง 100 หรือหมดเวลา → ผลลัพธ์ + ส่งคะแนน\n\n## 4. กฎและ invariants\n- คะแนนไม่ติดลบ, combo สูงสุด 12 (perfect) / 8 (good)\n- เมื่อคิวพิเศษรออยู่ แตะปุ่มหลักจะไม่ถูกตัดสิน\n- engine ไม่รู้จักธีม: ภาพทั้งหมดมาจาก `pack.Stage` คำทั้งหมดมาจาก prefix `pack.copy`\n- run ถูกเซฟที่ `pack.storageKey` (เล่นต่อได้) พร้อม difficulty, seed และ index ของคิวถัดไป\n- **ชาร์ตกำหนดตายตัว:** `buildChart(packId, difficulty, seed, params)` ใช้ mulberry32 กับ FNV-1a ของ `pack|difficulty|seed` → pack + ระดับ + seed + params เดียวกัน = ลำดับเวลาคิวเดียวกันทุกเครื่อง (`chartId()` เป็นลายนิ้วมือของชาร์ต)\n- **กติกาอยู่ที่ `ruleset.json`:** เวอร์ชัน 1.1.0 เก็บ `params`, `tuning` (easy/normal/hard), `scoring` และ `chart: v1`. เปลี่ยนค่าพวกนี้ต้อง bump เป็น 1.2.0 แล้วเพิ่มคีย์ใหม่ ทิ้งคีย์ 1.1.0 ไว้ให้ลิงก์เก่าเล่นได้ `check:modules` บังคับว่า `module.json` version ต้องมีในไฟล์นี้\n- ป้าย judgement ใหม่แทนป้ายเดิมทันที (miss ไม่ค้าง Perfect!) และ Stage ยกเลิกท่าทางเดิมทันที\n\n## 5. Input / การควบคุม\nปุ่มหลัก (แตะตามจังหวะ) และปุ่มพิเศษ (เมื่อมีคิว)\n\n## 6. คะแนนและความยาก\n| เหตุการณ์ | คะแนน |\n|---|---|\n| perfect (±`perfectMs` 110) | 80 + โบนัสความแม่น ≤50 + combo×3, progress +4.2 |\n| good (±`goodMs` 200) | 40 + combo, progress +2.4 |\n| miss | −10, combo = 0 |\n| extra-hit (±`extraWindowMs` 480) | 140 + combo×6, progress +9 |\n| ในโซนแรงดัน | +10/วินาที, progress +1.1/วินาที |\n| นอกโซน | −12/วินาที |\n\nระดับ `easy` / `normal` / `hard` (`paramsFor`): easy = จังหวะ ×1.15, หน้าต่างตัดสิน ×1.25, ช่องว่างคิว ×1.2, แรงดันขึ้น ×0.8 · hard = ×0.85, ×0.8, ×0.8, ×1.25 · ค่าตั้งต้นอยู่ใน `DEFAULT_PARAMS`\n\n## 7. Progression\nดาว: 2 ดาว ≥ `stars.two` (900), 3 ดาว ≥ `stars.three` (1400) และต้องทำ progress ครบ · บันทึกคะแนนดีสุดต่อ pack\n\n## 8. Content / config surface\n**pack interface** (`src/modules/rhythm/types.ts` → `RhythmPack`):\n- `id`, `leaderboardId`, `copy` (prefix i18n), `storageKey`, `route`\n- `params: RhythmParams` (durationSec, beatMs, perfectMs, goodMs, extra*, pressure*, stars)\n- `theme.background`, `theme.accent`\n- `Stage: Component<StageProps>` รับ progress, pressure, pressureZone, combo, beat, extraDue, last (judgement), pulse\n- hooks: `onBeat()`, `onJudge(j)`, `onFinish(score, progress)`\n\n## 9. UX / หน้าจอ\nintro (เลือกระดับ, ชาร์ต #seed, สุ่มชาร์ตใหม่, แชร์ลิงก์ชาร์ต, ป้ายท้าจากเพื่อน) → play (HUD: เวลา, คะแนน, combo, มาตรแรงดัน, Stage, ปุ่ม) → result (ดาว, คะแนนดีสุด, สถานะส่งออนไลน์, ปุ่มกระดานคะแนน)\n\n## 10. Data & telemetry (ฟิลด์บนเซิร์ฟเวอร์)\n`POST /never/api/runs` (Bearer player token) ด้วย protobuf run token: game = `pack.leaderboardId`, difficulty = ระดับที่เลือก, **seed = seed ของชาร์ต**, score, timeMs, `version` = `<app>;<ruleset>` (แอปไว้ดูอย่างเดียว ไม่ใช้แยกกระดาน), **`ruleset` = `rhythm@<engine>+<pack>@<packVer>`** เช่น `rhythm@1.1.0+stirfry@1.2.0` เก็บในคอลัมน์ `runs.ruleset` · Worker ตรวจว่า ruleset อยู่ใน allowlist, difficulty ∈ easy/normal/hard, seed เป็นจำนวนเต็ม 1..2^31−1, เวลาและคะแนนไม่เกินค่าใน ruleset (`minMs` 3000, `slackSec` 5, `maxScore` 25000)\n\nลิงก์ท้า: `<pack.route>/<difficulty>/<seed>[/rhythm@1.1.0+<pack>@<ver>][/vs/<nick>?score=&time=]` (`parseRhythmHash` / `rhythmHash`). ไม่มี segment กติกา = กติกาสมัยแอป 0.6.10 (`rhythm@1.1.0` + pack legacy). กติกาที่ไม่มีใน registry แสดงข้อความใน locale แล้วให้เล่นกติกาปัจจุบันแทน\n\n## 11. Dependencies + เวอร์ชัน\nminigame-core ^1.0.0 (เฟสจบรอบ, ลิงก์, `submitFinishedRun`, ป้ายกติกา), core >=0.6.12\n\n## 12. คำถามที่ยังเปิดอยู่ / Backlog\n- **[backlog]** เซิร์ฟเวอร์ replay ชาร์ตจาก seed เพื่อตรวจคะแนนสูงสุดที่เป็นไปได้\n- **[backlog]** คะแนนดีสุดแยกตามระดับในเครื่อง\n- **[backlog]** เสียง/ดนตรีต่อ pack ผ่าน hook\n\n## 13. Changelog (ผูกกับเวอร์ชันโมดูล)\n| เวอร์ชัน | แอป | การเปลี่ยนแปลง |\n|---|---|---|\n| 1.1.0 | 0.6.11 | ค่าเกมเท่า 0.6.10 แต่ถูกตรึงใน `ruleset.json` ลิงก์แชร์ติด `rhythm@1.1.0` คู่กับเวอร์ชัน pack กระดานแยกตามกติกานี้ |\n| 1.1.0 | 0.6.10 | ชาร์ตแบบ seed, ระดับ easy/normal/hard, ลิงก์ท้า, seed ใน run token, ป้าย judgement ไม่ค้าง |\n| 1.0.0 | 0.6.9 | แยกจาก stirfry เป็นกลไก white-label |\n",
       "files": 8,
-      "size": 38780,
-      "hash": "2ffa73c585bf",
+      "size": 38651,
+      "hash": "dc0da5bdbf29",
       "lastCommit": {
-        "sha": "8bd1cf2cddb08dfde8f6fb4573b27d2eb644bf77",
-        "date": "2026-11-07T03:40:36Z",
-        "subject": "feat(nes): v0.6.11 ruleset share links, pack rename, god module"
+        "sha": "a3e0936826b1669059d4cf6db566614d61e8ad9f",
+        "date": "2026-11-07T04:21:01Z",
+        "subject": "feat(nes): v0.6.12 extract minigame-core and event-core"
       }
     },
     {
@@ -309,7 +441,14 @@
       "version": "1.0.0",
       "description": "Sliding-block puzzle rules and board state.",
       "entry": "src/modules/slide/index.ts",
-      "dependsOn": [],
+      "dependsOn": [
+        {
+          "id": "minigame-core",
+          "range": "^1.0.0",
+          "version": "1.0.0",
+          "ok": true
+        }
+      ],
       "pack": null,
       "packs": [],
       "edition": null,
@@ -319,14 +458,14 @@
         "1.0.0"
       ],
       "gdd": "src/modules/slide/GDD.md",
-      "gddMarkdown": "# GDD: บล็อกเลื่อน (`slide`)\n\n| ฟิลด์ | ค่า |\n|---|---|\n| kind | minigame |\n| เวอร์ชัน | 1.0.0 |\n| เทมเพลต | `docs/gdd/TEMPLATE.md` |\n| อ้างอิง | `docs/design/never-ending-story-game-spec-v0.4-th.md` |\n\n## 1. จุดประสงค์ / Pitch\nเลื่อนบล็อกเพื่อพากุญแจออกทางออก\n\n## 2. แฟนตาซีของผู้เล่น\nหลานช่วยย่าแก้ปริศนาของเก่าในบ้าน\n\n## 3. Core loop\n1. แตะบล็อก 2. บล็อกเลื่อนตามแนว 3. กุญแจ `K` ถึงขอบ → ชนะ\n\n## 4. กฎและ invariants\n- บล็อกซ้อนกันไม่ได้ · `stepBlock()` คืน 0/1/'win'\n\n## 5. Input / การควบคุม\nแตะบล็อกเพื่อเลื่อน\n\n## 6. คะแนนและความยาก\nสูตรอยู่ใน `challenge` ruleset 1.1.0 · โหมด challenge ใช้ `ruleset.json` 1.0.0: ขนาด 3/3/4, สลับ 16/40/70 ครั้ง · par: 40/70/150 วินาที · เปลี่ยนค่าต้อง bump โมดูลนี้และเพิ่มคีย์ ruleset\n\n## 7. Progression\nใช้ในคดีผ่าน flow engine และในโหมด challenge (คะแนนดีสุดต่อระดับ)\n\n## 8. Content / config surface\nตำแหน่งเริ่มต้นใน `freshSlide()`\n\n## 9. UX / หน้าจอ\nบอร์ดปริศนา ปุ่มคำใบ้ หน้าผลลัพธ์ (ผ่าน challenge)\n\n## 10. Data & telemetry (ฟิลด์บนเซิร์ฟเวอร์)\nแถว `runs` game ตามคีย์ challenge (`cross`/`jig`/`slide`) difficulty easy/medium/hard\n\n## 11. Dependencies + เวอร์ชัน\nไม่มี dependency (ถูกใช้โดย core, challenge, event-01)\n\n## 12. คำถามที่ยังเปิดอยู่ / Backlog\n- **[backlog]** ปริศนาสุ่มจาก seed ทุกระดับ\n\n## 13. Changelog (ผูกกับเวอร์ชันโมดูล)\n| เวอร์ชัน | แอป | การเปลี่ยนแปลง |\n|---|---|---|\n| 1.0.0 | 0.6.5 | แยกกฎเป็นโมดูล |\n",
+      "gddMarkdown": "# GDD: บล็อกเลื่อน (`slide`)\n\n| ฟิลด์ | ค่า |\n|---|---|\n| kind | minigame |\n| เวอร์ชัน | 1.0.0 |\n| เทมเพลต | `docs/gdd/TEMPLATE.md` |\n| อ้างอิง | `docs/design/never-ending-story-game-spec-v0.4-th.md` |\n\n## 1. จุดประสงค์ / Pitch\nเลื่อนบล็อกเพื่อพากุญแจออกทางออก\n\n## 2. แฟนตาซีของผู้เล่น\nหลานช่วยย่าแก้ปริศนาของเก่าในบ้าน\n\n## 3. Core loop\n1. แตะบล็อก 2. บล็อกเลื่อนตามแนว 3. กุญแจ `K` ถึงขอบ → ชนะ\n\n## 4. กฎและ invariants\n- บล็อกซ้อนกันไม่ได้ · `stepBlock()` คืน 0/1/'win'\n\n## 5. Input / การควบคุม\nแตะบล็อกเพื่อเลื่อน\n\n## 6. คะแนนและความยาก\nสูตรอยู่ใน `challenge` ruleset 1.1.0 · โหมด challenge ใช้ `ruleset.json` 1.0.0: ขนาด 3/3/4, สลับ 16/40/70 ครั้ง · par: 40/70/150 วินาที · เปลี่ยนค่าต้อง bump โมดูลนี้และเพิ่มคีย์ ruleset\n\n## 7. Progression\nใช้ในคดีผ่าน flow engine และในโหมด challenge (คะแนนดีสุดต่อระดับ)\n\n## 8. Content / config surface\nตำแหน่งเริ่มต้นใน `freshSlide()`\n\n## 9. UX / หน้าจอ\nบอร์ดปริศนา ปุ่มคำใบ้ หน้าผลลัพธ์ (ผ่าน challenge)\n\n## 10. Data & telemetry (ฟิลด์บนเซิร์ฟเวอร์)\nแถว `runs` game ตามคีย์ challenge (`cross`/`jig`/`slide`) difficulty easy/medium/hard\n\n## 11. Dependencies + เวอร์ชัน\nminigame-core ^1.0.0 (`slideGame`) ถูกใช้โดย challenge และ event-core\n\n## 12. คำถามที่ยังเปิดอยู่ / Backlog\n- **[backlog]** ปริศนาสุ่มจาก seed ทุกระดับ\n\n## 13. Changelog (ผูกกับเวอร์ชันโมดูล)\n| เวอร์ชัน | แอป | การเปลี่ยนแปลง |\n|---|---|---|\n| 1.0.0 | 0.6.5 | แยกกฎเป็นโมดูล |\n",
       "files": 5,
-      "size": 3177,
-      "hash": "daefd980be86",
+      "size": 3424,
+      "hash": "e6f07e4cec61",
       "lastCommit": {
-        "sha": "8bd1cf2cddb08dfde8f6fb4573b27d2eb644bf77",
-        "date": "2026-11-07T03:40:36Z",
-        "subject": "feat(nes): v0.6.11 ruleset share links, pack rename, god module"
+        "sha": "a3e0936826b1669059d4cf6db566614d61e8ad9f",
+        "date": "2026-11-07T04:21:01Z",
+        "subject": "feat(nes): v0.6.12 extract minigame-core and event-core"
       }
     },
     {
@@ -339,8 +478,14 @@
       "dependsOn": [
         {
           "id": "core",
-          "range": ">=0.6.11",
-          "version": "0.6.11",
+          "range": ">=0.6.12",
+          "version": "0.6.12",
+          "ok": true
+        },
+        {
+          "id": "minigame-core",
+          "range": "^1.0.0",
+          "version": "1.0.0",
           "ok": true
         },
         {
@@ -391,14 +536,14 @@
         "1.2.0"
       ],
       "gdd": "src/modules/stirfry/GDD.md",
-      "gddMarkdown": "# GDD: ผัดกับย่า (Stir-fry with Grandma) (`stirfry`)\n\n| ฟิลด์ | ค่า |\n|---|---|\n| kind | pack (mechanism: `rhythm`) |\n| เวอร์ชัน | 1.2.0 |\n| เทมเพลต | `docs/gdd/TEMPLATE.md` |\n| อ้างอิง | `docs/design/never-ending-story-game-spec-v0.4-th.md` |\n\n## 1. จุดประสงค์ / Pitch\nผัดกระทะกับย่ามะลิให้เข้าจังหวะ ภาพเหมือนจริง อาหารในกระทะเปลี่ยนตามการผัด\n\n## 2. แฟนตาซีของผู้เล่น\nยืนหน้าเตาแก๊สในครัวไทย ผัดไปกับย่า เห็นอาหารสุกขึ้นทีละขั้น\n\n## 3. Core loop\nใช้ core loop ของ `rhythm`: ผัดตามจังหวะ (ปุ่มหลัก) ใส่วัตถุดิบเมื่อย่าบอก (ปุ่มพิเศษ) คุมไฟ (แรงดัน = ความร้อน)\n\n## 4. กฎและ invariants\n- ไม่เปลี่ยนกฎของ rhythm\n- `storageKey` = `nesg.stirfry.v1` เท่าเดิม เซฟเดิมไม่หาย\n- ภาพกระทะ: progress <30 ดิบ, <70 สุกครึ่ง, ≥70 สุก; ความร้อน >78 เริ่มไหม้ (เต็มที่ 96)\n\n## 5. Input / การควบคุม\nปุ่ม \"ผัด\" และ \"ใส่วัตถุดิบ\"\n\n## 6. คะแนนและความยาก\nตาม `rhythm` (`ruleset.json` 1.2.0 คือ params ของแพ็ก + `paramsFor` ของ engine) เลือกระดับ ง่าย / ปกติ / ยาก ก่อนเริ่ม · กระดาน `stirfry` แยกตามระดับ **และ** กติกา `rhythm@1.1.0+stirfry@1.2.0` · ลิงก์ท้า `#/play/stirfry/<ระดับ>/<seed>/rhythm@1.1.0+stirfry@1.2.0` ได้ชาร์ตและหน้าต่างเวลาชุดเดียวกัน · ลิงก์ไม่มีเวอร์ชันยังเล่นได้ เป็นกติกา 0.6.10 ซึ่งตอนนี้เท่ากับชุดนี้\n\n## 7. Progression\nดาวและคะแนนดีสุดตาม rhythm แสดงในสมุดของ FlowView\n\n## 8. Content / config surface\n**mechanism:** `rhythm` ^1.1.0. pack ปรับ (`pack` ใน `module.json`, โค้ดใน `pack.ts`):\n- theme: `public/img/stirfry/kitchen.webp` (สร้างด้วย GenerateImage)\n- Stage `WokStage.svelte`: `wok-raw/half/cooked/burnt/toss.webp`\n- onJudge → hit: ภาพโยนกระทะ + ไอน้ำ 260 ms; miss: สั่น + โทนแดง 380 ms; ไหม้ >0.3: ควัน\n- คำไทย prefix `stirfry.*` ใน locales\n- params: ตรึงใน `ruleset.json` คีย์ `1.2.0` (ไม่ดึงค่าปัจจุบันของ engine ตอนเล่นลิงก์เก่า) รวมช่วงรูปกระทะ `cook` 30/70, ไหม้เริ่ม 78 ช่วง 18, ควันที่ burnt > 0.3, ท่า hit/miss 260/380 ms\n\n## 9. UX / หน้าจอ\nครัวเป็นพื้นหลัง กระทะเต็มกรอบ ปุ่มผัด/ใส่วัตถุดิบด้านล่าง หน้าผลลัพธ์มีปุ่มกระดานคะแนน\n\n## 10. Data & telemetry (ฟิลด์บนเซิร์ฟเวอร์)\nแถว `runs` game = `stirfry`, difficulty = easy/normal/hard, seed = seed ของชาร์ต, `ruleset` = `rhythm@<engine>+stirfry@<pack>` (ตอนนี้ `rhythm@1.1.0+stirfry@1.2.0`). `version` มีเวอร์ชันแอปนำหน้า แต่ไม่ได้ใช้แยกกระดาน\n\n## 11. Dependencies + เวอร์ชัน\nrhythm ^1.1.0, core >=0.6.10\n\n## 12. คำถามที่ยังเปิดอยู่ / Backlog\n- **[backlog]** หลายเมนู (ภาพวัตถุดิบต่างกัน)\n- **[backlog]** เสียงฉ่า\n\n## 13. Changelog (ผูกกับเวอร์ชันโมดูล)\n| เวอร์ชัน | แอป | การเปลี่ยนแปลง |\n|---|---|---|\n| 1.2.0 | 0.6.11 | เปลี่ยนชื่อ kind เป็น pack, ตรึงกติกา 1.2.0 ใน ruleset.json (ค่าเล่นไม่เปลี่ยน), ลิงก์แชร์ติด rhythm@+stirfry@ |\n| 1.2.0 | 0.6.10 | เลือกระดับ, ชาร์ตตาม seed, ลิงก์ท้า, ท่ากระทะ miss/hit ไม่ซ้อนกัน |\n| 1.1.0 | 0.6.9 | คะแนนขึ้นเซิร์ฟเวอร์, ธีมภาพจริง, กระทะเปลี่ยนตามจังหวะ, เป็น pack ของ rhythm |\n| 1.0.0 | 0.6.5 | แยกเป็นโมดูล |\n",
+      "gddMarkdown": "# GDD: ผัดกับย่า (Stir-fry with Grandma) (`stirfry`)\n\n| ฟิลด์ | ค่า |\n|---|---|\n| kind | pack (mechanism: `rhythm`) |\n| เวอร์ชัน | 1.2.0 |\n| เทมเพลต | `docs/gdd/TEMPLATE.md` |\n| อ้างอิง | `docs/design/never-ending-story-game-spec-v0.4-th.md` |\n\n## 1. จุดประสงค์ / Pitch\nผัดกระทะกับย่ามะลิให้เข้าจังหวะ ภาพเหมือนจริง อาหารในกระทะเปลี่ยนตามการผัด\n\n## 2. แฟนตาซีของผู้เล่น\nยืนหน้าเตาแก๊สในครัวไทย ผัดไปกับย่า เห็นอาหารสุกขึ้นทีละขั้น\n\n## 3. Core loop\nใช้ core loop ของ `rhythm`: ผัดตามจังหวะ (ปุ่มหลัก) ใส่วัตถุดิบเมื่อย่าบอก (ปุ่มพิเศษ) คุมไฟ (แรงดัน = ความร้อน)\n\n## 4. กฎและ invariants\n- ไม่เปลี่ยนกฎของ rhythm\n- `storageKey` = `nesg.stirfry.v1` เท่าเดิม เซฟเดิมไม่หาย\n- ภาพกระทะ: progress <30 ดิบ, <70 สุกครึ่ง, ≥70 สุก; ความร้อน >78 เริ่มไหม้ (เต็มที่ 96)\n\n## 5. Input / การควบคุม\nปุ่ม \"ผัด\" และ \"ใส่วัตถุดิบ\"\n\n## 6. คะแนนและความยาก\nตาม `rhythm` (`ruleset.json` 1.2.0 คือ params ของแพ็ก + `paramsFor` ของ engine) เลือกระดับ ง่าย / ปกติ / ยาก ก่อนเริ่ม · กระดาน `stirfry` แยกตามระดับ **และ** กติกา `rhythm@1.1.0+stirfry@1.2.0` · ลิงก์ท้า `#/play/stirfry/<ระดับ>/<seed>/rhythm@1.1.0+stirfry@1.2.0` ได้ชาร์ตและหน้าต่างเวลาชุดเดียวกัน · ลิงก์ไม่มีเวอร์ชันยังเล่นได้ เป็นกติกา 0.6.10 ซึ่งตอนนี้เท่ากับชุดนี้\n\n## 7. Progression\nดาวและคะแนนดีสุดตาม rhythm แสดงในสมุดของ FlowView\n\n## 8. Content / config surface\n**mechanism:** `rhythm` ^1.1.0. pack ปรับ (`pack` ใน `module.json`, โค้ดใน `pack.ts`):\n- theme: `public/img/stirfry/kitchen.webp` (สร้างด้วย GenerateImage)\n- Stage `WokStage.svelte`: `wok-raw/half/cooked/burnt/toss.webp`\n- onJudge → hit: ภาพโยนกระทะ + ไอน้ำ 260 ms; miss: สั่น + โทนแดง 380 ms; ไหม้ >0.3: ควัน\n- คำไทย prefix `stirfry.*` ใน locales\n- params: ตรึงใน `ruleset.json` คีย์ `1.2.0` (ไม่ดึงค่าปัจจุบันของ engine ตอนเล่นลิงก์เก่า) รวมช่วงรูปกระทะ `cook` 30/70, ไหม้เริ่ม 78 ช่วง 18, ควันที่ burnt > 0.3, ท่า hit/miss 260/380 ms\n\n## 9. UX / หน้าจอ\nครัวเป็นพื้นหลัง กระทะเต็มกรอบ ปุ่มผัด/ใส่วัตถุดิบด้านล่าง หน้าผลลัพธ์มีปุ่มกระดานคะแนน\n\n## 10. Data & telemetry (ฟิลด์บนเซิร์ฟเวอร์)\nแถว `runs` game = `stirfry`, difficulty = easy/normal/hard, seed = seed ของชาร์ต, `ruleset` = `rhythm@<engine>+stirfry@<pack>` (ตอนนี้ `rhythm@1.1.0+stirfry@1.2.0`). `version` มีเวอร์ชันแอปนำหน้า แต่ไม่ได้ใช้แยกกระดาน\n\n## 11. Dependencies + เวอร์ชัน\nrhythm ^1.1.0, minigame-core ^1.0.0, core >=0.6.12\n\n## 12. คำถามที่ยังเปิดอยู่ / Backlog\n- **[backlog]** หลายเมนู (ภาพวัตถุดิบต่างกัน)\n- **[backlog]** เสียงฉ่า\n\n## 13. Changelog (ผูกกับเวอร์ชันโมดูล)\n| เวอร์ชัน | แอป | การเปลี่ยนแปลง |\n|---|---|---|\n| 1.2.0 | 0.6.11 | เปลี่ยนชื่อ kind เป็น pack, ตรึงกติกา 1.2.0 ใน ruleset.json (ค่าเล่นไม่เปลี่ยน), ลิงก์แชร์ติด rhythm@+stirfry@ |\n| 1.2.0 | 0.6.10 | เลือกระดับ, ชาร์ตตาม seed, ลิงก์ท้า, ท่ากระทะ miss/hit ไม่ซ้อนกัน |\n| 1.1.0 | 0.6.9 | คะแนนขึ้นเซิร์ฟเวอร์, ธีมภาพจริง, กระทะเปลี่ยนตามจังหวะ, เป็น pack ของ rhythm |\n| 1.0.0 | 0.6.5 | แยกเป็นโมดูล |\n",
       "files": 7,
-      "size": 8395,
-      "hash": "a94a6a879c9d",
+      "size": 8623,
+      "hash": "4d06e37ab3ed",
       "lastCommit": {
-        "sha": "8bd1cf2cddb08dfde8f6fb4573b27d2eb644bf77",
-        "date": "2026-11-07T03:40:36Z",
-        "subject": "feat(nes): v0.6.11 ruleset share links, pack rename, god module"
+        "sha": "a3e0936826b1669059d4cf6db566614d61e8ad9f",
+        "date": "2026-11-07T04:21:01Z",
+        "subject": "feat(nes): v0.6.12 extract minigame-core and event-core"
       }
     }
   ]
