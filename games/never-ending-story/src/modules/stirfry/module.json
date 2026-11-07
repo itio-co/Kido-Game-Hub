@@ -2,15 +2,15 @@
   "id": "stirfry",
   "name": "Stir-fry with Grandma",
   "kind": "edition",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Stir-fry with Grandma: rhythm edition with photoreal kitchen/wok art, wok frames mapped to cook progress and hits/misses, Thai copy.",
   "entry": "src/modules/stirfry/index.ts",
   "publicEntries": [
     "src/modules/stirfry/index.ts"
   ],
   "dependsOn": {
-    "core": ">=0.6.9",
-    "rhythm": "^1.0.0"
+    "core": ">=0.6.10",
+    "rhythm": "^1.1.0"
   },
   "edition": {
     "mechanism": "rhythm",
@@ -21,7 +21,13 @@
     "art": [
       "public/img/stirfry/kitchen.webp",
       "wok-raw/half/cooked/burnt/toss.webp"
-    ]
+    ],
+    "difficulties": [
+      "easy",
+      "normal",
+      "hard"
+    ],
+    "challengeLink": "#/play/stirfry/<easy|normal|hard>/<seed>"
   },
   "gdd": "src/modules/stirfry/GDD.md"
 }

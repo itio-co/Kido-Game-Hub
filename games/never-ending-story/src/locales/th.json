@@ -267,5 +267,12 @@
   "god.page.fastest": "เร็วสุด",
   "god.page.recent": "รอบล่าสุด",
   "god.mod.kind.engine": "กลไกหลัก",
-  "god.mod.kind.edition": "เอดิชัน"
+  "god.mod.kind.edition": "เอดิชัน",
+  "stirfry.diffLabel": "ระดับ",
+  "stirfry.diff.easy": "ง่าย",
+  "stirfry.diff.normal": "ปกติ",
+  "stirfry.diff.hard": "ยาก",
+  "stirfry.chart": "ชาร์ต #{seed}",
+  "stirfry.newChart": "สุ่มชาร์ตใหม่",
+  "stirfry.vs": "{nick} ท้าคุณ: {score} คะแนน"
 }

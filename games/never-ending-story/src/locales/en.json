@@ -267,5 +267,12 @@
   "god.page.fastest": "Fastest",
   "god.page.recent": "Recent runs",
   "god.mod.kind.engine": "engine",
-  "god.mod.kind.edition": "edition"
+  "god.mod.kind.edition": "edition",
+  "stirfry.diffLabel": "Difficulty",
+  "stirfry.diff.easy": "Easy",
+  "stirfry.diff.normal": "Normal",
+  "stirfry.diff.hard": "Hard",
+  "stirfry.chart": "Chart #{seed}",
+  "stirfry.newChart": "New chart",
+  "stirfry.vs": "{nick} challenges you: {score} pts"
 }

@@ -2,14 +2,14 @@
   "id": "rhythm",
   "name": "Rhythm tap (mechanism)",
   "kind": "engine",
-  "version": "1.0.0",
-  "description": "White-label rhythm button-tap engine: beat timing, perfect/good/miss judging, combo, scoring, pressure meter, extra-lane cues, run store, online score submission keyed by edition.",
+  "version": "1.1.0",
+  "description": "White-label rhythm button-tap engine: beat timing, perfect/good/miss judging, combo, scoring, pressure meter, extra-lane cues, seeded charts (edition+difficulty+seed), easy/normal/hard, challenge links, run store, online score submission keyed by edition.",
   "entry": "src/modules/rhythm/index.ts",
   "publicEntries": [
     "src/modules/rhythm/index.ts"
   ],
   "dependsOn": {
-    "core": ">=0.6.9",
+    "core": ">=0.6.10",
     "challenge": "^1.1.0"
   },
   "gdd": "src/modules/rhythm/GDD.md"

@@ -11,19 +11,21 @@
   let tossing = $state(false);
   let missed = $state(false);
   let lastPulse = 0;
+  let tossTimer = 0;
+  let missTimer = 0;
 
   $effect(() => {
     const p = props.pulse;
     if (p === lastPulse || !props.last) return;
     lastPulse = p;
     const hit = props.last === 'perfect' || props.last === 'good' || props.last === 'extra-hit';
-    if (hit) {
-      tossing = true;
-      setTimeout(() => (tossing = false), 260);
-    } else {
-      missed = true;
-      setTimeout(() => (missed = false), 380);
-    }
+    // A new judgement cancels the previous reaction immediately (no stale toss/miss look).
+    clearTimeout(tossTimer);
+    clearTimeout(missTimer);
+    tossing = hit;
+    missed = !hit;
+    if (hit) tossTimer = window.setTimeout(() => (tossing = false), 260);
+    else missTimer = window.setTimeout(() => (missed = false), 380);
   });
 </script>
 
