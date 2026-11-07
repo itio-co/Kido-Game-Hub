@@ -62,12 +62,14 @@ async function tokenOk(env: Env, playerId: string, token: string | null): Promis
 }
 
 /** Stir-fry (rhythm minigame): one 60 s round, no seed/difficulty ("normal"). Generous cap above the best possible play. */
-const STIRFRY = { difficulty: 'normal', maxMs: 65_000, maxScore: 25_000 };
-export const BOARD_GAMES: Record<string, string[]> = { cross: DIFFS, jig: DIFFS, slide: DIFFS, stirfry: [STIRFRY.difficulty] };
+const STIRFRY = { difficulties: ['easy', 'normal', 'hard'], maxMs: 65_000, maxScore: 25_000 };
+export const BOARD_GAMES: Record<string, string[]> = { cross: DIFFS, jig: DIFFS, slide: DIFFS, stirfry: STIRFRY.difficulties };
 
 function plausible(r: ChallengeRunPb): string | null {
   if (r.game === 'stirfry') {
-    if (r.difficulty !== STIRFRY.difficulty) return 'bad game/difficulty';
+    if (!STIRFRY.difficulties.includes(r.difficulty)) return 'bad game/difficulty';
+    // Seeded chart: the seed picks the cue sequence, so it must be a real chart seed.
+    if (!Number.isInteger(r.seed) || r.seed < 1 || r.seed >= 2 ** 31) return 'bad seed';
     if (!ID_RE.test(r.sessionId) || !ID_RE.test(r.playerId)) return 'bad ids';
     if (r.timeMs < 3000 || r.timeMs > STIRFRY.maxMs) return 'implausible time';
     if (r.score < 0 || r.score > STIRFRY.maxScore) return 'implausible score';

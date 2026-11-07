@@ -6,16 +6,21 @@
   import { clearRun, defaultRun, readRun, recordBest, starsFor, writeRun, type RhythmRun } from './store';
   import type { Judgement, RhythmEdition, StageProps } from './types';
   import manifest from './module.json';
+  import { buildChart, chartId, isChartSeed, newChartSeed, paramsFor, parseRhythmHash, rhythmHash, RHYTHM_DIFFICULTIES, type RhythmDifficulty, type RhythmLink } from './chart';
   import { submitRun } from '../../lib/cloudSync';
   import { packRun } from '../challenge/proto';
 
   let { edition, onExit }: { edition: RhythmEdition; onExit: () => void } = $props();
-  const P = $derived(edition.params);
+  let run = $state<RhythmRun>(defaultRun());
+  const P = $derived(paramsFor(edition.params, run.difficulty));
+  /** Extra-lane cue times (ms from start), fixed by edition + difficulty + seed. */
+  const chart = $derived(buildChart(edition.id, run.difficulty, run.seed, P));
+  let link = $state<RhythmLink>({ difficulty: null, seed: null, from: null });
+  let playStart = 0;
   const c = (key: string, vars?: Record<string, string | number>) => t(`${edition.copy}.${key}`, vars);
   let last = $state<Judgement | null>(null);
   let pulse = $state(0);
 
-  let run = $state<RhythmRun>(defaultRun());
   let nickname = $state('');
   let needNick = $state(false);
   let beatFlash = $state(false);
@@ -44,8 +49,8 @@
     const elapsed = Math.round((P.durationSec - run.timeLeft) * 1000);
     const sessionId = typeof crypto !== 'undefined' && 'randomUUID' in crypto ? crypto.randomUUID() : `sf-${Date.now().toString(16)}-${Math.random().toString(16).slice(2, 10)}`;
     const token = await packRun({
-      sessionId, playerId: me.playerId, nickname: me.nickname ?? '', game: edition.leaderboardId, difficulty: 'normal',
-      seed: 0, score: Math.round(run.score), timeMs: Math.max(3000, elapsed), version: `${version};${manifest.id}@${manifest.version};${edition.id}`, timestampMs: Date.now(),
+      sessionId, playerId: me.playerId, nickname: me.nickname ?? '', game: edition.leaderboardId, difficulty: run.difficulty,
+      seed: run.seed, score: Math.round(run.score), timeMs: Math.max(3000, elapsed), version: `${version};${manifest.id}@${manifest.version};${edition.id}`, timestampMs: Date.now(),
       challengerSessionId: '', challengerNickname: '', challengerScore: 0, challengerTimeMs: 0,
     }).catch(() => '');
     if (token) {
@@ -65,11 +70,28 @@
     writeRun(edition.storageKey, run);
   }
 
-  function flash(text: string): void {
+  let msgTimer = 0;
+  /** Show a judgement label; a newer label always replaces the previous one at once. */
+  let msgJudgement = $state('');
+  function flash(text: string, judgement = ''): void {
+    window.clearTimeout(msgTimer);
     msg = text;
-    window.setTimeout(() => {
-      if (msg === text) msg = '';
-    }, 700);
+    msgJudgement = judgement;
+    msgTimer = window.setTimeout(() => (msg = ''), 700);
+  }
+
+  /** Schedule the next chart cue (never sooner than `minGap` from now). */
+  function scheduleCue(now: number, minGap: number): void {
+    const at = chart[run.cue];
+    nextIngAt = at === undefined ? Infinity : Math.max(playStart + at, now + minGap);
+  }
+
+  function pickDifficulty(d: RhythmDifficulty): void {
+    run = { ...run, difficulty: d };
+  }
+  function newChart(): void {
+    run = { ...run, seed: newChartSeed() };
+    link = { ...link, from: null };
   }
 
   function bumpProgress(amount: number): void {
@@ -79,9 +101,12 @@
   function start(): void {
     const bestScore = run.bestScore;
     const bestStars = run.bestStars;
-    run = { ...defaultRun(), timeLeft: P.durationSec, phase: 'play', startedAt: Date.now(), bestScore, bestStars };
-    nextBeatAt = performance.now() + P.beatMs;
-    nextIngAt = performance.now() + P.extraFirstMs;
+    const difficulty = run.difficulty;
+    const seed = isChartSeed(run.seed) ? run.seed : newChartSeed();
+    run = { ...defaultRun(), timeLeft: P.durationSec, phase: 'play', startedAt: Date.now(), bestScore, bestStars, difficulty, seed, cue: 0 };
+    playStart = performance.now();
+    nextBeatAt = playStart + P.beatMs;
+    nextIngAt = playStart + (chart[0] ?? Infinity);
     persist();
     lastTs = 0;
   }
@@ -106,7 +131,9 @@
   }
 
   function retry(): void {
+    const { difficulty, seed } = run;
     clearRun(edition.storageKey);
+    run = { ...run, difficulty, seed };
     needNick = false;
     start();
   }
@@ -118,7 +145,11 @@
   }
 
   async function shareLink(): Promise<void> {
-    const url = `${window.location.origin}${window.location.pathname}${edition.route}`;
+    const me = readPlayerId();
+    const hash = run.phase === 'result'
+      ? rhythmHash(edition.route, run.difficulty, run.seed, { nick: me.nickname || '?', score: Math.round(run.score), time: Math.round((P.durationSec - run.timeLeft) * 10) / 10 })
+      : rhythmHash(edition.route, run.difficulty, run.seed);
+    const url = `${window.location.origin}${window.location.pathname}${hash}`;
     try {
       await navigator.clipboard.writeText(url);
       shareNote = c('shared');
@@ -145,18 +176,18 @@
       beatFlash = true;
       window.setTimeout(() => (beatFlash = false), 140);
       judge('perfect');
-      flash(c('perfect'));
+      flash(c('perfect'), 'perfect');
     } else if (delta <= P.goodMs) {
       run.score += 40 + run.combo;
       run.combo = Math.min(run.combo + 1, 8);
       bumpProgress(2.4);
       judge('good');
-      flash(c('good'));
+      flash(c('good'), 'good');
     } else {
       run.combo = 0;
       run.score = Math.max(0, run.score - 10);
       judge('miss');
-      flash(c('miss'));
+      flash(c('miss'), 'miss');
     }
     run.heat = Math.max(0, Math.min(100, run.heat - P.pressureDropPerTap));
     persist();
@@ -171,15 +202,16 @@
       run.ingredientHits += 1;
       bumpProgress(9);
       judge('extra-hit');
-      flash(c('ingHit'));
+      flash(c('ingHit'), 'extra-hit');
     } else {
       run.ingredientMiss += 1;
       run.combo = 0;
       judge('extra-miss');
-      flash(c('ingMiss'));
+      flash(c('ingMiss'), 'extra-miss');
     }
     run.ingredientDue = null;
-    nextIngAt = now + P.extraGapMs[0] + Math.random() * (P.extraGapMs[1] - P.extraGapMs[0]);
+    run.cue += 1;
+    scheduleCue(now, 600);
     persist();
     if (run.progress >= 100) finish('done');
   }
@@ -212,9 +244,10 @@
       run.ingredientMiss += 1;
       run.combo = 0;
       run.ingredientDue = null;
-      nextIngAt = ts + 2200;
+      run.cue += 1;
+      scheduleCue(ts, 1200);
       judge('extra-miss');
-      flash(c('ingMiss'));
+      flash(c('ingMiss'), 'extra-miss');
     }
 
     const inZone = run.heat >= P.pressureZone[0] && run.heat <= P.pressureZone[1];
@@ -238,28 +271,45 @@
   onMount(() => {
     const saved = readRun(edition.storageKey);
     if (saved.phase === 'play' && saved.timeLeft > 1 && saved.progress < 100) {
+      if (!isChartSeed(saved.seed)) saved.seed = newChartSeed();
       run = saved;
-      nextBeatAt = performance.now() + P.beatMs;
-      nextIngAt = performance.now() + 1600;
+      const now = performance.now();
+      playStart = now - (P.durationSec - run.timeLeft) * 1000;
+      nextBeatAt = now + P.beatMs;
+      run.ingredientDue = null;
+      scheduleCue(now, 1600);
     } else if (saved.phase === 'result') {
       run = saved;
       const profile = readPlayerId();
       needNick = !profile.nickname;
       nickname = profile.nickname ?? '';
     } else {
-      run = { ...defaultRun(), bestScore: saved.bestScore, bestStars: saved.bestStars };
+      run = { ...defaultRun(), bestScore: saved.bestScore, bestStars: saved.bestStars, difficulty: saved.difficulty, seed: newChartSeed() };
     }
+    applyLink();
+    addEventListener('hashchange', applyLink);
     readPlayerId();
     raf = requestAnimationFrame(tick);
   });
 
+  /** A challenge link (<route>/<diff>/<seed>) fixes the chart; it wins over a saved run that is not in progress. */
+  function applyLink(): void {
+    link = parseRhythmHash(edition.route, location.hash);
+    if (!link.difficulty || !link.seed) return;
+    if (run.phase === 'play' && run.difficulty === link.difficulty && run.seed === link.seed) return;
+    if (run.phase === 'play' || run.phase === 'result') run = { ...defaultRun(), bestScore: run.bestScore, bestStars: run.bestStars };
+    run = { ...run, difficulty: link.difficulty, seed: link.seed };
+  }
+
   onDestroy(() => {
+    removeEventListener('hashchange', applyLink);
+    window.clearTimeout(msgTimer);
     cancelAnimationFrame(raf);
     if (run.phase === 'play') persist();
   });
 </script>
 
-<div class="sf" data-edition={edition.id} style="--kitchen:url('{new URL(edition.theme.background, document.baseURI).href}')">
+<div class="sf" data-edition={edition.id} data-difficulty={run.difficulty} data-seed={run.seed} data-chart={chartId(chart)} data-cues={chart.length} style="--kitchen:url('{new URL(edition.theme.background, document.baseURI).href}')">
   <header class="top">
     <button type="button" class="sf-exit" aria-label={c('exit')} onclick={onExit}>←</button>
     <div class="topmid">
@@ -274,6 +324,14 @@
       <p class="line">{c('howto1')}</p>
       <p class="line">{c('howto2')}</p>
       <p class="line">{c('howto3')}</p>
+      {#if link.from}<p class="vs" data-testid="rhythm-vs">{c('vs', { nick: link.from.nick, score: link.from.score })}</p>{/if}
+      <div class="diffs" role="radiogroup" aria-label={c('diffLabel')}>
+        {#each RHYTHM_DIFFICULTIES as d (d)}
+          <button type="button" role="radio" aria-checked={run.difficulty === d} class="diff" class:on={run.difficulty === d} data-diff={d} onclick={() => pickDifficulty(d)}>{c(`diff.${d}`)}</button>
+        {/each}
+      </div>
+      <p class="chartline"><span data-testid="rhythm-seed">{c('chart', { seed: run.seed })}</span> <button type="button" class="ghost mini" onclick={newChart}>{c('newChart')}</button> <button type="button" class="ghost mini" onclick={shareLink}>{c('share')}</button></p>
+      {#if shareNote}<p class="chartline">{shareNote}</p>{/if}
       <button type="button" class="primary" onclick={start}>{c('start')}</button>
     </div>
   {:else if run.phase === 'play'}
@@ -296,7 +354,7 @@
 
       <div class="sf-stage">
         <p class="prompt" class:add={run.ingredientDue !== null} role="status">{prompt}</p>
-        <div class="msgslot" aria-live="polite">{msg || '\u00a0'}</div>
+        <div class="msgslot" aria-live="polite" data-testid="rhythm-judgement" data-judgement={msg ? msgJudgement : ''}>{msg || '\u00a0'}</div>
         <button
           type="button"
           class="wok"
@@ -349,6 +407,12 @@
 </div>
 
 <style>
+  .diffs { display: flex; gap: 8px; justify-content: center; margin: 10px 0 4px; }
+  .diff { flex: 1; border-radius: 999px; padding: 8px 6px; border: 1px solid #5fd3ff; background: transparent; color: #eaf6ff; font-weight: 700; }
+  .diff.on { background: #5fd3ff; color: #06212f; }
+  .chartline { text-align: center; font-size: 0.9em; opacity: 0.9; margin: 6px 0; }
+  .ghost.mini { padding: 3px 10px; font-size: 0.85em; }
+  .vs { text-align: center; font-weight: 700; color: #ffd34d; }
   .sf {
     position: absolute;
     inset: 0;

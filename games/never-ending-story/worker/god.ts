@@ -15,7 +15,7 @@ const MAX_FAILS = 5;
 const LOCK_MS = 15 * 60 * 1000;
 const ID_RE = /^[A-Za-z0-9-]{8,64}$/;
 const GAMES = ['cross', 'jig', 'slide', 'stirfry'];
-const GAME_DIFFS: Record<string, string[]> = { cross: ['easy', 'medium', 'hard'], jig: ['easy', 'medium', 'hard'], slide: ['easy', 'medium', 'hard'], stirfry: ['normal'] };
+const GAME_DIFFS: Record<string, string[]> = { cross: ['easy', 'medium', 'hard'], jig: ['easy', 'medium', 'hard'], slide: ['easy', 'medium', 'hard'], stirfry: ['easy', 'normal', 'hard'] };
 const DIFFS = ['easy', 'medium', 'hard'];
 const DAY = 86400000;
 

@@ -14,6 +14,11 @@ export type RhythmRun = {
   bestScore: number;
   bestStars: 0 | 1 | 2 | 3;
   endReason: 'done' | 'time' | null;
+  /** Chart identity: same difficulty + seed => same cue sequence. */
+  difficulty: 'easy' | 'normal' | 'hard';
+  seed: number;
+  /** Next chart cue index. */
+  cue: number;
 };
 
 export function defaultRun(): RhythmRun {
@@ -32,6 +37,9 @@ export function defaultRun(): RhythmRun {
     bestScore: 0,
     bestStars: 0,
     endReason: null,
+    difficulty: 'normal',
+    seed: 0,
+    cue: 0,
   };
 }
 
@@ -61,6 +69,9 @@ export function readRun(KEY: string): RhythmRun {
       bestScore: typeof data.bestScore === 'number' ? data.bestScore : 0,
       bestStars: data.bestStars === 1 || data.bestStars === 2 || data.bestStars === 3 ? data.bestStars : 0,
       endReason: data.endReason === 'done' || data.endReason === 'time' ? data.endReason : null,
+      difficulty: data.difficulty === 'easy' || data.difficulty === 'hard' ? data.difficulty : 'normal',
+      seed: typeof data.seed === 'number' && Number.isInteger(data.seed) && data.seed > 0 ? data.seed : 0,
+      cue: typeof data.cue === 'number' ? data.cue : 0,
     };
   } catch {
     return defaultRun();

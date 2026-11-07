@@ -3,7 +3,7 @@
 | ฟิลด์ | ค่า |
 |---|---|
 | kind | core |
-| เวอร์ชัน | app (ตาม `package.json`, ตอนนี้ 0.6.9) |
+| เวอร์ชัน | app (ตาม `package.json`, ตอนนี้ 0.6.10) |
 | เทมเพลต | `docs/gdd/TEMPLATE.md` |
 | อ้างอิง | `docs/design/never-ending-story-game-spec-v0.4-th.md` |
 
@@ -53,6 +53,7 @@ D1: `players`, `player_state`, `player_events`, `player_home`, `runs`, `god_logi
 ## 13. Changelog (ผูกกับเวอร์ชันโมดูล)
 | เวอร์ชัน | แอป | การเปลี่ยนแปลง |
 |---|---|---|
+| 0.6.10 | 0.6.10 | rhythm ชาร์ต seed + ระดับ, ป้าย judgement |
 | 0.6.9 | 0.6.9 | god หน้าย่อยต่อเกม, แท็บ GDD, rhythm engine/edition |
 | 0.6.8 | 0.6.8 | แก้ sw.js syntax |
 | 0.6.5 | 0.6.5 | modular monolith + หน้า Modules |

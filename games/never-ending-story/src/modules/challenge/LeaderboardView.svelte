@@ -10,6 +10,9 @@
   const BOARD_GAMES: BoardGame[] = [...CHALLENGE_GAMES, 'stirfry'];
   let game = $state<BoardGame>('cross');
   let diff = $state<Difficulty>('easy');
+  /** Rhythm editions (stirfry) use their own difficulty set. */
+  const SF_DIFFS = ['easy', 'normal', 'hard'] as const;
+  let sfDiff = $state<(typeof SF_DIFFS)[number]>('normal');
   let rows = $state<LeaderEntry[]>([]);
   let scope = $state<'online' | 'local'>('online');
   let online = $state<OnlineRow[] | null>(null);
@@ -23,10 +26,10 @@
   });
 
   $effect(() => {
-    const g = game, d = diff;
+    const g = game, d = diff, sd = sfDiff;
     if (scope !== 'online') return;
     loading = true;
-    void onlineTop(g, g === 'stirfry' ? 'normal' : d).then((list) => {
+    void onlineTop(g, g === 'stirfry' ? sd : d).then((list) => {
       online = list;
       loading = false;
       if (list === null) scope = 'local'; // offline / preview host: fall back to this device's board
@@ -50,7 +53,13 @@
       <button type="button" class:on={game === g} onclick={() => (game = g)}>{t(`challenge.game.${g}`)}</button>
     {/each}
   </div>
-  {#if game !== 'stirfry'}
+  {#if game === 'stirfry'}
+  <div class="tabs small" data-testid="board-sf-diffs">
+    {#each SF_DIFFS as d (d)}
+      <button type="button" class:on={sfDiff === d} onclick={() => (sfDiff = d)}>{t(`stirfry.diff.${d}`)}</button>
+    {/each}
+  </div>
+  {:else}
   <div class="tabs small">
     {#each DIFFICULTIES as d (d)}
       <button type="button" class:on={diff === d} onclick={() => (diff = d)}>{t(`challenge.diff.${d}`)}</button>

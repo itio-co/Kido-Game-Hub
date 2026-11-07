@@ -241,13 +241,13 @@
       {:else if section === 'games' && data}
         <table class="wide"><thead><tr><th>{t('god.col.game')}</th>{#each DIFFS as d (d)}<th>{diffName(d)}<br /><small>{t('god.games.cell')}</small></th>{/each}</tr></thead>
           <tbody>{#each data.games as g (g)}<tr><td><a href="#/games/{GAME_MODULE[g] ?? g}">{gameName(g)}</a></td>
-            {#if g === 'stirfry'}{@const s = statFor(g, 'normal')}<td colspan="3">{#if s}{t('god.games.normal')}: {s.runs} · {s.players} · <b>{s.best}</b> · {fmtTime(s.fastest)}{:else}–{/if}</td>
+            {#if g === 'stirfry'}{#each ['easy', 'normal', 'hard'] as d (d)}{@const s = statFor(g, d)}<td>{#if s}{d === 'normal' ? `${t('god.games.normal')}: ` : ''}{s.runs} · {s.players} · <b>{s.best}</b> · {fmtTime(s.fastest)}{:else}–{/if}</td>{/each}
             {:else}{#each DIFFS as d (d)}{@const s = statFor(g, d)}<td>{#if s}{s.runs} · {s.players} · <b>{s.best}</b> · {fmtTime(s.fastest)}{:else}–{/if}</td>{/each}{/if}
           </tr>{/each}</tbody></table>
         <h2>{t('god.games.board')}</h2>
         <div class="search">
           <select bind:value={boardGame} onchange={() => { boardDiff = boardGame === 'stirfry' ? 'normal' : 'easy'; void loadBoard(); }}>{#each ['cross', 'jig', 'slide', 'stirfry'] as g (g)}<option value={g}>{gameName(g)}</option>{/each}</select>
-          <select bind:value={boardDiff} onchange={loadBoard}>{#each boardGame === 'stirfry' ? ['normal'] : DIFFS as d (d)}<option value={d}>{diffName(d)}</option>{/each}</select>
+          <select bind:value={boardDiff} onchange={loadBoard}>{#each boardGame === 'stirfry' ? ['easy', 'normal', 'hard'] : DIFFS as d (d)}<option value={d}>{diffName(d)}</option>{/each}</select>
         </div>
         {#if board}
           <table class="wide"><thead><tr><th>#</th><th>{t('god.col.nick')}</th><th>{t('god.col.score')}</th><th>{t('god.col.time')}</th><th>{t('god.col.verified')}</th><th>{t('god.col.when')}</th><th></th></tr></thead>

@@ -3,7 +3,7 @@
 | ฟิลด์ | ค่า |
 |---|---|
 | kind | edition (mechanism: `rhythm`) |
-| เวอร์ชัน | 1.1.0 |
+| เวอร์ชัน | 1.2.0 |
 | เทมเพลต | `docs/gdd/TEMPLATE.md` |
 | อ้างอิง | `docs/design/never-ending-story-game-spec-v0.4-th.md` |
 
@@ -25,13 +25,13 @@
 ปุ่ม "ผัด" และ "ใส่วัตถุดิบ"
 
 ## 6. คะแนนและความยาก
-ตาม `rhythm` (`DEFAULT_PARAMS`) กระดานคะแนน `stirfry` / `normal`
+ตาม `rhythm` (`DEFAULT_PARAMS` + `paramsFor`) เลือกระดับ ง่าย / ปกติ / ยาก ก่อนเริ่ม · กระดานคะแนน `stirfry` แยกตามระดับ · ลิงก์ท้า `#/play/stirfry/<ระดับ>/<seed>` ได้ชาร์ตใส่เครื่องเดียวกัน
 
 ## 7. Progression
 ดาวและคะแนนดีสุดตาม rhythm แสดงในสมุดของ FlowView
 
 ## 8. Content / config surface
-**mechanism:** `rhythm` ^1.0.0. edition ปรับ:
+**mechanism:** `rhythm` ^1.1.0. edition ปรับ:
 - theme: `public/img/stirfry/kitchen.webp` (สร้างด้วย GenerateImage)
 - Stage `WokStage.svelte`: `wok-raw/half/cooked/burnt/toss.webp`
 - onJudge → hit: ภาพโยนกระทะ + ไอน้ำ 260 ms; miss: สั่น + โทนแดง 380 ms; ไหม้ >0.3: ควัน
@@ -42,10 +42,10 @@
 ครัวเป็นพื้นหลัง กระทะเต็มกรอบ ปุ่มผัด/ใส่วัตถุดิบด้านล่าง หน้าผลลัพธ์มีปุ่มกระดานคะแนน
 
 ## 10. Data & telemetry (ฟิลด์บนเซิร์ฟเวอร์)
-แถว `runs` game = `stirfry`, difficulty = `normal`, version มี `rhythm@x;stirfry`
+แถว `runs` game = `stirfry`, difficulty = easy/normal/hard, seed = seed ของชาร์ต, version มี `rhythm@x;stirfry`
 
 ## 11. Dependencies + เวอร์ชัน
-rhythm ^1.0.0, core >=0.6.9
+rhythm ^1.1.0, core >=0.6.10
 
 ## 12. คำถามที่ยังเปิดอยู่ / Backlog
 - **[backlog]** หลายเมนู (ภาพวัตถุดิบต่างกัน)
@@ -54,5 +54,6 @@ rhythm ^1.0.0, core >=0.6.9
 ## 13. Changelog (ผูกกับเวอร์ชันโมดูล)
 | เวอร์ชัน | แอป | การเปลี่ยนแปลง |
 |---|---|---|
+| 1.2.0 | 0.6.10 | เลือกระดับ, ชาร์ตตาม seed, ลิงก์ท้า, ท่ากระทะ miss/hit ไม่ซ้อนกัน |
 | 1.1.0 | 0.6.9 | คะแนนขึ้นเซิร์ฟเวอร์, ธีมภาพจริง, กระทะเปลี่ยนตามจังหวะ, เป็น edition ของ rhythm |
 | 1.0.0 | 0.6.5 | แยกเป็นโมดูล |

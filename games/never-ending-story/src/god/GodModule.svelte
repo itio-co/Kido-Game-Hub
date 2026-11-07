@@ -20,7 +20,7 @@
 
   const mod = $derived<Row | undefined>(reg?.modules?.find((m: Row) => m.id === id));
   const gameKey = $derived<string | null>(mod ? GAME_KEY[mod.id] ?? mod.edition?.leaderboardId ?? null : null);
-  const diffs = $derived(gameKey && !GAME_KEY[id] ? ['normal'] : DIFFS);
+  const diffs = $derived(gameKey && !GAME_KEY[id] ? ['easy', 'normal', 'hard'] : DIFFS);
   const modName = (mid: string) => reg?.modules?.find((m: Row) => m.id === mid)?.name ?? mid;
   const diffName = (d: string) => (d === 'normal' ? t('god.games.normal') : t(`challenge.diff.${d}`));
   const kindName = (k: string) => (t(`god.mod.kind.${k}`) === `god.mod.kind.${k}` ? k : t(`god.mod.kind.${k}`));
