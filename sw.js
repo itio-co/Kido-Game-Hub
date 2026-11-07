@@ -1,6 +1,6 @@
 /* Never Ending Story Game — generated at build time. Do not edit. */
-const CACHE = "nesg-b70a6812ce4f";
-const PRECACHE = ["./assets/NotoSans-Bold-BQFlziyr.ttf","./assets/NotoSans-Regular-DuyeGPRW.ttf","./assets/NotoSansThai-Bold-C2Vi385s.ttf","./assets/NotoSansThai-Regular-CBs6PpnR.ttf","./assets/index-CPLMfA2Q.css","./assets/index-Dum-4bxX.js","./data/case-flow.json","./data/player-room.json","./data/screens.json","./icons/icon-192.png","./icons/icon-512.png","./icons/icon-maskable-192.png","./icons/icon-maskable-512.png","./img/album-found.jpg","./img/cutscene-01-p1.jpg","./img/cutscene-01-p2.jpg","./img/cutscene-01-p3.jpg","./img/egg-young-grandpa.webp","./img/ending-01.jpg","./img/ending-02.jpg","./img/ending-03.jpg","./img/ending-04.jpg","./img/ending-05.jpg","./img/house-map.jpg","./img/kitchen-close.jpg","./img/kitchen-wide.jpg","./img/living-grandma.jpg","./img/living-shelf-tray.jpg","./img/living-table.jpg","./img/living-wide-afternoon.jpg","./img/living-wide-yesterday.jpg","./img/living-wide.jpg","./img/player-room-wide.jpg","./img/rin.jpg","./img/study-box.jpg","./img/study-wide.jpg","./img/uncle-mek.jpg","./index.html","./manifest.webmanifest","./models/nightstand-master.glb","./models/nightstand.glb","./showcase/nightstand-ref-points.json","./showcase/nightstand-ref.png"];
+const CACHE = "nesg-4855a2e71cfd";
+const PRECACHE = ["./assets/NotoSans-Bold-BQFlziyr.ttf","./assets/NotoSans-Regular-DuyeGPRW.ttf","./assets/NotoSansThai-Bold-C2Vi385s.ttf","./assets/NotoSansThai-Regular-CBs6PpnR.ttf","./assets/app-B0seWwPm.js","./assets/app-Bg23FCx3.css","./assets/god-B5Tapy6V.js","./assets/god-C8Ce_WzA.css","./assets/main-BE9e0kGY.js","./assets/main-WZOsEav1.css","./data/case-flow.json","./data/player-room.json","./data/screens.json","./icons/icon-192.png","./icons/icon-512.png","./icons/icon-maskable-192.png","./icons/icon-maskable-512.png","./img/album-found.jpg","./img/cutscene-01-p1.jpg","./img/cutscene-01-p2.jpg","./img/cutscene-01-p3.jpg","./img/egg-young-grandpa.webp","./img/ending-01.jpg","./img/ending-02.jpg","./img/ending-03.jpg","./img/ending-04.jpg","./img/ending-05.jpg","./img/house-map.jpg","./img/kitchen-close.jpg","./img/kitchen-wide.jpg","./img/living-grandma.jpg","./img/living-shelf-tray.jpg","./img/living-table.jpg","./img/living-wide-afternoon.jpg","./img/living-wide-yesterday.jpg","./img/living-wide.jpg","./img/player-room-wide.jpg","./img/rin.jpg","./img/study-box.jpg","./img/study-wide.jpg","./img/uncle-mek.jpg","./index.html","./manifest.webmanifest","./models/nightstand-master.glb","./models/nightstand.glb","./showcase/nightstand-ref-points.json","./showcase/nightstand-ref.png"];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -27,6 +27,7 @@ self.addEventListener('fetch', (event) => {
   if (url.origin !== self.location.origin) return;
   if (url.pathname.endsWith('/sw.js')) return;
   if (url.pathname.includes('/api/')) return; // live API, never cached
+  if (//(god(.html)?|modules.json)$/.test(url.pathname)) return; // admin page, always network
   event.respondWith(fromCacheOrNetwork(request));
 });
 

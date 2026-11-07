@@ -1,0 +1,219 @@
+{
+  "appVersion": "0.6.5",
+  "generatedAt": "2026-11-07T01:50:30.233Z",
+  "modules": [
+    {
+      "id": "challenge",
+      "name": "Challenge mode",
+      "kind": "minigame",
+      "version": "1.0.0",
+      "description": "Seeded challenge runs, scoring, share links, protobuf run token, leaderboard views.",
+      "entry": "src/modules/challenge/index.ts",
+      "dependsOn": [
+        {
+          "id": "core",
+          "range": ">=0.6.0",
+          "version": "0.6.5",
+          "ok": true
+        },
+        {
+          "id": "crossword",
+          "range": "^1.0.0",
+          "version": "1.0.0",
+          "ok": true
+        },
+        {
+          "id": "jigsaw",
+          "range": "^1.0.0",
+          "version": "1.0.0",
+          "ok": true
+        },
+        {
+          "id": "slide",
+          "range": "^1.0.0",
+          "version": "1.0.0",
+          "ok": true
+        }
+      ],
+      "files": 8,
+      "size": 41186,
+      "hash": "ae9db816b3ca",
+      "lastCommit": {
+        "sha": "4d841f7b4deafccef439b712973743e9dbbafa4d",
+        "date": "2026-11-07T08:50:28+07:00",
+        "subject": "refactor(nes): v0.6.5 modular monolith — src/modules (crossword, jigsaw, slide, stirfry, challenge, event-01 @1.0.0), boundary check, module registry, god Modules page"
+      }
+    },
+    {
+      "id": "core",
+      "name": "Core / main game",
+      "kind": "core",
+      "version": "0.6.5",
+      "description": "App shell, hub room, flow engine, save, i18n, cloudSync, prologue, Game of Dev admin.",
+      "entry": "src/main.ts",
+      "dependsOn": [
+        {
+          "id": "crossword",
+          "range": "^1.0.0",
+          "version": "1.0.0",
+          "ok": true
+        },
+        {
+          "id": "jigsaw",
+          "range": "^1.0.0",
+          "version": "1.0.0",
+          "ok": true
+        },
+        {
+          "id": "slide",
+          "range": "^1.0.0",
+          "version": "1.0.0",
+          "ok": true
+        },
+        {
+          "id": "stirfry",
+          "range": "^1.0.0",
+          "version": "1.0.0",
+          "ok": true
+        },
+        {
+          "id": "challenge",
+          "range": "^1.0.0",
+          "version": "1.0.0",
+          "ok": true
+        },
+        {
+          "id": "event-01",
+          "range": "^1.0.0",
+          "version": "1.0.0",
+          "ok": true
+        }
+      ],
+      "files": 68,
+      "size": 700727,
+      "hash": "ca870bd0aeb2",
+      "lastCommit": {
+        "sha": "4d841f7b4deafccef439b712973743e9dbbafa4d",
+        "date": "2026-11-07T08:50:28+07:00",
+        "subject": "refactor(nes): v0.6.5 modular monolith — src/modules (crossword, jigsaw, slide, stirfry, challenge, event-01 @1.0.0), boundary check, module registry, god Modules page"
+      }
+    },
+    {
+      "id": "crossword",
+      "name": "Crossword",
+      "kind": "minigame",
+      "version": "1.0.0",
+      "description": "Thai crossword puzzle rules and board state.",
+      "entry": "src/modules/crossword/index.ts",
+      "dependsOn": [],
+      "files": 3,
+      "size": 1259,
+      "hash": "ecd570fbb879",
+      "lastCommit": {
+        "sha": "4d841f7b4deafccef439b712973743e9dbbafa4d",
+        "date": "2026-11-07T08:50:28+07:00",
+        "subject": "refactor(nes): v0.6.5 modular monolith — src/modules (crossword, jigsaw, slide, stirfry, challenge, event-01 @1.0.0), boundary check, module registry, god Modules page"
+      }
+    },
+    {
+      "id": "event-01",
+      "name": "Event 01 · Visit Grandma",
+      "kind": "event",
+      "version": "1.0.0",
+      "description": "First story event (case-01): data in public/data/case-flow.json.",
+      "entry": "src/modules/event-01/index.ts",
+      "dependsOn": [
+        {
+          "id": "core",
+          "range": ">=0.6.0",
+          "version": "0.6.5",
+          "ok": true
+        },
+        {
+          "id": "crossword",
+          "range": "^1.0.0",
+          "version": "1.0.0",
+          "ok": true
+        },
+        {
+          "id": "jigsaw",
+          "range": "^1.0.0",
+          "version": "1.0.0",
+          "ok": true
+        },
+        {
+          "id": "slide",
+          "range": "^1.0.0",
+          "version": "1.0.0",
+          "ok": true
+        }
+      ],
+      "files": 2,
+      "size": 794,
+      "hash": "6e88aaf3c953",
+      "lastCommit": {
+        "sha": "4d841f7b4deafccef439b712973743e9dbbafa4d",
+        "date": "2026-11-07T08:50:28+07:00",
+        "subject": "refactor(nes): v0.6.5 modular monolith — src/modules (crossword, jigsaw, slide, stirfry, challenge, event-01 @1.0.0), boundary check, module registry, god Modules page"
+      }
+    },
+    {
+      "id": "jigsaw",
+      "name": "Jigsaw",
+      "kind": "minigame",
+      "version": "1.0.0",
+      "description": "Jigsaw puzzle rules and board state.",
+      "entry": "src/modules/jigsaw/index.ts",
+      "dependsOn": [],
+      "files": 3,
+      "size": 808,
+      "hash": "9b5c82dd295f",
+      "lastCommit": {
+        "sha": "4d841f7b4deafccef439b712973743e9dbbafa4d",
+        "date": "2026-11-07T08:50:28+07:00",
+        "subject": "refactor(nes): v0.6.5 modular monolith — src/modules (crossword, jigsaw, slide, stirfry, challenge, event-01 @1.0.0), boundary check, module registry, god Modules page"
+      }
+    },
+    {
+      "id": "slide",
+      "name": "Slide blocks",
+      "kind": "minigame",
+      "version": "1.0.0",
+      "description": "Sliding-block puzzle rules and board state.",
+      "entry": "src/modules/slide/index.ts",
+      "dependsOn": [],
+      "files": 3,
+      "size": 2471,
+      "hash": "4a7b9eecfe4d",
+      "lastCommit": {
+        "sha": "4d841f7b4deafccef439b712973743e9dbbafa4d",
+        "date": "2026-11-07T08:50:28+07:00",
+        "subject": "refactor(nes): v0.6.5 modular monolith — src/modules (crossword, jigsaw, slide, stirfry, challenge, event-01 @1.0.0), boundary check, module registry, god Modules page"
+      }
+    },
+    {
+      "id": "stirfry",
+      "name": "Stir-fry with Grandma",
+      "kind": "minigame",
+      "version": "1.0.0",
+      "description": "Cooking minigame with local best scores.",
+      "entry": "src/modules/stirfry/index.ts",
+      "dependsOn": [
+        {
+          "id": "core",
+          "range": ">=0.6.0",
+          "version": "0.6.5",
+          "ok": true
+        }
+      ],
+      "files": 4,
+      "size": 19441,
+      "hash": "f86427cefc1c",
+      "lastCommit": {
+        "sha": "4d841f7b4deafccef439b712973743e9dbbafa4d",
+        "date": "2026-11-07T08:50:28+07:00",
+        "subject": "refactor(nes): v0.6.5 modular monolith — src/modules (crossword, jigsaw, slide, stirfry, challenge, event-01 @1.0.0), boundary check, module registry, god Modules page"
+      }
+    }
+  ]
+}
