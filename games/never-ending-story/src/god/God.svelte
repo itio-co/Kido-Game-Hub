@@ -27,10 +27,19 @@
   let toast = $state('');
   let renameTo = $state('');
   let confirmText = $state('');
+  const KIND_ORDER = ['core', 'feature', 'minigame', 'event'];
+  let kindFilter = $state('all');
+  let collapsed = $state<Record<string, boolean>>({});
+  const kindName = (k: string) => (t(`god.mod.kind.${k}`) === `god.mod.kind.${k}` ? k : t(`god.mod.kind.${k}`));
 
   const parts = $derived(route.replace(/^#\/?/, '').split('/'));
   const section = $derived<Section>(SECTIONS.includes(parts[0] as Section) ? (parts[0] as Section) : 'dashboard');
   const playerId = $derived(section === 'players' && parts[1] ? decodeURIComponent(parts[1]) : null);
+  const modules = $derived<Row[]>(section === 'modules' && Array.isArray(data?.modules) ? data.modules : []);
+  const kinds = $derived.by((): string[] => {
+    const present = [...new Set(modules.map((m) => String(m.kind)))];
+    return [...KIND_ORDER.filter((k) => present.includes(k)), ...present.filter((k) => !KIND_ORDER.includes(k)).sort()];
+  });
 
   const gameName = (g: string) => t(`god.game.${g}`);
   const diffName = (d: string) => t(`challenge.diff.${d}`);
@@ -254,13 +263,29 @@
         <p class="note">{t('god.events.note')}</p>
       {:else if section === 'modules' && data}
         <p class="note">{t('god.mod.app', { v: data.appVersion, at: fmtDate(Date.parse(data.generatedAt)) })}</p>
-        <table class="wide"><thead><tr><th>{t('god.mod.name')}</th><th>{t('god.mod.kind')}</th><th>{t('god.mod.version')}</th><th>{t('god.mod.deps')}</th><th>{t('god.mod.size')}</th><th>{t('god.mod.hash')}</th><th>{t('god.mod.commit')}</th></tr></thead>
-          <tbody>{#each data.modules as m (m.id)}
-            <tr><td><b>{m.name}</b><br /><code>{m.id}</code></td><td><span class="tag kind">{t(`god.mod.kind.${m.kind}`)}</span></td><td><b>{m.version}</b></td>
-              <td>{#each m.dependsOn as d (d.id)}<div class:bad={!d.ok}>{d.ok ? '✓' : '✗'} {d.id} {d.range} <small>({d.version ?? '–'})</small></div>{:else}–{/each}</td>
-              <td>{(m.size / 1024).toFixed(1)} KB<br /><small>{m.files} {t('god.mod.files')}</small></td><td><code>{m.hash}</code></td>
-              <td>{#if m.lastCommit}<code>{m.lastCommit.sha.slice(0, 7)}</code> <small>{fmtDate(Date.parse(m.lastCommit.date))}</small><br /><small>{m.lastCommit.subject}</small>{:else}–{/if}</td></tr>
-          {/each}</tbody></table>
+        <div class="chips" role="group" aria-label={t('god.mod.kind')}>
+          <button type="button" class="chip" class:on={kindFilter === 'all'} aria-pressed={kindFilter === 'all'} onclick={() => (kindFilter = 'all')}>{t('god.mod.all')} <small>{modules.length}</small></button>
+          {#each kinds as k (k)}
+            <button type="button" class="chip" class:on={kindFilter === k} aria-pressed={kindFilter === k} onclick={() => (kindFilter = k)}>{kindName(k)} <small>{modules.filter((m) => m.kind === k).length}</small></button>
+          {/each}
+        </div>
+        {#each kinds.filter((k) => kindFilter === 'all' || kindFilter === k) as k (k)}
+          {@const mods = modules.filter((m) => m.kind === k).sort((x, y) => String(x.name).localeCompare(String(y.name)))}
+          <section class="kgroup">
+            <button type="button" class="khead" aria-expanded={!collapsed[k]} onclick={() => (collapsed = { ...collapsed, [k]: !collapsed[k] })}>
+              <span class="caret">{collapsed[k] ? '▸' : '▾'}</span> <b>{kindName(k)}</b> <span class="tag kind">{mods.length}</span>
+            </button>
+            {#if !collapsed[k]}
+              <table class="wide"><thead><tr><th>{t('god.mod.name')}</th><th>{t('god.mod.version')}</th><th>{t('god.mod.deps')}</th><th>{t('god.mod.size')}</th><th>{t('god.mod.hash')}</th><th>{t('god.mod.commit')}</th></tr></thead>
+                <tbody>{#each mods as m (m.id)}
+                  <tr><td><b>{m.name}</b><br /><code>{m.id}</code></td><td><b>{m.version}</b></td>
+                    <td>{#each m.dependsOn as d (d.id)}<div class:bad={!d.ok}>{d.ok ? '✓' : '✗'} {d.id} {d.range} <small>({d.version ?? '–'})</small></div>{:else}–{/each}</td>
+                    <td>{(m.size / 1024).toFixed(1)} KB<br /><small>{m.files} {t('god.mod.files')}</small></td><td><code>{m.hash}</code></td>
+                    <td>{#if m.lastCommit}<code>{m.lastCommit.sha.slice(0, 7)}</code> <small>{fmtDate(Date.parse(m.lastCommit.date))}</small><br /><small>{m.lastCommit.subject}</small>{:else}–{/if}</td></tr>
+                {/each}</tbody></table>
+            {/if}
+          </section>
+        {/each}
         <p class="note">{t('god.mod.note')}</p>
       {:else if !loadError}
         <p class="center">{t('god.loading')}</p>
@@ -322,6 +347,13 @@
   .search input { flex: 1; min-width: 160px; }
   .bad { color: #ff9a9a; }
   .tag.kind { background: #12324a; color: var(--cyan); margin: 0; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0 16px; }
+  .chip { border-radius: 999px; padding: 6px 14px; background: transparent; font-weight: 600; }
+  .chip.on { background: var(--cyan); color: #06212f; }
+  .chip small { opacity: 0.75; margin-left: 4px; }
+  .kgroup { margin-bottom: 18px; border: 1px solid #234; border-radius: 12px; padding: 4px 12px 8px; background: #0f1a27; }
+  .khead { width: 100%; text-align: left; background: transparent; border: 0; padding: 10px 0; display: flex; gap: 8px; align-items: center; font-size: 1.05em; }
+  .caret { width: 1em; color: var(--cyan); }
   .tag { margin-left: 6px; font-size: 0.75em; padding: 1px 6px; border-radius: 6px; background: #3a3020; color: #ffd479; }
   dl { display: grid; grid-template-columns: max-content 1fr; gap: 4px 12px; font-size: 0.9em; }
   dt { opacity: 0.7; }

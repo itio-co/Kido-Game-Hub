@@ -7,7 +7,7 @@ The game ships as one bundle but the code is split into modules under `src/modul
 | `core` | core | everything outside `src/modules/` (app shell, hub room, flow engine, save, i18n, cloudSync, prologue, `/never/god`, `worker/`). Its version **is the app version** in `package.json`. |
 | `crossword`, `jigsaw`, `slide` | minigame | puzzle rules + board state |
 | `stirfry` | minigame | Stir-fry with Grandma (component + local save) |
-| `challenge` | minigame | challenge mode: seeded runs, scoring, share links, protobuf run token, leaderboard views |
+| `challenge` | feature | challenge mode: seeded runs, scoring, share links, protobuf run token, leaderboard views |
 | `event-01` | event | Event 01 (`case-01`); story data in `public/data/case-flow.json` |
 
 ## Manifest
@@ -18,7 +18,7 @@ Each module has `src/modules/<id>/module.json`:
 {
   "id": "challenge",
   "name": "Challenge mode",
-  "kind": "minigame",            // core | minigame | event
+  "kind": "feature",             // core | feature | minigame | event (other kinds are shown as their own group)
   "version": "1.0.0",            // semver; core uses "app" = package.json version
   "description": "…",
   "entry": "src/modules/challenge/index.ts",

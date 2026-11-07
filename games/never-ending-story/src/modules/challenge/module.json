@@ -1,7 +1,7 @@
 {
   "id": "challenge",
   "name": "Challenge mode",
-  "kind": "minigame",
+  "kind": "feature",
   "version": "1.0.0",
   "description": "Seeded challenge runs, scoring, share links, protobuf run token, leaderboard views.",
   "entry": "src/modules/challenge/index.ts",

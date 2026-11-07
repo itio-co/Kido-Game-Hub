@@ -249,5 +249,8 @@
   "god.mod.kind.core": "core",
   "god.mod.kind.minigame": "minigame",
   "god.mod.kind.event": "event",
-  "god.mod.note": "See docs/modules.md for how to bump a module version"
+  "god.mod.note": "See docs/modules.md for how to bump a module version",
+  "god.mod.all": "All",
+  "god.mod.kind.feature": "feature",
+  "god.mod.kind.system": "system"
 }
