@@ -1,3 +1,4 @@
+import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { readdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
@@ -49,9 +50,31 @@ self.addEventListener('fetch', (event) => {
   if (url.origin !== self.location.origin) return;
   if (url.pathname.endsWith('/sw.js')) return;
   if (url.pathname.includes('/api/')) return; // live API, never cached
-  if (/\/(god(\.html)?|modules\.json)$/.test(url.pathname)) return; // admin page, always network
+  const file = url.pathname.split('/').pop() || '';
+  // Admin page + module registry: always network, never cached.
+  if (file === 'god' || file === 'god.html' || file === 'modules.json') return;
+  // HTML / navigations: network-first so a new deploy shows immediately; cache is the offline fallback.
+  if (request.mode === 'navigate' || file === '' || file.endsWith('.html')) {
+    event.respondWith(networkFirst(request));
+    return;
+  }
   event.respondWith(fromCacheOrNetwork(request));
 });
+
+async function networkFirst(request) {
+  try {
+    const response = await fetch(request, { cache: 'no-store' });
+    if (response && response.ok && response.type === 'basic') {
+      const copy = response.clone();
+      caches.open(CACHE).then((cache) => cache.put(request, copy)).catch(() => {});
+    }
+    return response;
+  } catch {
+    const cached = (await caches.match(request, { ignoreSearch: true })) || (await caches.match('./index.html'));
+    if (cached) return cached;
+    return new Response('Offline', { status: 503, headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
+  }
+}
 
 async function fromCacheOrNetwork(request) {
   const cached = await caches.match(request, { ignoreSearch: true });
@@ -64,10 +87,6 @@ async function fromCacheOrNetwork(request) {
     }
     return response;
   } catch {
-    if (request.mode === 'navigate') {
-      const shell = await caches.match('./index.html');
-      if (shell) return shell;
-    }
     return new Response('Offline', {
       status: 503,
       headers: { 'Content-Type': 'text/plain; charset=utf-8' },
@@ -88,6 +107,13 @@ export async function generatePrecache(outDir) {
     hash.update(await readFile(file));
   }
   const cacheId = hash.digest('hex').slice(0, 12);
-  await writeFile(path.join(outDir, 'sw.js'), renderServiceWorker(cacheId, urls));
+  const swPath = path.join(outDir, 'sw.js');
+  await writeFile(swPath, renderServiceWorker(cacheId, urls));
+  // Guard: a syntax error in sw.js silently pins every client to the old worker. Fail the build instead.
+  try {
+    execFileSync(process.execPath, ['--check', swPath], { stdio: 'pipe' });
+  } catch (error) {
+    throw new Error(`generated sw.js does not parse: ${String(error.stderr ?? error)}`);
+  }
   return { cacheId, urls };
 }
