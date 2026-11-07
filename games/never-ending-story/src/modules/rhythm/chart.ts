@@ -1,6 +1,6 @@
 import type { RhythmParams } from './types';
 import { rhythmRuleset, RHYTHM_VERSION, type RhythmTuning } from './ruleset';
-import { RULESET_SRC } from '../../lib/ruleset';
+import { RULESET_SRC, seededPath, withChallenger } from '../minigame-core/framework';
 
 /** Deterministic charts: same pack + difficulty + seed + ruleset => same cue sequence for every player. */
 export type RhythmDifficulty = 'easy' | 'normal' | 'hard';
@@ -93,7 +93,7 @@ export function parseRhythmHash(route: string, hash: string): RhythmLink {
   };
 }
 export function rhythmHash(route: string, diff: RhythmDifficulty, seed: number, from?: { nick: string; score: number; time: number }, ruleset?: string | null): string {
-  const path = `${route}/${diff}/${seed}${ruleset ? `/${ruleset}` : ''}`;
+  const path = seededPath(route, diff, seed, ruleset);
   if (!from) return path;
-  return `${path}/vs/${encodeURIComponent(from.nick)}?${new URLSearchParams({ score: String(from.score), time: String(from.time) })}`;
+  return withChallenger(path, from.nick, { score: String(from.score), time: String(from.time) });
 }

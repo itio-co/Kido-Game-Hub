@@ -9,6 +9,8 @@
     "src/modules/slide/index.ts",
     "src/modules/slide/ruleset.ts"
   ],
-  "dependsOn": {},
+  "dependsOn": {
+    "minigame-core": "^1.0.0"
+  },
   "gdd": "src/modules/slide/GDD.md"
 }

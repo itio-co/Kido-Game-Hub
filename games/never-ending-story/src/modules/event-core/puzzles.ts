@@ -1,12 +1,12 @@
 import type { PuzzleKey } from './types';
-import { CROSS_KEYS, type CrossState } from '../../modules/crossword';
-import type { JigState } from '../../modules/jigsaw';
-import type { SlideState } from '../../modules/slide';
+import { CROSS_KEYS, type CrossState } from '../crossword';
+import type { JigState } from '../jigsaw';
+import type { SlideState } from '../slide';
 
-// Puzzle rules live in their minigame modules; re-exported here for existing callers.
-export * from '../../modules/crossword';
-export * from '../../modules/jigsaw';
-export * from '../../modules/slide';
+// Puzzle rules live in their minigame modules; re-exported here for the event session.
+export * from '../crossword';
+export * from '../jigsaw';
+export * from '../slide';
 
 export function practiceSetup(game: PuzzleKey, level: number, cross: CrossState, jig: JigState, slide: SlideState): void {
   if (game === 'cross') {

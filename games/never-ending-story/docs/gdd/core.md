@@ -3,12 +3,12 @@
 | ฟิลด์ | ค่า |
 |---|---|
 | kind | core |
-| เวอร์ชัน | app (ตาม `package.json`, ตอนนี้ 0.6.11) |
+| เวอร์ชัน | app (ตาม `package.json`, ตอนนี้ 0.6.12) |
 | เทมเพลต | `docs/gdd/TEMPLATE.md` |
 | อ้างอิง | `docs/design/never-ending-story-game-spec-v0.4-th.md` |
 
 ## 1. จุดประสงค์ / Pitch
-เปลือกแอปของ Never Ending Story: ห้องโถงบ้านย่า, flow engine เล่นเนื้อเรื่องจาก story pack, เซฟ, i18n, cloud sync, prologue. หน้า admin `/never/god` อยู่โมดูล `god`
+เปลือกแอปของ Never Ending Story: ห้องโถงบ้านย่า, เซฟ, i18n, cloud sync, prologue. เฟรมมินิเกมอยู่ `minigame-core` เฟรมเหตุการณ์อยู่ `event-core` หน้า admin อยู่โมดูล `god`
 
 ## 2. แฟนตาซีของผู้เล่น
 เป็นหลานที่กลับมาบ้านย่ามะลิ ช่วยย่าไขคดีของเก่าในบ้าน (ย่ามะลิผมสั้นสีเงินปล่อยหลวม ไม่มวยผม)
@@ -16,7 +16,7 @@
 ## 3. Core loop
 1. เข้าเกม → prologue (ครั้งแรก) → ตั้งชื่อ
 2. ห้องโถง: เลือกคดี / แผนผังบ้าน / สมุดคดี / มินิเกม
-3. flow engine เล่นฉาก บทสนทนา หลักฐาน และเรียกมินิเกม
+3. `event-core` เล่นฉาก บทสนทนา หลักฐาน และเรียกมินิเกม
 4. จบคดี → เซฟความคืบหน้า และ sync ขึ้นเซิร์ฟเวอร์
 
 ## 4. กฎและ invariants
@@ -45,7 +45,7 @@ Prologue, Hub, FlowView, Settings, Leaderboard. god admin อยู่ในโ�
 D1: `players`, `player_state`, `player_events`, `player_home`, `runs` (มีคอลัมน์ `ruleset`), `god_login` · localStorage เซฟหลัก
 
 ## 11. Dependencies + เวอร์ชัน
-ใช้ crossword, jigsaw, slide, stirfry, challenge, event-01, god (ดู `module.json`)
+ใช้ minigame-core, event-core, crossword, jigsaw, slide, stirfry, challenge, event-01, god (ดู `module.json`)
 
 ## 12. คำถามที่ยังเปิดอยู่ / Backlog
 - **[backlog]** แยก flow engine เป็นโมดูลของตัวเอง
@@ -54,6 +54,7 @@ D1: `players`, `player_state`, `player_events`, `player_home`, `runs` (มีค
 ## 13. Changelog (ผูกกับเวอร์ชันโมดูล)
 | เวอร์ชัน | แอป | การเปลี่ยนแปลง |
 |---|---|---|
+| 0.6.12 | 0.6.12 | แยก minigame-core กับ event-core ค่ากติกาและ URL เดิม |
 | 0.6.11 | 0.6.11 | ลิงก์แชร์ติดกติกา engine+pack, กระดานแยกตาม ruleset, ย้าย god เป็นโมดูล, เปลี่ยนชื่อ edition เป็น pack |
 | 0.6.10 | 0.6.10 | rhythm ชาร์ต seed + ระดับ, ป้าย judgement |
 | 0.6.9 | 0.6.9 | god หน้าย่อยต่อเกม, แท็บ GDD, rhythm engine/edition |

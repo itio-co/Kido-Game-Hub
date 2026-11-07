@@ -1,5 +1,5 @@
 /** Challenge mode: seeded puzzles, points + time scoring, share links, leaderboard adapter. */
-import { RULESET_SRC } from '../../lib/ruleset';
+import { RULESET_SRC, seededPath, withChallenger } from '../minigame-core/framework';
 import { challengeScoring, CHALLENGE_VERSION, type ChallengeScoring } from './ruleset';
 import { currentRuleset, legacyRuleset } from '../../lib/rulesetCatalog';
 
@@ -98,10 +98,9 @@ export function parseChallengeHash(hash: string): ChallengeParams | null {
 }
 
 export function challengeHash(game: ChallengeGame, difficulty: Difficulty, seed: number, from?: { nick: string; token: string } & ChallengeResult, ruleset?: string | null): string {
-  const path = `#/challenge/${game}/${difficulty}/${seed}${ruleset ? `/${ruleset}` : ''}`;
+  const path = seededPath(`#/challenge/${game}`, difficulty, seed, ruleset);
   if (!from) return path;
-  const q = new URLSearchParams({ score: String(from.score), time: String(from.time), run: from.token });
-  return `${path}/vs/${encodeURIComponent(from.nick)}?${q.toString()}`;
+  return withChallenger(path, from.nick, { score: String(from.score), time: String(from.time), run: from.token });
 }
 
 export function shareUrl(hash: string): string {

@@ -1,20 +1,22 @@
 <script lang="ts">
   import { tick } from 'svelte';
-  import { imageUrl } from '../../lib/flow/loadFlow';
-  import { LEVEL_COUNT, LEVEL_THEME } from '../../lib/flow/puzzles';
-  import type { FlowSession } from '../../lib/flow/session.svelte';
-  import type { FlowSpot } from '../../lib/flow/types';
+  import { imageUrl } from '../../lib/imageUrl';
+  import { LEVEL_COUNT, LEVEL_THEME } from './puzzles';
+  import type { FlowSession } from './session.svelte';
+  import type { FlowSpot } from './types';
+  import { endingIdFor, primaryEventId } from './story';
   import { t } from '../../lib/i18n';
   import { readEggs } from '../../lib/eggs';
-  import { readStirFry } from '../../modules/stirfry';
+  import { readStirFry } from '../stirfry';
   import ComicPanel from './ComicPanel.svelte';
   import ImageScene from './ImageScene.svelte';
   import Minigames from './Minigames.svelte';
 
   let { session }: { session: FlowSession } = $props();
 
-  const introPages = $derived(session.flow?.pages.filter((item) => item.eventId === 'case-01') ?? []);
-  const endingPages = $derived(session.flow?.pages.filter((item) => item.eventId === 'case-01-ending') ?? []);
+  const storyId = $derived(primaryEventId(session.flow));
+  const introPages = $derived(session.flow?.pages.filter((item) => item.eventId === storyId) ?? []);
+  const endingPages = $derived(session.flow?.pages.filter((item) => item.eventId === endingIdFor(storyId)) ?? []);
   const pages = $derived(session.screen === 'ending-comic' ? endingPages : introPages);
   const cut = $derived(pages[session.page] ?? null);
   function loc(value: string): string {
@@ -93,17 +95,17 @@
     <div class="evlist">
       <p class="evh">ออกจากห้องแล้ว จะไปไหนดีนะ?</p>
       {#each session.flow?.events ?? [] as event (event.id)}
-        {@const open = !event.unlockAfter || (event.unlockAfter === 'case-01' && session.caseDone)}
+        {@const open = !event.unlockAfter || (event.unlockAfter === storyId && session.caseDone)}
         <button type="button" class="evcard" class:off={!open} onclick={() => session.openEvent(event.eventId)}>
           <img src={imageUrl(event.cover)} alt="" />
           {#if open}
-            <span class="badge">{event.eventId === 'case-01' && session.solved ? 'ไขแล้ว · เล่นซ้ำได้' : 'ใหม่'}</span>
+            <span class="badge">{event.eventId === storyId && session.solved ? 'ไขแล้ว · เล่นซ้ำได้' : 'ใหม่'}</span>
           {:else}
             <span class="lock">ล็อก</span>
           {/if}
           <span class="evt">
             <b>{open ? event.title : '???'}</b>
-            <small>{open ? event.subtitle : session.caseDone && event.unlockAfter === 'case-01' ? 'เร็ว ๆ นี้' : event.lockedHint}</small>
+            <small>{open ? event.subtitle : session.caseDone && event.unlockAfter === storyId ? 'เร็ว ๆ นี้' : event.lockedHint}</small>
           </span>
         </button>
       {/each}

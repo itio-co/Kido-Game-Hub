@@ -139,6 +139,15 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.a
     for (const m of reg.modules) if (!m.gddMarkdown) errors.push(`${m.id} has no GDD (set "gdd" in module.json and create the file; template: docs/gdd/TEMPLATE.md)`);
     for (const m of reg.modules) if (m.pack && !reg.modules.some((x) => x.id === m.pack.mechanism)) errors.push(`${m.id}: unknown mechanism ${m.pack.mechanism}`);
     for (const m of reg.modules) for (const d of m.dependsOn) if (!d.ok) errors.push(`${m.id} needs ${d.id} ${d.range}, found ${d.version}`);
+    const needsMinigameCore = new Set(['minigame', 'engine', 'pack']);
+    for (const m of reg.modules) {
+      if ((needsMinigameCore.has(m.kind) || m.id === 'challenge') && !m.dependsOn.some((d) => d.id === 'minigame-core' && d.ok)) {
+        errors.push(`${m.id} must depend on minigame-core ^1.0.0 (shared minigame framework)`);
+      }
+      if (m.kind === 'event' && !m.dependsOn.some((d) => d.id === 'event-core' && d.ok)) {
+        errors.push(`${m.id} must depend on event-core ^1.0.0 (shared event framework)`);
+      }
+    }
     for (const m of reg.modules) {
       if (!m.ruleset) continue;
       if (!m.rulesets) errors.push(`${m.id} needs src/modules/${m.id}/ruleset.json (gameplay params keyed by semver; cover ${m.version})`);

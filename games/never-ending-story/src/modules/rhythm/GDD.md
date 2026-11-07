@@ -64,7 +64,7 @@ intro (เลือกระดับ, ชาร์ต #seed, สุ่มชา
 ลิงก์ท้า: `<pack.route>/<difficulty>/<seed>[/rhythm@1.1.0+<pack>@<ver>][/vs/<nick>?score=&time=]` (`parseRhythmHash` / `rhythmHash`). ไม่มี segment กติกา = กติกาสมัยแอป 0.6.10 (`rhythm@1.1.0` + pack legacy). กติกาที่ไม่มีใน registry แสดงข้อความใน locale แล้วให้เล่นกติกาปัจจุบันแทน
 
 ## 11. Dependencies + เวอร์ชัน
-core >=0.6.11, challenge ^1.1.0 (`packRun`, `submitRun`)
+minigame-core ^1.0.0 (เฟสจบรอบ, ลิงก์, `submitFinishedRun`, ป้ายกติกา), core >=0.6.12
 
 ## 12. คำถามที่ยังเปิดอยู่ / Backlog
 - **[backlog]** เซิร์ฟเวอร์ replay ชาร์ตจาก seed เพื่อตรวจคะแนนสูงสุดที่เป็นไปได้

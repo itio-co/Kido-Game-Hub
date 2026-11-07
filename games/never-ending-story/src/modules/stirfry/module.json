@@ -10,7 +10,8 @@
     "src/modules/stirfry/ruleset.ts"
   ],
   "dependsOn": {
-    "core": ">=0.6.11",
+    "core": ">=0.6.12",
+    "minigame-core": "^1.0.0",
     "rhythm": "^1.1.0"
   },
   "pack": {

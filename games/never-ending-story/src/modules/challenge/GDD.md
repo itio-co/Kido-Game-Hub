@@ -40,7 +40,9 @@ ChallengeView, LeaderboardView (แท็บเกม; stirfry ใช้ระ�
 `POST /never/api/runs`: sessionId, playerId, game, difficulty, seed, score, timeMs, version, **ruleset**, ts, verified, integrity_ok · `GET` leaderboard ต่อ game + difficulty + ruleset (เวอร์ชันแอปไม่แยกกระดาน) · ruleset ว่างในโทเคนเก่า = กติกา 0.6.10
 
 ## 11. Dependencies + เวอร์ชัน
-core, crossword, jigsaw, slide
+minigame-core ^1.0.0 (ลิงก์, เฟสจบรอบ, โทเคน, เปลือกกติกา), core, crossword, jigsaw, slide
+
+โหมด challenge ไม่ถูกยุบเข้า minigame-core เพราะกระดานปริศนาและสูตรคะแนนเป็นของฟีเจอร์นี้ rhythm ไม่ควรต้องดึง crossword มาด้วย
 
 ## 12. คำถามที่ยังเปิดอยู่ / Backlog
 - **[backlog]** กระดานรายสัปดาห์

@@ -24,9 +24,11 @@ import type {
   ScreenId,
   ScreenRegistry,
 } from './types';
-import type { NavContext } from '../types';
-import { t } from '../i18n';
-import { tapFanEgg } from '../eggs';
+import type { NavContext } from '../../lib/types';
+import { t } from '../../lib/i18n';
+import { tapFanEgg } from '../../lib/eggs';
+import { endingIdFor, primaryEventId } from './story';
+import { playModeFromContext, type PlayMode } from '../minigame-core/framework';
 
 export type TalkChoice = { title: string; run: () => void };
 export type Talk = { who: string; text: string; choices: TalkChoice[] };
@@ -550,7 +552,7 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
     if (screen === 'event-select') return 'แตะการ์ดเพื่อเริ่มเหตุการณ์';
     if (screen === 'cutscene') return `หน้า ${page + 1}/3`;
     if (screen === 'ending-comic') {
-      const total = flow?.pages.filter((item) => item.eventId === 'case-01-ending').length ?? 5;
+      const total = flow?.pages.filter((item) => item.eventId === endingIdFor(primaryEventId(flow))).length ?? 5;
       return `หน้า ${page + 1}/${total}`;
     }
     if (screen === 'difficulty') return 'เลือกได้ใหม่ทุกครั้งที่เริ่มคดี ไม่มีจำกัดเวลา';
@@ -595,6 +597,10 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
     get levels() { return levels; },
     get practice() { return practice; },
     get context() { return context; },
+    /** Practice map, story case, or the online challenge shell. */
+    get playMode(): PlayMode {
+      return playModeFromContext(context, practice || practiceRun);
+    },
     /** สมุดคดี + event status: only when nav.context was positively set to event. */
     get showCaseUi() {
       return context === 'event' && !practice && !practiceRun && EVENT_CASE_SCREENS.has(screen);
@@ -665,7 +671,7 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
       const event = flow?.events.find((item) => item.eventId === eventId);
       if (!event) return;
       if (event.unlockAfter) {
-        showToast(caseDone && event.unlockAfter === 'case-01' ? 'เร็ว ๆ นี้' : event.lockedHint ?? 'ยังล็อกอยู่');
+        showToast(caseDone && event.unlockAfter === primaryEventId(flow) ? 'เร็ว ๆ นี้' : event.lockedHint ?? 'ยังล็อกอยู่');
         return;
       }
       page = 0;
@@ -676,7 +682,7 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
     },
     nextPage() {
       if (screen === 'ending-comic') {
-        const pages = flow?.pages.filter((item) => item.eventId === 'case-01-ending') ?? [];
+        const pages = flow?.pages.filter((item) => item.eventId === endingIdFor(primaryEventId(flow))) ?? [];
         if (page < pages.length - 1) {
           page += 1;
           persist();
@@ -685,7 +691,7 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
         void perform({ type: 'home' });
         return;
       }
-      const pages = flow?.pages.filter((item) => item.eventId === 'case-01') ?? [];
+      const pages = flow?.pages.filter((item) => item.eventId === primaryEventId(flow)) ?? [];
       if (page < pages.length - 1) {
         page += 1;
         void go('cutscene', true, false);

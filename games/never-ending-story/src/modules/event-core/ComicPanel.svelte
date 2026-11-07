@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { imageUrl } from '../../lib/flow/loadFlow';
+  import { imageUrl } from '../../lib/imageUrl';
 
   export type ComicLine = { id: string; who: string; text: string; x: number; y: number; w: number };
 

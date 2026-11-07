@@ -3,7 +3,7 @@
   import { t } from './lib/i18n';
   import EditorView from './components/EditorView.svelte';
   import CalendarPanel from './components/CalendarPanel.svelte';
-  import FlowView from './components/flow/FlowView.svelte';
+  import { FlowView, createFlow, loadFlow } from './modules/event-core';
   import Hud from './components/Hud.svelte';
   import Onboarding from './components/Onboarding.svelte';
   import Prologue from './components/Prologue.svelte';
@@ -14,8 +14,7 @@
   import VersionBadge from './components/VersionBadge.svelte';
   import { StirFryGame } from './modules/stirfry';
   import { ChallengeView, LeaderboardView, parseChallengeHash } from './modules/challenge';
-  import { loadFlow } from './lib/flow/loadFlow';
-  import { createFlow } from './lib/flow/session.svelte';
+  import { minigameRoute } from './modules/minigame-core';
   import { loadPlayerRoom } from './lib/loadRoom';
   import { readSave, writeSave } from './lib/save';
   import type { CalendarEntity, PlayerRoom, SaveV1, TextSize } from './lib/types';
@@ -45,9 +44,10 @@
   }
   const showcasing = $derived(route.startsWith('#/showcase'));
   const editing = $derived(route.startsWith('#/editor'));
-  const playingStirfry = $derived(route.startsWith('#/play/stirfry'));
-  const challenge = $derived(parseChallengeHash(route));
-  const showingBoard = $derived(route.startsWith('#/leaderboard'));
+  const mini = $derived(minigameRoute(route));
+  const playingStirfry = $derived(mini === 'rhythm' && route.startsWith('#/play/stirfry'));
+  const challenge = $derived(mini === 'challenge' ? parseChallengeHash(route) : null);
+  const showingBoard = $derived(mini === 'leaderboard');
   const fullscreenGame = $derived(playingStirfry || !!challenge || showingBoard);
 
   function toPractice(): void {

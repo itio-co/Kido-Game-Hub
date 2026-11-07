@@ -1,4 +1,4 @@
-import type { ComicLine } from '../components/flow/ComicPanel.svelte';
+import type { ComicLine } from '../modules/event-core';
 
 export type ProloguePage = { image: string; caption: string; lines: ComicLine[] };
 

@@ -1,4 +1,4 @@
-import type { Identity } from '../types';
+import type { Identity } from '../../lib/types';
 
 export type ScreenStatus = 'demo' | 'real';
 
@@ -185,4 +185,4 @@ export type CaseFlow = Identity & {
 
 export type PuzzleKey = 'cross' | 'jig' | 'slide';
 
-export type { FlowProgress } from '../types';
+export type { FlowProgress } from '../../lib/types';

@@ -269,6 +269,8 @@
   "god.mod.kind.engine": "กลไกหลัก",
   "god.mod.kind.pack": "แพ็ก",
   "god.mod.kind.admin": "แอดมิน",
+  "god.mod.kind.minigame-core": "แกนมินิเกม",
+  "god.mod.kind.event-core": "แกนอีเวนต์",
   "stirfry.diffLabel": "ระดับ",
   "stirfry.diff.easy": "ง่าย",
   "stirfry.diff.normal": "ปกติ",

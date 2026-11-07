@@ -9,7 +9,8 @@
     "src/modules/event-01/index.ts"
   ],
   "dependsOn": {
-    "core": ">=0.6.0",
+    "core": ">=0.6.12",
+    "event-core": "^1.0.0",
     "crossword": "^1.0.0",
     "jigsaw": "^1.0.0",
     "slide": "^1.0.0"
