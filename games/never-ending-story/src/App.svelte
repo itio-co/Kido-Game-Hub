@@ -18,6 +18,18 @@
   import { minigameRoute } from './modules/minigame-core';
   import { loadPlayerRoom } from './lib/loadRoom';
   import { readSave, writeSave } from './lib/save';
+  import { appStorage } from './lib/deployment';
+  import { buildInfo } from './lib/buildInfo';
+  import {
+    GodFloat,
+    godButtonVisible,
+    godFloatVisible,
+    godSessionActive,
+    loadFloatPrefs,
+    saveFloatPrefs,
+    type FloatPrefs,
+    type InspectPage,
+  } from './modules/god/player';
   import type { CalendarEntity, PlayerRoom, SaveV1, TextSize } from './lib/types';
 
   let room = $state<PlayerRoom | null>(null);
@@ -35,6 +47,8 @@
   let hintTimer = 0;
   let hintTier = 0;
   let route = $state(window.location.hash);
+  let godReady = $state(false);
+  let floatPrefs = $state<FloatPrefs>(loadFloatPrefs((key) => appStorage.getItem(key)));
   // Prologue only on a plain home entry, never for deep links (challenge, practice, leaderboard...).
   const homeEntry = ['', '#', '#/'].includes(window.location.hash);
   let showPrologue = $state(homeEntry && !save.player.prologueSeen);
@@ -195,8 +209,59 @@
     tutorIndex += 1;
   }
 
+  function setFloat(next: FloatPrefs): void {
+    floatPrefs = next;
+    saveFloatPrefs((key, value) => appStorage.setItem(key, value), next);
+  }
+
+  function toggleGod(): void {
+    setFloat({ ...floatPrefs, on: !floatPrefs.on });
+  }
+
+  async function openSettings(): Promise<void> {
+    if (overlay === 'settings') {
+      overlay = null;
+      return;
+    }
+    godReady = await godSessionActive();
+    overlay = 'settings';
+  }
+
+  const inspectPage = $derived.by((): InspectPage => ({
+    page: { screen: fullscreenGame ? route : session.screen, title: session.title, route },
+    room: room
+      ? {
+          id: room.id,
+          slug: room.slug,
+          title: room.title,
+          hotspots: $state.snapshot(room.hotspots),
+          objects: $state.snapshot(room.objects),
+        }
+      : null,
+    scene: session.scene,
+    hotspots: session.spots,
+    event: {
+      context: session.context,
+      slot: session.slot,
+      evidence: [...session.evidence],
+      solved: session.solved,
+      deduced: session.deduced,
+      reward: session.reward,
+      poster: session.poster,
+      caseDone: session.caseDone,
+      mapUnlocked: session.mapUnlocked,
+      difficulty: session.difficulty,
+      subtitle: session.subtitle,
+    },
+    save: $state.snapshot(save),
+    versions: buildInfo(),
+  }));
+
   onMount(() => {
     const ac = new AbortController();
+    void godSessionActive().then((ok) => {
+      if (!ac.signal.aborted) godReady = ok;
+    });
     loadPlayerRoom()
       .then((loaded) => {
         if (!ac.signal.aborted) room = loaded;
@@ -272,7 +337,7 @@
       settingsLabel={room.hud.settingsLabel}
       showHint={!['event-select', 'cutscene', 'ending-comic', 'difficulty', 'practice', 'level-map', 'crossword', 'jigsaw', 'slide'].includes(session.screen)}
       onHint={onHint}
-      onSettings={() => (overlay = overlay === 'settings' ? null : 'settings')}
+      onSettings={() => { void openSettings(); }}
     />
     {#if session.subtitle && !session.talk && (session.showCaseUi || session.screen === 'cutscene' || session.screen === 'ending-comic' || session.screen === 'difficulty')}
       <p class="flow-sub">{session.subtitle}</p>
@@ -307,6 +372,9 @@
         onSound={setSound}
         onClose={() => (overlay = null)}
         onReplayPrologue={() => { overlay = null; showPrologue = true; }}
+        showGod={godButtonVisible(godReady)}
+        godOn={floatPrefs.on}
+        onGodToggle={toggleGod}
       />
     {:else if overlay === 'calendar' && calendar && session.screen === 'player-room'}
       <CalendarPanel
@@ -340,6 +408,9 @@
     {#if session.toastText || toast}
       <p class="toast" class:toast-low={session.context !== 'event'} role="status">{session.toastText || toast}</p>
     {/if}
+  {/if}
+  {#if godFloatVisible(godReady, floatPrefs.on) && !editing && !browsing && overlay !== 'settings'}
+    <GodFloat page={inspectPage} prefs={floatPrefs} onPrefs={setFloat} />
   {/if}
 </div>
 
