@@ -41,6 +41,7 @@ export function defaultFlow(): FlowProgress {
     levels: { cross: [], jig: [], slide: [] },
     poster: false,
     caseDone: false,
+    bag: [],
     nav: undefined,
   };
 }
@@ -100,6 +101,7 @@ export function readSave(): SaveV1 {
         poster: flow.poster === true,
         caseDone: flow.caseDone === true,
         mapUnlocked: flow.mapUnlocked === true,
+        bag: Array.isArray(flow.bag) ? flow.bag.filter((id) => typeof id === 'string') : [],
         nav: isRecord(flow.nav)
           ? {
               screen: typeof flow.nav.screen === 'string' ? flow.nav.screen : 'player-room',

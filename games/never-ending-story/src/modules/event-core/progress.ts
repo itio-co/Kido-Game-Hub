@@ -74,6 +74,56 @@ export function eventProgressBody(flow: Record<string, unknown> | undefined): Ev
       endingSeen: f.caseDone,
       seen: f.seen,
       mapUnlocked: f.mapUnlocked === true,
+      bag: Array.isArray(f.bag) ? f.bag : [],
     },
   };
+}
+
+/** Inventory id of the key awarded when the case deduction is solved. Not an evidence code. */
+export const CASE_KEY_ID = 'case-key';
+
+type EvidenceFlow = { evidence?: { code?: unknown }[] } | null | undefined;
+
+/** Evidence codes this pack lists in the notebook. The HUD denominator is this length. */
+export function catalogCodes(flow: EvidenceFlow): string[] {
+  return (flow?.evidence ?? [])
+    .map((item) => item.code)
+    .filter((code): code is string => typeof code === 'string' && code.length > 0);
+}
+
+/** Held codes that are still evidence. Dropped codes such as a retired E05 do not count. */
+export function countedEvidence(catalog: readonly string[], held: readonly string[]): string[] {
+  const allowed = new Set(catalog);
+  return held.filter((code) => allowed.has(code));
+}
+
+/** สรุปคดี opens once every notebook evidence code is in the save. */
+export function canSolveCase(catalog: readonly string[], held: readonly string[]): boolean {
+  return catalog.length > 0 && catalog.every((code) => held.includes(code));
+}
+
+/**
+ * Old saves stored E05 as evidence, or finished the case before the key existed.
+ * Those players receive the key. E05 is removed so the counter stays x/catalog.
+ */
+export function migrateCaseBag(
+  input: {
+    evidence: readonly string[];
+    bag?: readonly string[];
+    solved?: boolean;
+    deduced?: boolean;
+    caseDone?: boolean;
+  },
+  catalog: readonly string[],
+): { evidence: string[]; bag: string[]; changed: boolean } {
+  const hadRetired = input.evidence.includes('E05');
+  const evidence = catalog.length > 0 ? countedEvidence(catalog, input.evidence) : [...input.evidence];
+  const bag = [...(input.bag ?? [])];
+  const earned = hadRetired || input.solved === true || input.deduced === true || input.caseDone === true;
+  let changed = evidence.length !== input.evidence.length || evidence.some((code, index) => code !== input.evidence[index]);
+  if (earned && !bag.includes(CASE_KEY_ID)) {
+    bag.push(CASE_KEY_ID);
+    changed = true;
+  }
+  return { evidence, bag, changed };
 }

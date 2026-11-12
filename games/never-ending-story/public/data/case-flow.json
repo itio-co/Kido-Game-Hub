@@ -323,14 +323,6 @@
       "slug": "flow/evidence/e04",
       "code": "E04",
       "text": "แผนผังบ้าน: ภาพถ่ายเก็บใต้หน้าต่างห้องทำงาน"
-    },
-    {
-      "id": "a4c0e001-0000-4000-8000-000000000072",
-      "kind": "evidence",
-      "title": "พบอัลบั้ม",
-      "slug": "flow/evidence/e05",
-      "code": "E05",
-      "text": "พบอัลบั้มในกล่องรูปดาว"
     }
   ],
   "slots": [
@@ -1066,7 +1058,7 @@
       "titleEn": "Album found",
       "screen": "album",
       "image": "album-found.jpg",
-      "hud": "หลักฐาน E05",
+      "hud": "นำอัลบั้มกลับไปให้ย่า",
       "enter": "flow/dialogue/album-open",
       "spots": [
         {

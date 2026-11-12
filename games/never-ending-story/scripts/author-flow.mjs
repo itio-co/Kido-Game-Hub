@@ -220,7 +220,7 @@ const scenes = [
     titleEn: 'Album found',
     screen: 'album',
     image: 'album-found.jpg',
-    hud: 'หลักฐาน E05',
+    hud: 'นำอัลบั้มกลับไปให้ย่า',
     enter: 'flow/dialogue/album-open',
     spots: [
       spot('รูปตาตอนหนุ่ม', 'flow/album/portrait', 37.8, 44.5, { type: 'dialogue', dialogue: 'flow/dialogue/album-portrait' }, { en: "Grandfather's photo" }),
@@ -423,10 +423,6 @@ const flow = ent('story-flow', 'คดี 01 อัลบั้มครอบ�
     ent('evidence', 'แผนผังที่เก็บภาพ', 'flow/evidence/e04', {
       code: 'E04',
       text: 'แผนผังบ้าน: ภาพถ่ายเก็บใต้หน้าต่างห้องทำงาน',
-    }),
-    ent('evidence', 'พบอัลบั้ม', 'flow/evidence/e05', {
-      code: 'E05',
-      text: 'พบอัลบั้มในกล่องรูปดาว',
     }),
   ],
   slots: [
