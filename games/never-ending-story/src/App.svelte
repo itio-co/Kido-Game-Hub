@@ -22,6 +22,7 @@
   import { buildInfo } from './lib/buildInfo';
   import {
     GodFloat,
+    GodLogin,
     godButtonVisible,
     godFloatVisible,
     godSessionActive,
@@ -48,6 +49,7 @@
   let hintTier = 0;
   let route = $state(window.location.hash);
   let godReady = $state(false);
+  let showGodLogin = $state(false);
   let floatPrefs = $state<FloatPrefs>(loadFloatPrefs((key) => appStorage.getItem(key)));
   // Prologue only on a plain home entry, never for deep links (challenge, practice, leaderboard...).
   const homeEntry = ['', '#', '#/'].includes(window.location.hash);
@@ -218,6 +220,16 @@
     setFloat({ ...floatPrefs, on: !floatPrefs.on });
   }
 
+  function showGodBubble(): void {
+    godReady = true;
+    setFloat({ ...floatPrefs, on: true });
+  }
+
+  async function onVersionUnlock(): Promise<void> {
+    if (await godSessionActive()) showGodBubble();
+    else showGodLogin = true;
+  }
+
   async function openSettings(): Promise<void> {
     if (overlay === 'settings') {
       overlay = null;
@@ -295,7 +307,10 @@
 </script>
 
 <div class="phone" class:wide={editing || browsing} data-text={save.player.textSize}>
-  {#if !editing && !browsing && !fullscreenGame}<VersionBadge />{/if}
+  {#if !editing && !browsing && !fullscreenGame}<VersionBadge onUnlock={onVersionUnlock} />{/if}
+  {#if showGodLogin}
+    <GodLogin onSuccess={() => { showGodLogin = false; showGodBubble(); }} onClose={() => (showGodLogin = false)} />
+  {/if}
   {#if browsing}
     <AssetBrowser />
   {:else if editing}
