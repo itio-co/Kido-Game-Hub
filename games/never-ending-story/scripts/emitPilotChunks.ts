@@ -3,13 +3,14 @@
  * Svelte stays a shared runtime (import map) so a rolled-back chunk still mounts in the current page.
  */
 import { createHash } from 'node:crypto';
-import { mkdir, readFile, readdir, rm, writeFile } from 'node:fs/promises';
+import { access, mkdir, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
 import { build } from 'vite';
 import { svelte } from '@sveltejs/vite-plugin-svelte';
 import { generatePrecache } from './precache.mjs';
+import { driftErrors, readPilotManifest, sourceHash, versionChanged } from './pilotDrift.mjs';
 import type { PilotManifest } from '../src/lib/pilotManifest.ts';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -79,17 +80,39 @@ async function emitRuntime(): Promise<Record<string, string>> {
   return Object.fromEntries(RUNTIME.map((item) => [item.specifier, `./modules/runtime/${item.name}.js`]));
 }
 
-async function emitModule(id: (typeof PILOTS)[number]): Promise<{ version: string; file: string; hash: string }> {
+async function fileExists(file: string): Promise<boolean> {
+  try {
+    await access(file);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function emitModule(id: (typeof PILOTS)[number], recorded: PilotManifest): Promise<{ version: string; file: string; hash: string; sourceHash: string; deploy: boolean }> {
   const meta = JSON.parse(await readFile(path.join(root, 'src/modules', id, 'module.json'), 'utf8')) as { version: string };
+  const hashed = sourceHash(id, root);
+  const problems = driftErrors(id, meta.version, hashed, recorded.modules?.[id]);
+  if (problems.length) throw new Error(problems.join('\n'));
+  const saved = recorded.modules[id].versions[meta.version];
+  const deploy = versionChanged(recorded.modules[id]);
+  const dest = path.join(dist, saved.file);
+  if (await fileExists(dest)) {
+    const onDisk = createHash('sha256').update(await readFile(dest)).digest('hex').slice(0, 16);
+    if (onDisk === saved.hash) {
+      console.log(`skip rebuild ${id}@${meta.version} (source unchanged${deploy ? ', version changed' : ''})`);
+      return { version: meta.version, file: saved.file, hash: saved.hash, sourceHash: hashed, deploy };
+    }
+  }
   const tmp = path.join(dist, '.pilot-tmp', id);
   await bundleFile(path.join(root, 'src/modules', id, 'index.ts'), tmp, true);
   const js = await inlineCss(path.join(tmp, 'mod.js'), path.join(tmp, 'mod.css'), `nes-pilot-${id}`);
   const hash = createHash('sha256').update(js).digest('hex').slice(0, 16);
-  const file = `modules/${id}/${meta.version}/${hash}.js`;
-  const dest = path.join(dist, file);
+  if (hash !== saved.hash) throw new Error(`${id}@${meta.version} output hash is ${hash}, pilot-manifest.json records ${saved.hash}`);
   await mkdir(path.dirname(dest), { recursive: true });
   await writeFile(dest, js);
-  return { version: meta.version, file, hash };
+  console.log(`${deploy ? 'deploy' : 'site-only'} ${id}@${meta.version} ${saved.file}`);
+  return { version: meta.version, file: saved.file, hash, sourceHash: hashed, deploy };
 }
 
 function injectImportMap(html: string, imports: Record<string, string>): string {
@@ -98,20 +121,26 @@ function injectImportMap(html: string, imports: Record<string, string>): string 
   return stripped.replace('<head>', `<head>${tag}`);
 }
 
+const recorded = readPilotManifest(root) as PilotManifest;
 const imports = await emitRuntime();
 const modules: PilotManifest['modules'] = {};
+const deployModules: PilotManifest['modules'] = {};
 for (const id of PILOTS) {
-  const chunk = await emitModule(id);
-  modules[id] = {
+  const chunk = await emitModule(id, recorded);
+  const record = {
     current: chunk.version,
-    retained: [chunk.version],
-    versions: { [chunk.version]: { file: chunk.file, hash: chunk.hash } },
+    retained: recorded.modules[id]?.retained ?? [chunk.version],
+    versions: { ...(recorded.modules[id]?.versions ?? {}), [chunk.version]: { file: chunk.file, hash: chunk.hash, sourceHash: chunk.sourceHash } },
   };
-  console.log(`pilot ${id}@${chunk.version} ${chunk.file}`);
+  modules[id] = record;
+  if (chunk.deploy) deployModules[id] = { current: chunk.version, retained: [chunk.version], versions: { [chunk.version]: record.versions[chunk.version] } };
 }
 const manifest: PilotManifest = { format: 1, modules };
 await mkdir(path.join(dist, 'modules'), { recursive: true });
 await writeFile(path.join(dist, 'modules/manifest.json'), `${JSON.stringify(manifest, null, 2)}\n`);
+await mkdir(path.join(dist, 'module-deploy'), { recursive: true });
+await writeFile(path.join(dist, 'module-deploy/manifest.json'), `${JSON.stringify({ format: 1, modules: deployModules }, null, 2)}\n`);
+console.log(Object.keys(deployModules).length ? `deploy package: ${Object.keys(deployModules).join(', ')}` : 'deploy package: no module version changed');
 for (const htmlName of ['index.html', 'god.html']) {
   const file = path.join(dist, htmlName);
   await writeFile(file, injectImportMap(await readFile(file, 'utf8'), imports));

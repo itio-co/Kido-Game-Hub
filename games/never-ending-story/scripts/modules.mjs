@@ -5,6 +5,7 @@ import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { checkPilotManifest } from './pilotDrift.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const MODULES = path.join(ROOT, 'src/modules');
@@ -168,6 +169,7 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.a
     for (const [game, ids] of Object.entries(gamesDoc.games ?? {})) {
       for (const id of ids) if (!reg.modules.some((m) => m.id === id)) errors.push(`game "${game}" lists unknown ruleset module ${id}`);
     }
+    errors.push(...checkPilotManifest(ROOT));
     if (errors.length) { console.error(errors.join('\n')); process.exit(1); }
     console.log(`modules ok: ${reg.modules.map((m) => `${m.id}@${m.version}`).join(', ')}`);
   } else if (cmd === 'registry') {

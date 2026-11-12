@@ -99,7 +99,7 @@ async function fromCacheOrNetwork(request) {
 export async function generatePrecache(outDir) {
   const files = (await walk(outDir)).filter((file) => {
     const rel = path.relative(outDir, file).split(path.sep).join('/');
-    return path.basename(file) !== 'sw.js' && path.basename(file) !== 'god.html' && path.basename(file) !== 'modules.json' && rel !== 'modules/manifest.json';
+    return path.basename(file) !== 'sw.js' && path.basename(file) !== 'god.html' && path.basename(file) !== 'modules.json' && rel !== 'modules/manifest.json' && !rel.startsWith('module-deploy/');
   }).sort();
   const hash = createHash('sha256');
   const urls = [];

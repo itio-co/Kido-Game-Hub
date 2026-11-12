@@ -3,7 +3,7 @@
 export const PILOT_IDS = ['rhythm', 'stirfry'] as const;
 export type PilotId = (typeof PILOT_IDS)[number];
 
-export type PilotChunk = { file: string; hash: string };
+export type PilotChunk = { file: string; hash: string; sourceHash?: string };
 export type PilotModuleRecord = {
   current: string;
   retained: string[];
@@ -56,7 +56,7 @@ export function mergeManifests(remote: PilotManifest | null, local: PilotManifes
         errors.push(`${id}@${version} is already published as ${old.hash}, not ${chunk.hash}`);
         continue;
       }
-      versions[version] = old ?? chunk;
+      versions[version] = old ? { ...chunk, ...old, sourceHash: old.sourceHash ?? chunk.sourceHash } : chunk;
     }
     const current = next?.current && versions[next.current] ? next.current : prev?.current;
     if (!current || !versions[current]) continue;

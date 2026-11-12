@@ -50,11 +50,15 @@ save endpoint is not a hosted authoring backend.
 
 ## Pilot module upload and rollback
 
-`make deploy-modules` reads `dist/modules/manifest.json` and, with `APPLY=1`,
-uploads only chunk keys the namespace does not already have, then writes
+`make deploy-modules` reads `dist/module-deploy/manifest.json`. That package
+lists only a pilot module whose current version changed content relative to
+the previous retained version in `pilot-manifest.json`. Unchanged modules are
+absent, so they are not uploaded. With `APPLY=1` the command uploads those
+chunks only when the namespace does not already have that version, then writes
 `/modules/manifest.json`. Old version keys are left in place. A version whose
-hash changed is refused, because published chunks are immutable. The manifest
-write is the last request, after the new chunks.
+output hash changed is refused, because published chunks are immutable. The
+manifest write is the last request, after the new chunks. If nothing changed,
+the command prints an empty upload and does not call Cloudflare.
 
 ```sh
 make deploy-modules SPACE=dev          # print the plan, no network
