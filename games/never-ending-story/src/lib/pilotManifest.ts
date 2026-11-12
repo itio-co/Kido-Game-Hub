@@ -3,7 +3,7 @@
 export const PILOT_IDS = ['rhythm', 'stirfry'] as const;
 export type PilotId = (typeof PILOT_IDS)[number];
 
-export type PilotChunk = { file: string; hash: string; sourceHash?: string };
+export type PilotChunk = { file: string; hash: string; sourceHash?: string; firstBuild?: number };
 export type PilotModuleRecord = {
   current: string;
   retained: string[];
@@ -11,6 +11,8 @@ export type PilotModuleRecord = {
 };
 export type PilotManifest = {
   format: 1;
+  /** App build that wrote this manifest. Module versions keep their own firstBuild. */
+  build?: number;
   modules: Record<string, PilotModuleRecord>;
 };
 
@@ -56,7 +58,9 @@ export function mergeManifests(remote: PilotManifest | null, local: PilotManifes
         errors.push(`${id}@${version} is already published as ${old.hash}, not ${chunk.hash}`);
         continue;
       }
-      versions[version] = old ? { ...chunk, ...old, sourceHash: old.sourceHash ?? chunk.sourceHash } : chunk;
+      versions[version] = old
+        ? { ...chunk, ...old, sourceHash: old.sourceHash ?? chunk.sourceHash, firstBuild: old.firstBuild ?? chunk.firstBuild }
+        : chunk;
     }
     const current = next?.current && versions[next.current] ? next.current : prev?.current;
     if (!current || !versions[current]) continue;

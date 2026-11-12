@@ -6,7 +6,8 @@
       "retained": ["1.1.1"],
       "versions": {
         "1.1.1": {
-          "sourceHash": "73f25c5b686048be04f823aa3b01e652fa344440bcce0906dfc2394f8e919b62",
+          "sourceHash": "3adc4dad607107e05cab378c96a7ab8cf85df4341d9c2bfffaa56fa117da25ea",
+          "firstBuild": 1,
           "file": "modules/rhythm/1.1.1/1f6517f2577bf7ce.js",
           "hash": "1f6517f2577bf7ce"
         }
@@ -17,7 +18,8 @@
       "retained": ["1.2.0"],
       "versions": {
         "1.2.0": {
-          "sourceHash": "95e37cdb2b21c1cab0b87d3c798bba540f851885a6534d1e946f55c33b23a518",
+          "sourceHash": "76c66f761a55173b643d578f1bfdbbb999cf0023bb57f927c8b23a84090576de",
+          "firstBuild": 1,
           "file": "modules/stirfry/1.2.0/3b4234583740aea2.js",
           "hash": "3b4234583740aea2"
         }

@@ -12,6 +12,7 @@
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { bumpBuildNumber } from './buildNumber.mjs';
 import {
   emptyManifest,
   isPilotManifest,
@@ -100,8 +101,9 @@ async function main(): Promise<void> {
     const token = process.env.CLOUDFLARE_API_TOKEN ?? '';
     const account = process.env.CLOUDFLARE_ACCOUNT_ID ?? '';
     if (!token || !account) throw new Error('CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID are required with --apply');
+    const appBuild = bumpBuildNumber(root);
     const remote = await remoteManifest(token, account, cfg.kv);
-    const next = rollbackManifest(remote, id, version);
+    const next = { ...rollbackManifest(remote, id, version), build: appBuild };
     await putBulk(token, account, cfg.kv, [{
       key: '/modules/manifest.json',
       value: `${JSON.stringify(next, null, 2)}\n`,
@@ -115,13 +117,28 @@ async function main(): Promise<void> {
   const packaged = await readManifest('dist/module-deploy/manifest.json');
   const site = await readManifest('dist/modules/manifest.json');
   if (!Object.keys(packaged.modules).length) {
-    console.log(JSON.stringify({
-      dryRun: !apply,
-      space,
-      base: cfg.base,
-      upload: [],
-      note: 'No pilot module version changed. Unchanged modules are not in the deploy package and are not uploaded.',
-    }, null, 2));
+    if (!apply) {
+      console.log(JSON.stringify({
+        dryRun: true,
+        space,
+        base: cfg.base,
+        upload: [],
+        note: 'No pilot module version changed. Unchanged modules are not in the deploy package and are not uploaded.',
+      }, null, 2));
+      return;
+    }
+    const token = process.env.CLOUDFLARE_API_TOKEN ?? '';
+    const account = process.env.CLOUDFLARE_ACCOUNT_ID ?? '';
+    if (!token || !account) throw new Error('CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID are required with --apply');
+    const appBuild = bumpBuildNumber(root);
+    const remote = await remoteManifest(token, account, cfg.kv);
+    await putBulk(token, account, cfg.kv, [{
+      key: '/modules/manifest.json',
+      value: `${JSON.stringify({ ...remote, build: appBuild }, null, 2)}\n`,
+      hash: 'manifest',
+      ct: 'application/json; charset=utf-8',
+    }]);
+    console.log(JSON.stringify({ applied: true, space, upload: [], build: appBuild, note: 'No module chunks uploaded. The app build number advanced.' }, null, 2));
     return;
   }
   if (!apply) {
@@ -140,10 +157,11 @@ async function main(): Promise<void> {
   const token = process.env.CLOUDFLARE_API_TOKEN ?? '';
   const account = process.env.CLOUDFLARE_ACCOUNT_ID ?? '';
   if (!token || !account) throw new Error('CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID are required with --apply');
+  const appBuild = bumpBuildNumber(root);
   const remote = await remoteManifest(token, account, cfg.kv);
   const plan = uploadPlan(remote, packaged);
   if (plan.errors.length) throw new Error(plan.errors.join('\n'));
-  const merged = mergeManifests(remote, site).manifest;
+  const merged = { ...mergeManifests(remote, site).manifest, build: appBuild };
   const files = [];
   for (const chunk of plan.upload) {
     files.push({

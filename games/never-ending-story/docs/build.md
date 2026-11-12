@@ -54,12 +54,14 @@ emits two pilot chunks and a manifest:
 
 The core bundle does not statically import `rhythm` or `stirfry`. It loads them with `import()` through the manifest. A share link that pins a version loads that retained file when the manifest lists it. If the file is absent, the page uses the code bundled in this build and the ruleset entry for the pinned version.
 
-`pilot-manifest.json` records a source hash for each published pilot version. The hash covers that module's code and ruleset (the `version` field in `module.json` is ignored) and the files those sources import. `make check` fails in two cases:
+`pilot-manifest.json` records a source hash for each published pilot version. The hash covers that module's code and ruleset (the `version` field in `module.json` is ignored) and the files those sources import, except the app `package.json` and `src/locales`, which are not module content. `make check` fails in two cases:
 
 - the source hash no longer matches the hash recorded for the current version (content changed, version was not bumped)
 - the version was bumped but the source hash is the same as an older version (no content change)
 
 A matching hash is not a new version. The build does not rebuild that chunk when the recorded file is already present, and it does not put the module in `dist/module-deploy`. That deploy package contains only a module whose current version has a different source hash from the previous retained version. `make deploy-modules` uploads that package only. Unchanged modules stay out of it.
+
+`build.json` is the app build number. `npm run build` adds one before compiling, and `make deploy-modules APPLY=1` or `make rollback-module APPLY=1` adds one more. The number only goes up. Module versions do not. The running app shows it as `0.6.16 (build 12)` on the version badge, in settings, and on the God dashboard and Modules page. `pilot-manifest.json` records `firstBuild` on each module version: the app build that first shipped that version. Later builds leave `firstBuild` alone.
 
 `make deploy-modules` and `make rollback-module` only print a plan unless `APPLY=1`. They never delete KV keys. The Worker and the rest of the site still deploy the way they do today. See [deploy-cloudflare.md](deploy-cloudflare.md).
 

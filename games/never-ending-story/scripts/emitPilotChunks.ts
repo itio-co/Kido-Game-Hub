@@ -10,6 +10,7 @@ import { createRequire } from 'node:module';
 import { build } from 'vite';
 import { svelte } from '@sveltejs/vite-plugin-svelte';
 import { generatePrecache } from './precache.mjs';
+import { readBuildNumber } from './buildNumber.mjs';
 import { driftErrors, readPilotManifest, sourceHash, versionChanged } from './pilotDrift.mjs';
 import type { PilotManifest } from '../src/lib/pilotManifest.ts';
 
@@ -121,6 +122,8 @@ function injectImportMap(html: string, imports: Record<string, string>): string 
   return stripped.replace('<head>', `<head>${tag}`);
 }
 
+const appBuild = readBuildNumber(root);
+console.log(`app build ${appBuild}`);
 const recorded = readPilotManifest(root) as PilotManifest;
 const imports = await emitRuntime();
 const modules: PilotManifest['modules'] = {};
@@ -130,12 +133,12 @@ for (const id of PILOTS) {
   const record = {
     current: chunk.version,
     retained: recorded.modules[id]?.retained ?? [chunk.version],
-    versions: { ...(recorded.modules[id]?.versions ?? {}), [chunk.version]: { file: chunk.file, hash: chunk.hash, sourceHash: chunk.sourceHash } },
+    versions: { ...(recorded.modules[id]?.versions ?? {}), [chunk.version]: { file: chunk.file, hash: chunk.hash, sourceHash: chunk.sourceHash, firstBuild: recorded.modules[id]?.versions[chunk.version]?.firstBuild ?? appBuild } },
   };
   modules[id] = record;
   if (chunk.deploy) deployModules[id] = { current: chunk.version, retained: [chunk.version], versions: { [chunk.version]: record.versions[chunk.version] } };
 }
-const manifest: PilotManifest = { format: 1, modules };
+const manifest: PilotManifest = { format: 1, build: appBuild, modules };
 await mkdir(path.join(dist, 'modules'), { recursive: true });
 await writeFile(path.join(dist, 'modules/manifest.json'), `${JSON.stringify(manifest, null, 2)}\n`);
 await mkdir(path.join(dist, 'module-deploy'), { recursive: true });

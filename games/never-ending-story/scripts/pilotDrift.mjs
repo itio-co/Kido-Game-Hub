@@ -40,7 +40,10 @@ export function sourceFiles(id, root = ROOT) {
     const text = fs.readFileSync(file, 'utf8');
     for (const match of text.matchAll(/(?:from|import)\s*(?:[^'";]*?from\s*)?['"](\.[^'"]+)['"]/g)) {
       const next = resolveImport(file, match[1]);
-      if (next && !seen.has(next)) queue.push(next);
+      if (!next || seen.has(next)) continue;
+      const rel = path.relative(root, next).split(path.sep).join('/');
+      if (rel === 'package.json' || rel.startsWith('src/locales/')) continue;
+      queue.push(next);
     }
   }
   return [...seen].sort();
