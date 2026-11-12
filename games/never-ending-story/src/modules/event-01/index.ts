@@ -1,6 +1,7 @@
 /** Event 01 "Visit Grandma's house" (case-01). Story data lives in public/data/case-flow.json (eventId case-01). */
 import { endingIdFor } from '../event-core';
 import { filesForUse } from '../cutscene';
+import './houseMap';
 
 export const EVENT_ID = 'case-01';
 /** Ending cutscene id. event-core joins pages whose eventId is `endingIdFor(EVENT_ID)`. */

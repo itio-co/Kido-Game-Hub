@@ -58,6 +58,12 @@ self.addEventListener('fetch', (event) => {
     event.respondWith(networkFirst(request));
     return;
   }
+  // Story JSON shares a stable URL. Cache-first kept the previous case-flow.json
+  // (no unlocksHouseMap) after the new script loaded, which opened the house-map button.
+  if (url.pathname.includes('/data/') && file.endsWith('.json')) {
+    event.respondWith(networkFirst(request));
+    return;
+  }
   event.respondWith(fromCacheOrNetwork(request));
 });
 

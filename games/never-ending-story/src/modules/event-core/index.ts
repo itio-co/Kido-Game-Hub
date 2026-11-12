@@ -5,6 +5,15 @@ export type { ComicLine } from './ComicPanel.svelte';
 export { loadFlow, imageUrl } from './loadFlow';
 export { createFlow } from './session.svelte';
 export type { FlowSession } from './session.svelte';
-export { eventProgressBody, type EventProgressBody } from './progress';
+export {
+  eventProgressBody,
+  houseMapGate,
+  houseMapUnlocked,
+  mapUnlockNeedsPersist,
+  registerHouseMapGate,
+  showHouseMapButton,
+  type EventProgressBody,
+  type HouseMapFlow,
+} from './progress';
 export { endingIdFor, primaryEventId } from './story';
 export type { CaseFlow, FlowEvent, FlowScene, ScreenId } from './types';
