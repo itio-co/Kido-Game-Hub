@@ -225,7 +225,7 @@
             {#if detail.home}<p class="note">rev {detail.home.rev} · {detail.home.bytes} B · {fmtDate(detail.home.updated_at)}</p><pre>{JSON.stringify(detail.home.data, null, 1).slice(0, 1200)}</pre>{:else}<p>{t('god.empty')}</p>{/if}
           </section>
           <section><h2>{t('god.player.events')}</h2>
-            {#each detail.events as e (e.eventId)}<p><b>{e.eventId}</b> · {t(`god.status.${e.status}`)} · {t('god.player.evidence')} {Array.isArray(e.progress?.evidence) ? e.progress.evidence.length : 0}/5 · {fmtDate(e.updated_at)}</p>{:else}<p>{t('god.empty')}</p>{/each}
+            {#each detail.events as e (e.eventId)}<p><b>{e.eventId}</b> · {t(`god.status.${e.status}`)} · {t('god.player.evidence')} {Array.isArray(e.progress?.evidence) ? e.progress.evidence.length : 0}/4 · {fmtDate(e.updated_at)}</p>{:else}<p>{t('god.empty')}</p>{/each}
             <h2>{t('god.player.runs')}</h2>
             <table><tbody>{#each detail.runs as r (r.sessionId)}<tr><td>{gameName(r.game)} · {diffName(r.difficulty)}</td><td>{r.score}</td><td>{fmtTime(r.timeMs)}</td><td>{r.verified ? '✓' : ''}</td><td>{fmtDate(r.ts)}</td></tr>{:else}<tr><td>{t('god.empty')}</td></tr>{/each}</tbody></table>
           </section>

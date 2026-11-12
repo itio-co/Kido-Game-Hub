@@ -269,6 +269,8 @@ export type FlowProgress = {
   caseDone: boolean;
   /** Sync copy of the jigsaw gate. The button reads the evidence code, not this flag. A true flag without that evidence is cleared on load. */
   mapUnlocked?: boolean;
+  /** Item ids in the bag. The case key is awarded when the deduction is solved, not as evidence. */
+  bag?: string[];
   /** Restored navigation after refresh. */
   nav?: {
     screen: string;

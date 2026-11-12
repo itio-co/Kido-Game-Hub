@@ -357,6 +357,7 @@
           </button>
         {/if}
         {#if session.showCaseUi}
+          <button type="button" class="case" class:fresh={session.bagPulse} data-testid="bag-btn" onclick={() => session.openBag()}>{t('bag.title')}</button>
           <button type="button" class="case" data-testid="case-notebook" onclick={() => (session.screen === 'notebook' ? session.back() : session.go('notebook'))}>
             {room.hud.caseLabel}
           </button>
@@ -428,7 +429,7 @@
     align-items: flex-end;
   }
   .bottom-actions .case { position: static; }
-  .mapbtn.fresh { animation: map-unlock 0.7s ease; }
+  .mapbtn.fresh, .case.fresh { animation: map-unlock 0.7s ease; }
   @keyframes map-unlock {
     0% { transform: scale(0.86); box-shadow: 0 0 0 0 var(--cyan); }
     45% { transform: scale(1.08); box-shadow: 0 0 0 6px transparent; }

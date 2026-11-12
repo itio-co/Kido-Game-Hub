@@ -118,7 +118,7 @@ const safeJson = (s: unknown) => { try { return JSON.parse(String(s ?? 'null'));
 const STEPS: { id: string; test: (p: Record<string, unknown>, status: string) => boolean }[] = [
   { id: 'started', test: () => true },
   { id: 'evidence1', test: (p) => Array.isArray(p.evidence) && p.evidence.length >= 1 },
-  { id: 'evidenceAll', test: (p) => Array.isArray(p.evidence) && p.evidence.length >= 5 },
+  { id: 'evidenceAll', test: (p) => Array.isArray(p.evidence) && p.evidence.length >= 4 },
   { id: 'poster', test: (p) => p.posterShown === true },
   { id: 'deduced', test: (p) => p.deduced === true },
   { id: 'solved', test: (p) => p.solved === true },

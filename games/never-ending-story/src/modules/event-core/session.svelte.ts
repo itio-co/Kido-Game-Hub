@@ -26,7 +26,17 @@ import type {
 } from './types';
 import type { NavContext } from '../../lib/types';
 import { t } from '../../lib/i18n';
-import { houseMapGate, houseMapUnlocked, mapUnlockNeedsPersist, showHouseMapButton as houseMapButtonVisible } from './progress';
+import {
+  CASE_KEY_ID,
+  canSolveCase,
+  catalogCodes,
+  countedEvidence,
+  houseMapGate,
+  houseMapUnlocked,
+  mapUnlockNeedsPersist,
+  migrateCaseBag,
+  showHouseMapButton as houseMapButtonVisible,
+} from './progress';
 import { tapFanEgg } from '../../lib/eggs';
 import { endingIdFor, primaryEventId } from './story';
 import { playModeFromContext, type PlayMode } from '../minigame-core/framework';
@@ -62,7 +72,7 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
   let hintSpot = $state<string | null>(null);
   let toastText = $state<string | null>(null);
   let talk = $state<Talk | null>(null);
-  let overlay = $state<null | 'calendar' | 'clock' | 'day'>(null);
+  let overlay = $state<null | 'calendar' | 'clock' | 'day' | 'bag'>(null);
   let slot = $state<'yesterday' | 'afternoon' | 'now'>('now');
   let evidence = $state<string[]>([]);
   let solved = $state(false);
@@ -98,6 +108,9 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
   let hintTimer = 0;
   let mapPulseTimer = 0;
   let mapUnlockPulse = $state(false);
+  let bag = $state<string[]>([]);
+  let bagPulse = $state(false);
+  let bagPulseTimer = 0;
 
   function mapIsUnlocked(): boolean {
     return houseMapUnlocked(flow, evidence);
@@ -106,7 +119,17 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
   function use(nextFlow: CaseFlow, nextRegistry: ScreenRegistry, saved: FlowProgress | null): void {
     flow = nextFlow;
     registry = nextRegistry;
-    evidence = [...(saved?.evidence ?? [])];
+    const migrated = migrateCaseBag(
+      {
+        evidence: saved?.evidence ?? [],
+        bag: saved?.bag,
+        solved: saved?.solved,
+        deduced: saved?.deduced,
+        caseDone: saved?.caseDone,
+      },
+      catalogCodes(nextFlow),
+    );
+    evidence = migrated.evidence;
     solved = saved?.solved ?? false;
     deduced = saved?.deduced ?? false;
     reward = saved?.reward ?? false;
@@ -168,9 +191,10 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
         }
       }
     }
+    bag = migrated.bag;
     // The button reads the jigsaw evidence, not the saved flag. Write the flag when a real
     // win predates it, and clear a true flag that has no such evidence (visits and other clues do not count).
-    if (houseMapGate(flow) && mapUnlockNeedsPersist(saved?.mapUnlocked, mapIsUnlocked())) persist();
+    if (migrated.changed || (houseMapGate(flow) && mapUnlockNeedsPersist(saved?.mapUnlocked, mapIsUnlocked()))) persist();
   }
 
   const scene = $derived(flow?.scenes.find((item) => item.screen === screen) ?? null);
@@ -190,6 +214,7 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
       poster,
       caseDone,
       mapUnlocked: houseMapGate(flow) ? mapIsUnlocked() : undefined,
+      bag: [...bag],
       nav: {
         screen,
         history: [...history],
@@ -390,7 +415,7 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
         showToast('เปิดกล่องนี้แล้ว');
         return;
       }
-      if (!deduced) {
+      if (!bag.includes(CASE_KEY_ID)) {
         openLines('ย่ามะลิ', ['กล่องนี้ล็อกอยู่นะ ลองสรุปคดีบนกระดานให้ครบก่อนสิจ๊ะ']);
         return;
       }
@@ -526,7 +551,6 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
     }
     showToast('กุญแจถึงรูกุญแจ!');
     solved = true;
-    addEvidence('E05');
     history = ['study', 'star-box'];
     await go('album', true);
   }
@@ -573,7 +597,7 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
     if (screen === 'difficulty') return 'เลือกได้ใหม่ทุกครั้งที่เริ่มคดี ไม่มีจำกัดเวลา';
     if (screen === 'practice') return '';
     if (screen === 'level-map') return practice ? '' : 'ผ่านด่านเพื่อปลดล็อกด่านถัดไป';
-    if (screen === 'notebook') return `หลักฐาน ${evidence.length}/5`;
+    if (screen === 'notebook') return t('hud.evidence', { n: countedEvidence(catalogCodes(flow), evidence).length, total: catalogCodes(flow).length || 4 });
     if (screen === 'case-board') return 'ตอบ 3 ข้อ แล้วเลือกหลักฐานยืนยัน';
     if (screen === 'crossword' || screen === 'jigsaw' || screen === 'slide') {
       if (practice) return '';
@@ -581,10 +605,11 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
     }
     if (!scene || !flow) return '';
     if (poster && solved && !caseDone) {
-      return `${t('hud.takePoster')} · ${t('hud.evidence', { n: evidence.length })}`;
+      return `${t('hud.takePoster')} · ${t('hud.evidence', { n: countedEvidence(catalogCodes(flow), evidence).length, total: catalogCodes(flow).length || 4 })}`;
     }
     const clock = scene.timed ? `⏳ ${flow.slots.find((item) => item.slot === slot)?.title ?? ''} · ` : '';
-    return `${clock}${scene.hud} · ${t('hud.evidence', { n: evidence.length })}`;
+    const found = countedEvidence(catalogCodes(flow), evidence).length;
+    return `${clock}${scene.hud} · ${t('hud.evidence', { n: found, total: catalogCodes(flow).length || 4 })}`;
   });
 
   return {
@@ -606,6 +631,10 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
     get poster() { return poster; },
     get caseDone() { return caseDone; },
     get mapUnlocked() { return mapIsUnlocked(); },
+    get bag() { return bag; },
+    get bagPulse() { return bagPulse; },
+    get canSolve() { return canSolveCase(catalogCodes(flow), evidence); },
+    get evidenceTotal() { return catalogCodes(flow).length || 4; },
     /** Bottom-bar house map. Same rule on every scene that sets `map`. */
     get showHouseMapButton() {
       return houseMapButtonVisible({ context, sceneHasMap: scene?.map === true, flow, evidence });
@@ -889,6 +918,13 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
       if (hint) openLines('ย่ามะลิ', [hint]);
       else {
         deduced = true;
+        if (!bag.includes(CASE_KEY_ID)) {
+          bag = [...bag, CASE_KEY_ID];
+          bagPulse = true;
+          window.clearTimeout(bagPulseTimer);
+          bagPulseTimer = window.setTimeout(() => { bagPulse = false; }, 2600);
+          showToast(t('toast.keyAwarded'));
+        }
         persist();
         openDialogue('flow/dialogue/deduce-ok');
       }
@@ -906,6 +942,7 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
       showToast(`⏳ ${found.title}`);
     },
     openDayTravel() { overlay = 'day'; },
+    openBag() { overlay = 'bag'; },
   };
 }
 
