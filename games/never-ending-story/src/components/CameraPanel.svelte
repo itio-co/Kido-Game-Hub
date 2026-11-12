@@ -121,13 +121,15 @@
 </script>
 
 <section class="cm" data-camera-panel>
-  <h2>จับมุมกล้อง (Camera match)</h2>
+  <details class="help"><summary>วิธีจับมุมกล้อง</summary>
   <p class="tip">
     1) ลากปลายเส้นสีให้ทับขอบที่ขนานกันในภาพ: <b style="color:{AXIS_COLORS[0]}">แดง = แกน X (ด้านกว้าง)</b>,
     <b style="color:{AXIS_COLORS[1]}">เขียว = แกน Y (ด้านลึก)</b>, <b style="color:{AXIS_COLORS[2]}">น้ำเงิน = แกน Z (แนวตั้ง)</b>
     2) กด “คำนวณจากเส้น” 3) เพิ่มคู่จุดเพื่อตั้งระยะ/ขนาด แล้วกด “คำนวณละเอียด”
   </p>
 
+  </details>
+  <details open><summary>ภาพอ้างอิง</summary>
   <div class="seg3" role="radiogroup" aria-label="ภาพที่ใช้">
     <button type="button" class:on={st.image === 'crop'} aria-checked={st.image === 'crop'} role="radio" data-image="crop"
       onclick={() => { st.setImage('crop'); onChange(); say(T.groups.cropToast); }}>{T.groups.cropButton}</button>
@@ -149,7 +151,8 @@
       onclick={() => { st.rays = !st.rays; onChange(); }}>{T.groups.rays(st.rays)}</button>
   </div>
 
-  <h3>การแสดงผล</h3>
+  </details>
+  <details><summary>การแสดงผล / เทียบภาพ</summary>
   <div class="seg3" role="radiogroup" aria-label="แบบการแสดงโมเดล">
     {#each displays as d (d.id)}
       <button type="button" role="radio" aria-checked={st.display === d.id} class:on={st.display === d.id} data-display={d.id}
@@ -165,7 +168,8 @@
     <input type="range" min="0" max="100" step="1" bind:value={st.split} data-split />
   </label>
 
-  <h3>เส้นนำสายตา</h3>
+  </details>
+  <details><summary>เส้น / จุดลับตา / ขอบภาพ</summary>
   <div class="adds">
     {#each [0, 1, 2] as const as a (a)}
       <button type="button" class="add" style="border-color:{AXIS_COLORS[a]}" data-add-line={a}
@@ -283,7 +287,8 @@
     <span class="hint">ลากพื้นหลังเพื่อเลื่อน · หนีบ/ล้อเมาส์เพื่อซูม</span>
   </div>
 
-  <h3>คำนวณกล้อง</h3>
+  </details>
+  <details open><summary>คำนวณกล้อง / คู่จุด</summary>
   <div class="field">
     <span>จุดกึ่งกลางภาพ (principal point)</span>
     <div class="seg3" role="radiogroup" aria-label="จุดกึ่งกลางภาพ">
@@ -378,23 +383,24 @@
     เส้น {res.lines === null ? '–' : `${r(res.lines, 2)} px`} · คู่จุด {res.points === null ? '–' : `${r(res.points, 2)} px`}
   </div>
 
-  <h3>ค่ากล้อง <small>(หน่วย Blender)</small></h3>
+  </details>
+  <details><summary>ค่ากล้อง <small>(หน่วย Blender)</small></summary>
   <div class="vals">
     <span>เลนส์ (มม.)</span>
-    <input type="number" step="0.5" value={r(st.lens, 2)} onchange={numeric((v) => st.setLens(v))} data-cam="lens" />
+    <input type="number" step="0.5" value={r(st.lens, 2)} onchange={numeric((v) => st.setLens(v))} aria-label="เลนส์ มม." data-cam="lens" />
     <span class="note" data-cam-fov>FOV แนวนอน {r(st.hfov, 2)}°{st.wideLens ? ` · บนภาพเต็ม ${r(st.wideLens, 1)} มม. / ${r(st.wideHfov ?? 0, 1)}°` : ''}</span>
     {#each [0, 1, 2] as const as i (i)}
       <span>ตำแหน่ง {axisLabels[i]} ซม.</span>
-      <input type="number" step="1" value={r(st.cam.C[i], 1)} onchange={numeric((v) => st.setPosition(i, v))} data-cam="pos-{i}" />
+      <input type="number" step="1" value={r(st.cam.C[i], 1)} onchange={numeric((v) => st.setPosition(i, v))} aria-label={`ตำแหน่งกล้อง ${axisLabels[i]} ซม.`} data-cam="pos-{i}" />
     {/each}
     {#each [0, 1, 2] as const as i (i)}
       <span>หมุน {AXIS_NAMES[i]} (องศา)</span>
-      <input type="number" step="0.1" value={r(euler[i], 2)} onchange={numeric((v) => st.setEuler(i, v))} data-cam="rot-{i}" />
+      <input type="number" step="0.1" value={r(euler[i], 2)} onchange={numeric((v) => st.setEuler(i, v))} aria-label={`หมุนกล้อง ${AXIS_NAMES[i]} องศา`} data-cam="rot-{i}" />
     {/each}
     <span>จุดกึ่งกลาง cx, cy (px)</span>
     <div class="two">
-      <input type="number" step="1" value={r(st.cam.cx, 1)} onchange={numeric((v) => st.setPrincipal(0, v))} data-cam="cx" />
-      <input type="number" step="1" value={r(st.cam.cy, 1)} onchange={numeric((v) => st.setPrincipal(1, v))} data-cam="cy" />
+      <input type="number" step="1" value={r(st.cam.cx, 1)} onchange={numeric((v) => st.setPrincipal(0, v))} aria-label="จุดกึ่งกลาง cx" data-cam="cx" />
+      <input type="number" step="1" value={r(st.cam.cy, 1)} onchange={numeric((v) => st.setPrincipal(1, v))} aria-label="จุดกึ่งกลาง cy" data-cam="cy" />
     </div>
   </div>
   <div class="actions">
@@ -402,12 +408,14 @@
     <button type="button" class="danger" data-act="reset-cam" onclick={() => { st.resetCamera(); onChange(); if (st.message) say(st.message); }}>กลับเป็นกล้องเดิม</button>
   </div>
 
-  <h3>บันทึก / ส่งออกกล้อง</h3>
+  </details>
+  <details><summary>บันทึก / ส่งออกกล้อง</summary>
   <p class="tip">บันทึกในเครื่องนี้อัตโนมัติ (มุม Mock-up จะใช้กล้องนี้) · cam.json ใช้กับ blender/add_cam.py, render.py</p>
   <div class="actions col">
     <button type="button" class="primary" data-act="export-cam" onclick={exportCam}>ดาวน์โหลด cam.json (Blender)</button>
     <button type="button" data-act="export-match" onclick={exportFull}>ดาวน์โหลดค่าทั้งหมด (Blender + Three.js)</button>
   </div>
+  </details>
 </section>
 
 <style>
@@ -419,17 +427,18 @@
   button.on { background: #8fdfff; border-color: #8fdfff; color: #082030; }
   button.primary { background: #ffcf4d; border-color: #ffcf4d; color: #2a1a00; }
   button.danger { border-color: #a5484a; color: #ffb3b3; }
-  .small { min-height: 40px; font-size: 15px; padding: 0 10px; }
+  .small { min-height: 44px; font-size: 15px; padding: 0 10px; }
   .vpbox { border: 1px solid #2c4256; border-radius: 10px; padding: 8px 10px; margin: 10px 0; background: rgba(255, 255, 255, 0.03); }
   .vphead { font-size: 15px; color: #e6f0f8; font-weight: 700; margin-bottom: 4px; }
   .vphead small { font-weight: 400; color: #9fb4c6; }
-  .vprow { display: grid; grid-template-columns: 22px auto 1fr auto; align-items: center; gap: 8px; min-height: 40px; font-size: 15px; color: #c5d7e6; }
+  .vprow { display: grid; grid-template-columns: 22px auto minmax(0, 1fr); align-items: center; gap: 8px; min-height: 44px; font-size: 15px; color: #c5d7e6; }
   .vprow .ax { font-size: 17px; }
-  .vprow.vpm { grid-template-columns: 22px auto 1fr auto; }
-  .pair { display: inline-flex; gap: 6px; }
-  .mrow { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 2px 0 8px 30px; font-size: 14px; }
+  .vprow.vpm { grid-template-columns: 22px auto minmax(0, 1fr); }
+  .pair { display: flex; gap: 6px; grid-column: 2 / -1; margin-bottom: 8px; }
+  .pair button { flex: 1; }
+  .mrow { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 2px 0 8px; font-size: 14px; }
   .mrow .mlabel { font-weight: 700; white-space: nowrap; }
-  .mrow select { flex: 1 1 96px; min-height: 40px; min-width: 96px; padding: 0 6px; background: #1a2836; color: #e6f1fa; border: 1px solid #3a5670; border-radius: 6px; font-size: 14px; }
+  .mrow select { flex: 1 1 96px; min-height: 44px; min-width: 96px; padding: 0 6px; background: #1a2836; color: #e6f1fa; border: 1px solid #3a5670; border-radius: 6px; font-size: 14px; }
   .mtip { margin: -4px 0 8px 30px; }
   .small.mode { min-width: 64px; min-height: 44px; border: 1px solid #3a5670; background: #1a2836; color: #c5d7e6; }
   .small.mode.on { background: #8fd8ff; color: #06202f; border-color: #8fd8ff; }
@@ -449,13 +458,14 @@
   .actions.col { flex-direction: column; }
   .tip { font-size: 15px; color: #c5d7e6; margin: 8px 0; line-height: 1.45; }
   .field { display: grid; gap: 4px; margin: 0 0 8px; font-size: 15px; color: #c5d7e6; }
-  .slider input { width: 100%; height: 36px; }
-  h2 { font-size: 18px; margin: 14px 0 8px; }
+  .slider input { width: 100%; height: 44px; }
+
   select {
+    max-width: 100%; min-width: 0;
     font: inherit; font-size: 16px; min-height: 46px; border-radius: 10px;
     border: 2px solid #3a5a74; background: #10202e; color: #eaf6ff; padding: 0 8px;
   }
-  .cm { border-top: 2px solid #2c4256; margin-top: 10px; }
+  .cm { min-width: 0; }
   h3 { font-size: 16px; margin: 14px 0 6px; color: #8fdfff; }
   h3 small { font-weight: 400; color: #8fb3cc; font-size: 13px; }
   .seg3 { display: flex; gap: 6px; flex-wrap: wrap; margin: 0 0 8px; }
@@ -466,7 +476,7 @@
   .zoom { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; margin-top: 8px; }
   .zoom button { min-width: 48px; font-size: 18px; }
   .hint { font-size: 13px; color: #8fb3cc; }
-  .check { display: flex; gap: 8px; align-items: center; font-size: 15px; margin: 6px 0; min-height: 40px; }
+  .check { display: flex; gap: 8px; align-items: center; font-size: 15px; margin: 6px 0; min-height: 44px; }
   .check input { width: 24px; height: 24px; }
   .picking { background: #3a1d3a; border: 2px solid #ff4dd8; border-radius: 10px; padding: 6px 10px; display: flex; gap: 8px; align-items: center; justify-content: space-between; font-weight: 700; }
   .pairs { margin: 6px 0; padding-left: 22px; display: grid; gap: 4px; font-size: 14px; }
@@ -474,12 +484,17 @@
   .pairs li.sel span { color: #ffe14d; }
   .pairs small { color: #39f3ff; }
   .result { margin: 10px 0; padding: 8px 10px; border-radius: 10px; background: #0b1620; border: 1px solid #39f3ff; font-size: 15px; }
-  .vals { display: grid; grid-template-columns: 1fr 120px; gap: 6px 8px; align-items: center; font-size: 15px; }
+  .vals { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 120px); gap: 6px 8px; align-items: center; font-size: 15px; }
   .vals .note { grid-column: 1 / -1; font-size: 13px; color: #8fb3cc; margin-top: -2px; }
   .vals input, .two input {
-    font: inherit; font-size: 17px; width: 100%; min-height: 44px; box-sizing: border-box;
+    font: inherit; font-size: 17px; width: 100%; min-width: 0; min-height: 44px; box-sizing: border-box;
     border-radius: 8px; border: 2px solid #3a5a74; background: #0b1620; color: #fff; padding: 0 6px; text-align: right;
   }
   .two { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
   .actions select { flex: 1 1 100%; min-height: 46px; }
+  details { border-bottom: 1px solid #344759; margin-bottom: 4px; padding-bottom: 4px; }
+  summary { min-height: 44px; display: list-item; align-content: center; cursor: pointer; font-weight: 650; color: #cfe5f4; list-style-position: inside; }
+  summary small { font-size: 12px; font-weight: 400; color: #8fb3cc; }
+  summary:focus-visible, button:focus-visible { outline: 2px solid white; outline-offset: 2px; }
+  .help summary { color: #8fb3cc; font-size: 13px; }
 </style>

@@ -1,3 +1,4 @@
+import { appStorage } from '../deployment';
 import type { ShowcaseAsset } from '../showcaseAssets';
 import { FORMAT_MATCH, stableStringify } from './editorFilesCore.mjs';
 import {
@@ -9,7 +10,6 @@ import {
   mulMV,
   project,
   refine,
-  rmsErrors,
   solveFull,
   solvePosition,
   sub,
@@ -25,13 +25,14 @@ import {
 import { blenderValues, camFromMatched, camJson, focalFromLens, fullExport, hfovDeg, lensMm, type ViewRect } from './cameraMatch';
 import type { DisplayMode } from './modelEditor';
 import { T } from './strings';
-import { frameWindow, FOCUS_PAD, type Box2 } from './viewFrame';
+import { frameWindow, recoveryWindow, FOCUS_PAD, type Box2 } from './viewFrame';
 import { jointMembers, linkEnds, removeLineLinks, unlinkEnd, type EndRef } from './guideSnap';
 import { applyMasterIds, ensureMasters, masterIds, masterOf, parseMasterMap, promoteMaster, setMasterFlag, type MasterMap } from './masterLine';
 import { alignLine, edgeMapFromRGBA, edgeOverlayRGBA, refineLine, type EdgeAlign, type EdgeMap } from './edgeAlign';
 import { consolidate as consolidateLines, fitAxes, parallelSuggestion, type Frame, type VpFit, type VpMode, type VpModes } from './vpFit';
 import {
   agreement as agreementOf,
+  groupRmsErrors,
   camToCrop,
   camToFull,
   fullCentreInCrop,
@@ -385,6 +386,17 @@ export class MatchState {
   cropPreset(animate = true): void {
     this.frameBox(this.cropRect, 0, animate);
   }
+  /** View-only recovery. Camera, guides, selected parts and saved model data are untouched. */
+  centerModel(points: readonly V3[]): boolean {
+    const target = recoveryWindow(this.cam, points, { w: this.stageW, h: this.stageH, padBottom: this.padBottom }, this.fitScale);
+    if (!target) return false;
+    this.stopAnim();
+    this.focusBox = target.box;
+    this.zoom = target.zoom;
+    this.center = target.center;
+    this.userView = true;
+    return true;
+  }
   fit(): void {
     this.stopAnim();
     this.focusBox = null;
@@ -396,7 +408,8 @@ export class MatchState {
   }
   zoomAt(factor: number, at?: V2): void {
     this.stopAnim();
-    const z = Math.min(40, Math.max(0.5, this.zoom * factor));
+    // Recovery can fit an unusually large projection below 50%; zoom from that value without a jump.
+    const z = Math.min(40, Math.max(Math.min(0.5, this.zoom), this.zoom * factor));
     const p = at ?? this.center;
     const f = this.zoom / z;
     this.center = [p[0] + (this.center[0] - p[0]) * f, p[1] + (this.center[1] - p[1]) * f];
@@ -779,7 +792,7 @@ export class MatchState {
 
   // ---------- solving ----------
   get residual(): { lines: number | null; points: number | null } {
-    return rmsErrors(this.cam, this.lines, this.completePairs);
+    return groupRmsErrors(this.cam, this.lines, this.completePairs, this.group, this.yaw);
   }
   private say(msg: string): void {
     this.message = msg;
@@ -1089,7 +1102,7 @@ export class MatchState {
       vpModes: [...this.vpModes] as VpModes,
     };
     try {
-      localStorage.setItem(this.storageKey, JSON.stringify(data));
+      appStorage.setItem(this.storageKey, JSON.stringify(data));
     } catch {
       /* storage full or blocked */
     }
@@ -1099,7 +1112,7 @@ export class MatchState {
   onSave: (() => void) | null = null;
   private restore(): boolean {
     try {
-      const raw = localStorage.getItem(this.storageKey);
+      const raw = appStorage.getItem(this.storageKey);
       if (!raw) return false;
       return this.restoreFrom(JSON.parse(raw) as Saved);
     } catch {
@@ -1150,14 +1163,14 @@ export class MatchState {
   }
   hasSaved(): boolean {
     try {
-      return !!localStorage.getItem(this.storageKey);
+      return !!appStorage.getItem(this.storageKey);
     } catch {
       return false;
     }
   }
   forget(): void {
     try {
-      localStorage.removeItem(this.storageKey);
+      appStorage.removeItem(this.storageKey);
     } catch {
       /* ignore */
     }
@@ -1217,6 +1230,7 @@ export class MatchState {
       residual: this.residual,
       image: this.image === 'wide' ? 'mockup (full)' : 'crop',
       room: this.roomExport(),
+      crop: { ...this.crop },
     });
   }
 }

@@ -1,5 +1,6 @@
+import { appBase } from '../../lib/deployment';
 /** Admin API client. Session lives in an HttpOnly cookie; nothing secret is stored in JS. */
-const API = new URL('api/god/', `${location.origin}${location.pathname.replace(/\/god(\/.*)?$/, '/god').replace(/[^/]*$/, '')}`).href;
+const API = new URL('api/god/', `${location.origin}${appBase()}/`).href;
 
 export class ApiError extends Error {
   constructor(public status: number, public code: string, public data: Record<string, unknown> = {}) {

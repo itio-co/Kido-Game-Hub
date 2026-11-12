@@ -1,0 +1,108 @@
+{
+  "id": "a4c0e001-0000-4000-8000-00000000001c",
+  "kind": "hotspot",
+  "title": "นาฬิกา",
+  "titleEn": "Wall clock",
+  "slug": "flow/living-room/clock",
+  "status": "modelled",
+  "statusNotes": "Available as an editable 3D asset. The living-room game remains a 2D image scene.",
+  "dimensionsCm": {
+    "width": 38,
+    "depth": 5.4,
+    "height": 42
+  },
+  "dimensionsNotes": "Artist-estimated, not measured. Origin at bottom centre of case. Blender X width / Y depth / Z up; front -Y.",
+  "colors": {
+    "frame": "#71431f",
+    "bevel": "#8b552b",
+    "inner": "#58321a",
+    "back": "#623c24",
+    "dial": "#cabc9e",
+    "hands": "#49321e"
+  },
+  "source": {
+    "mockup": "games/never-ending-story/public/img/living-wide.jpg",
+    "mockupSize": {
+      "width": 720,
+      "height": 1280
+    },
+    "cropBox": {
+      "x": 48,
+      "y": 108,
+      "width": 96,
+      "height": 108
+    },
+    "sha256": "895aeaf4c04a742be4323a38564254efb38714a8a176243f64326722ab9ee4a4",
+    "provenance": "Existing repository game artwork. Original crop only; model authored procedurally in Blender. No third-party model or external generation service used. Archived the original source image when upstream updated the living-room artwork; the original camera and crop retain this provenance.",
+    "archivedMockup": "ref/living-wide-source.jpg"
+  },
+  "ref": {
+    "crop": "ref/clock-ref.png",
+    "cropSha256": "3d4de6794ba8dd387d1c6b283015dd8f3c375d8dee9f2aa2863210987a399ce5"
+  },
+  "camera": {
+    "file": "blender/cam.json",
+    "method": "Approximate six-DOF pose fit to eight hand-picked outer-bevel corners with fixed assumed focal length and dimensions.",
+    "rmsPx": 1.4549211558437278,
+    "imageSize": [
+      96,
+      108
+    ],
+    "focalPx": 220,
+    "three": {
+      "hfovDeg": 24.61603163485585,
+      "position": [
+        -0.5266875105187215,
+        -0.034769209309725435,
+        1.0645291874438558
+      ],
+      "quaternion": [
+        0.10234308296643761,
+        -0.22115226294693946,
+        0.03560994521141413,
+        0.9692004445750181
+      ]
+    }
+  },
+  "exports": {
+    "lowpoly": {
+      "file": "export/clock.glb",
+      "triangles": 324,
+      "parts": 13,
+      "bytes": 33236
+    },
+    "master": {
+      "file": "export/clock-master.glb",
+      "triangles": 2068,
+      "parts": 13,
+      "bytes": 127264
+    },
+    "runtime": [
+      "games/never-ending-story/public/models/clock.glb",
+      "games/never-ending-story/public/models/clock-master.glb"
+    ],
+    "partNodes": [
+      "Clock_Back",
+      "Clock_Frame_01",
+      "Clock_Frame_02",
+      "Clock_Frame_03",
+      "Clock_Frame_04",
+      "Clock_Frame_05",
+      "Clock_Frame_06",
+      "Clock_Frame_07",
+      "Clock_Frame_08",
+      "Clock_Dial",
+      "Hand_Hour",
+      "Hand_Minute",
+      "Hand_Hub"
+    ],
+    "partNodesNote": "One editable node per part; frame groups contain material primitives. Hands pivot about the clock axle."
+  },
+  "notes": [
+    "Matches the visible octagonal wood case, cream dial and 2:00 hands. No numerals are visible in the source.",
+    "Wall and door trim in the crop are excluded.",
+    "Real dimensions, hidden rear geometry and focal length are assumptions.",
+    "No glass, grain texture, hanging hardware, working mechanism or live hand animation.",
+    "Preview lighting differs from the painted reference."
+  ]
+}

@@ -2,6 +2,7 @@
 import { fromBlenderEulerDeg, mulMV, project, sub, type Axis, type Cam, type GuideLine, type V2, type V3 } from '../src/lib/editor/camMath.ts';
 import {
   agreement,
+  groupRmsErrors,
   camToCrop,
   camToFull,
   fullCentreInCrop,
@@ -150,6 +151,21 @@ test('yawed object: shared vertical, yaw ψ recovered; aligned mode flags the X/
   ok(ag2.axes[0]!.band === 'bad' && ag2.axes[1]!.band === 'bad', `X/Y bands ${ag2.axes.map((x) => x.band)}`);
   ok(ag2.axes[0]!.deg! > 10, `X angle ${ag2.axes[0]!.deg}`);
   ok(ag2.band === 'bad', `overall ${ag2.band}`);
+});
+
+test('room residuals use room axes, while point pairs stay in object coordinates', () => {
+  const object = boxLines(TRUE, [0, 0, 27], [61, 40, 55]);
+  const room = boxLines(TRUE, [10, 60, 120], [400, 300, 240], 25);
+  const world: V3 = [10, 5, 30];
+  const pairs = [{ id: 1, world, image: project(TRUE, world)! }];
+  const a = groupRmsErrors(TRUE, object, pairs, 'object', 25);
+  const b = groupRmsErrors(TRUE, room, pairs, 'room', 25);
+  ok(a.lines! < 1e-8 && b.lines! < 1e-8, `correct lines ${a.lines} / ${b.lines}`);
+  ok(a.points! < 1e-8 && b.points! < 1e-8, `correct points ${a.points} / ${b.points}`);
+  const wrongFrame = groupRmsErrors(TRUE, room, pairs, 'object', 25);
+  ok(wrongFrame.lines! > 10, `test detects the old wrong-frame error: ${wrongFrame.lines}`);
+  const shiftedPairs = [{ ...pairs[0]!, image: [pairs[0]!.image[0] + 3, pairs[0]!.image[1] + 4] as V2 }];
+  ok(close(groupRmsErrors(TRUE, room, shiftedPairs, 'room', 25).points!, 5, 1e-8), 'point residual remains 5 px');
 });
 
 test('yaw is not observable without object X/Y lines → kept, reported', () => {

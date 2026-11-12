@@ -1,3 +1,4 @@
+import { appStorage } from '../../lib/deployment';
 /** Generic run/best-score store for a rhythm pack (one localStorage key per pack). */
 export type RhythmRun = {
   phase: 'ready' | 'play' | 'result';
@@ -49,7 +50,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 export function readRun(KEY: string): RhythmRun {
   try {
-    const raw = localStorage.getItem(KEY);
+    const raw = appStorage.getItem(KEY);
     if (!raw) return defaultRun();
     const data: unknown = JSON.parse(raw);
     if (!isRecord(data)) return defaultRun();
@@ -79,7 +80,7 @@ export function readRun(KEY: string): RhythmRun {
 }
 
 export function writeRun(KEY: string, run: RhythmRun): void {
-  localStorage.setItem(KEY, JSON.stringify(run));
+  appStorage.setItem(KEY, JSON.stringify(run));
 }
 
 export function clearRun(KEY: string): void {

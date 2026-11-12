@@ -1,7 +1,7 @@
 // Plain test for 2D view framing (Focus / Object crop) of the mock-up stage: `npm test` in game/.
 import type { Cam, M3, V3 } from '../src/lib/editor/camMath.ts';
 import { project } from '../src/lib/editor/camMath.ts';
-import { boxOnStage, frameWindow, projectedBox, usableHeight, FOCUS_MAX_ZOOM, FOCUS_MIN_ZOOM } from '../src/lib/editor/viewFrame.ts';
+import { boxOnStage, frameWindow, recoveryWindow, projectedBox, usableHeight, FOCUS_MAX_ZOOM, FOCUS_MIN_ZOOM } from '../src/lib/editor/viewFrame.ts';
 
 declare const process: { exitCode?: number };
 let failed = 0;
@@ -96,6 +96,37 @@ test('framing a projected part through the camera puts its projection in the pad
     const sy = (v - oy) * k;
     ok(sx >= 0 && sx <= stage.w && sy >= 0 && sy <= usableHeight(stage), `vertex on screen (${sx.toFixed(1)}, ${sy.toFixed(1)})`);
   }
+});
+
+test('recovery frames an off-screen model on phone and desktop without changing camera or vertices', () => {
+  const pts = cube([4000, 30, 1200], 20);
+  const original = JSON.stringify({ cam, pts });
+  for (const [w, h] of [[390, 844], [320, 568], [844, 390], [1440, 900]]) {
+    const size = { w: w!, h: h!, padBottom: 110 };
+    const result = recoveryWindow(cam, pts, size, 0.35)!;
+    ok(!!result, 'recovery available');
+    const screen = boxOnStage(result.box, size, 0.35, result.zoom, result.center);
+    ok(near((screen.x0 + screen.x1) / 2, w! / 2), 'model horizontally centred');
+    ok(screen.x0 >= 0 && screen.x1 <= w! && screen.y0 >= 0 && screen.y1 <= usableHeight(size), 'entire model visible');
+  }
+  ok(JSON.stringify({ cam, pts }) === original, 'camera and geometry unchanged');
+});
+
+test('recovery may zoom below 50% to fit a huge projection, repeated recovery is stable', () => {
+  const pts = cube([1000, -180, 500], 19);
+  const first = recoveryWindow(cam, pts, stage, fitScale)!;
+  ok(first.zoom > 0 && first.zoom < 0.5, 'fits without the focus minimum');
+  const screen = boxOnStage(first.box, stage, fitScale, first.zoom, first.center);
+  ok(screen.x0 >= 0 && screen.x1 <= stage.w && screen.y0 >= 0 && screen.y1 <= usableHeight(stage), 'huge projection contained');
+  ok(JSON.stringify(first) === JSON.stringify(recoveryWindow(cam, pts, stage, fitScale)), 'repeated recovery stable');
+});
+
+test('recovery declines hidden, invalid, behind-camera and camera-crossing geometry', () => {
+  ok(recoveryWindow(cam, [], stage, fitScale) === null, 'empty model');
+  ok(recoveryWindow(cam, [[0, -400, 50]], stage, fitScale) === null, 'behind camera');
+  ok(recoveryWindow(cam, cube([0, -200, 50], 10), stage, fitScale) === null, 'crosses camera');
+  ok(recoveryWindow(cam, [[NaN, 0, 0]], stage, fitScale) === null, 'invalid projection');
+  ok(recoveryWindow(cam, cube([0, 0, 0], 10), stage, 0) === null, 'invalid viewport');
 });
 
 console.log(`\nviewFrame: ${passed} passed, ${failed} failed`);

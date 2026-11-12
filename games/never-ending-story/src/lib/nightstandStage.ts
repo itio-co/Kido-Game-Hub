@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { findAsset, vfovFromHfov } from './showcaseAssets';
+import { findAsset } from './showcaseAssets';
+import { applyToCamera, camFromMatched } from './editor/cameraMatch';
 
 export type NightstandStage = { dispose: () => void };
 export type NightstandVariant = 'lowpoly' | 'master';
@@ -143,17 +144,19 @@ export function mountNightstandStage(
   function frame(aspect: number): void {
     camera.aspect = aspect;
     if (mode === 'fit') {
-      camera.fov = vfovFromHfov(MATCH.hfovDeg, aspect);
-      camera.position.copy(MATCH.position);
-      camera.quaternion.copy(MATCH.quaternion);
+      const ref = NIGHTSTAND.ref!;
+      const h = ref.width / aspect;
+      applyToCamera(camera, camFromMatched(MATCH, ref.width, ref.height), {
+        x0: 0, y0: (ref.height - h) / 2, w: ref.width, h,
+      });
     } else {
       camera.fov = 32;
       camera.up.set(0, 1, 0);
       const dist = 1.7;
       camera.position.set(Math.sin(yaw) * dist, 0.9, Math.cos(yaw) * dist);
       camera.lookAt(0, 0.26, 0);
+      camera.updateProjectionMatrix();
     }
-    camera.updateProjectionMatrix();
   }
 
   function render(): void {

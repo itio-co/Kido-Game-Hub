@@ -68,3 +68,6 @@ core >=0.6.11 (`i18n`, catalog กติกา) Worker (`worker/index.ts`) เ�
 |---|---|---|
 | 1.1.0 | 0.6.13 | แท็บคลังของโมดูล character และ cutscene |
 | 1.0.0 | 0.6.11 | ย้ายออกจาก core, kind `admin`, แสดงกติกาและจำนวนรอบต่อเวอร์ชัน |
+
+## การแยก deployment space
+ใช้ APP_BASE จาก Worker เพื่อแยกข้อมูลในเบราว์เซอร์ของแต่ละ space โดยไม่แก้ข้อมูล production; God ใช้ชื่อและ path ของ cookie แยกตาม base และต้องตั้ง secret แยกกัน

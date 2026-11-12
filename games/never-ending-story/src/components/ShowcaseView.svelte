@@ -24,7 +24,7 @@
 
 <div class="showcase">
   <header>
-    <p class="kicker">มุมออกแบบ</p>
+    <p class="kicker"><a href="#/assets">← Asset browser</a> · มุมออกแบบ</p>
     <h1>{nightstand?.title ?? 'ตู้ข้างเตียง'}</h1>
   </header>
 

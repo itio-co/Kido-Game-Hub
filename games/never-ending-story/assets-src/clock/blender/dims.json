@@ -1,0 +1,8 @@
+{
+  "width": 38,
+  "height": 42,
+  "depth": 5.4,
+  "frameWidth": 3.4,
+  "handTime": { "hour": 2, "minute": 0 },
+  "notes": "Artist-estimated centimetres, not a physical measurement. Front is Blender -Y; origin is the bottom centre of the case."
+}

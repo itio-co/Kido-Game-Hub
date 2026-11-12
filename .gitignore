@@ -6,3 +6,6 @@ dist/
 !.env.example
 *.local
 .DS_Store
+
+# Local server bundle (never a public static asset)
+games/never-ending-story/.worker-build/

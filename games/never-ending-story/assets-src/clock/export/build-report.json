@@ -1,0 +1,14 @@
+{
+  "lowpoly": {
+    "file": "export/clock.glb",
+    "triangles": 324,
+    "parts": 13,
+    "bytes": 33236
+  },
+  "master": {
+    "file": "export/clock-master.glb",
+    "triangles": 2068,
+    "parts": 13,
+    "bytes": 127264
+  }
+}

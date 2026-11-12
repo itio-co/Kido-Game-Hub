@@ -18,6 +18,8 @@ export type MatchedCamera = {
   hfovDeg: number;
   position: THREE.Vector3;
   quaternion: THREE.Quaternion;
+  /** Optical centre in reference-crop pixels. Omit for legacy centred cameras. */
+  principalPoint?: readonly [number, number];
 };
 
 export type ShowcaseAsset = {
@@ -102,6 +104,41 @@ export const SHOWCASE_ASSETS: ShowcaseAsset[] = [
       camParams: [61.02402536913852, 40.53803905099494, 6.575529655854545, 0.8650713919262639, 7.509763478210199],
     },
     orbit: { target: 0.26, distance: 1.7, height: 0.9 },
+  },
+  {
+    id: 'a4c0e001-0000-4000-8000-00000000001c',
+    slug: 'flow/living-room/clock',
+    title: 'นาฬิกาแขวน',
+    variants: [
+      { id: 'lowpoly', label: 'Low-poly (เกม)', url: `${BASE}models/clock.glb`, flat: true },
+      { id: 'master', label: 'Master', url: `${BASE}models/clock-master.glb` },
+    ],
+    ref: {
+      src: `${BASE}showcase/clock-ref.png`,
+      width: 96,
+      height: 108,
+      // Approximate pose fitted to eight hand-picked rim corners, not a measured camera.
+      // 38 × 5.4 × 42 cm and a 220 px focal length are explicit artist estimates.
+      // Source and reproducible solve: assets-src/clock/blender/{dims,cam}.json, solve_cam.py.
+      camera: {
+        hfovDeg: 24.616031634856,
+        position: new THREE.Vector3(-0.526687510519, -0.034769209310, 1.064529187444),
+        quaternion: new THREE.Quaternion(0.102343082966, -0.221152262947, 0.035609945211, 0.969200444575),
+      },
+      mockup: { src: `${BASE}img/living-wide.jpg`, width: 720, height: 1280, crop: { x: 48, y: 108 } },
+      keyPoints: [
+        { id: 'Rim01', label: 'มุมกรอบ 1', p: [-7.870057685, -2.050000000, 42.000000000] },
+        { id: 'Rim02', label: 'มุมกรอบ 2', p: [7.870057685, -2.050000000, 42.000000000] },
+        { id: 'Rim03', label: 'มุมกรอบ 3', p: [19.000000000, -2.050000000, 29.698484810] },
+        { id: 'Rim04', label: 'มุมกรอบ 4', p: [19.000000000, -2.050000000, 12.301515190] },
+        { id: 'Rim05', label: 'มุมกรอบ 5', p: [7.870057685, -2.050000000, 0.000000000] },
+        { id: 'Rim06', label: 'มุมกรอบ 6', p: [-7.870057685, -2.050000000, 0.000000000] },
+        { id: 'Rim07', label: 'มุมกรอบ 7', p: [-19.000000000, -2.050000000, 12.301515190] },
+        { id: 'Rim08', label: 'มุมกรอบ 8', p: [-19.000000000, -2.050000000, 29.698484810] },
+        { id: 'Axle', label: 'แกนเข็มนาฬิกา', p: [0, -2.5, 21] },
+      ],
+    },
+    orbit: { target: 0.21, distance: 1.05, height: 0.43 },
   },
 ];
 

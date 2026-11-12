@@ -1,5 +1,13 @@
 /** Thai labels for part names from the Blender build scripts (Leg_LF, Stretcher_R, …). Unknown names pass through. */
 const WORDS: Record<string, string> = {
+  Clock: 'นาฬิกา',
+  Frame: 'กรอบ',
+  Back: 'ฝาหลัง',
+  Dial: 'หน้าปัด',
+  Hand: 'เข็ม',
+  Hour: 'ชั่วโมง',
+  Minute: 'นาที',
+  Hub: 'แกนกลาง',
   TopSlab: 'แผ่นท็อป',
   Leg: 'ขา',
   Apron: 'คานใต้ท็อป',

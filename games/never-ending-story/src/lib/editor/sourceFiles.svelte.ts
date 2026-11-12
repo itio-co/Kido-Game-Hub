@@ -1,3 +1,4 @@
+import { appStorage } from '../deployment';
 /**
  * Source files of the editor's work: games/never-ending-story/assets-src/<item>/editor/
  *   camera-match.json        guide lines, point pairs, VP lock / modes, crop rect, solved camera
@@ -74,7 +75,7 @@ function bundledFor(item: string): Record<string, unknown> {
 
 function readDraft(key: string): unknown {
   try {
-    const raw = localStorage.getItem(key);
+    const raw = appStorage.getItem(key);
     return raw ? JSON.parse(raw) : null;
   } catch {
     return null;

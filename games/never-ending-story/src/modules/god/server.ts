@@ -1,3 +1,4 @@
+import { normalizeAppBase } from '../../lib/deployment';
 /**
  * "Game of Dev" admin API under /never/api/god/*.
  * Auth: Worker secret GOD_ADMIN_PASSWORD (SHA-256 hex of the password, or the plain password) -> HMAC-signed session cookie (12h).
@@ -21,9 +22,10 @@ export interface GodEnv {
   DB: GodDb;
   ASSETS_KV: GodKv;
   GOD_ADMIN_PASSWORD?: string;
+  APP_BASE?: string;
 }
 
-const COOKIE = 'nes_god';
+const cookieName = (env: GodEnv) => env.APP_BASE && env.APP_BASE !== '/never' ? `nes_god_${normalizeAppBase(env.APP_BASE).slice(1).replaceAll('/', '_')}` : 'nes_god';
 const SESSION_MS = 12 * 3600 * 1000;
 const MAX_FAILS = 5;
 const LOCK_MS = 15 * 60 * 1000;
@@ -68,16 +70,16 @@ function readCookie(req: Request, name: string): string | null {
   }
   return null;
 }
-async function sessionOk(req: Request, secret: string): Promise<boolean> {
-  const raw = readCookie(req, COOKIE);
+async function sessionOk(req: Request, secret: string, env: GodEnv): Promise<boolean> {
+  const raw = readCookie(req, cookieName(env));
   if (!raw) return false;
   const [exp, sig] = raw.split('.');
   if (!exp || !sig || !(Number(exp) > Date.now())) return false;
   const want = await hmac(secret, exp);
   return sameBytes(enc.encode(sig), enc.encode(want));
 }
-const cookie = (value: string, maxAge: number) =>
-  `${COOKIE}=${value}; Path=/never; HttpOnly; Secure; SameSite=Strict; Max-Age=${maxAge}`;
+const cookie = (value: string, maxAge: number, env: GodEnv) =>
+  `${cookieName(env)}=${value}; Path=${normalizeAppBase(env.APP_BASE)}; HttpOnly; Secure; SameSite=Strict; Max-Age=${maxAge}`;
 
 async function ensureTables(env: GodEnv): Promise<void> {
   await env.DB.prepare('CREATE TABLE IF NOT EXISTS god_login (ip TEXT PRIMARY KEY, fails INTEGER NOT NULL DEFAULT 0, locked_until INTEGER NOT NULL DEFAULT 0, updated_at INTEGER NOT NULL)').run();
@@ -107,7 +109,7 @@ async function login(req: Request, env: GodEnv): Promise<Response> {
   }
   await env.DB.prepare('DELETE FROM god_login WHERE ip=?').bind(ip).run();
   const exp = String(now + SESSION_MS);
-  return json({ ok: true, expiresAt: Number(exp) }, 200, { 'set-cookie': cookie(`${exp}.${await hmac(secret, exp)}`, SESSION_MS / 1000) });
+  return json({ ok: true, expiresAt: Number(exp) }, 200, { 'set-cookie': cookie(`${exp}.${await hmac(secret, exp)}`, SESSION_MS / 1000, env) });
 }
 
 const safeJson = (s: unknown) => { try { return JSON.parse(String(s ?? 'null')); } catch { return null; } };
@@ -226,10 +228,10 @@ async function events(env: GodEnv): Promise<Response> {
 
 export async function godApi(req: Request, env: GodEnv, path: string): Promise<Response> {
   if (path === '/login' && req.method === 'POST') return login(req, env);
-  if (path === '/logout' && req.method === 'POST') return json({ ok: true }, 200, { 'set-cookie': cookie('', 0) });
+  if (path === '/logout' && req.method === 'POST') return json({ ok: true }, 200, { 'set-cookie': cookie('', 0, env) });
   const secret = env.GOD_ADMIN_PASSWORD;
   if (!secret) return fail(503, 'not-configured');
-  if (!(await sessionOk(req, secret))) return fail(401, 'unauthorized');
+  if (!(await sessionOk(req, secret, env))) return fail(401, 'unauthorized');
 
   if (path === '/me' && req.method === 'GET') return json({ ok: true });
   if (path === '/dashboard' && req.method === 'GET') return dashboard(env);

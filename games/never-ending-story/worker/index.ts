@@ -3,6 +3,7 @@
  * - Static files live in Workers KV (binding ASSETS_KV, key = path under /never, e.g. "/index.html").
  * - Leaderboard API under /never/api backed by D1 (binding DB). See docs/online-leaderboard.md.
  */
+import { normalizeAppBase } from '../src/lib/deployment';
 import { godApi } from '../src/modules/god/server';
 import { decodeRun, tagFor, unb64url, type ChallengeRunPb } from '../src/modules/challenge/proto';
 import { acceptRuleset, legacyRuleset, rhythmFor, scoringFor, versionIn, resolveGame } from '../src/lib/rulesetCatalog';
@@ -11,9 +12,9 @@ interface Env {
   ASSETS_KV: KVNamespace;
   DB: D1Database;
   GOD_ADMIN_PASSWORD?: string;
+  APP_BASE?: string;
 }
 
-const BASE = '/never';
 const GAMES = ['cross', 'jig', 'slide'];
 const DIFFS = ['easy', 'medium', 'hard'];
 const MULT: Record<string, number> = { easy: 1, medium: 1.5, hard: 2 };
@@ -296,13 +297,23 @@ async function asset(req: Request, env: Env, path: string): Promise<Response> {
   return new Response(req.method === 'HEAD' ? null : hit.value, { headers });
 }
 
+function injectBase(html: string, base: string): string {
+  return html.replace('<head>', `<head><meta name="nes-app-base" content="${base}">`);
+}
+
 export default {
   async fetch(req: Request, env: Env): Promise<Response> {
     const url = new URL(req.url);
+    let BASE: string;
+    try { BASE = normalizeAppBase(env.APP_BASE); } catch { return err(500, 'invalid deployment base'); }
     if (url.pathname === BASE) return Response.redirect(`${url.origin}${BASE}/${url.search}`, 301);
     if (!url.pathname.startsWith(`${BASE}/`)) return new Response('Not found', { status: 404 });
     const path = url.pathname.slice(BASE.length);
     try {
+      // A scoped network-only worker prevents the parent production SW owning this partition.
+      if (path === '/sw.js' && BASE !== '/never') return new Response(
+        `self.addEventListener('install',()=>self.skipWaiting());self.addEventListener('activate',e=>e.waitUntil(self.clients.claim()));`,
+        { headers: { 'content-type': 'application/javascript', 'cache-control': 'no-store' } });
       if (path.startsWith('/api/')) return await api(req, env, path.slice(4));
       if (req.method !== 'GET' && req.method !== 'HEAD') return err(405, 'method');
       // Admin SPA: /never/god and deep links /never/god/<section>/<id>. Relative asset URLs are rewritten to absolute /never/ paths.
@@ -314,11 +325,16 @@ export default {
         headers.set('referrer-policy', 'no-referrer');
         headers.delete('etag');
         if (res.status !== 200) return new Response(res.body, { status: res.status, headers });
-        const html = (await res.text()).replace(/(src|href)="\.\//g, `$1="${BASE}/`);
+        const html = injectBase(await res.text(), BASE).replace(/(src|href)="\.\//g, `$1="${BASE}/`);
         return new Response(req.method === 'HEAD' ? null : html, { status: 200, headers });
       }
       if (path === '/modules.json') return new Response('Not found', { status: 404 }); // admin-only via /api/god/modules
-      return await asset(req, env, path);
+      const res = await asset(req, env, path);
+      if (res.status === 200 && res.headers.get('content-type')?.includes('text/html')) {
+        const headers = new Headers(res.headers); headers.delete('etag');
+        return new Response(req.method === 'HEAD' ? null : injectBase(await res.text(), BASE).replace('<head>', `<head><base href="${BASE}/">`), { headers });
+      }
+      return res;
     } catch {
       return err(500, 'internal');
     }
