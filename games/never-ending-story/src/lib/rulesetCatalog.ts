@@ -4,8 +4,12 @@
  */
 import gamesDoc from './ruleset-games.json';
 import { canonicalRuleset, pinVersion, resolveRuleset, supportedKeys, type ModulePin, type ModuleRules, type RulesetResolution } from './ruleset';
-import { RHYTHM_RULESETS, RHYTHM_VERSION, rhythmRuleset, type RhythmRuleset } from '../modules/rhythm/ruleset';
-import { STIRFRY_RULESETS, STIRFRY_VERSION, stirfryRuleset, type StirfryRuleset } from '../modules/stirfry/ruleset';
+import type { RhythmRuleset } from '../modules/rhythm/ruleset';
+import type { StirfryRuleset } from '../modules/stirfry/ruleset';
+import rhythmMeta from '../modules/rhythm/module.json';
+import rhythmData from '../modules/rhythm/ruleset.json';
+import stirfryMeta from '../modules/stirfry/module.json';
+import stirfryData from '../modules/stirfry/ruleset.json';
 import { CHALLENGE_RULESETS, CHALLENGE_VERSION, challengeScoring, type ChallengeScoring } from '../modules/challenge/ruleset';
 import { CROSS_RULESETS, CROSS_VERSION, crossRules, type CrossRuleset } from '../modules/crossword/ruleset';
 import { JIG_RULESETS, JIG_VERSION, jigRules, type JigRuleset } from '../modules/jigsaw/ruleset';
@@ -16,8 +20,8 @@ const LEGACY = gamesDoc.legacy as Record<string, string>;
 export const GAME_MODULES = gamesDoc.games as Record<string, string[]>;
 
 const REGISTRY: Record<string, { version: string; versions: string[] }> = {
-  rhythm: { version: RHYTHM_VERSION, versions: Object.keys(RHYTHM_RULESETS) },
-  stirfry: { version: STIRFRY_VERSION, versions: Object.keys(STIRFRY_RULESETS) },
+  rhythm: { version: rhythmMeta.version, versions: Object.keys(rhythmData) },
+  stirfry: { version: stirfryMeta.version, versions: Object.keys(stirfryData) },
   challenge: { version: CHALLENGE_VERSION, versions: Object.keys(CHALLENGE_RULESETS) },
   crossword: { version: CROSS_VERSION, versions: Object.keys(CROSS_RULESETS) },
   jigsaw: { version: JIG_VERSION, versions: Object.keys(JIG_RULESETS) },
@@ -76,10 +80,10 @@ export function versionIn(res: Extract<RulesetResolution, { ok: true }>, id: str
 }
 
 export function rhythmFor(version: string): RhythmRuleset | null {
-  return rhythmRuleset(version);
+  return (rhythmData as unknown as Record<string, RhythmRuleset>)[version] ?? null;
 }
 export function stirfryFor(version: string): StirfryRuleset | null {
-  return stirfryRuleset(version);
+  return (stirfryData as unknown as Record<string, StirfryRuleset>)[version] ?? null;
 }
 export function scoringFor(version: string): ChallengeScoring | null {
   return challengeScoring(version);

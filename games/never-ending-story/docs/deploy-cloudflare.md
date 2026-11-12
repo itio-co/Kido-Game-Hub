@@ -42,6 +42,39 @@ Dev resources provisioned for this release:
 - D1: `nes-game-dev` (`6a7404ed-8e15-447d-800f-a8eea69af505`)
 - Intended route: `games.itio.space/dev/never/*` (activate only after upload/tests)
 
-This does not implement independently released frontend modules. Build game/God
-as before and upload the resulting artifacts only to the selected space's KV.
-The localhost editor save endpoint is not a hosted authoring backend.
+This does not make every module an independent release. `rhythm` and `stirfry`
+are the pilot. Build game/God as before (`make build`). That writes the versioned
+chunks and `modules/manifest.json` into `dist/`. Upload the whole `dist/` to the
+space's KV the same way as today when shipping the core. The localhost editor
+save endpoint is not a hosted authoring backend.
+
+## Pilot module upload and rollback
+
+`make deploy-modules` reads `dist/modules/manifest.json` and, with `APPLY=1`,
+uploads only chunk keys the namespace does not already have, then writes
+`/modules/manifest.json`. Old version keys are left in place. A version whose
+hash changed is refused, because published chunks are immutable. The manifest
+write is the last request, after the new chunks.
+
+```sh
+make deploy-modules SPACE=dev          # print the plan, no network
+make deploy-modules SPACE=dev APPLY=1  # needs CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID
+make deploy-modules SPACE=prod APPLY=1
+```
+
+`SPACE=dev` uses KV `nes-game-dev-assets` (`1f761c42cfb240afb23e5ff941ad3d9e`) and
+`APP_BASE` `/dev/never`. `SPACE=prod` uses `nes-game-assets`
+(`fd398000ddb740198d25474d340f9d13`) and `/never`. Keys are the path under that
+base (`/modules/stirfry/1.2.0/<hash>.js`), the same keys the Worker already serves.
+
+Rollback only changes `current` in the manifest. The previous chunk must already
+be listed under `retained`.
+
+```sh
+make rollback-module SPACE=dev MODULE=stirfry VERSION=1.2.0
+make rollback-module SPACE=dev MODULE=stirfry VERSION=1.2.0 APPLY=1
+```
+
+God's Modules page shows the bundled source version and the live manifest version.
+A module that is not in the manifest shows no live version. Do not run these
+targets against real namespaces unless you intend to publish.

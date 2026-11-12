@@ -5,7 +5,7 @@ ROOT := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))
 GAME := games/never-ending-story
 NPM ?= npm
 
-.PHONY: help install dev preview check check-modules test test-game test-shared build build-packages build-web build-worker verify
+.PHONY: help install dev preview check check-modules test test-game test-shared build build-packages build-web build-worker verify deploy-modules rollback-module
 help:
 	@printf '%s\n' \
 	  'make install        Install locked npm workspace dependencies (npm ci)' \
@@ -17,7 +17,9 @@ help:
 	  'make build-worker   Bundle the Worker without deploying it' \
 	  'make verify         Run checks, tests and complete local build in order' \
 	  'make preview        Preview the previously built static site' \
-	  'Independent module release is a future design; see game docs/build.md.'
+	  'make deploy-modules Dry-run rhythm/stirfry chunk upload (APPLY=1 sends it; SPACE=dev|prod)' \
+	  'make rollback-module Dry-run pointing one module at MODULE= and VERSION= (APPLY=1 sends it)' \
+	  'Pilot chunks: rhythm and stirfry only. See games/never-ending-story/docs/build.md.'
 
 install:
 	cd "$(ROOT)" && $(NPM) ci
@@ -65,3 +67,10 @@ verify:
 	$(MAKE) -C "$(ROOT)" check
 	$(MAKE) -C "$(ROOT)" test
 	$(MAKE) -C "$(ROOT)" build
+
+# Prints the plan unless APPLY=1. Never deletes KV keys. Does not deploy the Worker.
+deploy-modules:
+	cd "$(ROOT)/$(GAME)" && node --experimental-strip-types scripts/module-deploy.ts upload --space $(or $(SPACE),dev) $(if $(APPLY),--apply,)
+
+rollback-module:
+	cd "$(ROOT)/$(GAME)" && node --experimental-strip-types scripts/module-deploy.ts rollback --space $(or $(SPACE),dev) --module $(MODULE) --version $(VERSION) $(if $(APPLY),--apply,)

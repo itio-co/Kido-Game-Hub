@@ -25,6 +25,7 @@ function ownerOf(file) {
   return rel.startsWith('..') ? 'core' : rel.split(path.sep)[0];
 }
 
+const PILOT = new Set(['rhythm', 'stirfry']);
 const SEMVER_KEY = /^(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)$/;
 const RULESET_KINDS = new Set(['engine', 'pack', 'minigame']);
 /** `edition` is the pre-0.6.11 name of `pack`. Readers accept both. */
@@ -65,11 +66,16 @@ export function checkBoundaries(mods = readManifests()) {
   for (const file of files) {
     const text = fs.readFileSync(file, 'utf8');
     for (const m of text.matchAll(re)) {
-      const target = resolveImport(file, m[1] ?? m[2]);
+      const spec = m[1] ?? m[2];
+      const target = resolveImport(file, spec);
       if (!target) continue;
       const from = ownerOf(file);
       const to = ownerOf(target);
-      if (to === 'core' || to === from) continue;
+      const dataFile = path.basename(target) === 'module.json' || path.basename(target) === 'ruleset.json';
+      if (from === 'core' && PILOT.has(to) && m[1] && !/^\s*import\s+type\b/.test(m[0]) && !dataFile) {
+        errors.push(`${path.relative(ROOT, file)} statically imports ${spec} (pilot module "${to}" must be loaded with import())`);
+      }
+      if (to === 'core' || to === from || (PILOT.has(to) && dataFile)) continue;
       const mod = byId[to];
       const publicFiles = (mod?.publicEntries ?? [mod?.entry]).map((e) => path.join(ROOT, e));
       if (!publicFiles.includes(target)) {

@@ -52,7 +52,7 @@ self.addEventListener('fetch', (event) => {
   if (url.pathname.includes('/api/')) return; // live API, never cached
   const file = url.pathname.split('/').pop() || '';
   // Admin page + module registry: always network, never cached.
-  if (file === 'god' || file === 'god.html' || file === 'modules.json' || url.pathname.includes('/god/')) return;
+  if (file === 'god' || file === 'god.html' || file === 'modules.json' || url.pathname.endsWith('/modules/manifest.json') || url.pathname.includes('/god/')) return;
   // HTML / navigations: network-first so a new deploy shows immediately; cache is the offline fallback.
   if (request.mode === 'navigate' || file === '' || file.endsWith('.html')) {
     event.respondWith(networkFirst(request));
@@ -97,7 +97,10 @@ async function fromCacheOrNetwork(request) {
 }
 
 export async function generatePrecache(outDir) {
-  const files = (await walk(outDir)).filter((file) => path.basename(file) !== 'sw.js' && path.basename(file) !== 'god.html' && path.basename(file) !== 'modules.json').sort();
+  const files = (await walk(outDir)).filter((file) => {
+    const rel = path.relative(outDir, file).split(path.sep).join('/');
+    return path.basename(file) !== 'sw.js' && path.basename(file) !== 'god.html' && path.basename(file) !== 'modules.json' && rel !== 'modules/manifest.json';
+  }).sort();
   const hash = createHash('sha256');
   const urls = [];
   for (const file of files) {

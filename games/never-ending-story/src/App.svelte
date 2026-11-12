@@ -13,7 +13,8 @@
   import SettingsPanel from './components/SettingsPanel.svelte';
   import Sheet from './components/Sheet.svelte';
   import VersionBadge from './components/VersionBadge.svelte';
-  import { StirFryGame } from './modules/stirfry';
+  import { installPilotHost, loadPilot } from './lib/pilotHost';
+  import type { Component } from 'svelte';
   import { ChallengeView, LeaderboardView, parseChallengeHash } from './modules/challenge';
   import { minigameRoute } from './modules/minigame-core';
   import { loadPlayerRoom } from './lib/loadRoom';
@@ -28,6 +29,8 @@
   let selectedId = $state<string | null>(null);
   let hintId = $state<string | null>(null);
   let toast = $state<string | null>(null);
+  installPilotHost();
+  let StirFryGame = $state<Component<{ onExit: () => void }> | null>(null);
   let tutorIndex = $state(0);
   let showTutor = $state(!save.player.onboardingComplete);
 
@@ -51,6 +54,20 @@
   const challenge = $derived(mini === 'challenge' ? parseChallengeHash(route) : null);
   const showingBoard = $derived(mini === 'leaderboard');
   const fullscreenGame = $derived(playingStirfry || !!challenge || showingBoard);
+  $effect(() => {
+    if (!playingStirfry) {
+      StirFryGame = null;
+      return;
+    }
+    const hash = route;
+    let stop = false;
+    loadPilot('stirfry').then((mod) => {
+      if (!stop && route === hash) StirFryGame = mod.StirFryGame as Component<{ onExit: () => void }>;
+    }).catch(() => {
+      if (!stop) StirFryGame = null;
+    });
+    return () => { stop = true; };
+  });
 
   function toPractice(): void {
     window.location.hash = '';
@@ -248,7 +265,11 @@
   {:else if showingBoard}
     <LeaderboardView onExit={toPractice} onPlay={(game) => (window.location.hash = game === 'stirfry' ? '#/play/stirfry' : `#/challenge/${game}`)} />
   {:else if playingStirfry}
-    <StirFryGame onExit={() => { window.location.hash = ''; route = ''; void session.go('practice'); }} />
+    {#if StirFryGame}
+      <StirFryGame onExit={() => { window.location.hash = ''; route = ''; void session.go('practice'); }} />
+    {:else}
+      <p class="status">{t('stirfry.opening')}</p>
+    {/if}
   {:else}
     <div class="stage" class:is-fading={session.fading}>
       <div class="room-layer" class:hidden={session.screen !== 'player-room'}>

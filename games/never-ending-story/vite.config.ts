@@ -52,6 +52,10 @@ export default defineConfig({
   preview: { host: true, port: 4173 },
   build: {
     chunkSizeWarningLimit: 800,
-    rollupOptions: { input: { main: 'index.html', god: 'god.html' } },
+    rollupOptions: {
+      input: { main: 'index.html', god: 'god.html' },
+      // Shared with the versioned pilot chunks through the import map emitted after this build.
+      external: (id: string) => id === 'svelte' || id.startsWith('svelte/'),
+    },
   },
 });

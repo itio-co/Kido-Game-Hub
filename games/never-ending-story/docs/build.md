@@ -44,15 +44,19 @@ build tools. Browser and live deployment verification are separate from `verify`
 ## What "module build" means now
 
 `src/modules/*/module.json` defines versioned source boundaries and public entries.
-Vite builds the application as a multi-entry release. God displays the generated
-module registry and GDDs. Neither the registry nor a separate chunk is an
-independently deployable module. There is intentionally no `deploy-module` target.
+`npm run build` / `make build` still builds the game and God together. It also
+emits two pilot chunks and a manifest:
 
-Cloudflare serves the current app through `nes-game` with KV and D1. See
-[deploy-cloudflare.md](deploy-cloudflare.md) for the current protocol. The existing
-`scripts/cloudflare/mk.mjs` contains a machine-specific path; it must be made
-portable and validated before automated packaging is added. The Makefile does not
-call those historical upload-generation scripts or perform migrations.
+- `dist/modules/rhythm/<version>/<hash>.js`
+- `dist/modules/stirfry/<version>/<hash>.js`
+- `dist/modules/manifest.json` — module id, `current` version, chunk URL, and `retained` versions this build knows about
+- `dist/modules/runtime/svelte*.js` plus an import map in `index.html` and `god.html`, so those chunks share one Svelte runtime with the page
+
+The core bundle does not statically import `rhythm` or `stirfry`. It loads them with `import()` through the manifest. A share link that pins a version loads that retained file when the manifest lists it. If the file is absent, the page uses the code bundled in this build and the ruleset entry for the pinned version.
+
+`make deploy-modules` and `make rollback-module` only print a plan unless `APPLY=1`. They never delete KV keys. The Worker and the rest of the site still deploy the way they do today. See [deploy-cloudflare.md](deploy-cloudflare.md).
+
+Other modules stay inside the core bundle. Editor modules are not independently deployed.
 
 ## Intended next stage (not implemented by this Makefile)
 
