@@ -284,9 +284,9 @@
       </svg>
     </button>
 
-    {#if session.showCaseUi || (session.context === 'event' && session.scene?.map && session.mapUnlocked)}
+    {#if session.showCaseUi || session.showHouseMapButton}
       <div class="bottom-actions">
-        {#if session.context === 'event' && session.scene?.map && session.mapUnlocked}
+        {#if session.showHouseMapButton}
           <button type="button" class="case mapbtn" class:fresh={session.mapUnlockPulse} data-testid="house-map-btn" onclick={() => session.go('house-map')}>
             {t('hud.houseMap')}
           </button>

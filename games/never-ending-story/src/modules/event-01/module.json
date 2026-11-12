@@ -2,7 +2,7 @@
   "id": "event-01",
   "name": "Event 01 · Visit Grandma",
   "kind": "event",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "First story event (case-01): data in public/data/case-flow.json.",
   "entry": "src/modules/event-01/index.ts",
   "publicEntries": [

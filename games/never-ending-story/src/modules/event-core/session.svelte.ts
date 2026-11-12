@@ -26,7 +26,7 @@ import type {
 } from './types';
 import type { NavContext } from '../../lib/types';
 import { t } from '../../lib/i18n';
-import { houseMapGate, houseMapUnlocked } from './progress';
+import { houseMapGate, houseMapUnlocked, mapUnlockNeedsPersist, showHouseMapButton as houseMapButtonVisible } from './progress';
 import { tapFanEgg } from '../../lib/eggs';
 import { endingIdFor, primaryEventId } from './story';
 import { playModeFromContext, type PlayMode } from '../minigame-core/framework';
@@ -168,8 +168,9 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
         }
       }
     }
-    // Older saves won the jigsaw (evidence) before the button flag existed. Write it once so sync matches.
-    if (houseMapGate(flow) && mapIsUnlocked() && saved?.mapUnlocked !== true) persist();
+    // The button reads the jigsaw evidence, not the saved flag. Write the flag when a real
+    // win predates it, and clear a true flag that has no such evidence (visits and other clues do not count).
+    if (houseMapGate(flow) && mapUnlockNeedsPersist(saved?.mapUnlocked, mapIsUnlocked())) persist();
   }
 
   const scene = $derived(flow?.scenes.find((item) => item.screen === screen) ?? null);
@@ -605,6 +606,10 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
     get poster() { return poster; },
     get caseDone() { return caseDone; },
     get mapUnlocked() { return mapIsUnlocked(); },
+    /** Bottom-bar house map. Same rule on every scene that sets `map`. */
+    get showHouseMapButton() {
+      return houseMapButtonVisible({ context, sceneHasMap: scene?.map === true, flow, evidence });
+    },
     get mapUnlockPulse() { return mapUnlockPulse; },
     get eggReveal() { return eggReveal; },
     get difficulty() { return difficulty; },

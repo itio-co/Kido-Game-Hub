@@ -267,7 +267,7 @@ export type FlowProgress = {
   poster: boolean;
   /** Case-01 fully finished (ending comic done / home). Enables replay skip. */
   caseDone: boolean;
-  /** House-map button unlocked by the pack's jigsaw. Omitted on older saves; derived again from evidence. */
+  /** Sync copy of the jigsaw gate. The button reads the evidence code, not this flag. A true flag without that evidence is cleared on load. */
   mapUnlocked?: boolean;
   /** Restored navigation after refresh. */
   nav?: {
