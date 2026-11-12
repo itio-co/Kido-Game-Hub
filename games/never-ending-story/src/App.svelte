@@ -29,7 +29,7 @@
     saveFloatPrefs,
     type FloatPrefs,
     type InspectPage,
-  } from './modules/god/player';
+  } from './modules/god-mode';
   import type { CalendarEntity, PlayerRoom, SaveV1, TextSize } from './lib/types';
 
   let room = $state<PlayerRoom | null>(null);

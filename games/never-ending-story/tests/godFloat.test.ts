@@ -1,5 +1,5 @@
-import { godAdminUrl, godButtonVisible, godFloatVisible, loadFloatPrefs, parseFloatPrefs, saveFloatPrefs, GOD_FLOAT_KEY } from '../src/modules/god/floatState.ts';
-import { inspectDocument, inspectText, redact } from '../src/modules/god/inspect.ts';
+import { godAdminUrl, godButtonVisible, godFloatVisible, loadFloatPrefs, parseFloatPrefs, saveFloatPrefs, GOD_FLOAT_KEY } from '../src/modules/god-mode/floatState.ts';
+import { inspectDocument, inspectText, redact } from '../src/modules/god-mode/inspect.ts';
 
 declare const process: { exitCode?: number };
 let failed = 0;

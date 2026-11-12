@@ -12,6 +12,8 @@ The game ships as one bundle but the code is split into modules under `src/modul
 | `challenge` | feature | puzzle challenge mode and leaderboards. Stays its own feature and depends on `minigame-core` (see below) |
 | `event-core` | event-core | shared event framework: cutscenes, stage map, case notebook, event HUD, D1 progress document |
 | `event-01` | event | Event 01 content (`case-01`) on top of `event-core` |
+| `god` | admin | admin page `/never/god` and `/never/api/god` |
+| `god-mode` | feature | in-game GOD float: Settings toggle, bubble, Admin/Inspect, redacted page JSON |
 | `character` | character | people already in the story: names, portraits, generation prompts |
 | `cutscene` | cutscene | Cut Scene: prologue, case-01 opening/ending, and room art; people in a frame are character ids |
 
@@ -63,7 +65,7 @@ A **mechanism** (`kind: "engine"`) owns the rules: timing, judging, combo, scori
 - Rhythm packs implement `RhythmPack` (`src/modules/rhythm/types.ts`): `id`, `leaderboardId`, `copy` (i18n prefix), `storageKey`, `route`, `version`, `rulesets`, `theme`, `Stage` (gets `StageProps`: progress, pressure, pressureZone, combo, beat, extraDue, last judgement, pulse, packVersion) and optional hooks `onBeat` / `onJudge` / `onFinish`.
 - Leaderboards are keyed by the pack's `leaderboardId` **and** the ruleset (engine version + pack version). The app version is not part of that key.
 - The registry lists `pack` on packs and `packs` (ids) on mechanisms, and still emits `edition` / `editions` as aliases. `/never/god/games/<id>` shows the relationship.
-- God admin is its own module (`kind: "admin"`, `src/modules/god`). The page is still `/never/god` and the API is still `/never/api/god/*`.
+- God admin is its own module (`kind: "admin"`, `src/modules/god`). The page is still `/never/god` and the API is still `/never/api/god/*`. The in-game float is `god-mode` (`kind: "feature"`).
 - `npm run check:modules` requires every `minigame`, `engine`, and `pack`, plus the `challenge` feature, to depend on `minigame-core`. Every `event` must depend on `event-core`.
 
 ## Why challenge stays a feature

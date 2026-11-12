@@ -1,5 +1,6 @@
 import { version } from '../../package.json';
-import { GOD_VERSION } from '../modules/god/player';
+import { GOD_VERSION } from '../modules/god/version';
+import { GOD_MODE_VERSION } from '../modules/god-mode/version';
 import { currentRuleset, GAME_MODULES } from './rulesetCatalog';
 import { RHYTHM_VERSION } from '../modules/rhythm/ruleset';
 import { STIRFRY_VERSION } from '../modules/stirfry/ruleset';
@@ -18,6 +19,7 @@ export function buildInfo(): { app: string; build: string; modules: Record<strin
     modules: {
       core: version,
       god: GOD_VERSION,
+      'god-mode': GOD_MODE_VERSION,
       rhythm: RHYTHM_VERSION,
       stirfry: STIRFRY_VERSION,
       challenge: CHALLENGE_VERSION,
