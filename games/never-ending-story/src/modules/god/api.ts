@@ -1,6 +1,8 @@
 import { appBase } from '../../lib/deployment';
 /** Admin API client. Session lives in an HttpOnly cookie; nothing secret is stored in JS. */
-const API = new URL('api/god/', `${location.origin}${appBase()}/`).href;
+function apiUrl(): string {
+  return new URL('api/god/', `${location.origin}${appBase()}/`).href;
+}
 
 export class ApiError extends Error {
   constructor(public status: number, public code: string, public data: Record<string, unknown> = {}) {
@@ -11,7 +13,7 @@ export class ApiError extends Error {
 export async function god<T = Record<string, unknown>>(path: string, init: RequestInit = {}): Promise<T> {
   let res: Response;
   try {
-    res = await fetch(API + path, { ...init, credentials: 'same-origin', headers: { 'content-type': 'application/json', ...(init.headers ?? {}) } });
+    res = await fetch(apiUrl() + path, { ...init, credentials: 'same-origin', headers: { 'content-type': 'application/json', ...(init.headers ?? {}) } });
   } catch {
     throw new ApiError(0, 'network');
   }
