@@ -3,12 +3,12 @@
 | ฟิลด์ | ค่า |
 |---|---|
 | kind | core |
-| เวอร์ชัน | app (ตาม `package.json`, ตอนนี้ 0.6.17) |
+| เวอร์ชัน | app (ตาม `package.json`, ตอนนี้ 0.6.18) |
 | เทมเพลต | `docs/gdd/TEMPLATE.md` |
 | อ้างอิง | `docs/design/never-ending-story-game-spec-v0.4-th.md` |
 
 ## 1. จุดประสงค์ / Pitch
-เปลือกแอปของ Never Ending Story: ห้องโถงบ้านย่า, เซฟ, i18n, cloud sync, prologue. เฟรมมินิเกมอยู่ `minigame-core` เฟรมเหตุการณ์อยู่ `event-core` หน้า admin อยู่โมดูล `god`
+เปลือกแอปของ Never Ending Story: ห้องโถงบ้านย่า, เซฟ, i18n, cloud sync, prologue. เฟรมมินิเกมอยู่ `minigame-core` เฟรมเหตุการณ์อยู่ `event-core` หน้า admin อยู่โมดูล `god` ไอคอน GOD ในเกมอยู่โมดูล `god-mode`
 
 ## 2. แฟนตาซีของผู้เล่น
 เป็นหลานที่กลับมาบ้านย่ามะลิ ช่วยย่าไขคดีของเก่าในบ้าน (ย่ามะลิผมสั้นสีเงินปล่อยหลวม ไม่มวยผม)
@@ -39,13 +39,13 @@ core ไม่มีคะแนนเอง คะแนนมาจากม�
 story pack JSON (`public/data/case-flow.json`) และรูปใน `public/img/` ปรับได้โดยไม่แตะโค้ด ดู `docs/design/story-pack-format-th.md`
 
 ## 9. UX / หน้าจอ
-Prologue, Hub, FlowView, Settings, Leaderboard. god admin อยู่ในโมดูล `god`
+Prologue, Hub, FlowView, Settings, Leaderboard. god admin อยู่ในโมดูล `god` ไอคอน GOD ในเกมอยู่ในโมดูล `god-mode`
 
 ## 10. Data & telemetry (ฟิลด์บนเซิร์ฟเวอร์)
 D1: `players`, `player_state`, `player_events`, `player_home`, `runs` (มีคอลัมน์ `ruleset`), `god_login` · localStorage เซฟหลัก
 
 ## 11. Dependencies + เวอร์ชัน
-ใช้ minigame-core, event-core, crossword, jigsaw, slide, stirfry, challenge, event-01, god (ดู `module.json`)
+ใช้ minigame-core, event-core, crossword, jigsaw, slide, stirfry, challenge, event-01, god, god-mode (ดู `module.json`)
 
 ## 12. คำถามที่ยังเปิดอยู่ / Backlog
 - **[backlog]** แยก flow engine เป็นโมดูลของตัวเอง
@@ -54,6 +54,7 @@ D1: `players`, `player_state`, `player_events`, `player_home`, `runs` (มีค
 ## 13. Changelog (ผูกกับเวอร์ชันโมดูล)
 | เวอร์ชัน | แอป | การเปลี่ยนแปลง |
 |---|---|---|
+| 0.6.18 | 0.6.18 | ย้ายไอคอน GOD ในเกมไปโมดูล God Mode (`god-mode` 1.0.0) เลข build ยังเป็นเวอร์ชันแอป |
 | 0.6.17 | 0.6.17 | ปุ่ม GOD ในตั้งค่าและไอคอนลอยเป็นของโมดูล god แอปส่งเลข build (เวอร์ชันแอป) ให้ตัวตรวจข้อมูล |
 | 0.6.16 | 0.6.16 | ปุ่มแผนผังบ้านทุกฉากใช้เกตจิ๊กซอว์เดียวกัน ไฟล์ `data/*.json` ใน service worker เป็น network-first เพื่อไม่ให้ไฟล์เรื่องเก่าค้างแล้วเปิดปุ่ม |
 | 0.6.13 | 0.6.13 | โมดูล character และ cutscene รูปและกติเกมเดิม |

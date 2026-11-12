@@ -17,7 +17,8 @@
     "event-01": "^1.0.0",
     "event-core": "^1.0.0",
     "minigame-core": "^1.0.0",
-    "god": "^1.0.0",
+    "god": "^2.0.0",
+    "god-mode": "^1.0.0",
     "character": "^1.0.0",
     "cutscene": "^1.0.0"
   },
