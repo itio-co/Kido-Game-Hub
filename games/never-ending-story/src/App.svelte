@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import { t } from './lib/i18n';
   import EditorView from './components/EditorView.svelte';
+  import AssetBrowser from './components/AssetBrowser.svelte';
   import CalendarPanel from './components/CalendarPanel.svelte';
   import { FlowView, createFlow, loadFlow } from './modules/event-core';
   import Hud from './components/Hud.svelte';
@@ -44,6 +45,7 @@
   }
   const showcasing = $derived(route.startsWith('#/showcase'));
   const editing = $derived(route.startsWith('#/editor'));
+  const browsing = $derived(route.startsWith('#/assets'));
   const mini = $derived(minigameRoute(route));
   const playingStirfry = $derived(mini === 'rhythm' && route.startsWith('#/play/stirfry'));
   const challenge = $derived(mini === 'challenge' ? parseChallengeHash(route) : null);
@@ -227,9 +229,11 @@
   });
 </script>
 
-<div class="phone" class:wide={editing} data-text={save.player.textSize}>
-  {#if !fullscreenGame}<VersionBadge />{/if}
-  {#if editing}
+<div class="phone" class:wide={editing || browsing} data-text={save.player.textSize}>
+  {#if !editing && !browsing && !fullscreenGame}<VersionBadge />{/if}
+  {#if browsing}
+    <AssetBrowser />
+  {:else if editing}
     <EditorView />
   {:else if error}
     <p class="error">{error}</p>

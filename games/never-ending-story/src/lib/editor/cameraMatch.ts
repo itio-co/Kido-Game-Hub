@@ -12,7 +12,7 @@ import {
   type M3,
   type PointPair,
   type V3,
-} from './camMath';
+} from './camMath.ts';
 
 /** Blender world (Z-up, cm) → Three.js world (Y-up, m): (x, y, z) → (x, z, −y) / 100. */
 const B: M3 = [
@@ -44,7 +44,7 @@ export function camFromMatched(m: MatchedCamera, width: number, height: number):
   // M = B Rᵀ F  →  R = F Mᵀ B
   const R = mulMM(mulMM(F, transpose(M)), B);
   const C = scale(mulMV(transpose(B), [m.position.x, m.position.y, m.position.z]), 100);
-  return { f, cx: width / 2, cy: height / 2, R, C };
+  return { f, cx: m.principalPoint?.[0] ?? width / 2, cy: m.principalPoint?.[1] ?? height / 2, R, C };
 }
 
 /** Three.js pose (metres, Y-up) of a pinhole camera. */
@@ -104,6 +104,8 @@ export type MatchExtras = {
   pairs: PointPair[];
   residual: { lines: number | null; points: number | null };
   image: string;
+  /** Current crop → full-image transform, including edits to the asset default. */
+  crop?: { x: number; y: number; s: number };
   /** Object ↔ room block (crop transform, yaw, agreement, grouped lines in full px). */
   room?: object;
 };
@@ -131,6 +133,11 @@ export function fullExport(cam: Cam, x: MatchExtras) {
   const pose = threePose(cam);
   const hf = hfovDeg(cam.f, ref.width);
   const mock = ref.mockup;
+  const crop = x.crop ?? (mock ? { ...mock.crop, s: mock.scale ?? 1 } : { x: 0, y: 0, s: 1 });
+  // Intrinsics must use the same crop → full transform as the live editor.
+  const fullF = cam.f * crop.s;
+  const fullCx = crop.x + cam.cx * crop.s;
+  const fullCy = crop.y + cam.cy * crop.s;
   return {
     format: 'kido-camera-match/1',
     asset: x.asset.slug,
@@ -154,19 +161,20 @@ export function fullExport(cam: Cam, x: MatchExtras) {
         .join(', ')}), quaternion: new THREE.Quaternion(${pose.quaternion
         .toArray()
         .map((v) => round(v, 6))
-        .join(', ')}) }`,
+        .join(', ')}), principalPoint: [${round(cam.cx, 3)}, ${round(cam.cy, 3)}] }`,
     },
     mockup: mock
       ? {
           src: mock.src.replace(/^.*\/img\//, 'img/'),
           size: [mock.width, mock.height],
-          cropOffset: [mock.crop.x, mock.crop.y],
-          focal_px: round(cam.f, 3),
-          principalPoint: [round(cam.cx + mock.crop.x, 3), round(cam.cy + mock.crop.y, 3)],
-          lens_mm: round(lensMm(cam.f, mock.width), 3),
-          hfovDeg: round(hfovDeg(cam.f, mock.width), 4),
-          shift_x: round((mock.width / 2 - (cam.cx + mock.crop.x)) / mock.width, 5),
-          shift_y: round((cam.cy + mock.crop.y - mock.height / 2) / mock.width, 5),
+          cropOffset: [crop.x, crop.y],
+          cropScale: crop.s,
+          focal_px: round(fullF, 3),
+          principalPoint: [round(fullCx, 3), round(fullCy, 3)],
+          lens_mm: round(lensMm(fullF, mock.width), 3),
+          hfovDeg: round(hfovDeg(fullF, mock.width), 4),
+          shift_x: round((mock.width / 2 - fullCx) / mock.width, 5),
+          shift_y: round((fullCy - mock.height / 2) / mock.width, 5),
         }
       : null,
     residualPx: { lines: x.residual.lines, points: x.residual.points },

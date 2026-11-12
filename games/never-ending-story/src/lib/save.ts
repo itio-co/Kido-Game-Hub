@@ -1,3 +1,4 @@
+import { appStorage } from './deployment';
 import type { FlowProgress, SaveV1, TextSize } from './types';
 import { markDirty } from './cloudSync';
 
@@ -50,7 +51,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 export function readSave(): SaveV1 {
   try {
-    const raw = localStorage.getItem(SAVE_KEY);
+    const raw = appStorage.getItem(SAVE_KEY);
     if (!raw) return defaultSave();
     const data: unknown = JSON.parse(raw);
     if (!isRecord(data) || data.version !== 1) return defaultSave();
@@ -131,6 +132,6 @@ export function readSave(): SaveV1 {
 }
 
 export function writeSave(save: SaveV1): void {
-  localStorage.setItem(SAVE_KEY, JSON.stringify(save));
+  appStorage.setItem(SAVE_KEY, JSON.stringify(save));
   markDirty();
 }

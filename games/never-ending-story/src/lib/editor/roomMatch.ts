@@ -30,6 +30,7 @@ import {
   mulMV,
   orthonormalize,
   rodrigues,
+  rmsErrors,
   solveFromLines,
   solveLinear,
   transpose,
@@ -38,6 +39,7 @@ import {
   type Cam,
   type GuideLine,
   type M3,
+  type PointPair,
   type V2,
   type V3,
 } from './camMath.ts';
@@ -135,6 +137,12 @@ export function vpOfDir(cam: Cam, d: V3): V3 {
   const r = mulMV(cam.R, d);
   return [cam.f * r[0] + cam.cx * r[2], cam.f * r[1] + cam.cy * r[2], r[2]];
 }
+/** Active group's line error, with point pairs always evaluated in the object's world frame. */
+export function groupRmsErrors(cam: Cam, lines: GuideLine[], pairs: PointPair[], group: LineGroup, yawDeg: number): { lines: number | null; points: number | null } {
+  const lineCam = group === 'room' ? { ...cam, R: mulMM(cam.R, rotZ(-yawDeg)) } : cam;
+  return { lines: rmsErrors(lineCam, lines, []).lines, points: rmsErrors(cam, [], pairs).points };
+}
+
 /** Object-frame direction of a measured VP (sign-free). */
 function dirOfVp(cam: Cam, vp: V3): V3 {
   return mulMV(transpose(cam.R), unit([(vp[0] - cam.cx * vp[2]) / cam.f, (vp[1] - cam.cy * vp[2]) / cam.f, vp[2]]));

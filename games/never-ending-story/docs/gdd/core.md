@@ -3,7 +3,7 @@
 | ฟิลด์ | ค่า |
 |---|---|
 | kind | core |
-| เวอร์ชัน | app (ตาม `package.json`, ตอนนี้ 0.6.13) |
+| เวอร์ชัน | app (ตาม `package.json`, ตอนนี้ 0.6.14) |
 | เทมเพลต | `docs/gdd/TEMPLATE.md` |
 | อ้างอิง | `docs/design/never-ending-story-game-spec-v0.4-th.md` |
 
@@ -63,3 +63,6 @@ D1: `players`, `player_state`, `player_events`, `player_home`, `runs` (มีค
 | 0.6.5 | 0.6.5 | modular monolith + หน้า Modules |
 | 0.6.4 | 0.6.4 | god admin |
 | 0.6.3 | 0.6.3 | prologue |
+
+## Deployment space (0.6.14)
+Worker รับ APP_BASE เช่น `/never`, `/never/dev` หรือ `/dev/never`; แต่ละ deployment ต้องใช้ KV/D1 และ secret แยกกัน หน้า HTML ส่ง base ให้ client เพื่อแยก localStorage และ API โดย production ยังคงใช้ key เดิม พื้นที่ทดสอบใช้ service worker แบบ network-only ไม่ลบ cache ของ production

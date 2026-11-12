@@ -9,11 +9,60 @@
     "maxBase": 3000,
     "minMs": 3000,
     "maxMs": 3600000,
-    "mult": { "easy": 1, "medium": 1.5, "hard": 2 },
+    "mult": {
+      "easy": 1,
+      "medium": 1.5,
+      "hard": 2
+    },
     "par": {
-      "cross": { "easy": 45, "medium": 75, "hard": 110 },
-      "jig": { "easy": 30, "medium": 50, "hard": 90 },
-      "slide": { "easy": 40, "medium": 70, "hard": 150 }
+      "cross": {
+        "easy": 45,
+        "medium": 75,
+        "hard": 110
+      },
+      "jig": {
+        "easy": 30,
+        "medium": 50,
+        "hard": 90
+      },
+      "slide": {
+        "easy": 40,
+        "medium": 70,
+        "hard": 150
+      }
+    }
+  },
+  "1.1.1": {
+    "correct": 100,
+    "combo": 20,
+    "mistake": 40,
+    "hint": 150,
+    "timeBonus": 10,
+    "floor": 0,
+    "maxBase": 3000,
+    "minMs": 3000,
+    "maxMs": 3600000,
+    "mult": {
+      "easy": 1,
+      "medium": 1.5,
+      "hard": 2
+    },
+    "par": {
+      "cross": {
+        "easy": 45,
+        "medium": 75,
+        "hard": 110
+      },
+      "jig": {
+        "easy": 30,
+        "medium": 50,
+        "hard": 90
+      },
+      "slide": {
+        "easy": 40,
+        "medium": 70,
+        "hard": 150
+      }
     }
   }
 }

@@ -2,7 +2,7 @@
   "id": "rhythm",
   "name": "Rhythm tap (mechanism)",
   "kind": "engine",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "White-label rhythm button-tap engine: beat timing, perfect/good/miss judging, combo, scoring, pressure meter, extra-lane cues, seeded charts (pack+difficulty+seed), easy/normal/hard, versioned rulesets, challenge links, run store, online score submission keyed by pack.",
   "entry": "src/modules/rhythm/index.ts",
   "publicEntries": [

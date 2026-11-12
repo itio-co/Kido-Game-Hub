@@ -1,3 +1,4 @@
+import { appStorage } from './deployment';
 const KEY = 'nesg.playerId.v1';
 
 export type PlayerIdState = {
@@ -16,16 +17,16 @@ function uuid(): string {
 
 export function readPlayerId(): PlayerIdState {
   try {
-    const raw = localStorage.getItem(KEY);
+    const raw = appStorage.getItem(KEY);
     if (!raw) {
       const fresh = { playerId: uuid(), nickname: null };
-      localStorage.setItem(KEY, JSON.stringify(fresh));
+      appStorage.setItem(KEY, JSON.stringify(fresh));
       return fresh;
     }
     const data: unknown = JSON.parse(raw);
     if (!isRecord(data) || typeof data.playerId !== 'string') {
       const fresh = { playerId: uuid(), nickname: null };
-      localStorage.setItem(KEY, JSON.stringify(fresh));
+      appStorage.setItem(KEY, JSON.stringify(fresh));
       return fresh;
     }
     return {
@@ -34,7 +35,7 @@ export function readPlayerId(): PlayerIdState {
     };
   } catch {
     const fresh = { playerId: uuid(), nickname: null };
-    localStorage.setItem(KEY, JSON.stringify(fresh));
+    appStorage.setItem(KEY, JSON.stringify(fresh));
     return fresh;
   }
 }
@@ -42,7 +43,7 @@ export function readPlayerId(): PlayerIdState {
 export function setNickname(nickname: string): PlayerIdState {
   const state = readPlayerId();
   state.nickname = nickname.trim().slice(0, 24) || null;
-  localStorage.setItem(KEY, JSON.stringify(state));
+  appStorage.setItem(KEY, JSON.stringify(state));
   if (state.nickname) void import('./cloudSync').then((m) => m.pushNickname(state.nickname as string));
   return state;
 }

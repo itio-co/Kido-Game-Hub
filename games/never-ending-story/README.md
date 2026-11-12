@@ -18,6 +18,12 @@ This folder is an npm workspace of the repo root. `npm install` here installs in
 
 Open the URL Vite prints (default `http://localhost:5173`) on a phone, or use a narrow portrait window such as 390×844.
 
+## Reproducible build and AI guidance
+
+Use `make help` and `make verify` from the repository root. See
+[build workflow and module release direction](docs/build.md) and the project
+[AI contributor instructions](AGENTS.md). These commands build locally; they do not deploy.
+
 ## Build a static preview
 
 ```bash
@@ -89,3 +95,47 @@ Clock, calendar, and day travel are overlays on the living room, so they use tha
 Story content (events, spots, evidence, dialogues, practice cards) lives in `public/data/case-flow.json` with the same `id` / `kind` / `title` / `slug` model. Room positions stay in `public/data/player-room.json`. `scripts/author-flow.mjs` is the authoring source for the flow files. Do not regenerate it casually: ids are assigned in call order.
 
 The UI fonts are Noto Sans and Noto Sans Thai, licensed under the SIL Open Font License 1.1 (`src/fonts/OFL.txt`).
+
+## Asset browser
+
+Open `#/assets` for the responsive project catalog. It reads the model registry,
+per-asset manifests and checked-in image files, keeping models distinct from 2D
+artwork and reference crops. Search Thai/English titles, filenames or source paths;
+filter by type; switch grid/list; inspect metadata; download images or GLBs; open
+any model variant directly in the 3D editor. Filters, sort, layout and selection
+are preserved in the URL. The editor's back button returns to the selected asset.
+
+The current catalog has two editable models (four GLB variants), 18 artwork JPGs
+and two reference crops. Render thumbnails come from existing project QA renders.
+Source paths are informational, not links to hosted Blender/source files. The
+catalog does not upload, delete, import or change game assets. Model/camera drafts
+continue to use the editor's existing local storage and file-export behavior.
+
+### Comparison and Bring to view
+
+In image and camera-match views, use the **เทียบภาพ** icon in the right toolbar
+for the before/after wipe. Drag its yellow line or 48-pixel handle; arrow keys
+move 1%, Shift+arrow and Page Up/Down 10%, Home/End reach either edge, and
+Enter/Space or double-click returns to 50%. There is no floating comparison
+button over the reference image.
+
+**เข้าภาพ / Bring to view** moves and uniformly rescales the entire model into
+the center of the chosen reference image, not merely the viewport. It handles
+objects outside/behind the camera and incorrect huge or tiny scales. It stays
+in the current image/matching mode and fits the reference image on screen.
+The solved camera, guide lines, part rotations, pivots and relative layout are
+preserved. The reference-image center may differ from the camera principal
+point. This is a recovery placement, not an automatic geometry-to-photo match.
+
+This operation is a real model edit and creates one model-history step. The
+persistent **ย้อนกลับ** action restores the previous positions/scales even in
+camera-match mode, whose regular Undo operates on guides. It disappears after
+another model edit, so it cannot overwrite newer work. Normal model Undo/Redo,
+JSON drafts and exported edits also retain the operation. Hidden non-deleted
+parts move with the whole model, keeping their flags; deleted parts remain
+unchanged. Fully hidden or zero-sized models report an error without changes.
+
+Bring to view turns off the wipe and difference blend and shows the model at
+100% opacity. In free 3D/orbit mode, **กลางจอ** remains view-only framing; it
+does not perform the image-placement edit. WebGL failure is reported rather
+than claiming success.

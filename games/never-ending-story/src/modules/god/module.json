@@ -2,7 +2,7 @@
   "id": "god",
   "name": "God admin",
   "kind": "admin",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Admin console at /never/god and /never/api/god. Password session, players, games, events, and the module registry. Behavior and auth match the previous in-core page.",
   "entry": "src/modules/god/index.ts",
   "publicEntries": [

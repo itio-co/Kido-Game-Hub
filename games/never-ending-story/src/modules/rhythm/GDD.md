@@ -77,3 +77,6 @@ minigame-core ^1.0.0 (เฟสจบรอบ, ลิงก์, `submitFinished
 | 1.1.0 | 0.6.11 | ค่าเกมเท่า 0.6.10 แต่ถูกตรึงใน `ruleset.json` ลิงก์แชร์ติด `rhythm@1.1.0` คู่กับเวอร์ชัน pack กระดานแยกตามกติกานี้ |
 | 1.1.0 | 0.6.10 | ชาร์ตแบบ seed, ระดับ easy/normal/hard, ลิงก์ท้า, seed ใน run token, ป้าย judgement ไม่ค้าง |
 | 1.0.0 | 0.6.9 | แยกจาก stirfry เป็นกลไก white-label |
+
+## การแยก deployment space
+ใช้ APP_BASE จาก Worker เพื่อแยกข้อมูลในเบราว์เซอร์ของแต่ละ space โดยไม่แก้ข้อมูล production; God ใช้ชื่อและ path ของ cookie แยกตาม base และต้องตั้ง secret แยกกัน

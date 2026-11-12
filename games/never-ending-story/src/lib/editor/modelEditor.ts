@@ -1,3 +1,4 @@
+import { appStorage } from '../deployment';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { GLTFExporter } from 'three/addons/exporters/GLTFExporter.js';
@@ -6,6 +7,9 @@ import { TransformControls } from 'three/addons/controls/TransformControls.js';
 import { type ShowcaseAsset, type ShowcaseVariant } from '../showcaseAssets';
 import type { Cam } from './camMath';
 import { applyToCamera, camFromMatched, type ViewRect } from './cameraMatch';
+import { recoveryDepth } from './viewFrame';
+import { placementInImage, placementProblem, placedPart, placedPoint, clipForHistoryStep, type BringHistory, type BringProblem } from './bringToImage';
+import type { Box2 } from './viewFrame';
 import {
   SNAP_KINDS,
   ZERO,
@@ -26,6 +30,7 @@ import {
 } from './pivot';
 
 export type Vec3 = [number, number, number];
+export type SelectionMode = 'object' | 'part';
 export type GizmoMode = 'translate' | 'rotate' | 'scale';
 export type ViewMode = 'orbit' | 'mock' | 'match';
 /** How the model is drawn over the mock-up: shaded, wireframe, or outline/crease edges. */
@@ -75,10 +80,13 @@ export type SelectedInfo = {
 
 export type EditorSnapshot = {
   ready: boolean;
+  selectionMode: SelectionMode;
+  wholeSelected: boolean;
   parts: PartInfo[];
   selected: SelectedInfo | null;
   canUndo: boolean;
   canRedo: boolean;
+  canUndoBring: boolean;
   dirty: boolean;
   /** Edit-pivot mode: translate drags move only the selected part's origin. */
   pivotMode: boolean;
@@ -137,6 +145,9 @@ export function createModelEditor(canvas: HTMLCanvasElement, onChange: (snap: Ed
   box.renderOrder = 10;
   box.visible = false;
   scene.add(box);
+  const wholeBox = new THREE.Box3Helper(new THREE.Box3(), new THREE.Color('#ffe14d'));
+  (wholeBox.material as THREE.LineBasicMaterial).depthTest = false;
+  wholeBox.renderOrder = 10; wholeBox.visible = false; scene.add(wholeBox);
 
   const orbit = new OrbitControls(camera, canvas);
   orbit.enableDamping = false;
@@ -166,9 +177,18 @@ export function createModelEditor(canvas: HTMLCanvasElement, onChange: (snap: Ed
   const bases = new Map<string, Base>();
   const objects = new Map<string, THREE.Object3D>();
   let state: EditState = { parts: [] };
-  let history: string[] = [];
+  let history: { id: number; state: string }[] = [];
+  let historySerial = 0;
   let index = -1;
+  let lastBringId: number | null = null;
+  const bringHistory = new Map<number, BringHistory>();
+  let bringProblem: BringProblem | null = null;
   let selected: string | null = null;
+  let selectionMode: SelectionMode = 'object';
+  let wholeSelected = true;
+  const wholeHandle = new THREE.Object3D();
+  scene.add(wholeHandle);
+  let wholeStart: { inverse: THREE.Matrix4; matrices: Map<string, THREE.Matrix4> } | null = null;
   let view: ViewMode = 'orbit';
   let snap = true;
   let gizmoMode: GizmoMode = 'translate';
@@ -227,7 +247,10 @@ export function createModelEditor(canvas: HTMLCanvasElement, onChange: (snap: Ed
         camera.updateProjectionMatrix();
         gizmo.setSize(GIZMO_SIZE);
       }
-      if (selected && objects.get(selected)?.visible) {
+      wholeBox.visible = false;
+      if (wholeSelected && root) {
+        wholeBox.box.copy(modelBounds()); wholeBox.visible = !wholeBox.box.isEmpty(); box.visible = false;
+      } else if (selected && objects.get(selected)?.visible) {
         box.setFromObject(objects.get(selected)!);
         box.visible = true;
       } else box.visible = false;
@@ -241,7 +264,7 @@ export function createModelEditor(canvas: HTMLCanvasElement, onChange: (snap: Ed
       renderer.render(scene, camera);
       return;
     }
-    const helpers = [box, gizmoHelper, grid, marker];
+    const helpers = [box, wholeBox, gizmoHelper, grid, marker];
     const shown = helpers.map((h) => h.visible);
     for (const h of helpers) h.visible = false;
     if (display === 'edges') syncEdges();
@@ -295,12 +318,14 @@ export function createModelEditor(canvas: HTMLCanvasElement, onChange: (snap: Ed
   gizmo.addEventListener('dragging-changed', (event) => {
     orbit.enabled = view === 'orbit' && !event.value;
     if (event.value) {
-      if (pivotMode) beginPivotDrag();
+      if (wholeSelected) beginWholeDrag();
+      else if (pivotMode) beginPivotDrag();
     } else if (pivotMode) endPivotDrag();
     else readGizmo();
   });
   gizmo.addEventListener('objectChange', () => {
-    if (pivotMode && gizmo.dragging) snapPivot();
+    if (wholeSelected && gizmo.dragging) updateWholeDrag();
+    else if (pivotMode && gizmo.dragging) snapPivot();
     emit();
   });
   const observer = new ResizeObserver(render);
@@ -472,7 +497,78 @@ export function createModelEditor(canvas: HTMLCanvasElement, onChange: (snap: Ed
     render();
   }
 
+  function modelBounds(): THREE.Box3 {
+    root?.updateMatrixWorld(true);
+    const bounds = new THREE.Box3();
+    for (const object of objects.values()) if (object.visible) bounds.expandByObject(object, true);
+    return bounds;
+  }
+  function beginWholeDrag(): void {
+    root?.updateMatrixWorld(true); wholeHandle.updateMatrixWorld(true);
+    wholeStart = { inverse: wholeHandle.matrixWorld.clone().invert(), matrices: new Map() };
+    for (const part of state.parts) {
+      const object = objects.get(part.name);
+      if (object && !part.deleted) wholeStart.matrices.set(part.name, object.matrixWorld.clone());
+    }
+  }
+  function updateWholeDrag(): void {
+    if (!wholeStart) return;
+    // Group scaling is uniform: nonuniform world scaling would shear rotated parts.
+    if (gizmoMode === 'scale') {
+      const axis = gizmo.axis;
+      const scale = axis === 'Y' ? wholeHandle.scale.y : axis === 'Z' ? wholeHandle.scale.z : wholeHandle.scale.x;
+      wholeHandle.scale.setScalar(Math.max(0.001, scale));
+    }
+    wholeHandle.updateMatrixWorld(true);
+    const delta = wholeHandle.matrixWorld.clone().multiply(wholeStart.inverse);
+    for (const [name, matrix] of wholeStart.matrices) {
+      const object = objects.get(name)!;
+      const local = (object.parent?.matrixWorld.clone().invert() ?? new THREE.Matrix4()).multiply(delta).multiply(matrix);
+      local.decompose(object.position, object.quaternion, object.scale);
+      object.updateMatrix();
+    }
+    root?.updateMatrixWorld(true);
+    render();
+  }
+  function finishWholeDrag(): void {
+    if (!wholeStart) return;
+    const next = structuredClone(state);
+    for (const part of next.parts) {
+      if (!wholeStart.matrices.has(part.name)) continue;
+      const object = objects.get(part.name)!;
+      part.position = object.position.toArray() as Vec3;
+      part.rotation = [object.rotation.x * DEG + 0, object.rotation.y * DEG + 0, object.rotation.z * DEG + 0];
+      part.scale = object.scale.toArray() as Vec3;
+    }
+    wholeStart = null;
+    if (JSON.stringify(next) !== JSON.stringify(state)) { apply(next); commit(); }
+    else attach();
+  }
+  function transformWhole(kind: GizmoMode, axis: 0 | 1 | 2, value: number): void {
+    if (!wholeSelected || !root || !Number.isFinite(value) || (kind === 'scale' && value <= 0)) return;
+    beginWholeDrag();
+    if (kind === 'translate') wholeHandle.position.setComponent(axis, wholeHandle.position.getComponent(axis) + value / 100);
+    else if (kind === 'rotate') wholeHandle.rotateOnWorldAxis(new THREE.Vector3().setComponent(axis, 1), value / DEG);
+    else wholeHandle.scale.setScalar(value);
+    const previousMode = gizmoMode;
+    // Values here are already uniform; the gizmo-axis normalization is unnecessary.
+    gizmoMode = kind === 'scale' ? 'translate' : kind;
+    updateWholeDrag(); gizmoMode = previousMode; finishWholeDrag(); emit(); render();
+  }
+  function setSelectionMode(next: SelectionMode): void {
+    if (gizmo.dragging) return;
+    selectionMode = next; selected = null; wholeSelected = next === 'object';
+    pivotMode = false; pivotPicking = false; marker.visible = false; drag = null;
+    gizmo.setMode(gizmoMode); attach(); emit(); render();
+  }
   function attach(): void {
+    if (wholeSelected && root) {
+      const bounds = modelBounds();
+      if (bounds.isEmpty()) { gizmo.detach(); return; }
+      wholeHandle.position.copy(bounds.getCenter(new THREE.Vector3()));
+      wholeHandle.quaternion.identity(); wholeHandle.scale.setScalar(1);
+      wholeHandle.updateMatrixWorld(true); gizmo.attach(wholeHandle); return;
+    }
     const obj = selected ? objects.get(selected) : undefined;
     if (!obj || !obj.visible || pivotPicking) gizmo.detach();
     else if (pivotMode) {
@@ -658,9 +754,12 @@ export function createModelEditor(canvas: HTMLCanvasElement, onChange: (snap: Ed
 
   function commit(): void {
     history = history.slice(0, index + 1);
-    history.push(JSON.stringify(state));
+    history.push({ id: ++historySerial, state: JSON.stringify(state) });
     if (history.length > 200) history.shift();
     index = history.length - 1;
+    for (const [after, entry] of bringHistory) {
+      if (!history.some(h => h.id === after) || !history.some(h => h.id === entry.before)) bringHistory.delete(after);
+    }
     save();
     emit();
   }
@@ -672,7 +771,17 @@ export function createModelEditor(canvas: HTMLCanvasElement, onChange: (snap: Ed
     commit();
   }
 
+  function stepHistory(direction: -1 | 1): void {
+    const next = index + direction;
+    if (next < 0 || next >= history.length) return;
+    const range = clipForHistoryStep(history[index]!.id, history[next]!.id, bringHistory);
+    if (range) { camera.near = range.near; camera.far = range.far; }
+    index = next;
+    apply(JSON.parse(history[index]!.state) as EditState);
+  }
+
   function readGizmo(): void {
+    if (wholeSelected) { finishWholeDrag(); return; }
     if (!selected) return;
     const obj = objects.get(selected);
     if (!obj) return;
@@ -700,8 +809,8 @@ export function createModelEditor(canvas: HTMLCanvasElement, onChange: (snap: Ed
   function save(): void {
     if (!asset || !variant || index < 0) return;
     try {
-      if (index === 0 && history.length === 1) localStorage.removeItem(storageKey());
-      else localStorage.setItem(storageKey(), JSON.stringify(state));
+      if (index === 0 && history.length === 1) appStorage.removeItem(storageKey());
+      else appStorage.setItem(storageKey(), JSON.stringify(state));
     } catch {
       /* storage full or blocked: editing still works */
     }
@@ -741,11 +850,13 @@ export function createModelEditor(canvas: HTMLCanvasElement, onChange: (snap: Ed
     }
     onChange({
       ready: !!root,
+      selectionMode, wholeSelected,
       parts,
       selected: info,
       canUndo: index > 0,
       canRedo: index < history.length - 1,
-      dirty: index >= 0 && history[index] !== history[0],
+      canUndoBring: index > 0 && lastBringId !== null && history[index]!.id === lastBringId,
+      dirty: index >= 0 && history[index]!.state !== history[0]!.state,
       pivotMode,
       pivotPicking,
       pivotSnap: pivotSnapKind,
@@ -797,12 +908,15 @@ export function createModelEditor(canvas: HTMLCanvasElement, onChange: (snap: Ed
     }
     let node: THREE.Object3D | null = hit.object;
     while (node && !targets.includes(node)) node = node.parent;
-    select(node ? node.name : null);
+    if (selectionMode === 'object') { wholeSelected = !!node; selected = null; attach(); emit(); render(); }
+    else select(node ? node.name : null);
   }
   canvas.addEventListener('pointerdown', pointerDown);
   canvas.addEventListener('pointerup', pointerUp);
 
   function select(name: string | null): void {
+    wholeSelected = false;
+    if (name) selectionMode = 'part';
     selected = name && objects.has(name) ? name : null;
     if (!selected) pivotPicking = false;
     attach();
@@ -857,6 +971,8 @@ export function createModelEditor(canvas: HTMLCanvasElement, onChange: (snap: Ed
       baseline?: EditState | null,
     ): Promise<{ restored: boolean; from: 'draft' | 'file' | null }> {
       const token = ++loadToken;
+      lastBringId = null;
+      bringHistory.clear();
       const gltf = await new GLTFLoader().loadAsync(nextVariant.url);
       if (disposed || token !== loadToken) return { restored: false, from: null };
       if (root) {
@@ -888,6 +1004,7 @@ export function createModelEditor(canvas: HTMLCanvasElement, onChange: (snap: Ed
         objects.set(object.name, object);
       }
       selected = null;
+      wholeSelected = selectionMode === 'object';
       pivotPicking = false;
       drag = null;
       let start = initialState();
@@ -897,11 +1014,11 @@ export function createModelEditor(canvas: HTMLCanvasElement, onChange: (snap: Ed
         start = structuredClone(baseline);
         from = 'file';
       }
-      history = [JSON.stringify(start)];
+      history = [{ id: ++historySerial, state: JSON.stringify(start) }];
       index = 0;
       let restored = false;
       try {
-        const saved = localStorage.getItem(storageKey());
+        const saved = appStorage.getItem(storageKey());
         if (saved) {
           const parsed = migrate(JSON.parse(saved) as EditState);
           if (fitsModel(parsed)) {
@@ -934,7 +1051,7 @@ export function createModelEditor(canvas: HTMLCanvasElement, onChange: (snap: Ed
       return true;
     },
 
-    select,
+    select, setSelectionMode, transformWhole,
     setMode(mode: GizmoMode): void {
       gizmoMode = mode;
       if (!pivotMode) gizmo.setMode(mode);
@@ -946,6 +1063,7 @@ export function createModelEditor(canvas: HTMLCanvasElement, onChange: (snap: Ed
      * Rotate / scale are not available in this mode.
      */
     setPivotMode(on: boolean): void {
+      if (wholeSelected && on) return;
       pivotMode = on;
       pivotPicking = false;
       drag = null;
@@ -1017,6 +1135,128 @@ export function createModelEditor(canvas: HTMLCanvasElement, onChange: (snap: Ed
       return snap;
     },
     setView,
+    /** One undoable object edit. The reference camera and all part rotations/pivots stay unchanged. */
+    get bringProblem(): BringProblem | null { return bringProblem; },
+    bringToImage(cam: Cam, image: Box2, points: readonly Vec3[], recoverPlacement = false): { scale: number; changed: boolean } | null {
+      bringProblem = null;
+      if (!root || !asset || !points.length) return null;
+      root.updateMatrixWorld(true);
+      const sourceTransforms = new Map<string, { position: Vec3; scale: Vec3 }>();
+      if (recoverPlacement) {
+        // Explicit recovery only: compute on detached copies first. No draft/history is changed on failure.
+        const recoveredPoints: Vec3[] = [];
+        for (const part of state.parts) {
+          if (part.deleted) continue;
+          const base = bases.get(part.source), object = objects.get(part.name);
+          if (!base || !object || !part.rotation.every(Number.isFinite)) { bringProblem = 'transform'; return null; }
+          const position = shiftedPosition(base.position, part.rotation, base.scale, ZERO, part.pivot ?? ZERO);
+          sourceTransforms.set(part.name, { position, scale: [...base.scale] });
+          if (part.hidden) continue;
+          const copy = object.clone(true);
+          copy.position.fromArray(position); copy.scale.fromArray(base.scale);
+          copy.updateMatrix();
+          const parent = new THREE.Group();
+          parent.matrixAutoUpdate = false;
+          parent.matrix.copy(object.parent?.matrixWorld ?? new THREE.Matrix4());
+          parent.add(copy); parent.updateMatrixWorld(true);
+          copy.traverse(node => {
+            const mesh = node as THREE.Mesh;
+            if (!mesh.isMesh) return;
+            const positions = mesh.geometry.getAttribute('position');
+            if (!positions) return;
+            const point = new THREE.Vector3();
+            for (let i = 0; i < positions.count; i++) {
+              point.fromBufferAttribute(positions, i).applyMatrix4(mesh.matrixWorld);
+              recoveredPoints.push([point.x * 100, -point.z * 100, point.y * 100]);
+            }
+          });
+        }
+        points = recoveredPoints;
+      }
+      bringProblem = placementProblem(cam, points, image);
+      if (bringProblem) return null;
+      if (!recoverPlacement && state.parts.some(part => !part.hidden && !part.deleted && part.scale.every(value => value === 0))) {
+        bringProblem = 'geometry'; return null;
+      }
+      // Fixed source anchor, independent of the damaged draft's position/scale, makes repeat clicks stable.
+      const anchors = asset.ref?.keyPoints?.map(p => p.p) ?? [];
+      const anchor: Vec3 = anchors.length
+        ? [0, 1, 2].map(axis => anchors.reduce((sum, p) => sum + p[axis]!, 0) / anchors.length) as Vec3
+        : [0, 0, 0];
+      const depth = Math.max(10, Math.hypot(...cam.C.map((v, i) => v - anchor[i]!)));
+      const placement = placementInImage(cam, points, image, depth);
+      if (!placement) { bringProblem = 'geometry'; return null; }
+      if (!recoverPlacement && Math.abs(placement.scale - 1) < 1e-10 && Math.hypot(...placement.from.map((v, i) => v - placement.to[i]!)) < 1e-7) {
+        const range = recoveryDepth(cam, points);
+        if (range) { camera.near = range.near; camera.far = range.far; render(); }
+        return { scale: 1, changed: false };
+      }
+      root.updateMatrixWorld(true);
+      const transforms = new Map<string, { position: Vec3; scale: Vec3 }>();
+      // Hidden parts move with their object so showing them later does not split the model apart.
+      // Deleted parts and visibility flags remain untouched.
+      for (const part of state.parts) {
+        if (part.deleted) continue;
+        const object = objects.get(part.name);
+        if (!object) { bringProblem = 'transform'; return null; }
+        const source = sourceTransforms.get(part.name) ?? part;
+        const next = placedPart(source.position, source.scale, object.parent?.matrixWorld ?? new THREE.Matrix4(), placement);
+        if (!next) { bringProblem = 'transform'; return null; } // Validate every part before creating history or applying anything.
+        transforms.set(part.name, next);
+      }
+      const before = history[index]!.id;
+      const beforeClip = { near: camera.near, far: camera.far };
+      const range = recoveryDepth(cam, points.map(p => placedPoint(p, placement)));
+      if (range) { camera.near = range.near; camera.far = range.far; }
+      change(draft => {
+        for (const part of draft.parts) {
+          const next = transforms.get(part.name);
+          if (next) { part.position = next.position; part.scale = next.scale; }
+        }
+      });
+      lastBringId = history[index]!.id;
+      bringHistory.set(lastBringId, { before, beforeClip, afterClip: { near: camera.near, far: camera.far } });
+      emit(); render();
+      return { scale: placement.scale, changed: true };
+    },
+    /** Explicit model undo works even when the ordinary history dock is editing camera guides. */
+    undoBringToImage(): boolean {
+      if (index <= 0 || lastBringId === null || history[index]!.id !== lastBringId) return false;
+      stepHistory(-1);
+      return true;
+    },
+    /** Reveal a centred model that was outside the renderer's default 2 cm–40 m depth range. */
+    recoverMatchDepth(cam: Cam, points: readonly Vec3[]): void {
+      const range = recoveryDepth(cam, points);
+      if (!range) return;
+      camera.near = range.near;
+      camera.far = range.far;
+      render();
+    },
+    /** Reframe the visible model in orbit without moving parts or changing the saved matched camera. */
+    centerModel(): boolean {
+      if (view !== 'orbit' || !root) return false;
+      root.updateMatrixWorld(true);
+      const bounds = new THREE.Box3();
+      for (const object of objects.values()) if (object.visible) bounds.expandByObject(object, true);
+      if (bounds.isEmpty()) return false;
+      const sphere = bounds.getBoundingSphere(new THREE.Sphere());
+      const direction = camera.position.clone().sub(orbit.target).normalize();
+      if (!direction.lengthSq()) direction.set(0, 0, 1);
+      const aspect = (canvas.clientWidth || 1) / (canvas.clientHeight || 1);
+      const vertical = THREE.MathUtils.degToRad(camera.fov) / 2;
+      const horizontal = Math.atan(Math.tan(vertical) * aspect);
+      const radius = Math.max(sphere.radius, 0.001);
+      const distance = radius / Math.sin(Math.min(vertical, horizontal)) * 1.25;
+      orbit.target.copy(sphere.center);
+      camera.position.copy(sphere.center).addScaledVector(direction, distance);
+      camera.near = Math.max(0.0001, (distance - radius) / 100);
+      camera.far = Math.max(40, distance + radius * 10);
+      camera.lookAt(orbit.target);
+      orbit.update();
+      render();
+      return true;
+    },
     /** Camera for mock-up / match views (null = the asset's stored camera) and the visible ref-px window. */
     setMatch(cam: Cam | null, rect: ViewRect | null): void {
       matchCam = cam;
@@ -1108,7 +1348,7 @@ export function createModelEditor(canvas: HTMLCanvasElement, onChange: (snap: Ed
     },
     /** Screen point (canvas px from its top-left) of the selected part's origin = where the gizmo sits; null if none. */
     selectedScreen(): [number, number] | null {
-      const o = selected ? objects.get(selected) : undefined;
+      const o = wholeSelected ? wholeHandle : selected ? objects.get(selected) : undefined;
       if (!o) return null;
       root?.updateMatrixWorld(true);
       const p = new THREE.Vector3().setFromMatrixPosition(o.matrixWorld).project(camera);
@@ -1189,14 +1429,10 @@ export function createModelEditor(canvas: HTMLCanvasElement, onChange: (snap: Ed
       });
     },
     undo(): void {
-      if (index <= 0) return;
-      index -= 1;
-      apply(JSON.parse(history[index]!) as EditState);
+      stepHistory(-1);
     },
     redo(): void {
-      if (index >= history.length - 1) return;
-      index += 1;
-      apply(JSON.parse(history[index]!) as EditState);
+      stepHistory(1);
     },
 
     async exportGlb(): Promise<Blob> {
@@ -1269,6 +1505,8 @@ export function createModelEditor(canvas: HTMLCanvasElement, onChange: (snap: Ed
       window.removeEventListener('keydown', onKeyAlt);
       window.removeEventListener('keyup', onKeyAlt);
       window.removeEventListener('blur', onBlurAlt);
+      wholeBox.geometry.dispose();
+      (wholeBox.material as THREE.Material).dispose();
       marker.geometry.dispose();
       (marker.material as THREE.PointsMaterial).map?.dispose();
       (marker.material as THREE.PointsMaterial).dispose();

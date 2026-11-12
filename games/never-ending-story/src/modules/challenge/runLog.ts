@@ -1,3 +1,4 @@
+import { appStorage } from '../../lib/deployment';
 /**
  * Encrypted-at-rest log of every challenge run, exportable for a future backend import.
  * Local-only history (no export UI); the share URL is the transport — see docs/challenge-links.md. NOTE: the key lives on the client,
@@ -30,20 +31,20 @@ async function sha256(text: string): Promise<string> {
 }
 
 async function getKey(): Promise<{ key: CryptoKey; jwk: JsonWebKey }> {
-  const raw = localStorage.getItem(KEY_KEY);
+  const raw = appStorage.getItem(KEY_KEY);
   if (raw) {
     const jwk = JSON.parse(raw) as JsonWebKey;
     return { jwk, key: await crypto.subtle.importKey('jwk', jwk, { name: 'AES-GCM' }, true, ['encrypt', 'decrypt']) };
   }
   const key = await crypto.subtle.generateKey({ name: 'AES-GCM', length: 256 }, true, ['encrypt', 'decrypt']);
   const jwk = await crypto.subtle.exportKey('jwk', key);
-  localStorage.setItem(KEY_KEY, JSON.stringify(jwk));
+  appStorage.setItem(KEY_KEY, JSON.stringify(jwk));
   return { key, jwk };
 }
 
 function readSealed(): Sealed[] {
   try {
-    const data: unknown = JSON.parse(localStorage.getItem(LOG_KEY) ?? '[]');
+    const data: unknown = JSON.parse(appStorage.getItem(LOG_KEY) ?? '[]');
     return Array.isArray(data) ? (data as Sealed[]) : [];
   } catch {
     return [];
@@ -62,7 +63,7 @@ export async function appendRun(record: RunRecord): Promise<void> {
   const ct = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, new TextEncoder().encode(text));
   const all = readSealed();
   all.push({ iv: b64(iv), ct: b64(ct), sha256: await sha256(text) });
-  localStorage.setItem(LOG_KEY, JSON.stringify(all));
+  appStorage.setItem(LOG_KEY, JSON.stringify(all));
 }
 
 export function runCount(): number {

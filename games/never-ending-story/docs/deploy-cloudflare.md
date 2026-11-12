@@ -20,3 +20,28 @@ Why KV and not Workers Static Assets: the deploy connection's asset-upload JWT f
 4. PUT the worker script (multipart: metadata `{main_module, compatibility_date, bindings:[kv ASSETS_KV, d1 DB]}` + `worker.js`).
 
 A GitHub Action would need a `CLOUDFLARE_API_TOKEN` secret with Workers Scripts/KV/D1 edit on the account (not created).
+
+## Isolated spaces
+
+Deployment spaces use `/<space>/never/`, with `dev` at
+`https://games.itio.space/dev/never/`. Legacy production stays `/never/`.
+Set the Worker plain-text `APP_BASE` binding to `/dev/never` for the dev release;
+omitting it retains `/never`. Each space needs its own Worker, KV namespace, D1
+and admin secret. Do not bind a dev Worker to production resources or copy data.
+
+The Worker injects the base into both HTML entries. Client API calls and local
+save/draft keys use that base; production storage keys remain unchanged. God
+uses a partition-specific cookie name and path. Non-production service workers
+are network-only and do not create or clear caches. This is operational isolation,
+not an origin security boundary: same-host JavaScript can access other paths.
+Use separate origins if untrusted code must be isolated.
+
+Dev resources provisioned for this release:
+- Worker target: `nes-game-dev`
+- KV: `nes-game-dev-assets` (`1f761c42cfb240afb23e5ff941ad3d9e`)
+- D1: `nes-game-dev` (`6a7404ed-8e15-447d-800f-a8eea69af505`)
+- Intended route: `games.itio.space/dev/never/*` (activate only after upload/tests)
+
+This does not implement independently released frontend modules. Build game/God
+as before and upload the resulting artifacts only to the selected space's KV.
+The localhost editor save endpoint is not a hosted authoring backend.

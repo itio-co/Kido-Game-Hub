@@ -1,3 +1,4 @@
+import { appStorage } from './deployment';
 const EGG_KEY = 'nesg.eggs.v1';
 
 export type EggState = {
@@ -15,7 +16,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 export function readEggs(): EggState {
   try {
-    const raw = localStorage.getItem(EGG_KEY);
+    const raw = appStorage.getItem(EGG_KEY);
     if (!raw) return empty();
     const data: unknown = JSON.parse(raw);
     if (!isRecord(data)) return empty();
@@ -29,7 +30,7 @@ export function readEggs(): EggState {
 }
 
 export function writeEggs(state: EggState): void {
-  localStorage.setItem(EGG_KEY, JSON.stringify(state));
+  appStorage.setItem(EGG_KEY, JSON.stringify(state));
 }
 
 /** Returns true when the sticker is newly unlocked this tap. */

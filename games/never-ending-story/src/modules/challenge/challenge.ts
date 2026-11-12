@@ -1,3 +1,4 @@
+import { appStorage } from '../../lib/deployment';
 /** Challenge mode: seeded puzzles, points + time scoring, share links, leaderboard adapter. */
 import { RULESET_SRC, seededPath, withChallenger } from '../minigame-core/framework';
 import { challengeScoring, CHALLENGE_VERSION, type ChallengeScoring } from './ruleset';
@@ -143,7 +144,7 @@ const LB_KEY = 'nesg.challenge.board.v1';
 
 function readAll(): LeaderEntry[] {
   try {
-    const data: unknown = JSON.parse(localStorage.getItem(LB_KEY) ?? '[]');
+    const data: unknown = JSON.parse(appStorage.getItem(LB_KEY) ?? '[]');
     return Array.isArray(data) ? (data as LeaderEntry[]).filter((e) => e && typeof e.score === 'number') : [];
   } catch {
     return [];
@@ -159,7 +160,7 @@ export class LocalLeaderboard implements LeaderboardAdapter {
     if (idx >= 0) {
       if (compare(entry, all[idx]) === 'win') all[idx] = entry;
     } else all.push(entry);
-    localStorage.setItem(LB_KEY, JSON.stringify(all.slice(-300)));
+    appStorage.setItem(LB_KEY, JSON.stringify(all.slice(-300)));
   }
   async top(game: ChallengeGame, difficulty: Difficulty, limit = 10, ruleset = currentRuleset(game)): Promise<LeaderEntry[]> {
     return readAll()
@@ -175,15 +176,15 @@ const RUN_KEY = 'nesg.challenge.run.v1';
 
 export function readRun<T>(): T | null {
   try {
-    const raw = localStorage.getItem(RUN_KEY);
+    const raw = appStorage.getItem(RUN_KEY);
     return raw ? (JSON.parse(raw) as T) : null;
   } catch {
     return null;
   }
 }
 export function writeRun(run: unknown): void {
-  localStorage.setItem(RUN_KEY, JSON.stringify(run));
+  appStorage.setItem(RUN_KEY, JSON.stringify(run));
 }
 export function clearRun(): void {
-  localStorage.removeItem(RUN_KEY);
+  appStorage.removeItem(RUN_KEY);
 }

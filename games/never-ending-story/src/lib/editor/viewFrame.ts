@@ -65,3 +65,32 @@ export function boxOnStage(box: Box2, stage: StageSize, fitScale: number, zoom: 
   const oy = center[1] - stage.h / 2 / k;
   return { x0: (box.x0 - ox) * k, y0: (box.y0 - oy) * k, x1: (box.x1 - ox) * k, y1: (box.y1 - oy) * k };
 }
+
+/** Recover the whole model without changing its transform or the solved camera.
+ * A model crossing/behind the camera cannot be recovered by 2D panning; callers offer the orbit view instead.
+ * Unlike focus, recovery may zoom below 50%, so a very large/off-screen projection is fully visible.
+ */
+export function recoveryWindow(cam: Cam, points: readonly V3[], stage: StageSize, fitScale: number): { box: Box2; zoom: number; center: V2 } | null {
+  if (!points.length || !(fitScale > 0) || !Number.isFinite(fitScale)) return null;
+  if (points.some((point) => {
+    const p = project(cam, point);
+    return !p || !p.every(Number.isFinite);
+  })) return null;
+  const box = projectedBox(cam, points);
+  if (!box) return null;
+  const window = frameWindow(box, stage, fitScale, { pad: 0.25, minZoom: 0 });
+  if (!(window.zoom > 0) || ![window.zoom, ...window.center].every(Number.isFinite)) return null;
+  return { box, ...window };
+}
+
+/** Transient renderer clipping planes in metres. Changing them does not alter the camera match's x/y projection. */
+export function recoveryDepth(cam: Cam, points: readonly V3[]): { near: number; far: number } | null {
+  if (!points.length) return null;
+  let min = Infinity, max = -Infinity;
+  for (const point of points) {
+    const z = cam.R[2].reduce((sum, value, i) => sum + value * (point[i]! - cam.C[i]!), 0) / 100;
+    if (!Number.isFinite(z) || z <= 0) return null;
+    min = Math.min(min, z); max = Math.max(max, z);
+  }
+  return { near: min / 2, far: Math.max(40, max * 2) };
+}

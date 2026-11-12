@@ -1,3 +1,4 @@
+import { appStorage, appBase } from './deployment';
 /**
  * Online sync with the Cloudflare Worker API (games.itio.space/never/api).
  * Everything is best-effort: offline, cross-origin previews or API errors fall back to local data silently.
@@ -17,7 +18,7 @@ type QueuedRun = { token: string; mine: boolean };
 
 const API = (() => {
   try {
-    return new URL('api/', `${location.origin}${location.pathname}`).href;
+    return new URL('api/', `${location.origin}${appBase()}/`).href;
   } catch {
     return '';
   }
@@ -25,13 +26,13 @@ const API = (() => {
 
 function readJson<T>(key: string, fallback: T): T {
   try {
-    const raw = localStorage.getItem(key);
+    const raw = appStorage.getItem(key);
     return raw ? (JSON.parse(raw) as T) : fallback;
   } catch {
     return fallback;
   }
 }
-const writeJson = (key: string, v: unknown) => localStorage.setItem(key, JSON.stringify(v));
+const writeJson = (key: string, v: unknown) => appStorage.setItem(key, JSON.stringify(v));
 const meta = (): Meta => ({ stateRev: 0, homeRev: 0, localAt: 0, dirty: false, ...readJson<Partial<Meta>>(META_KEY, {}) });
 const setMeta = (patch: Partial<Meta>) => writeJson(META_KEY, { ...meta(), ...patch });
 
@@ -39,7 +40,7 @@ async function call(path: string, init: RequestInit = {}, auth = true): Promise<
   if (!API) return null;
   const headers = new Headers(init.headers);
   if (init.body) headers.set('content-type', 'application/json');
-  const token = localStorage.getItem(TOKEN_KEY);
+  const token = appStorage.getItem(TOKEN_KEY);
   if (auth && token) headers.set('authorization', `Bearer ${token}`);
   try {
     const res = await fetch(API + path, { ...init, headers, credentials: 'omit' });
@@ -53,13 +54,13 @@ async function call(path: string, init: RequestInit = {}, auth = true): Promise<
 
 /** Register this device's player once; the server returns a secret token shown only once. */
 export async function ensureToken(): Promise<string | null> {
-  const have = localStorage.getItem(TOKEN_KEY);
+  const have = appStorage.getItem(TOKEN_KEY);
   if (have) return have;
   const me = readPlayerId();
   const res = await call('players/register', { method: 'POST', body: JSON.stringify({ playerId: me.playerId, nickname: me.nickname ?? '' }) }, false);
   if (!res?.ok) return null;
   const data = (await res.json()) as { token?: string };
-  if (data.token) localStorage.setItem(TOKEN_KEY, data.token);
+  if (data.token) appStorage.setItem(TOKEN_KEY, data.token);
   return data.token ?? null;
 }
 
@@ -164,7 +165,7 @@ export async function pushAll(): Promise<void> {
  * (keeps local if the server is empty). Runs before the app mounts; bounded by a timeout.
  */
 export async function pullOnStartup(timeoutMs = 1500): Promise<void> {
-  if (!localStorage.getItem(TOKEN_KEY)) return;
+  if (!appStorage.getItem(TOKEN_KEY)) return;
   const work = (async () => {
     const res = await call('players/me/state');
     if (!res?.ok) return;
