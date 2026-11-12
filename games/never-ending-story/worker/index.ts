@@ -286,11 +286,13 @@ async function asset(req: Request, env: Env, path: string): Promise<Response> {
   }
   if (!hit.value) return new Response('Not found', { status: 404 });
   const etag = `"${hit.metadata?.h ?? ''}"`;
-  const immutable = key.startsWith('/assets/');
+  const moduleChunk = /^\/modules\/[a-z0-9-]+\/\d+\.\d+\.\d+\/[a-f0-9]+\.js$/.test(key);
+  const manifest = key === '/modules/manifest.json';
+  const immutable = key.startsWith('/assets/') || moduleChunk;
   const headers = {
     'content-type': hit.metadata?.ct ?? 'application/octet-stream',
     etag,
-    'cache-control': immutable ? 'public, max-age=31536000, immutable' : key.endsWith('.html') || key.endsWith('sw.js') ? 'no-cache' : 'public, max-age=3600',
+    'cache-control': manifest || key.endsWith('.html') || key.endsWith('sw.js') ? 'no-cache' : immutable ? 'public, max-age=31536000, immutable' : 'public, max-age=3600',
     'x-content-type-options': 'nosniff',
   };
   if (req.headers.get('if-none-match') === etag) return new Response(null, { status: 304, headers });
@@ -298,7 +300,7 @@ async function asset(req: Request, env: Env, path: string): Promise<Response> {
 }
 
 function injectBase(html: string, base: string): string {
-  return html.replace('<head>', `<head><meta name="nes-app-base" content="${base}">`);
+  return html.replace('<head>', `<head><meta name="nes-app-base" content="${base}"><base href="${base}/">`);
 }
 
 export default {
@@ -332,7 +334,7 @@ export default {
       const res = await asset(req, env, path);
       if (res.status === 200 && res.headers.get('content-type')?.includes('text/html')) {
         const headers = new Headers(res.headers); headers.delete('etag');
-        return new Response(req.method === 'HEAD' ? null : injectBase(await res.text(), BASE).replace('<head>', `<head><base href="${BASE}/">`), { headers });
+        return new Response(req.method === 'HEAD' ? null : injectBase(await res.text(), BASE), { headers });
       }
       return res;
     } catch {

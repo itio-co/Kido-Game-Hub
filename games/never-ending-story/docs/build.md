@@ -44,15 +44,28 @@ build tools. Browser and live deployment verification are separate from `verify`
 ## What "module build" means now
 
 `src/modules/*/module.json` defines versioned source boundaries and public entries.
-Vite builds the application as a multi-entry release. God displays the generated
-module registry and GDDs. Neither the registry nor a separate chunk is an
-independently deployable module. There is intentionally no `deploy-module` target.
+`npm run build` / `make build` still builds the game and God together. It also
+emits two pilot chunks and a manifest:
 
-Cloudflare serves the current app through `nes-game` with KV and D1. See
-[deploy-cloudflare.md](deploy-cloudflare.md) for the current protocol. The existing
-`scripts/cloudflare/mk.mjs` contains a machine-specific path; it must be made
-portable and validated before automated packaging is added. The Makefile does not
-call those historical upload-generation scripts or perform migrations.
+- `dist/modules/rhythm/<version>/<hash>.js`
+- `dist/modules/stirfry/<version>/<hash>.js`
+- `dist/modules/manifest.json` — module id, `current` version, chunk URL, and `retained` versions this build knows about
+- `dist/modules/runtime/svelte*.js` plus an import map in `index.html` and `god.html`, so those chunks share one Svelte runtime with the page
+
+The core bundle does not statically import `rhythm` or `stirfry`. It loads them with `import()` through the manifest. A share link that pins a version loads that retained file when the manifest lists it. If the file is absent, the page uses the code bundled in this build and the ruleset entry for the pinned version.
+
+`pilot-manifest.json` records a source hash for each published pilot version. The hash covers that module's code and ruleset (the `version` field in `module.json` is ignored) and the files those sources import, except the app `package.json` and `src/locales`, which are not module content. `make check` fails in two cases:
+
+- the source hash no longer matches the hash recorded for the current version (content changed, version was not bumped)
+- the version was bumped but the source hash is the same as an older version (no content change)
+
+A matching hash is not a new version. The build does not rebuild that chunk when the recorded file is already present, and it does not put the module in `dist/module-deploy`. That deploy package contains only a module whose current version has a different source hash from the previous retained version. `make deploy-modules` uploads that package only. Unchanged modules stay out of it.
+
+`build.json` is the app build number. `npm run build` adds one before compiling, and `make deploy-modules APPLY=1` or `make rollback-module APPLY=1` adds one more. The number only goes up. Module versions do not. The running app shows it as `0.6.16 (build 12)` on the version badge, in settings, and on the God dashboard and Modules page. `pilot-manifest.json` records `firstBuild` on each module version: the app build that first shipped that version. Later builds leave `firstBuild` alone.
+
+`make deploy-modules` and `make rollback-module` only print a plan unless `APPLY=1`. They never delete KV keys. The Worker and the rest of the site still deploy the way they do today. See [deploy-cloudflare.md](deploy-cloudflare.md).
+
+Other modules stay inside the core bundle. Editor modules are not independently deployed.
 
 ## Intended next stage (not implemented by this Makefile)
 

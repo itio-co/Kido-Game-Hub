@@ -1,8 +1,8 @@
 <script lang="ts">
-  import { version } from '../../package.json';
+  import { appVersionLabel } from '../lib/appVersion';
 </script>
 
-<p class="ver">v{version}</p>
+<p class="ver" data-testid="app-version">{appVersionLabel()}</p>
 
 <style>
   /* Sit under the HUD on the left — never overlaps the settings gear (top-right). */

@@ -47,6 +47,8 @@
 ## 11. Dependencies + เวอร์ชัน
 rhythm ^1.1.0, minigame-core ^1.0.0, core >=0.6.12
 
+แพ็กนี้เป็น pilot คู่กับ rhythm `make build` เขียน `dist/modules/stirfry/<เวอร์ชัน>/<hash>.js` หน้าเกมโหลดผ่าน manifest ไม่ใช่ import คงที่จาก core ลิงก์แชร์ที่ปัก `stirfry@` เวอร์ชันที่ manifest ยังเก็บไว้จะได้ chunk นั้น ถ้าไม่มีจะเล่นด้วยโค้ดปัจจุบันและกติกาเวอร์ชันนั้นใน `ruleset.json` ปุ่มแผนผังบ้านของคดีไม่เกี่ยวกับ chunk นี้
+
 ## 12. คำถามที่ยังเปิดอยู่ / Backlog
 - **[backlog]** หลายเมนู (ภาพวัตถุดิบต่างกัน)
 - **[backlog]** เสียงฉ่า

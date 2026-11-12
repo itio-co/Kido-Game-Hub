@@ -79,6 +79,7 @@ A **mechanism** (`kind: "engine"`) owns the rules: timing, judging, combo, scori
 Gameplay params (chart generation, timing windows, scoring, pack thresholds) live in `src/modules/<id>/ruleset.json`, one entry per module version that must stay playable. `ruleset.ts` next to it is a public entry.
 
 - A share link carries every module that affects the run, in a path segment: `rhythm@1.1.0+stirfry@1.2.0` (canonical form sorts ids). Puzzle links look like `#/challenge/cross/medium/482913/challenge@1.1.0+crossword@1.0.0`.
+- `rhythm` and `stirfry` are the pilot for versioned chunks. `make build` writes `dist/modules/<id>/<version>/<hash>.js` and `dist/modules/manifest.json`. The game loads the chunk named in the manifest. A pinned version that is not in `retained` keeps using this build's code plus that version's `ruleset.json` entry. Other modules stay inside the core bundle.
 - A link with no segment is the **v0.6.10 ruleset** (`src/lib/ruleset-games.json` → `legacy`). Today that matches the current params, so old links and new shares land on the same board.
 - Changing a gameplay param means: bump that module's version, add a `ruleset.json` entry for the new version, leave the old entry in place. `npm run check:modules` fails if the current version is missing, or if a legacy pin is missing.
 - An unknown version shows a localized notice and a button to play the current ruleset instead.

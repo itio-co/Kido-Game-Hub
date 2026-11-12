@@ -1,0 +1,29 @@
+{
+  "format": 1,
+  "modules": {
+    "rhythm": {
+      "current": "1.1.1",
+      "retained": ["1.1.1"],
+      "versions": {
+        "1.1.1": {
+          "sourceHash": "3adc4dad607107e05cab378c96a7ab8cf85df4341d9c2bfffaa56fa117da25ea",
+          "firstBuild": 1,
+          "file": "modules/rhythm/1.1.1/1f6517f2577bf7ce.js",
+          "hash": "1f6517f2577bf7ce"
+        }
+      }
+    },
+    "stirfry": {
+      "current": "1.2.0",
+      "retained": ["1.2.0"],
+      "versions": {
+        "1.2.0": {
+          "sourceHash": "76c66f761a55173b643d578f1bfdbbb999cf0023bb57f927c8b23a84090576de",
+          "firstBuild": 1,
+          "file": "modules/stirfry/1.2.0/3b4234583740aea2.js",
+          "hash": "3b4234583740aea2"
+        }
+      }
+    }
+  }
+}

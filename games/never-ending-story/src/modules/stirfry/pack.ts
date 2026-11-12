@@ -1,5 +1,6 @@
+import { appStorage } from '../../lib/deployment';
 import { imageUrl } from '../../lib/imageUrl';
-import { readRun, type RhythmPack } from '../rhythm';
+import type { RhythmPack } from '../rhythm';
 import { STIRFRY_RULESETS, STIRFRY_VERSION, type StirfryRuleset } from './ruleset';
 import WokStage from './WokStage.svelte';
 
@@ -35,4 +36,11 @@ export const stirfryPack: RhythmPack = {
   Stage: WokStage,
 };
 
-export const readStirFry = () => readRun(STORAGE_KEY);
+export function readStirFry(): { bestScore: number; bestStars: number } {
+  try {
+    const data = JSON.parse(appStorage.getItem(STORAGE_KEY) ?? 'null') as { bestScore?: number; bestStars?: number } | null;
+    return { bestScore: Number(data?.bestScore) || 0, bestStars: Number(data?.bestStars) || 0 };
+  } catch {
+    return { bestScore: 0, bestStars: 0 };
+  }
+}

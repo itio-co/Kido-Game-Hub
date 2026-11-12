@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { appVersionLabel } from '../lib/appVersion';
   import { t } from '../lib/i18n';
   import type { TextSize } from '../lib/types';
 
@@ -28,6 +29,7 @@
 <div class="scrim" onclick={onClose} role="presentation">
   <dialog class="sheet" aria-label="ตั้งค่า" open onclick={(event) => event.stopPropagation()}>
     <h2>ตั้งค่า</h2>
+    <p data-testid="settings-version">{appVersionLabel()}</p>
     <p>ขนาดตัวอักษร</p>
     <div class="row">
       {#each sizes as size (size.id)}

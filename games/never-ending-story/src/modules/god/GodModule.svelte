@@ -1,5 +1,6 @@
 <script lang="ts">
   /** Sub-page for one game/module: overview, mechanism/pack, rulesets, stats, leaderboard, recent runs, config, GDD. */
+  import { onMount } from 'svelte';
   import { t } from '../../lib/i18n';
   import { imageUrl } from '../../lib/imageUrl';
   import { CHARACTERS } from '../character';
@@ -24,6 +25,7 @@
   let rulesetFilter = $state('all');
   let rows = $state<Row[] | null>(null);
   let missing = $state(false);
+  let liveVersion = $state('');
 
   const packOf = (m: Row | undefined) => (m?.pack ?? m?.edition ?? null) as Row | null;
   const mod = $derived<Row | undefined>(reg?.modules?.find((m: Row) => m.id === id));
@@ -37,6 +39,15 @@
   const modName = (mid: string) => reg?.modules?.find((m: Row) => m.id === mid)?.name ?? mid;
   const diffName = (d: string) => (d === 'normal' ? t('god.games.normal') : t(`challenge.diff.${d}`));
   const galleryKind = $derived(mod?.kind === 'character' || mod?.kind === 'cutscene');
+  onMount(() => {
+    fetch(new URL('modules/manifest.json', document.baseURI).href, { cache: 'no-store' })
+      .then(async (res) => {
+        if (!res.ok) return;
+        const body = await res.json() as { modules?: Record<string, { current?: string }> };
+        liveVersion = body.modules?.[id]?.current ?? '';
+      })
+      .catch(() => {});
+  });
   async function copyText(text: string): Promise<void> {
     try {
       await navigator.clipboard.writeText(text);
@@ -93,7 +104,8 @@
 
   {#if tab === 'overview'}
     <div class="cards">
-      <div class="card"><small>{t('god.mod.version')}</small><strong class="sm">v{mod.version}</strong></div>
+      <div class="card"><small>{t('god.mod.bundled')}</small><strong class="sm">v{mod.version}</strong></div>
+      <div class="card"><small>{t('god.mod.live')}</small><strong class="sm">{liveVersion ? `v${liveVersion}` : '–'}</strong></div>
       <div class="card"><small>{t('god.mod.size')}</small><strong class="sm">{(mod.size / 1024).toFixed(1)} KB · {mod.files} {t('god.mod.files')}</strong></div>
       <div class="card"><small>{t('god.mod.hash')}</small><strong class="sm"><code>{mod.hash}</code></strong></div>
       <div class="card"><small>{t('god.mod.commit')}</small><strong class="sm">{mod.lastCommit ? `${mod.lastCommit.sha.slice(0, 7)} · ${fmtDate(Date.parse(mod.lastCommit.date))}` : '–'}</strong></div>

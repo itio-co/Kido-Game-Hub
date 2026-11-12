@@ -3,7 +3,7 @@
 | ฟิลด์ | ค่า |
 |---|---|
 | kind | admin |
-| เวอร์ชัน | 1.1.0 |
+| เวอร์ชัน | 1.2.0 |
 | เทมเพลต | `docs/gdd/TEMPLATE.md` |
 | อ้างอิง | `docs/modules.md` |
 
@@ -42,7 +42,7 @@
 - `#/players` และ `#/players/<id>`
 - `#/games` และ `#/games/<moduleId>`: ภาพรวม, กระดาน, GDD, ตารางกติกา (runs / players)
 - `#/events` กรวยคดี
-- `#/modules` จัดกลุ่มตาม kind รวม `admin` และ `pack`
+- `#/modules` จัดกลุ่มตาม kind รวม `admin` และ `pack` คอลัมน์ในชุดนี้คือเวอร์ชันซอร์สของ build คอลัมน์ที่ขึ้นจริงอ่าน `modules/manifest.json` (rhythm กับ stirfry) ถ้ายังไม่มีไฟล์นี้แสดง –
 
 ## 10. Data & telemetry (ฟิลด์บนเซิร์ฟเวอร์)
 `server.ts` ตอบใต้ `/never/api/god` (auth เดิม):
@@ -66,6 +66,7 @@ core >=0.6.11 (`i18n`, catalog กติกา) Worker (`worker/index.ts`) เ�
 ## 13. Changelog (ผูกกับเวอร์ชันโมดูล)
 | เวอร์ชัน | แอป | การเปลี่ยนแปลง |
 |---|---|---|
+| 1.2.0 | 0.6.16 | หน้าโมดูลแยกเวอร์ชันในชุดนี้กับเวอร์ชันที่ manifest ชี้ (ที่ขึ้นจริง) สำหรับ rhythm และ stirfry |
 | 1.1.0 | 0.6.13 | แท็บคลังของโมดูล character และ cutscene |
 | 1.0.0 | 0.6.11 | ย้ายออกจาก core, kind `admin`, แสดงกติกาและจำนวนรอบต่อเวอร์ชัน |
 

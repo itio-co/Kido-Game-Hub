@@ -7,7 +7,7 @@
   import { endingIdFor, primaryEventId } from './story';
   import { t } from '../../lib/i18n';
   import { readEggs } from '../../lib/eggs';
-  import { readStirFry } from '../stirfry';
+  import { appStorage } from '../../lib/deployment';
   import { portraitFile } from '../character';
   import { artworkFile } from '../cutscene';
   import ComicPanel from './ComicPanel.svelte';
@@ -21,6 +21,14 @@
   const endingPages = $derived(session.flow?.pages.filter((item) => item.eventId === endingIdFor(storyId)) ?? []);
   const pages = $derived(session.screen === 'ending-comic' ? endingPages : introPages);
   const cut = $derived(pages[session.page] ?? null);
+  function readStirBest(): { bestScore: number; bestStars: number } {
+    try {
+      const data = JSON.parse(appStorage.getItem('nesg.stirfry.v1') ?? 'null') as { bestScore?: number; bestStars?: number } | null;
+      return { bestScore: Number(data?.bestScore) || 0, bestStars: Number(data?.bestStars) || 0 };
+    } catch {
+      return { bestScore: 0, bestStars: 0 };
+    }
+  }
   function loc(value: string): string {
     if (value && value.includes('.') && !value.includes(' ')) return t(value);
     return value;
@@ -144,7 +152,7 @@
       {/each}
     </div>
   {:else if session.screen === 'practice'}
-    {@const stirBest = readStirFry()}
+    {@const stirBest = readStirBest()}
     {@const unlockedCount = (session.flow?.practice ?? []).filter((game) => game.game === 'stirfry' || (!game.future && session.played.includes(game.slug))).length}
     {@const totalCount = session.flow?.practice.length ?? 0}
     <div class="pgrid">

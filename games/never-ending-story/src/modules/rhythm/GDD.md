@@ -66,6 +66,8 @@ intro (เลือกระดับ, ชาร์ต #seed, สุ่มชา
 ## 11. Dependencies + เวอร์ชัน
 minigame-core ^1.0.0 (เฟสจบรอบ, ลิงก์, `submitFinishedRun`, ป้ายกติกา), core >=0.6.12
 
+`make build` เขียน chunk `dist/modules/rhythm/<เวอร์ชัน>/<hash>.js` และบันทึกใน `modules/manifest.json` core โหลดไฟล์นี้แบบ dynamic ลิงก์ที่ปักเวอร์ชันเก่าจะโหลด chunk ที่ยังอยู่ใน `retained` ถ้าไม่มีไฟล์นั้นจะใช้โค้ดชุดปัจจุบันคู่กับค่าใน `ruleset.json` ของเวอร์ชันนั้น `make deploy-modules` อัปโหลดเฉพาะเวอร์ชันที่ KV ยังไม่มี และไม่ลบของเก่า
+
 ## 12. คำถามที่ยังเปิดอยู่ / Backlog
 - **[backlog]** เซิร์ฟเวอร์ replay ชาร์ตจาก seed เพื่อตรวจคะแนนสูงสุดที่เป็นไปได้
 - **[backlog]** คะแนนดีสุดแยกตามระดับในเครื่อง

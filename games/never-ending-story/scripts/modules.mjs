@@ -5,6 +5,7 @@ import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { checkPilotManifest } from './pilotDrift.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const MODULES = path.join(ROOT, 'src/modules');
@@ -25,6 +26,7 @@ function ownerOf(file) {
   return rel.startsWith('..') ? 'core' : rel.split(path.sep)[0];
 }
 
+const PILOT = new Set(['rhythm', 'stirfry']);
 const SEMVER_KEY = /^(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)$/;
 const RULESET_KINDS = new Set(['engine', 'pack', 'minigame']);
 /** `edition` is the pre-0.6.11 name of `pack`. Readers accept both. */
@@ -65,11 +67,16 @@ export function checkBoundaries(mods = readManifests()) {
   for (const file of files) {
     const text = fs.readFileSync(file, 'utf8');
     for (const m of text.matchAll(re)) {
-      const target = resolveImport(file, m[1] ?? m[2]);
+      const spec = m[1] ?? m[2];
+      const target = resolveImport(file, spec);
       if (!target) continue;
       const from = ownerOf(file);
       const to = ownerOf(target);
-      if (to === 'core' || to === from) continue;
+      const dataFile = path.basename(target) === 'module.json' || path.basename(target) === 'ruleset.json';
+      if (from === 'core' && PILOT.has(to) && m[1] && !/^\s*import\s+type\b/.test(m[0]) && !dataFile) {
+        errors.push(`${path.relative(ROOT, file)} statically imports ${spec} (pilot module "${to}" must be loaded with import())`);
+      }
+      if (to === 'core' || to === from || (PILOT.has(to) && dataFile)) continue;
       const mod = byId[to];
       const publicFiles = (mod?.publicEntries ?? [mod?.entry]).map((e) => path.join(ROOT, e));
       if (!publicFiles.includes(target)) {
@@ -162,6 +169,7 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.a
     for (const [game, ids] of Object.entries(gamesDoc.games ?? {})) {
       for (const id of ids) if (!reg.modules.some((m) => m.id === id)) errors.push(`game "${game}" lists unknown ruleset module ${id}`);
     }
+    errors.push(...checkPilotManifest(ROOT));
     if (errors.length) { console.error(errors.join('\n')); process.exit(1); }
     console.log(`modules ok: ${reg.modules.map((m) => `${m.id}@${m.version}`).join(', ')}`);
   } else if (cmd === 'registry') {
