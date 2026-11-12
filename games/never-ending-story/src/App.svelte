@@ -284,10 +284,10 @@
       </svg>
     </button>
 
-    {#if session.showCaseUi || (session.context === 'event' && session.scene?.map)}
+    {#if session.showCaseUi || (session.context === 'event' && session.scene?.map && session.mapUnlocked)}
       <div class="bottom-actions">
-        {#if session.context === 'event' && session.scene?.map}
-          <button type="button" class="case mapbtn" data-testid="house-map-btn" onclick={() => session.go('house-map')}>
+        {#if session.context === 'event' && session.scene?.map && session.mapUnlocked}
+          <button type="button" class="case mapbtn" class:fresh={session.mapUnlockPulse} data-testid="house-map-btn" onclick={() => session.go('house-map')}>
             {t('hud.houseMap')}
           </button>
         {/if}
@@ -357,6 +357,12 @@
     align-items: flex-end;
   }
   .bottom-actions .case { position: static; }
+  .mapbtn.fresh { animation: map-unlock 0.7s ease; }
+  @keyframes map-unlock {
+    0% { transform: scale(0.86); box-shadow: 0 0 0 0 var(--cyan); }
+    45% { transform: scale(1.08); box-shadow: 0 0 0 6px transparent; }
+    100% { transform: scale(1); }
+  }
   .flow-sub {
     position: absolute;
     z-index: 5;

@@ -29,6 +29,8 @@
   "toast.posterTaken": "Poster kept — show it to Grandma",
   "toast.caseComplete": "Event complete — home again. Tap an empty slot to place Grandpa's photo",
   "toast.eggFound": "Secret young-Grandpa sticker found!",
+  "toast.mapUnlocked": "House map unlocked",
+  "toast.mapLocked": "Finish the house-plan puzzle first",
   "egg.revealTitle": "Secret sticker",
   "egg.revealBody": "A young-Grandpa sticker was stuck on the fan blade — Grandma hid it for sure",
   "egg.close": "Keep sticker",

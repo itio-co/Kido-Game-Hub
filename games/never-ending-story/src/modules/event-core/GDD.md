@@ -3,7 +3,7 @@
 | ฟิลด์ | ค่า |
 |---|---|
 | kind | event-core |
-| เวอร์ชัน | 1.1.0 |
+| เวอร์ชัน | 1.2.0 |
 | เทมเพลต | `docs/gdd/TEMPLATE.md` |
 | อ้างอิง | `docs/design/story-pack-format-th.md` |
 
@@ -24,10 +24,11 @@
 - โค้ดเฟรมเวิร์กไม่ฝังบทคดี ข้อความที่ยังฝังใน `FlowView` / `Minigames` เป็นสำเนาเดิมของ UI ก่อนแยกโมดูล
 - เหตุการณ์แรกในข้อมูลปัจจุบันคือ `case-01` ฉากจบ `case-01-ending` เหมือนเดิม
 - สมุดคดีโชว์เมื่อ `showCaseUi` (context เป็น event และไม่ใช่โหมดฝึก)
+- ปุ่มแผนผังบ้านโชว์เมื่อฉากมี `map` และปลดล็อกแล้ว ถ้ามินิเกม jigsaw ในแพ็กตั้ง `unlocksHouseMap` เป็นรหัสหลักฐาน ปุ่มถูกซ่อนจนกว่าเซฟจะมีรหัสนั้น ชนะจิ๊กซอว์ครั้งแรกแล้วขึ้นข้อความสั้น ๆ เซฟเก่าที่มีหลักฐานนั้นอยู่แล้วถือว่าปลดล็อก (เขียน `mapUnlocked` ตอนเปิดเกม) แพ็กที่ไม่ตั้งค่านี้ปุ่มยังโชว์เหมือนเดิม
 - `playMode` คืน practice / story / challenge ตาม context ไม่เปลี่ยนเส้นทางหน้าจอ
 
 ## 5. Input / การควบคุม
-แตะฮอตสปอต เลือกบทพูด พลิกหน้าการ์ตูน ปุ่มย้อน สมุดคดี ด่านฝึก บนจอแนวตั้ง
+แตะฮอตสปอต เลือกบทพูด พลิกหน้าการ์ตูน ปุ่มย้อน สมุดคดี ปุ่มแผนผังบ้าน (หลังปลดล็อก) ด่านฝึก บนจอแนวตั้ง
 
 ## 6. คะแนนและความยาก
 มินิเกมในคดีใช้ดาวจากจำนวนคำใบ้ (`starCount`) ไม่ส่งกระดานออนไลน์ ระดับความยากเลือกในฉาก difficulty ของแพ็ก
@@ -42,7 +43,7 @@ story pack JSON รูปใน `public/img/` แพ็ก event-01 กำหน
 `FlowView` รวมแผนผังบ้าน ห้อง สมุดคดี กระดานคดี ฉากจบ และ `Minigames` (crossword, jigsaw, slide)
 
 ## 10. Data & telemetry (ฟิลด์บนเซิร์ฟเวอร์)
-`eventProgressBody` ให้ `{ status, progress: { evidence, solved, deduced, reward, posterShown, endingSeen, seen } }` เหมือนเดิม ตาราง `player_events` ไม่เปลี่ยน
+`eventProgressBody` ให้ `{ status, progress: { evidence, solved, deduced, reward, posterShown, endingSeen, seen, mapUnlocked } }` ตาราง `player_events` ไม่เปลี่ยน `mapUnlocked` เป็นจริงเมื่อเซฟมีหลักฐานที่จิ๊กซอว์ใช้ปลดปุ่ม
 
 ## 11. Dependencies + เวอร์ชัน
 core >=0.6.12, minigame-core ^1.0.0, crossword, jigsaw, slide ^1.0.0, stirfry ^1.1.0 (สมุดคดีอ่านสถิติผัด)
@@ -54,5 +55,6 @@ core >=0.6.12, minigame-core ^1.0.0, crossword, jigsaw, slide ^1.0.0, stirfry ^1
 ## 13. Changelog (ผูกกับเวอร์ชันโมดูล)
 | เวอร์ชัน | แอป | การเปลี่ยนแปลง |
 |---|---|---|
+| 1.2.0 | 0.6.15 | ปุ่มแผนผังบ้านถูกซ่อนจนกว่าจะชนะจิ๊กซอว์ที่ตั้ง `unlocksHouseMap` เซฟเก่าที่มีหลักฐานนั้นปลดล็อกให้ และส่ง `mapUnlocked` ในเอกสารความคืบหน้า |
 | 1.1.0 | 0.6.13 | แผนผังบ้านและสติกเกอร์ตาอ้างผ่าน cutscene กับ character ไฟล์เดิม |
 | 1.0.0 | 0.6.12 | ย้าย flow engine, ฉาก, สมุดคดี และเอกสาร D1 ออกจาก core |

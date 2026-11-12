@@ -166,6 +166,8 @@ export type MiniGame = Identity & {
   kind: 'minigame';
   game: 'crossword' | 'jigsaw' | 'slide';
   hud: string;
+  /** Evidence code granted by winning this jigsaw. While it is missing, the house-map button stays hidden. */
+  unlocksHouseMap?: string;
 };
 
 export type CaseFlow = Identity & {
