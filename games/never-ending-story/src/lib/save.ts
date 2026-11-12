@@ -99,6 +99,7 @@ export function readSave(): SaveV1 {
         },
         poster: flow.poster === true,
         caseDone: flow.caseDone === true,
+        mapUnlocked: flow.mapUnlocked === true,
         nav: isRecord(flow.nav)
           ? {
               screen: typeof flow.nav.screen === 'string' ? flow.nav.screen : 'player-room',

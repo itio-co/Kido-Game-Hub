@@ -26,6 +26,7 @@ import type {
 } from './types';
 import type { NavContext } from '../../lib/types';
 import { t } from '../../lib/i18n';
+import { houseMapGate, houseMapUnlocked } from './progress';
 import { tapFanEgg } from '../../lib/eggs';
 import { endingIdFor, primaryEventId } from './story';
 import { playModeFromContext, type PlayMode } from '../minigame-core/framework';
@@ -95,6 +96,12 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
   let marks = $state<number[]>([0, 0, 0]);
   let toastTimer = 0;
   let hintTimer = 0;
+  let mapPulseTimer = 0;
+  let mapUnlockPulse = $state(false);
+
+  function mapIsUnlocked(): boolean {
+    return houseMapUnlocked(flow, evidence);
+  }
 
   function use(nextFlow: CaseFlow, nextRegistry: ScreenRegistry, saved: FlowProgress | null): void {
     flow = nextFlow;
@@ -161,6 +168,8 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
         }
       }
     }
+    // Older saves won the jigsaw (evidence) before the button flag existed. Write it once so sync matches.
+    if (houseMapGate(flow) && mapIsUnlocked() && saved?.mapUnlocked !== true) persist();
   }
 
   const scene = $derived(flow?.scenes.find((item) => item.screen === screen) ?? null);
@@ -179,6 +188,7 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
       levels: { cross: [...levels.cross], jig: [...levels.jig], slide: [...levels.slide] },
       poster,
       caseDone,
+      mapUnlocked: houseMapGate(flow) ? mapIsUnlocked() : undefined,
       nav: {
         screen,
         history: [...history],
@@ -284,6 +294,10 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
         await wait(50);
         guard += 1;
       }
+    }
+    if (next === 'house-map' && !mapIsUnlocked() && !caseDone) {
+      showToast(t('toast.mapLocked'));
+      return;
     }
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     fading = true;
@@ -590,6 +604,8 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
     get reward() { return reward; },
     get poster() { return poster; },
     get caseDone() { return caseDone; },
+    get mapUnlocked() { return mapIsUnlocked(); },
+    get mapUnlockPulse() { return mapUnlockPulse; },
     get eggReveal() { return eggReveal; },
     get difficulty() { return difficulty; },
     get played() { return played; },
@@ -819,7 +835,15 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
     async finishJigsaw() {
       if (practice) { await finishPracticeLevel(); return; }
       jig = { placed: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11], sel: null };
-      addEvidence('E04');
+      const gate = houseMapGate(flow);
+      const firstUnlock = gate !== null && !has(gate);
+      addEvidence(gate ?? 'E04');
+      if (firstUnlock) {
+        showToast(t('toast.mapUnlocked'));
+        mapUnlockPulse = true;
+        window.clearTimeout(mapPulseTimer);
+        mapPulseTimer = window.setTimeout(() => { mapUnlockPulse = false; }, 2600);
+      }
       history = history.slice(0, -1);
       await go('tray', true, false);
       openDialogue('flow/dialogue/map-clue');
