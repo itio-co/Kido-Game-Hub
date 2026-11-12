@@ -9,6 +9,9 @@
     onSound,
     onClose,
     onReplayPrologue,
+    showGod = false,
+    godOn = false,
+    onGodToggle,
   }: {
     textSize: TextSize;
     soundEnabled: boolean;
@@ -16,6 +19,10 @@
     onSound: (enabled: boolean) => void;
     onClose: () => void;
     onReplayPrologue?: () => void;
+    /** Shown only when this device already has a God admin session. */
+    showGod?: boolean;
+    godOn?: boolean;
+    onGodToggle?: () => void;
   } = $props();
 
   const sizes: { id: TextSize; label: string }[] = [
@@ -26,8 +33,20 @@
 </script>
 
 <div class="scrim" onclick={onClose} role="presentation">
-  <dialog class="sheet" aria-label="ตั้งค่า" open onclick={(event) => event.stopPropagation()}>
-    <h2>ตั้งค่า</h2>
+  <dialog class="sheet" aria-label={t('settings.title')} open onclick={(event) => event.stopPropagation()}>
+    <header class="head">
+      <h2>{t('settings.title')}</h2>
+      {#if showGod}
+        <button
+          type="button"
+          class="god"
+          class:on={godOn}
+          data-testid="god-mode-toggle"
+          aria-pressed={godOn}
+          onclick={onGodToggle}
+        >{t('god.float.toggle')}</button>
+      {/if}
+    </header>
     <p>ขนาดตัวอักษร</p>
     <div class="row">
       {#each sizes as size (size.id)}
@@ -61,3 +80,20 @@
     <button type="button" class="close" onclick={onClose}>ปิด</button>
   </dialog>
 </div>
+
+<style>
+  .head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 0 0 8px; }
+  .head h2 { margin: 0; }
+  .god {
+    margin-left: auto;
+    min-height: 36px;
+    border-radius: 999px;
+    border: 1px solid var(--cyan);
+    background: #123246;
+    color: #eaf6ff;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    padding: 6px 12px;
+  }
+  .god.on { background: #ffcf4a; color: #3a2a00; }
+</style>

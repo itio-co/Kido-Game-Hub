@@ -3,7 +3,7 @@
 | ฟิลด์ | ค่า |
 |---|---|
 | kind | core |
-| เวอร์ชัน | app (ตาม `package.json`, ตอนนี้ 0.6.16) |
+| เวอร์ชัน | app (ตาม `package.json`, ตอนนี้ 0.6.17) |
 | เทมเพลต | `docs/gdd/TEMPLATE.md` |
 | อ้างอิง | `docs/design/never-ending-story-game-spec-v0.4-th.md` |
 
@@ -54,6 +54,7 @@ D1: `players`, `player_state`, `player_events`, `player_home`, `runs` (มีค
 ## 13. Changelog (ผูกกับเวอร์ชันโมดูล)
 | เวอร์ชัน | แอป | การเปลี่ยนแปลง |
 |---|---|---|
+| 0.6.17 | 0.6.17 | ปุ่ม GOD ในตั้งค่าและไอคอนลอยเป็นของโมดูล god แอปส่งเลข build (เวอร์ชันแอป) ให้ตัวตรวจข้อมูล |
 | 0.6.16 | 0.6.16 | ปุ่มแผนผังบ้านทุกฉากใช้เกตจิ๊กซอว์เดียวกัน ไฟล์ `data/*.json` ใน service worker เป็น network-first เพื่อไม่ให้ไฟล์เรื่องเก่าค้างแล้วเปิดปุ่ม |
 | 0.6.13 | 0.6.13 | โมดูล character และ cutscene รูปและกติเกมเดิม |
 | 0.6.12 | 0.6.12 | แยก minigame-core กับ event-core ค่ากติกาและ URL เดิม |
