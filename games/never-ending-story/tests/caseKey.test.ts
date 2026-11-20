@@ -31,17 +31,19 @@ test('the notebook is four clues and E05 does not count', () => {
   ok(canSolveCase(catalog, ['E01', 'E02', 'E03', 'E04', 'E05']) === true, 'all four');
 });
 
-test('old saves with E05 or a solved case receive the key and drop E05', () => {
-  const fromE05 = migrateCaseBag({ evidence: ['E01', 'E05'], bag: [] }, catalog);
-  ok(!fromE05.evidence.includes('E05') && fromE05.bag.includes(CASE_KEY_ID) && fromE05.changed, JSON.stringify(fromE05));
-  const solved = migrateCaseBag({ evidence: ['E01', 'E02', 'E03', 'E04'], solved: true }, catalog);
-  ok(solved.evidence.length === 4 && solved.bag.includes(CASE_KEY_ID), JSON.stringify(solved));
-  const deduced = migrateCaseBag({ evidence: ['E01'], deduced: true, bag: [CASE_KEY_ID] }, catalog);
-  ok(deduced.bag.length === 1 && deduced.bag[0] === CASE_KEY_ID, 'no duplicate key');
+test('the key stays in the bag only until the box opens', () => {
+  const fromE05 = migrateCaseBag({ evidence: ['E01', 'E05'], bag: [CASE_KEY_ID] }, catalog);
+  ok(!fromE05.evidence.includes('E05') && !fromE05.bag.includes(CASE_KEY_ID) && fromE05.changed, JSON.stringify(fromE05));
+  const solved = migrateCaseBag({ evidence: ['E01', 'E02', 'E03', 'E04'], solved: true, bag: [CASE_KEY_ID] }, catalog);
+  ok(solved.evidence.length === 4 && !solved.bag.includes(CASE_KEY_ID), JSON.stringify(solved));
+  const deduced = migrateCaseBag({ evidence: ['E01', 'E02', 'E03', 'E04'], deduced: true, bag: [] }, catalog);
+  ok(deduced.bag.length === 1 && deduced.bag[0] === CASE_KEY_ID, JSON.stringify(deduced));
+  const kept = migrateCaseBag({ evidence: ['E01'], deduced: true, bag: [CASE_KEY_ID] }, catalog);
+  ok(kept.bag.length === 1 && kept.changed === false, 'no duplicate key');
   const fresh = migrateCaseBag({ evidence: ['E01', 'E02'], bag: [] }, catalog);
   ok(fresh.bag.length === 0 && fresh.changed === false, JSON.stringify(fresh));
-  const done = migrateCaseBag({ evidence: [], caseDone: true }, catalog);
-  ok(done.bag.includes(CASE_KEY_ID), 'finished case');
+  const done = migrateCaseBag({ evidence: [], caseDone: true, bag: [CASE_KEY_ID] }, catalog);
+  ok(!done.bag.includes(CASE_KEY_ID), 'finished case consumed the key');
 });
 
 if (failed) process.exitCode = 1;

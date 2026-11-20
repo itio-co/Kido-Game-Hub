@@ -262,6 +262,7 @@
       poster: session.poster,
       caseDone: session.caseDone,
       mapUnlocked: session.mapUnlocked,
+      stateCheck: session.stateCheck,
       difficulty: session.difficulty,
       subtitle: session.subtitle,
     },

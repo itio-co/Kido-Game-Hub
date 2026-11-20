@@ -34,9 +34,16 @@ import {
   houseMapGate,
   houseMapUnlocked,
   mapUnlockNeedsPersist,
-  migrateCaseBag,
   showHouseMapButton as houseMapButtonVisible,
 } from './progress';
+import {
+  caseStage,
+  grandmaDialogueSlug,
+  isGrandmaStageSlug,
+  normalizeCaseState,
+  type CaseStage,
+  type CaseViolation,
+} from './caseState';
 import { tapFanEgg } from '../../lib/eggs';
 import { endingIdFor, primaryEventId } from './story';
 import { playModeFromContext, type PlayMode } from '../minigame-core/framework';
@@ -111,6 +118,7 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
   let bag = $state<string[]>([]);
   let bagPulse = $state(false);
   let bagPulseTimer = 0;
+  let repaired = $state<CaseViolation[]>([]);
 
   function mapIsUnlocked(): boolean {
     return houseMapUnlocked(flow, evidence);
@@ -119,19 +127,26 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
   function use(nextFlow: CaseFlow, nextRegistry: ScreenRegistry, saved: FlowProgress | null): void {
     flow = nextFlow;
     registry = nextRegistry;
-    const migrated = migrateCaseBag(
+    const catalog = catalogCodes(nextFlow);
+    const gate = houseMapGate(nextFlow);
+    const report = normalizeCaseState(
       {
         evidence: saved?.evidence ?? [],
         bag: saved?.bag,
         solved: saved?.solved,
         deduced: saved?.deduced,
         caseDone: saved?.caseDone,
+        poster: saved?.poster,
+        mapUnlocked: saved?.mapUnlocked,
+        talkSlug: saved?.nav?.talkSlug,
       },
-      catalogCodes(nextFlow),
+      catalog,
+      gate,
     );
-    evidence = migrated.evidence;
-    solved = saved?.solved ?? false;
-    deduced = saved?.deduced ?? false;
+    evidence = report.evidence;
+    solved = report.solved;
+    deduced = report.deduced;
+    repaired = report.violations;
     reward = saved?.reward ?? false;
     difficulty = saved?.difficulty || 'ปานกลาง';
     played = [...(saved?.played ?? [])];
@@ -141,8 +156,8 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
       jig: [...(saved?.levels.jig ?? [])],
       slide: [...(saved?.levels.slide ?? [])],
     };
-    poster = saved?.poster === true;
-    caseDone = saved?.caseDone === true;
+    poster = report.poster;
+    caseDone = report.caseDone;
     ready = true;
     if (saved?.nav?.screen) {
       const navScreen = saved.nav.screen as ScreenId;
@@ -186,15 +201,15 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
           context = 'hub';
           practiceRun = false;
         }
-        if (saved.nav.talkSlug && screen === navScreen) {
-          queueMicrotask(() => openDialogue(saved.nav!.talkSlug!));
+        if (report.talkSlug && screen === navScreen) {
+          queueMicrotask(() => openDialogue(report.talkSlug!));
         }
       }
     }
-    bag = migrated.bag;
+    bag = report.bag;
     // The button reads the jigsaw evidence, not the saved flag. Write the flag when a real
     // win predates it, and clear a true flag that has no such evidence (visits and other clues do not count).
-    if (migrated.changed || (houseMapGate(flow) && mapUnlockNeedsPersist(saved?.mapUnlocked, mapIsUnlocked()))) persist();
+    if (report.changed || (gate && mapUnlockNeedsPersist(saved?.mapUnlocked, mapIsUnlocked()))) persist();
   }
 
   const scene = $derived(flow?.scenes.find((item) => item.screen === screen) ?? null);
@@ -255,11 +270,17 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
     return flow?.practice.find((item) => item.game === game && !item.future);
   }
 
+  function progressStage(): CaseStage {
+    return caseStage({ solved, deduced, poster, caseDone });
+  }
+
+  function resolveGrandmaEntry(slug: string): string {
+    if (!isGrandmaStageSlug(slug)) return slug;
+    return grandmaDialogueSlug(progressStage());
+  }
+
   function openDialogue(slug: string): void {
-    if (slug === 'flow/dialogue/grandma-open' && solved) {
-      openDialogue('flow/dialogue/grandma-win');
-      return;
-    }
+    slug = resolveGrandmaEntry(slug);
     const found = flow?.dialogues.find((item) => item.slug === slug);
     if (!found) return;
     talkSlug = slug;
@@ -303,11 +324,7 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
     const found = flow?.scenes.find((item) => item.screen === next);
     if (next === 'uncle') addEvidence('E03');
     if (!found) return;
-    if (next === 'grandma' && solved) {
-      openDialogue(poster ? 'flow/dialogue/grandma-win' : 'flow/dialogue/grandma-need-poster');
-      return;
-    }
-    const slug = solved && found.enterWhenSolved ? found.enterWhenSolved : found.enter;
+    const slug = found.enter;
     if (slug) openDialogue(slug);
   }
 
@@ -551,6 +568,7 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
     }
     showToast('กุญแจถึงรูกุญแจ!');
     solved = true;
+    bag = bag.filter((id) => id !== CASE_KEY_ID);
     history = ['study', 'star-box'];
     await go('album', true);
   }
@@ -584,7 +602,11 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
 
   const spots = $derived.by(() => {
     if (!scene) return [];
-    return scene.spots.filter((item) => item.when === 'always' || item.when === slot);
+    return scene.spots.filter((item) => {
+      if (item.when !== 'always' && item.when !== slot) return false;
+      if (item.slug === 'flow/star-box/lock' && solved) return false;
+      return true;
+    });
   });
 
   const subtitle = $derived.by(() => {
@@ -604,6 +626,10 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
       return `${flow?.games.find((item) => item.game === (screen === 'slide' ? 'slide' : screen === 'jigsaw' ? 'jigsaw' : 'crossword'))?.hud ?? ''} · คำใบ้ ${hints}`;
     }
     if (!scene || !flow) return '';
+    if (screen === 'star-box' && solved) {
+      const found = countedEvidence(catalogCodes(flow), evidence).length;
+      return `${t('box.opened')} · ${t('hud.evidence', { n: found, total: catalogCodes(flow).length || 4 })}`;
+    }
     if (poster && solved && !caseDone) {
       return `${t('hud.takePoster')} · ${t('hud.evidence', { n: countedEvidence(catalogCodes(flow), evidence).length, total: catalogCodes(flow).length || 4 })}`;
     }
@@ -634,6 +660,26 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
     get bag() { return bag; },
     get bagPulse() { return bagPulse; },
     get canSolve() { return canSolveCase(catalogCodes(flow), evidence); },
+    get stateCheck() {
+      const gate = houseMapGate(flow);
+      const stage = progressStage();
+      return {
+        stage,
+        grandmaDialogue: grandmaDialogueSlug(stage),
+        houseMap: gate ? (mapIsUnlocked() ? 'unlocked' : 'locked') : 'ungated',
+        houseMapEvidence: gate,
+        violations: normalizeCaseState({
+          evidence,
+          bag,
+          solved,
+          deduced,
+          poster,
+          caseDone,
+          mapUnlocked: gate ? mapIsUnlocked() : undefined,
+        }, catalogCodes(flow), gate).violations,
+        repaired,
+      };
+    },
     get evidenceTotal() { return catalogCodes(flow).length || 4; },
     /** Bottom-bar house map. Same rule on every scene that sets `map`. */
     get showHouseMapButton() {
@@ -704,14 +750,7 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
     tapSpot(spot: FlowSpot) {
       if (selected === spot.id) {
         selected = null;
-        const action =
-          spot.slug === 'flow/grandma/talk' && solved
-            ? {
-                type: 'dialogue' as const,
-                dialogue: poster ? 'flow/dialogue/grandma-win' : 'flow/dialogue/grandma-need-poster',
-              }
-            : spot.action;
-        void perform(action);
+        void perform(spot.action);
         return;
       }
       selected = spot.id;
@@ -918,7 +957,7 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
       if (hint) openLines('ย่ามะลิ', [hint]);
       else {
         deduced = true;
-        if (!bag.includes(CASE_KEY_ID)) {
+        if (!solved && !bag.includes(CASE_KEY_ID)) {
           bag = [...bag, CASE_KEY_ID];
           bagPulse = true;
           window.clearTimeout(bagPulseTimer);

@@ -103,8 +103,9 @@ export function canSolveCase(catalog: readonly string[], held: readonly string[]
 }
 
 /**
- * Old saves stored E05 as evidence, or finished the case before the key existed.
- * Those players receive the key. E05 is removed so the counter stays x/catalog.
+ * Old saves stored E05 as evidence. E05 is removed so the counter stays x/catalog.
+ * The key is added only when the case is deduced and the box is still closed.
+ * An opened box (solved, finished, or former E05) consumes the key.
  */
 export function migrateCaseBag(
   input: {
@@ -118,10 +119,14 @@ export function migrateCaseBag(
 ): { evidence: string[]; bag: string[]; changed: boolean } {
   const hadRetired = input.evidence.includes('E05');
   const evidence = catalog.length > 0 ? countedEvidence(catalog, input.evidence) : [...input.evidence];
-  const bag = [...(input.bag ?? [])];
-  const earned = hadRetired || input.solved === true || input.deduced === true || input.caseDone === true;
+  let bag = [...(input.bag ?? [])];
+  const opened = input.solved === true || input.caseDone === true || hadRetired;
   let changed = evidence.length !== input.evidence.length || evidence.some((code, index) => code !== input.evidence[index]);
-  if (earned && !bag.includes(CASE_KEY_ID)) {
+  if (opened && bag.includes(CASE_KEY_ID)) {
+    bag = bag.filter((id) => id !== CASE_KEY_ID);
+    changed = true;
+  }
+  if (!opened && input.deduced === true && !bag.includes(CASE_KEY_ID)) {
     bag.push(CASE_KEY_ID);
     changed = true;
   }
