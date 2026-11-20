@@ -223,7 +223,7 @@ const scenes = [
     hud: 'นำอัลบั้มกลับไปให้ย่า',
     enter: 'flow/dialogue/album-open',
     spots: [
-      spot('รูปตาตอนหนุ่ม', 'flow/album/portrait', 37.8, 44.5, { type: 'dialogue', dialogue: 'flow/dialogue/album-portrait' }, { en: "Grandfather's photo" }),
+      spot('รูปปู่ตอนหนุ่ม', 'flow/album/portrait', 37.8, 44.5, { type: 'dialogue', dialogue: 'flow/dialogue/album-portrait' }, { en: "Grandfather's photo" }),
       spot('โปสการ์ด', 'flow/album/postcard', 80, 45, { type: 'dialogue', dialogue: 'flow/dialogue/album-card' }, { en: 'Postcard' }),
     ],
   }),
@@ -234,7 +234,7 @@ const choice = (title, slug, extra) => ent('choice', title, slug, extra);
 const dialogues = [
   ent('dialogue', 'ย่าเปิดเรื่อง', 'flow/dialogue/grandma-open', {
     who: 'ย่ามะลิ',
-    text: 'หลานมาแล้วเหรอจ๊ะ ย่าหาอัลบั้มรูปครอบครัวไม่เจอ ในนั้นมีรูปตาตอนหนุ่ม ๆ ด้วยนะ',
+    text: 'หลานมาแล้วเหรอจ๊ะ ย่าหาอัลบั้มรูปครอบครัวไม่เจอ ในนั้นมีรูปปู่ตอนหนุ่ม ๆ ด้วยนะ',
     choices: [
       choice('ถามเรื่องอัลบั้ม', 'flow/dialogue/grandma-open/ask', { next: 'flow/dialogue/grandma-ask' }),
       choice('ปิด', 'flow/dialogue/grandma-open/close', { action: { type: 'toast', text: '' } }),
@@ -247,7 +247,7 @@ const dialogues = [
   }),
   ent('dialogue', 'ย่าดีใจ', 'flow/dialogue/grandma-win', {
     who: 'ย่ามะลิ',
-    text: 'นี่ไงรูปตา ขอบใจนะหลาน มานั่งดูด้วยกันมา ย่าจะเล่าให้ฟัง',
+    text: 'นี่ไงรูปปู่ ขอบใจนะหลาน มานั่งดูด้วยกันมา ย่าจะเล่าให้ฟัง',
     choices: [choice('ปิด', 'flow/dialogue/grandma-win/close', {})],
   }),
   ent('dialogue', 'ลุงเมฆเล่า', 'flow/dialogue/mek-open', {
@@ -276,9 +276,9 @@ const dialogues = [
     text: 'เจอแล้ว! หน้าปกดอกไม้เล่มนี้เอง',
     choices: [choice('ปิด', 'flow/dialogue/album-open/close', {})],
   }),
-  ent('dialogue', 'รูปตา', 'flow/dialogue/album-portrait', {
+  ent('dialogue', 'รูปปู่', 'flow/dialogue/album-portrait', {
     who: 'ย่ามะลิ',
-    text: 'นี่ไงรูปตา ขอบใจนะหลาน มานั่งดูด้วยกันมา ย่าจะเล่าให้ฟัง',
+    text: 'นี่ไงรูปปู่ ขอบใจนะหลาน มานั่งดูด้วยกันมา ย่าจะเล่าให้ฟัง',
     choices: [choice('ต่อ', 'flow/dialogue/album-portrait/next', { next: 'flow/dialogue/album-rin' })],
   }),
   ent('dialogue', 'รินอธิบาย', 'flow/dialogue/album-rin', {
@@ -392,7 +392,7 @@ const flow = ent('story-flow', 'คดี 01 อัลบั้มครอบ�
       lines: [
         ent('speech-line', 'ย่ามะลิ', 'flow/cutscene/case-01/p3/grandma', {
           who: 'ย่ามะลิ',
-          text: 'อัลบั้มรูปครอบครัวหายไปจากชั้นจ้ะ ในนั้นมีรูปตาตอนหนุ่ม ๆ ด้วย',
+          text: 'อัลบั้มรูปครอบครัวหายไปจากชั้นจ้ะ ในนั้นมีรูปปู่ตอนหนุ่ม ๆ ด้วย',
           x: 2,
           y: 50,
           w: 34,

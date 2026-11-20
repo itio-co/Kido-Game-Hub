@@ -23,7 +23,7 @@ export type Character = {
   version: string;
 };
 
-export const CHARACTER_VERSION = '1.0.0';
+export const CHARACTER_VERSION = '1.0.1';
 
 const STYLE =
   'Stylized low-poly 3D storybook render, faceted clay-like surfaces, large glossy eyes, warm cozy light, Thai family home, no text, no watermark.';
