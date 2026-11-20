@@ -1295,7 +1295,7 @@
       "title": "สรุปคดีผ่าน",
       "slug": "flow/dialogue/deduce-ok",
       "who": "ย่ามะลิ",
-      "text": "เก่งมากหลาน! งั้นไปดูที่ห้องทำงานกันเถอะ",
+      "text": "เก่งมากหลาน! กุญแจอยู่ในกระเป๋าแล้ว เอาไปเปิดกล่องรูปดาวใต้หน้าต่างในห้องทำงานนะ",
       "choices": [
         {
           "id": "a4c0e001-0000-4000-8000-00000000005f",
@@ -1328,7 +1328,7 @@
     {
       "id": "a4c0e001-0000-4000-8000-0000000000a7",
       "kind": "dialogue",
-      "title": "ย่าขอโปสเตอร์",
+      "title": "ย่าเจออัลบั้มแล้ว",
       "slug": "flow/dialogue/grandma-need-poster",
       "who": "ย่ามะลิ",
       "text": "dialogue.grandmaNeedPoster",
@@ -1338,6 +1338,22 @@
           "kind": "choice",
           "title": "ปิด",
           "slug": "flow/dialogue/grandma-need-poster/close"
+        }
+      ]
+    },
+    {
+      "id": "a4c0e001-0000-4000-8000-0000000000aa",
+      "kind": "dialogue",
+      "title": "ย่าให้ใช้กุญแจ",
+      "slug": "flow/dialogue/grandma-has-key",
+      "who": "ย่ามะลิ",
+      "text": "dialogue.grandmaHasKey",
+      "choices": [
+        {
+          "id": "a4c0e001-0000-4000-8000-0000000000ab",
+          "kind": "choice",
+          "title": "ปิด",
+          "slug": "flow/dialogue/grandma-has-key/close"
         }
       ]
     }

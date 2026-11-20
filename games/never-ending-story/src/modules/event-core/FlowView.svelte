@@ -33,9 +33,8 @@
 
   function labelFor(spot: FlowSpot): string {
     if (spot.slug !== 'flow/star-box/lock') return spot.title;
-    if (session.solved) return 'เปิดแล้ว';
-    if (session.bag.includes(CASE_KEY_ID)) return 'เล่นเลื่อนบล็อก';
-    return 'ตัวล็อก (ต้องสรุปคดีก่อน)';
+    if (session.bag.includes(CASE_KEY_ID)) return t('box.useKey');
+    return t('box.needCase');
   }
 
   function sceneImage(): string {
@@ -94,6 +93,9 @@
       onSpot={(spot) => session.tapSpot(spot)}
       onMiss={() => session.clearSpot()}
     />
+    {#if session.screen === 'star-box' && session.solved}
+      <p class="box-state" data-testid="star-box-open">{t('box.opened')}</p>
+    {/if}
   {:else if session.screen === 'event-select'}
     <div class="evlist">
       <p class="evh">ออกจากห้องแล้ว จะไปไหนดีนะ?</p>
@@ -356,6 +358,22 @@
 
 <style>
   .flow { position: absolute; inset: 0; color: #eaf6ff; font-size: var(--fs); }
+  .box-state {
+    position: absolute;
+    z-index: 6;
+    left: 50%;
+    top: calc(64px + env(safe-area-inset-top));
+    transform: translateX(-50%);
+    margin: 0;
+    max-width: min(88%, 320px);
+    padding: 8px 12px;
+    border-radius: 12px;
+    background: rgba(6, 24, 40, 0.92);
+    border: 1px solid var(--cyan, #39e0ff);
+    text-align: center;
+    font-weight: 800;
+    pointer-events: none;
+  }
   .evlist, .pgrid, .note-list, .deduce, .pick, .lvwrap { position: absolute; inset: 0; overflow: auto; padding: 78px 12px 96px; }
   .evlist { background: linear-gradient(170deg, #2a2440, #3a2f2a); display: flex; flex-direction: column; gap: 12px; }
   .evh, .pick p, .note-list p { text-align: center; margin: 0; }
