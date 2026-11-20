@@ -2,7 +2,7 @@
   "id": "god",
   "name": "God admin",
   "kind": "admin",
-  "version": "2.0.1",
+  "version": "2.1.0",
   "description": "Admin console at /never/god and /never/api/god. Password session, players, games, events, and the module registry.",
   "entry": "src/modules/god/index.ts",
   "publicEntries": [
@@ -12,7 +12,7 @@
     "src/modules/god/version.ts"
   ],
   "dependsOn": {
-    "core": ">=0.6.13",
+    "core": ">=0.6.23",
     "character": "^1.0.0",
     "cutscene": "^1.0.0"
   },
