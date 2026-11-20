@@ -36,7 +36,7 @@
   "toast.photoHeld": "The photo is already in your bag. Show it to Grandma",
   "toast.photoShown": "Grandma has the photo",
   "toast.needPhoto": "The photo is not in your bag yet",
-  "toast.caseComplete": "Event complete — home again. Tap an empty slot to place Grandpa's photo",
+  "toast.caseComplete": "Event complete — home again. Tap the keepsake shelf to place Grandpa's photo",
   "toast.eggFound": "Secret young-Grandpa sticker found!",
   "toast.mapUnlocked": "House map unlocked",
   "toast.mapLocked": "Finish the house-plan puzzle first",
@@ -367,5 +367,11 @@
   "god.page.current": "current",
   "god.page.legacy": "v0.6.10 link",
   "god.col.ruleset": "Rules",
-  "god.board.allRulesets": "All rules"
+  "god.board.allRulesets": "All rules",
+  "toast.photoPlaced": "Placed Grandpa's photo",
+  "decor.photo": "📷 Grandpa's photo",
+  "decor.place": "Place Grandpa's photo",
+  "decor.ready": "You have Grandpa's photo from the case. Place it on the keepsake shelf.",
+  "decor.shelfOnly": "Grandpa's photo can only go on the keepsake shelf",
+  "decor.empty": "This slot is empty"
 }

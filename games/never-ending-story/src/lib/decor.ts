@@ -1,0 +1,44 @@
+/** Player-room decor: the case-01 photo may only sit on the keepsake wall shelf. */
+
+export const KEEPSAKE_SHELF_ID = '6bb33448-6b61-4564-91e1-125bae9cf57c';
+
+/** Canonical stored label. Old saves may still contain the legacy ตา wording. */
+export const DECOR_PHOTO = '📷 รูปปู่';
+export const DECOR_PHOTO_LEGACY = '📷 รูปตา';
+
+export type DecorViolation = { code: string; detail: string };
+
+export function isGrandpaPhoto(value: string | null | undefined): boolean {
+  if (!value) return false;
+  return value.includes('รูปปู่') || value.includes('รูปตา') || value === 'album-photo';
+}
+
+export type NormalizedDecor = {
+  decor: Record<string, string | null>;
+  violations: DecorViolation[];
+  changed: boolean;
+};
+
+/**
+ * Move a placed grandpa photo onto the keepsake shelf and drop copies in other slots.
+ * Records `photo-off-shelf` when it had to be moved.
+ */
+export function normalizeDecor(decor: Record<string, string | null>): NormalizedDecor {
+  const next: Record<string, string | null> = { ...decor };
+  const violations: DecorViolation[] = [];
+  const slots = Object.keys(next).filter((id) => isGrandpaPhoto(next[id]));
+  if (slots.length === 0) return { decor: next, violations, changed: false };
+
+  const offShelf = slots.filter((id) => id !== KEEPSAKE_SHELF_ID);
+  for (const id of offShelf) next[id] = null;
+  next[KEEPSAKE_SHELF_ID] = DECOR_PHOTO;
+
+  if (offShelf.length > 0) {
+    violations.push({ code: 'photo-off-shelf', detail: offShelf.join(',') });
+  }
+
+  const changed = slots.length !== 1
+    || slots[0] !== KEEPSAKE_SHELF_ID
+    || decor[KEEPSAKE_SHELF_ID] !== DECOR_PHOTO;
+  return { decor: next, violations, changed };
+}

@@ -18,6 +18,7 @@
   import { minigameRoute } from './modules/minigame-core';
   import { loadPlayerRoom } from './lib/loadRoom';
   import { readSave, writeSave } from './lib/save';
+  import { DECOR_PHOTO, KEEPSAKE_SHELF_ID, isGrandpaPhoto } from './lib/decor';
   import { appStorage } from './lib/deployment';
   import { buildInfo } from './lib/buildInfo';
   import {
@@ -187,17 +188,37 @@
     commit();
   }
 
+  function canPlacePhoto(slotId: string | null): boolean {
+    return !!slotId && slotId === KEEPSAKE_SHELF_ID;
+  }
+
   function placeReward(): void {
-    if (!decorSlotId || !session.reward) return;
+    if (!canPlacePhoto(decorSlotId) || !session.reward) return;
     const next = { ...save.player.decor };
     for (const key of Object.keys(next)) {
-      if (next[key]?.includes('รูปตา')) next[key] = null;
+      if (isGrandpaPhoto(next[key])) next[key] = null;
     }
-    next[decorSlotId] = '📷 รูปตา';
+    next[KEEPSAKE_SHELF_ID] = DECOR_PHOTO;
     save.player.decor = next;
     commit();
     overlay = null;
-    showToast('วางรูปตาแล้ว');
+    showToast(t('toast.photoPlaced'));
+  }
+
+  function decorBody(): string {
+    if (!decorHotspot || decorHotspot.kind !== 'decor-slot') return t('decor.empty');
+    const placed = save.player.decor[decorHotspot.id];
+    if (isGrandpaPhoto(placed)) return t('decor.photo');
+    if (placed) return placed;
+    if (session.reward && decorHotspot.id === KEEPSAKE_SHELF_ID) return t('decor.ready');
+    if (session.reward) return t('decor.shelfOnly');
+    return decorHotspot.emptyHint;
+  }
+
+  function decorActionLabel(): string {
+    if (!decorHotspot || decorHotspot.kind !== 'decor-slot') return '';
+    if (!session.reward || save.player.decor[decorHotspot.id]) return '';
+    return decorHotspot.id === KEEPSAKE_SHELF_ID ? t('decor.place') : '';
   }
 
   function finishTutor(): void {
@@ -405,10 +426,8 @@
     {:else if overlay === 'decor' && decorHotspot}
       <Sheet
         title={decorHotspot.title}
-        body={decorHotspot.kind === 'decor-slot'
-          ? save.player.decor[decorHotspot.id] ?? (session.reward ? 'มีรูปตาจากคดีแล้ว วางลงช่องนี้ได้' : decorHotspot.emptyHint)
-          : 'ช่องนี้ว่าง'}
-        actionLabel={session.reward && decorHotspot.kind === 'decor-slot' && !save.player.decor[decorHotspot.id] ? 'วางรูปตา' : ''}
+        body={decorBody()}
+        actionLabel={decorActionLabel()}
         onAction={placeReward}
         onClose={() => (overlay = null)}
       />

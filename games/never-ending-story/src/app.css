@@ -98,6 +98,9 @@ button { cursor: pointer; -webkit-tap-highlight-color: transparent; }
   user-select: none;
   -webkit-user-drag: none;
 }
+.room .decor-overlay {
+  z-index: 1;
+}
 .spots { z-index: 2; pointer-events: none; }
 .room .miss {
   position: absolute;

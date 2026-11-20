@@ -36,7 +36,7 @@ a3=[
  A('calendar-wall','ปฏิทินแขวน (ห้องเด็ก)','Wall calendar (kid room)','prop',P('player-room-wide.jpg'),[33,25,17,13],['room'],'to-model','แตะเพื่อเปิด UI ปฏิทิน · ใช้ธีมได้'),
  A('calendar-grandma','ปฏิทินของย่า','Grandma calendar','prop',P('living-wide.jpg'),[72,21,17,12],['living'],'to-model','ควบคุมวัน (ย้อนวัน)'),
  A('clock','นาฬิกาแขวน','Wall clock','prop',P('living-wide.jpg'),[6,8,14,9],['living'],'to-model','ควบคุมชั่วโมง (ย้อนเวลา)'),
- A('grandpa-photo','กรอบรูปตา','Grandpa photo frame','decor',P('album-found.jpg'),[18,30,38,30],['ของรางวัล → ช่องตกแต่ง'],'to-model'),
+ A('grandpa-photo','กรอบรูปปู่','Grandpa photo frame','decor',P('album-found.jpg'),[18,30,38,30],['ของรางวัล → ช่องตกแต่ง'],'to-model'),
  A('keepsake-shelf','ชั้นของที่ระลึก','Keepsake shelf','decor',P('player-room-wide.jpg'),[57,23,28,12],['room'],'to-model'),
  A('rug','พรมห้องเด็ก','Kid room rug','decor',P('player-room-wide.jpg'),[3,64,96,34],['room'],'to-model'),
 ]

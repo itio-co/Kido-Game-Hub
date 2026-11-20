@@ -1,6 +1,7 @@
 import { appStorage } from './deployment';
 import type { FlowProgress, SaveV1, TextSize } from './types';
 import { markDirty } from './cloudSync';
+import { normalizeDecor } from './decor';
 
 export const SAVE_KEY = 'nesg.player.v1';
 
@@ -64,8 +65,9 @@ export function readSave(): SaveV1 {
     const levels = isRecord(flow.levels) ? flow.levels : {};
     const stars = (value: unknown): number[] => (Array.isArray(value) ? value.filter((item) => typeof item === 'number') : []);
     const textSize = SIZES.includes(player.textSize as TextSize) ? (player.textSize as TextSize) : 'md';
-    const decor = isRecord(player.decor) ? (player.decor as Record<string, string | null>) : {};
-    return {
+    const rawDecor = isRecord(player.decor) ? (player.decor as Record<string, string | null>) : {};
+    const decorReport = normalizeDecor(rawDecor);
+    const save: SaveV1 = {
       version: 1,
       player: {
         onboardingComplete: player.onboardingComplete === true,
@@ -73,7 +75,7 @@ export function readSave(): SaveV1 {
         textSize,
         soundEnabled: player.soundEnabled === true,
         calendarTheme: typeof player.calendarTheme === 'string' ? player.calendarTheme : null,
-        decor,
+        decor: decorReport.decor,
       },
       knowledge: {
         evidence: Array.isArray(knowledge.evidence) ? knowledge.evidence.filter((id) => typeof id === 'string') : [],
@@ -129,6 +131,8 @@ export function readSave(): SaveV1 {
           : undefined,
       },
     };
+    if (decorReport.changed) writeSave(save);
+    return save;
   } catch {
     return defaultSave();
   }
