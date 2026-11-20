@@ -4,7 +4,7 @@
   import { LEVEL_COUNT, LEVEL_THEME } from './puzzles';
   import type { FlowSession } from './session.svelte';
   import type { FlowSpot } from './types';
-  import { CASE_KEY_ID } from './progress';
+  import { CASE_KEY_ID, CASE_PHOTO_ID } from './progress';
   import { endingIdFor, primaryEventId } from './story';
   import { t } from '../../lib/i18n';
   import { readEggs } from '../../lib/eggs';
@@ -297,8 +297,9 @@
           <ul>
             {#each session.bag as id (id)}
               <li class="have">
-                <b>{id === CASE_KEY_ID ? t('bag.key') : id}</b>
+                <b>{id === CASE_KEY_ID ? t('bag.key') : id === CASE_PHOTO_ID ? t('bag.photo') : id}</b>
                 {#if id === CASE_KEY_ID}<span>{t('bag.keyBody')}</span>{/if}
+                {#if id === CASE_PHOTO_ID}<span>{t('bag.photoBody')}</span>{/if}
               </li>
             {/each}
           </ul>

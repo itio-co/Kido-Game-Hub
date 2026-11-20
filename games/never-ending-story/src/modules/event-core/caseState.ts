@@ -4,7 +4,7 @@
  * are rewritten to match that on load.
  */
 
-import { CASE_KEY_ID, canSolveCase, countedEvidence, houseMapUnlocked, type HouseMapFlow } from './progress.ts';
+import { CASE_KEY_ID, CASE_PHOTO_ID, canSolveCase, countedEvidence, houseMapUnlocked, type HouseMapFlow } from './progress.ts';
 
 export type CaseStage = 'investigate' | 'deduced' | 'opened' | 'poster' | 'done';
 
@@ -47,6 +47,18 @@ export function grandmaDialogueSlug(stage: CaseStage): string {
 
 export function isGrandmaStageSlug(slug: string): boolean {
   return GRANDMA_STAGE_SLUGS.has(slug);
+}
+
+/** Opening the box spends the key and puts the album photo in the bag. */
+export function openBoxBag(bag: readonly string[]): string[] {
+  const next = bag.filter((id) => id !== CASE_KEY_ID);
+  return next.includes(CASE_PHOTO_ID) ? next : [...next, CASE_PHOTO_ID];
+}
+
+/** Giving Grandma the photo takes it out of the bag. `shown` is false when it was not there. */
+export function showPhotoBag(bag: readonly string[]): { bag: string[]; shown: boolean } {
+  if (!bag.includes(CASE_PHOTO_ID)) return { bag: [...bag], shown: false };
+  return { bag: bag.filter((id) => id !== CASE_PHOTO_ID), shown: true };
 }
 
 export type NormalizedCase = {
@@ -106,6 +118,18 @@ export function normalizeCaseState(input: CaseStateInput, catalog: readonly stri
   if (opened && holdsKey) {
     bag = bag.filter((id) => id !== CASE_KEY_ID);
     violations.push({ code: 'key-after-open', detail: 'the star-box key stays in the bag after the box was opened' });
+  }
+  if (opened && !poster && !bag.includes(CASE_PHOTO_ID)) {
+    bag = [...bag, CASE_PHOTO_ID];
+    violations.push({ code: 'missing-photo', detail: 'the opened box did not put the album photo in the bag' });
+  }
+  if ((poster || caseDone) && bag.includes(CASE_PHOTO_ID)) {
+    bag = bag.filter((id) => id !== CASE_PHOTO_ID);
+    violations.push({ code: 'photo-after-show', detail: 'the album photo was still in the bag after Grandma had seen it' });
+  }
+  if (!opened && bag.includes(CASE_PHOTO_ID)) {
+    bag = bag.filter((id) => id !== CASE_PHOTO_ID);
+    violations.push({ code: 'photo-before-open', detail: 'the album photo was in the bag before the box opened' });
   }
   if (!opened && deduced && !bag.includes(CASE_KEY_ID)) {
     bag = [...bag, CASE_KEY_ID];
