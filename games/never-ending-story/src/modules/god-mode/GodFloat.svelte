@@ -1,7 +1,7 @@
 <script lang="ts">
   import { appBase } from '../../lib/deployment';
   import { t } from '../../lib/i18n';
-  import { godAdminUrl, type FloatPrefs } from './floatState';
+  import { floatDragged, godAdminUrl, nextFloatPosition, type FloatPrefs } from './floatState';
   import { inspectDocument, type InspectPage } from './inspect';
 
   let {
@@ -18,6 +18,7 @@
   let inspect = $state(false);
   let copied = $state(false);
   let dragging = $state(false);
+  let root = $state<HTMLDivElement>();
   let x = $state(0.78);
   let y = $state(0.62);
   let moved = false;
@@ -37,15 +38,22 @@
   const text = $derived(JSON.stringify(doc, null, 2));
   const sections = $derived(Object.entries(doc));
 
+  function stageBox(): { width: number; height: number } | null {
+    const stage = root?.offsetParent as HTMLElement | null;
+    const rect = stage?.getBoundingClientRect();
+    if (!rect || rect.width <= 0 || rect.height <= 0) return null;
+    return { width: rect.width, height: rect.height };
+  }
+
   function point(event: PointerEvent): void {
-    const parent = (event.currentTarget as HTMLElement).offsetParent as HTMLElement | null;
-    const rect = parent?.getBoundingClientRect();
-    if (!rect || rect.width === 0 || rect.height === 0) return;
+    const stage = stageBox();
+    if (!stage) return;
     const dx = event.clientX - startX;
     const dy = event.clientY - startY;
-    if (Math.hypot(dx, dy) > 6) moved = true;
-    x = Math.min(0.92, Math.max(0.04, originX + dx / rect.width));
-    y = Math.min(0.92, Math.max(0.04, originY + dy / rect.height));
+    if (floatDragged(dx, dy)) moved = true;
+    const next = nextFloatPosition({ x: originX, y: originY }, { x: dx, y: dy }, stage);
+    x = next.x;
+    y = next.y;
   }
 
   function onDown(event: PointerEvent): void {
@@ -90,7 +98,7 @@
   }
 </script>
 
-<div class="god-float" style="left:{x * 100}%;top:{y * 100}%">
+<div class="god-float" bind:this={root} style="left:{x * 100}%;top:{y * 100}%">
   {#if menu}
     <div class="menu" data-testid="god-float-menu">
       <button type="button" data-testid="god-float-admin" onclick={openAdmin}>{t('god.float.admin')}</button>
