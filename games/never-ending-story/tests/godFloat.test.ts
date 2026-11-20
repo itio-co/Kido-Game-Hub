@@ -1,4 +1,4 @@
-import { godAdminUrl, godButtonVisible, godFloatVisible, loadFloatPrefs, parseFloatPrefs, saveFloatPrefs, GOD_FLOAT_KEY } from '../src/modules/god-mode/floatState.ts';
+import { floatDragged, godAdminUrl, godButtonVisible, godFloatVisible, loadFloatPrefs, nextFloatPosition, parseFloatPrefs, saveFloatPrefs, FLOAT_TAP_SLOP_PX, GOD_FLOAT_KEY } from '../src/modules/god-mode/floatState.ts';
 import { inspectDocument, inspectText, redact } from '../src/modules/god-mode/inspect.ts';
 
 declare const process: { exitCode?: number };
@@ -37,6 +37,39 @@ test('the float toggle and position persist locally', () => {
   ok(parseFloatPrefs(JSON.stringify({ on: 'yes', x: 'no' })).on === false, 'non-boolean on');
   saveFloatPrefs(write, { on: false, x: 0.4, y: 0.5 });
   ok(loadFloatPrefs(read).on === false, 'toggle off is stored');
+});
+
+test('dragging keeps the grab point under the pointer', () => {
+  const stage = { width: 390, height: 844 };
+  const origin = { x: 0.5, y: 0.4 };
+  const delta = { x: 39, y: -84.4 };
+  const next = nextFloatPosition(origin, delta, stage);
+  ok(Math.abs(next.x - 0.6) < 1e-12 && Math.abs(next.y - 0.3) < 1e-12, JSON.stringify(next));
+  ok(Math.abs((next.x - origin.x) * stage.width - delta.x) < 1e-9, 'x tracks the pointer');
+  ok(Math.abs((next.y - origin.y) * stage.height - delta.y) < 1e-9, 'y tracks the pointer');
+  const bubble = 64;
+  const raced = origin.x + delta.x / bubble;
+  ok(Math.abs(next.x - raced) > 0.2, 'the bubble box is not the stage');
+});
+
+test('a scaled stage uses the visual box, not the layout size', () => {
+  const visual = { width: 195, height: 422 };
+  const layout = { width: 390, height: 844 };
+  const delta = { x: 19.5, y: 42.2 };
+  const tracked = nextFloatPosition({ x: 0.2, y: 0.5 }, delta, visual);
+  ok(Math.abs((tracked.x - 0.2) * visual.width - delta.x) < 1e-9, 'visual x');
+  ok(Math.abs((tracked.y - 0.5) * visual.height - delta.y) < 1e-9, 'visual y');
+  const lagged = nextFloatPosition({ x: 0.2, y: 0.5 }, delta, layout);
+  ok(Math.abs((lagged.x - 0.2) * visual.width - delta.x / 2) < 1e-9, 'layout size would lag');
+});
+
+test('the bubble stays inside the phone and a short move is still a tap', () => {
+  const next = nextFloatPosition({ x: 0.9, y: 0.05 }, { x: 800, y: -800 }, { width: 390, height: 844 });
+  ok(next.x === 0.92 && next.y === 0.04, JSON.stringify(next));
+  const held = nextFloatPosition({ x: 0.4, y: 0.6 }, { x: 0, y: 0 }, { width: 0, height: 0 });
+  ok(held.x === 0.4 && held.y === 0.6, 'empty stage does not jump');
+  ok(floatDragged(FLOAT_TAP_SLOP_PX, 0) === false, 'slop is still a tap');
+  ok(floatDragged(FLOAT_TAP_SLOP_PX + 0.1, 0) === true, 'past the slop is a drag');
 });
 
 test('the admin link stays on the deployment base', () => {
