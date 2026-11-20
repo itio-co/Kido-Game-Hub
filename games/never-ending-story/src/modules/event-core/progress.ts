@@ -82,6 +82,12 @@ export function eventProgressBody(flow: Record<string, unknown> | undefined): Ev
 /** Inventory id of the key awarded when the case deduction is solved. Not an evidence code. */
 export const CASE_KEY_ID = 'case-key';
 
+/**
+ * The family-album photo from the star box (young Grandpa), poster included.
+ * It is what Grandma is waiting to see. Not an evidence code.
+ */
+export const CASE_PHOTO_ID = 'album-photo';
+
 type EvidenceFlow = { evidence?: { code?: unknown }[] } | null | undefined;
 
 /** Evidence codes this pack lists in the notebook. The HUD denominator is this length. */

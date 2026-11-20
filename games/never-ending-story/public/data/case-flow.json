@@ -1334,6 +1334,15 @@
       "text": "dialogue.grandmaNeedPoster",
       "choices": [
         {
+          "id": "a4c0e001-0000-4000-8000-0000000000ac",
+          "kind": "choice",
+          "title": "dialogue.grandmaShowPhoto",
+          "slug": "flow/dialogue/grandma-need-poster/show",
+          "action": {
+            "type": "show-photo"
+          }
+        },
+        {
           "id": "a4c0e001-0000-4000-8000-0000000000a8",
           "kind": "choice",
           "title": "ปิด",

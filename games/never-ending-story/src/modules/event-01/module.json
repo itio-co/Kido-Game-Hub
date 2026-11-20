@@ -2,15 +2,15 @@
   "id": "event-01",
   "name": "Event 01 · Visit Grandma",
   "kind": "event",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "First story event (case-01): data in public/data/case-flow.json.",
   "entry": "src/modules/event-01/index.ts",
   "publicEntries": [
     "src/modules/event-01/index.ts"
   ],
   "dependsOn": {
-    "core": ">=0.6.22",
-    "event-core": "^1.2.3",
+    "core": ">=0.6.24",
+    "event-core": "^1.2.4",
     "cutscene": "^1.0.0",
     "crossword": "^1.0.0",
     "jigsaw": "^1.0.0",

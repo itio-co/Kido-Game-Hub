@@ -39,6 +39,7 @@ export type FlowAction =
   | { type: 'box-lock' }
   | { type: 'home' }
   | { type: 'take-poster' }
+  | { type: 'show-photo' }
   | { type: 'ending-comic' }
   | { type: 'egg-fan' };
 

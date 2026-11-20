@@ -28,6 +28,7 @@ import type { NavContext } from '../../lib/types';
 import { t } from '../../lib/i18n';
 import {
   CASE_KEY_ID,
+  CASE_PHOTO_ID,
   canSolveCase,
   catalogCodes,
   countedEvidence,
@@ -37,10 +38,13 @@ import {
   showHouseMapButton as houseMapButtonVisible,
 } from './progress';
 import {
+  GRANDMA_WIN,
   caseStage,
   grandmaDialogueSlug,
   isGrandmaStageSlug,
   normalizeCaseState,
+  openBoxBag,
+  showPhotoBag,
   type CaseStage,
   type CaseViolation,
 } from './caseState';
@@ -243,6 +247,12 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
         lvN,
       },
     });
+  }
+
+  function pulseBag(): void {
+    bagPulse = true;
+    window.clearTimeout(bagPulseTimer);
+    bagPulseTimer = window.setTimeout(() => { bagPulse = false; }, 2600);
   }
 
   function showToast(text: string): void {
@@ -455,9 +465,27 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
       return;
     }
     if (action.type === 'take-poster') {
+      if (poster || bag.includes(CASE_PHOTO_ID)) {
+        showToast(t(poster ? 'toast.photoShown' : 'toast.photoHeld'));
+        return;
+      }
+      bag = openBoxBag(bag);
+      pulseBag();
+      persist();
+      showToast(t('toast.photoAwarded'));
+      return;
+    }
+    if (action.type === 'show-photo') {
+      const given = showPhotoBag(bag);
+      if (!given.shown) {
+        showToast(t('toast.needPhoto'));
+        return;
+      }
+      bag = given.bag;
       poster = true;
       persist();
-      showToast(t('toast.posterTaken'));
+      showToast(t('toast.photoShown'));
+      openDialogue(GRANDMA_WIN);
       return;
     }
     if (action.type === 'ending-comic') {
@@ -566,9 +594,10 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
       await finishPracticeLevel();
       return;
     }
-    showToast('กุญแจถึงรูกุญแจ!');
     solved = true;
-    bag = bag.filter((id) => id !== CASE_KEY_ID);
+    bag = openBoxBag(bag);
+    pulseBag();
+    showToast(t('toast.photoAwarded'));
     history = ['study', 'star-box'];
     await go('album', true);
   }
@@ -630,7 +659,7 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
       const found = countedEvidence(catalogCodes(flow), evidence).length;
       return `${t('box.opened')} · ${t('hud.evidence', { n: found, total: catalogCodes(flow).length || 4 })}`;
     }
-    if (poster && solved && !caseDone) {
+    if (solved && !poster && !caseDone && bag.includes(CASE_PHOTO_ID)) {
       return `${t('hud.takePoster')} · ${t('hud.evidence', { n: countedEvidence(catalogCodes(flow), evidence).length, total: catalogCodes(flow).length || 4 })}`;
     }
     const clock = scene.timed ? `⏳ ${flow.slots.find((item) => item.slot === slot)?.title ?? ''} · ` : '';
@@ -821,6 +850,7 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
     jumpEndingComic() {
       poster = true;
       solved = true;
+      bag = bag.filter((id) => id !== CASE_KEY_ID && id !== CASE_PHOTO_ID);
       page = 0;
       context = 'event';
       practice = false;
@@ -959,9 +989,7 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
         deduced = true;
         if (!solved && !bag.includes(CASE_KEY_ID)) {
           bag = [...bag, CASE_KEY_ID];
-          bagPulse = true;
-          window.clearTimeout(bagPulseTimer);
-          bagPulseTimer = window.setTimeout(() => { bagPulse = false; }, 2600);
+          pulseBag();
           showToast(t('toast.keyAwarded'));
         }
         persist();

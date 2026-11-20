@@ -1,4 +1,4 @@
-import { CASE_KEY_ID, showHouseMapButton } from '../src/modules/event-core/progress.ts';
+import { CASE_KEY_ID, CASE_PHOTO_ID, showHouseMapButton } from '../src/modules/event-core/progress.ts';
 import {
   GRANDMA_FOUND,
   GRANDMA_HAS_KEY,
@@ -6,6 +6,8 @@ import {
   GRANDMA_WIN,
   grandmaDialogueSlug,
   normalizeCaseState,
+  openBoxBag,
+  showPhotoBag,
 } from '../src/modules/event-core/caseState.ts';
 
 declare const process: { exitCode?: number };
@@ -38,7 +40,8 @@ test('an opened box consumes the key and asks Grandma for the poster', () => {
     mapUnlocked: true,
     talkSlug: GRANDMA_OPEN,
   }, catalog, 'E04');
-  ok(!report.bag.includes(CASE_KEY_ID), JSON.stringify(report.bag));
+  ok(!report.bag.includes(CASE_KEY_ID) && report.bag.includes(CASE_PHOTO_ID), JSON.stringify(report.bag));
+  ok(codes(report).includes('missing-photo'), codes(report).join(','));
   ok(report.stage === 'opened', report.stage);
   ok(report.talkSlug === GRANDMA_FOUND, report.talkSlug ?? '');
   ok(grandmaDialogueSlug(report.stage) === GRANDMA_FOUND, 'found line');
@@ -60,6 +63,36 @@ test('a deduced case keeps the key and Grandma points at the box', () => {
   ok(report.stage === 'deduced', report.stage);
   ok(report.talkSlug === GRANDMA_HAS_KEY, report.talkSlug ?? '');
   ok(report.solved === false, 'box still closed');
+  ok(!report.bag.includes(CASE_PHOTO_ID), 'no photo before the box opens');
+});
+
+test('opening the box puts the album photo in the bag and showing Grandma takes it out', () => {
+  const opened = openBoxBag([CASE_KEY_ID, 'other']);
+  ok(!opened.includes(CASE_KEY_ID) && opened.includes(CASE_PHOTO_ID) && opened.includes('other'), opened.join(','));
+  ok(openBoxBag(opened).filter((id) => id === CASE_PHOTO_ID).length === 1, 'no duplicate photo');
+  const given = showPhotoBag(opened);
+  ok(given.shown && !given.bag.includes(CASE_PHOTO_ID), given.bag.join(','));
+  const missing = showPhotoBag(['other']);
+  ok(!missing.shown && missing.bag.length === 1, 'cannot show a photo that is not there');
+  const migrated = normalizeCaseState({
+    evidence: clues,
+    bag: [],
+    solved: true,
+    deduced: true,
+    poster: false,
+    mapUnlocked: true,
+  }, catalog, 'E04');
+  ok(migrated.bag.includes(CASE_PHOTO_ID) && codes(migrated).includes('missing-photo'), JSON.stringify(migrated));
+  const shown = normalizeCaseState({
+    evidence: clues,
+    bag: [CASE_PHOTO_ID],
+    solved: true,
+    deduced: true,
+    poster: true,
+    mapUnlocked: true,
+  }, catalog, 'E04');
+  ok(!shown.bag.includes(CASE_PHOTO_ID) && shown.stage === 'poster', JSON.stringify(shown));
+  ok(codes(shown).includes('photo-after-show'), codes(shown).join(','));
 });
 
 test('the house map stays locked without the jigsaw evidence', () => {
