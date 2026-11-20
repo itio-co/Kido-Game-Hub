@@ -1,4 +1,5 @@
 import { normalizeAppBase } from '../../lib/deployment';
+import { createSnapshot, listSnapshots, readSnapshot, revokeSnapshot, snapshotPath, type SnapshotStore } from './snapshot';
 /**
  * "Game of Dev" admin API under /never/api/god/*.
  * Auth: Worker secret GOD_ADMIN_PASSWORD (SHA-256 hex of the password, or the plain password) -> HMAC-signed session cookie (12h).
@@ -17,6 +18,9 @@ interface GodDb {
 }
 interface GodKv {
   get(key: string, type: 'json'): Promise<unknown>;
+  get(key: string): Promise<string | null>;
+  put(key: string, value: string, options?: { expirationTtl?: number }): Promise<void>;
+  delete(key: string): Promise<void>;
 }
 export interface GodEnv {
   DB: GodDb;
@@ -226,11 +230,26 @@ async function events(env: GodEnv): Promise<Response> {
   return json({ ok: true, steps: STEPS.map((s) => s.id), events: Object.values(out) });
 }
 
+function snapStore(kv: GodKv): SnapshotStore {
+  return {
+    get: (key, type) => (type === 'json' ? kv.get(key, 'json') : kv.get(key)),
+    put: (key, value, options) => kv.put(key, value, options),
+    delete: (key) => kv.delete(key),
+  };
+}
+
 export async function godApi(req: Request, env: GodEnv, path: string): Promise<Response> {
   if (path === '/login' && req.method === 'POST') return login(req, env);
   if (path === '/logout' && req.method === 'POST') return json({ ok: true }, 200, { 'set-cookie': cookie('', 0, env) });
   const secret = env.GOD_ADMIN_PASSWORD;
   if (!secret) return fail(503, 'not-configured');
+  const snap = /^\/snapshots\/([A-Za-z0-9_-]{32,80})$/.exec(path);
+  if (snap && req.method === 'GET') {
+    const token = new URL(req.url).searchParams.get('t') ?? '';
+    const result = await readSnapshot(snapStore(env.ASSETS_KV), secret, snap[1], token);
+    if (!result.ok) return fail(result.error === 'bad-token' ? 401 : 410, result.error);
+    return json({ ok: true, title: result.title, expiresAt: result.expiresAt, document: result.document });
+  }
   if (!(await sessionOk(req, secret, env))) return fail(401, 'unauthorized');
 
   if (path === '/me' && req.method === 'GET') return json({ ok: true });
@@ -264,6 +283,20 @@ export async function godApi(req: Request, env: GodEnv, path: string): Promise<R
     return r.meta.changes ? json({ ok: true }) : fail(404, 'not-found');
   }
   if (path === '/events' && req.method === 'GET') return events(env);
+  if (path === '/snapshots' && req.method === 'GET') {
+    return json({ ok: true, snapshots: await listSnapshots(snapStore(env.ASSETS_KV)) });
+  }
+  if (path === '/snapshots' && req.method === 'POST') {
+    let body: { ttl?: unknown; document?: unknown } = {};
+    try { body = await req.json() as { ttl?: unknown; document?: unknown }; } catch { return fail(400, 'bad-json'); }
+    const made = await createSnapshot(snapStore(env.ASSETS_KV), secret, body.document, typeof body.ttl === 'string' ? body.ttl : '');
+    if ('error' in made) return fail(made.error === 'too-large' ? 413 : 400, made.error);
+    const url = new URL(snapshotPath(normalizeAppBase(env.APP_BASE), made.id, made.token), req.url).href;
+    return json({ ok: true, id: made.id, expiresAt: made.expiresAt, url });
+  }
+  if (snap && req.method === 'DELETE') {
+    return (await revokeSnapshot(snapStore(env.ASSETS_KV), snap[1])) ? json({ ok: true }) : fail(404, 'not-found');
+  }
   if (path === '/modules' && req.method === 'GET') {
     const reg = await env.ASSETS_KV.get('/modules.json', 'json');
     return reg ? json({ ok: true, registry: reg }) : fail(404, 'no-registry');

@@ -3,12 +3,13 @@
   import { t } from '../../lib/i18n';
   import { ApiError, fmtDate, fmtTime, god, short } from './api';
   import GodModule from './GodModule.svelte';
+  import SnapshotPage from './SnapshotPage.svelte';
   import '../../app.css';
   import { version } from '../../../package.json';
 
   type Row = Record<string, any>;
-  type Section = 'dashboard' | 'players' | 'games' | 'events' | 'modules';
-  const SECTIONS: Section[] = ['dashboard', 'players', 'games', 'events', 'modules'];
+  type Section = 'dashboard' | 'players' | 'games' | 'events' | 'modules' | 'snapshots';
+  const SECTIONS: Section[] = ['dashboard', 'players', 'games', 'events', 'modules', 'snapshots'];
   const DIFFS = ['easy', 'medium', 'hard'];
 
   let authed = $state<boolean | null>(null);
@@ -17,8 +18,12 @@
   let loginError = $state('');
   let busy = $state(false);
   // Path deep links (/never/god/games/stirfry) map onto the hash router.
+  // A snapshot link stays on its path so it can open without a God session.
+  const snapshotPath = /\/snapshot\/([^/]+)$/.exec(location.pathname);
+  const snapshotId = snapshotPath ? decodeURIComponent(snapshotPath[1]) : null;
+  const snapshotToken = new URLSearchParams(location.search).get('t') ?? '';
   const deep = /\/god\/(.+)$/.exec(location.pathname);
-  if (deep && !location.hash) history.replaceState(null, '', `${location.pathname.slice(0, location.pathname.indexOf('/god/'))}/god#/${deep[1]}`);
+  if (deep && !snapshotId && !location.hash) history.replaceState(null, '', `${location.pathname.slice(0, location.pathname.indexOf('/god/'))}/god#/${deep[1]}`);
   let route = $state(location.hash);
   let drawer = $state(false);
   let data = $state<Row | null>(null);
@@ -102,6 +107,7 @@
       else if (section === 'games') { data = await god<Row>('games'); await loadBoard(); }
       else if (section === 'events') data = await god<Row>('events');
       else if (section === 'modules') data = ((await god<Row>('modules')) as Row).registry;
+      else if (section === 'snapshots') data = await god<Row>('snapshots');
     } catch (e) { loadError = errText(e); }
   }
 
@@ -140,6 +146,14 @@
     return (data?.stats as Row[] | undefined)?.find((s) => s.game === game && s.difficulty === diff);
   }
 
+  async function revokeSnapshot(id: string) {
+    try {
+      await god(`snapshots/${encodeURIComponent(id)}`, { method: 'DELETE' });
+      flash(t('god.snap.revokedDone'));
+      await load();
+    } catch (e) { flash(errText(e)); }
+  }
+
   onMount(() => {
     const onHash = () => { route = location.hash; drawer = false; };
     addEventListener('hashchange', onHash);
@@ -153,7 +167,9 @@
   });
 </script>
 
-{#if authed === null}
+{#if snapshotId}
+  <SnapshotPage id={snapshotId} token={snapshotToken} />
+{:else if authed === null}
   <p class="center">{t('god.loading')}</p>
 {:else if !authed}
   <main class="login">
@@ -302,6 +318,22 @@
           </section>
         {/each}
         <p class="note">{t('god.mod.note')}</p>
+      {:else if section === 'snapshots' && data}
+        <h2>{t('god.snap.list')}</h2>
+        <table>
+          <thead><tr><th>{t('god.snap.titleCol')}</th><th>{t('god.snap.expires')}</th><th></th></tr></thead>
+          <tbody>
+            {#each data.snapshots ?? [] as item (item.id)}
+              <tr>
+                <td>{item.title}<br /><code>{item.id.slice(0, 12)}</code></td>
+                <td>{fmtDate(item.exp)}</td>
+                <td><button type="button" onclick={() => revokeSnapshot(item.id)}>{t('god.snap.revoke')}</button></td>
+              </tr>
+            {:else}
+              <tr><td colspan="3">{t('god.snap.empty')}</td></tr>
+            {/each}
+          </tbody>
+        </table>
       {:else if !loadError}
         <p class="center">{t('god.loading')}</p>
       {/if}

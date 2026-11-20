@@ -1,6 +1,7 @@
 <script lang="ts">
   import { appBase } from '../../lib/deployment';
   import { t } from '../../lib/i18n';
+  import { ApiError, god } from '../god/api';
   import { floatDragged, godAdminUrl, nextFloatPosition, type FloatPrefs } from './floatState';
   import { inspectDocument, type InspectPage } from './inspect';
 
@@ -16,7 +17,10 @@
 
   let menu = $state(false);
   let inspect = $state(false);
-  let copied = $state(false);
+  let shareTtl = $state<'1h' | '24h' | '7d'>('24h');
+  let shareUrl = $state('');
+  let shareError = $state('');
+  let sharing = $state(false);
   let dragging = $state(false);
   let root = $state<HTMLDivElement>();
   let x = $state(0.78);
@@ -35,7 +39,6 @@
   });
 
   const doc = $derived(inspectDocument(page));
-  const text = $derived(JSON.stringify(doc, null, 2));
   const sections = $derived(Object.entries(doc));
 
   function stageBox(): { width: number; height: number } | null {
@@ -85,15 +88,29 @@
   function openInspect(): void {
     menu = false;
     inspect = true;
-    copied = false;
+    shareUrl = '';
+    shareError = '';
   }
 
-  async function copyJson(): Promise<void> {
+  async function shareLink(): Promise<void> {
+    sharing = true;
+    shareError = '';
     try {
-      await navigator.clipboard.writeText(text);
-      copied = true;
+      const made = await god<{ url: string }>('snapshots', { method: 'POST', body: JSON.stringify({ ttl: shareTtl, document: doc }) });
+      shareUrl = made.url;
+    } catch (error) {
+      shareUrl = '';
+      shareError = error instanceof ApiError ? error.code : 'error';
+    } finally {
+      sharing = false;
+    }
+  }
+
+  async function copyLink(): Promise<void> {
+    try {
+      await navigator.clipboard.writeText(shareUrl);
     } catch {
-      copied = false;
+      shareError = 'copy';
     }
   }
 </script>
@@ -122,8 +139,21 @@
   <section class="inspect" data-testid="god-inspect" aria-label={t('god.float.inspectTitle')}>
     <header>
       <h2>{t('god.float.inspectTitle')}</h2>
-      <button type="button" data-testid="god-inspect-copy" onclick={copyJson}>{copied ? t('god.float.copied') : t('god.float.copy')}</button>
+      <label class="ttl">{t('god.float.shareFor')}
+        <select data-testid="god-share-ttl" bind:value={shareTtl}>
+          <option value="1h">{t('god.float.ttl1h')}</option>
+          <option value="24h">{t('god.float.ttl24h')}</option>
+          <option value="7d">{t('god.float.ttl7d')}</option>
+        </select>
+      </label>
+      <button type="button" data-testid="god-inspect-share" disabled={sharing} onclick={shareLink}>{t('god.float.share')}</button>
       <button type="button" onclick={() => (inspect = false)}>{t('god.float.close')}</button>
+      {#if shareUrl}
+        <p class="share" data-testid="god-share-url"><a href={shareUrl}>{shareUrl}</a>
+          <button type="button" onclick={copyLink}>{t('god.float.copyLink')}</button>
+        </p>
+      {/if}
+      {#if shareError}<p class="share err" role="alert">{t('god.float.shareError')}</p>{/if}
     </header>
     {#each sections as [key, value] (key)}
       <details open={key === 'page' || key === 'scene' || key === 'event' || key === 'versions'}>
@@ -187,6 +217,10 @@
     user-select: text;
   }
   .inspect header { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .ttl { display: flex; gap: 6px; align-items: center; font-size: 0.9rem; }
+  .ttl select, .share button { min-height: 40px; border-radius: 10px; }
+  .share { flex-basis: 100%; margin: 0; word-break: break-all; font-size: 12px; }
+  .share.err { color: #ffb020; }
   .inspect h2 { margin: 0; font-size: 1rem; flex: 1; }
   .inspect details { margin-top: 8px; }
   .inspect summary { cursor: pointer; font-weight: 700; }
