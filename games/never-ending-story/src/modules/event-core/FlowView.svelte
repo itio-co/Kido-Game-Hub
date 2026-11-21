@@ -126,18 +126,16 @@
       count={pages.length}
       index={session.page}
       onNext={() => session.nextPage()}
-    />
-    {#if session.page > 0}
-      <button type="button" class="prev" onclick={() => session.prevPage()}>{session.screen === 'ending-comic' ? t('ending.prev') : 'ก่อนหน้า'}</button>
-    {/if}
-    {#if session.screen === 'ending-comic' || session.caseDone}
-      <button type="button" class="skip" class:loud={session.caseDone && session.screen !== 'ending-comic'} onclick={() => session.skipCutscene()}>
-        {session.screen === 'ending-comic' ? t('ending.skip') : t('skip.intro')}
-      </button>
-    {/if}
-    {#if session.screen === 'cutscene' && session.caseDone}
-      <button type="button" class="skip mapskip" onclick={() => session.skipToMap()}>{t('skip.intro')} → แผนผัง</button>
-    {/if}
+      onPrev={() => session.prevPage()}
+    >
+      {#snippet actions()}
+        {#if session.screen === 'ending-comic' || session.caseDone}
+          <button type="button" class="skip" data-testid="comic-skip" class:loud={session.caseDone && session.screen !== 'ending-comic'} onclick={() => session.skipCutscene()}>
+            {session.screen === 'ending-comic' ? t('ending.skip') : t('skip.intro')}
+          </button>
+        {/if}
+      {/snippet}
+    </ComicPanel>
   {:else if session.screen === 'difficulty'}
     <div class="pick">
       <h1>เลือกระดับความยากของคดีนี้</h1>
@@ -386,9 +384,7 @@
   .evt small { font-size: var(--fs-sm); }
   .badge, .lock { position: absolute; z-index: 1; top: 8px; left: 8px; background: #ffcf4a; color: #3a2a00; border-radius: 8px; padding: 2px 8px; font-weight: 800; font-size: var(--fs-sm); }
   .lock { top: 36%; left: 50%; transform: translate(-50%, -50%); background: transparent; color: #fff; font-size: calc(var(--fs) + 8px); }
-  .skip, .prev { position: absolute; z-index: 6; bottom: 16px; background: rgba(0, 0, 0, 0.55); color: #fff; border: 0; border-radius: 16px; padding: 8px 14px; font-size: var(--fs-sm); font-weight: 700; }
-  .skip { right: 12px; }
-  .prev { left: 84px; }
+  .skip { background: rgba(0, 0, 0, 0.55); color: #fff; border: 0; border-radius: 16px; padding: 8px 14px; font-size: var(--fs-sm); font-weight: 700; white-space: nowrap; }
   .pick { background: linear-gradient(160deg, #f6e7d7, #e8d3f0); color: #3a3550; }
   .pick h1 { margin: 12px 0 8px; text-align: center; font-size: calc(var(--fs) + 6px); }
   .pick button, .mgbtn, .chips button, .link { min-height: 48px; border-radius: 12px; border: 1px solid #39e0ff; background: #0d4a66; color: #fff; font-weight: 800; font-size: var(--fs); padding: 10px 14px; }
@@ -458,7 +454,6 @@
   .calx { position: absolute; right: 22px; top: 78px; width: 36px; height: 36px; border-radius: 50%; border: 0; background: #fff; color: #333; font-size: 18px; }
   .link { margin-top: 8px; background: #fff; color: #4a2e18; border: 1px solid #888; }
   .skip.loud { background: #39e0ff; color: #06212f; font-weight: 800; }
-  .skip.mapskip { right: 12px; bottom: 56px; }
   .egg-modal { position: absolute; inset: 0; z-index: 20; background: rgba(0,0,0,0.55); display: grid; place-items: center; padding: 24px; }
   .egg-card { width: min(100%, 320px); background: #0d2a3c; border: 2px solid #39e0ff; border-radius: 16px; padding: 16px; text-align: center; }
   .egg-card img { width: 160px; height: 160px; object-fit: contain; margin: 0 auto 10px; display: block; }

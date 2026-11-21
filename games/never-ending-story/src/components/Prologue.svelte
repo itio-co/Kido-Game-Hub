@@ -38,10 +38,8 @@
       count={PROLOGUE_PAGES.length}
       index={page}
       onNext={next}
+      onPrev={() => { if (page > 0) page -= 1; }}
     />
-    {#if page > 0}
-      <button type="button" class="prev" onclick={() => (page -= 1)}>{t('ending.prev')}</button>
-    {/if}
     <button type="button" class="skip" data-testid="prologue-skip" onclick={() => (profile.nickname ? onDone() : (naming = true))}>{t('prologue.skip')}</button>
   {:else}
     <form class="name" data-testid="prologue-name" onsubmit={(event) => { event.preventDefault(); confirm(); }}>
@@ -64,9 +62,8 @@
 
 <style>
   .prologue { position: absolute; inset: 0; z-index: 20; background: #000; }
-  .skip, .prev { position: absolute; z-index: 6; bottom: 16px; background: rgba(0, 0, 0, 0.55); color: #fff; border: 0; border-radius: 16px; padding: 8px 14px; font-size: var(--fs-sm); font-weight: 700; }
+  .skip { position: absolute; z-index: 6; bottom: 16px; background: rgba(0, 0, 0, 0.55); color: #fff; border: 0; border-radius: 16px; padding: 8px 14px; font-size: var(--fs-sm); font-weight: 700; }
   .skip { right: 12px; top: 16px; bottom: auto; }
-  .prev { left: 12px; }
   .name { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: center; gap: 12px; padding: 24px; background: linear-gradient(#10141c, #1c2a3a); color: var(--ink); }
   .name h1 { margin: 0; font-size: 1.5em; }
   .name p { margin: 0; line-height: 1.5; }
