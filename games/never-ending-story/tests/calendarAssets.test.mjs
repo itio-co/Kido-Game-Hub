@@ -123,6 +123,55 @@ for (const [design, file] of Object.entries(DESIGN_OVERLAY)) {
   }
   shadowBoxes.push(any);
 }
+// 0.6.30 edge quality (checked on a dark pink background, where the v0.6.29 colour-keyed mattes looked ragged)
+function components(img, minAlpha) {
+  const seen = new Uint8Array(img.width * img.height);
+  let n = 0;
+  for (let i = 0; i < seen.length; i++) {
+    if (seen[i] || img.alpha(i % img.width, (i / img.width) | 0) <= minAlpha) continue;
+    n++; const stack = [i]; seen[i] = 1;
+    while (stack.length) {
+      const j = stack.pop(), x = j % img.width, y = (j / img.width) | 0;
+      for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+        const X = x + dx, Y = y + dy, k = Y * img.width + X;
+        if (X < 0 || Y < 0 || X >= img.width || Y >= img.height || seen[k] || img.alpha(X, Y) <= minAlpha) continue;
+        seen[k] = 1; stack.push(k);
+      }
+    }
+  }
+  return n;
+}
+function edgeWobble(img, side) {
+  // sub-pixel edge position per row/column from body coverage (shadow alpha stays below 80);
+  // a straight anti-aliased edge has a near-zero second difference, stair-steps/notches do not
+  const cov = (x, y) => Math.min(1, Math.max(0, (img.alpha(x, y) - 80) / 175));
+  const e = [];
+  if (side === 'bottom') for (let x = FOOTPRINT.x0 + 7; x < FOOTPRINT.x1 - 8; x++) { let s = 0; for (let y = 470; y < 490; y++) s += cov(x, y); e.push(s); }
+  else for (let y = FOOTPRINT.y0 + 6; y < 470; y++) {
+    let s = 0; const [a, b] = side === 'left' ? [FOOTPRINT.x0 - 4, FOOTPRINT.x0 + 11] : [FOOTPRINT.x1 - 9, FOOTPRINT.x1 + 6];
+    for (let x = a; x < b; x++) s += cov(x, y); e.push(s);
+  }
+  let worst = 0;
+  for (let i = 1; i < e.length - 1; i++) worst = Math.max(worst, Math.abs(e[i - 1] - 2 * e[i] + e[i + 1]));
+  return worst;
+}
+for (const [design, file] of Object.entries(DESIGN_OVERLAY)) {
+  const img = decodeRgba(await read(`public/img/decor/${file}`));
+  assert.equal(components(img, 0), 1, `${design}: stray semi-transparent specks`);
+  assert.equal(components(img, 200), 1, `${design}: body, rope and nail must be one solid shape`);
+  for (const side of ['left', 'right', 'bottom']) {
+    const w = edgeWobble(img, side);
+    assert.ok(w <= 0.3, `${design} ${side} edge is ragged (wobble ${w.toFixed(2)} px)`);
+  }
+  // soft shadow fades to nothing: wherever the overlay meets fully transparent pixels it is already ~0
+  // (a clipped/boxed shadow would end on a visible step)
+  let rim = 0;
+  for (let y = 1; y < img.height - 1; y++) for (let x = 1; x < img.width - 1; x++) {
+    const v = img.alpha(x, y);
+    if (v && (!img.alpha(x - 1, y) || !img.alpha(x + 1, y) || !img.alpha(x, y - 1) || !img.alpha(x, y + 1))) rim = Math.max(rim, v);
+  }
+  assert.ok(rim <= 3, `${design} overlay ends on a hard alpha step (${rim})`);
+}
 // all designs share one outer box (±TOL), so swapping never changes size or position
 for (const b of shadowBoxes) for (const k of Object.keys(b)) assert.ok(Math.abs(b[k] - shadowBoxes[0][k]) <= TOL, `outer box ${k} differs`);
 // the take-down patch covers the original footprint plus its drop shadow
