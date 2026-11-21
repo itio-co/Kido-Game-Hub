@@ -381,5 +381,16 @@
   "calendar.locked": "ยังล็อกอยู่",
   "calendar.lockedPrefix": "ล็อก ",
   "calendar.close": "ปิด",
-  "calendar.downShort": "เก็บลงแล้ว"
+  "calendar.downShort": "เก็บลงแล้ว",
+  "photo.title": "รูปปู่",
+  "photo.manage": "จัดรูปบนชั้น",
+  "photo.onShelfShort": "อยู่บนชั้น",
+  "photo.storedShort": "เก็บไว้แล้ว",
+  "photo.store": "เก็บรูปลง",
+  "photo.putBack": "วางรูปกลับบนชั้น",
+  "photo.onShelfBody": "รูปปู่ตอนหนุ่มวางอยู่บนชั้นของที่ระลึก",
+  "photo.storedBody": "เก็บรูปปู่ไว้แล้ว ชั้นว่าง วางกลับเมื่อไหร่ก็ได้",
+  "photo.storedNote": "รูปยังเป็นของหนูเสมอ เก็บแล้วไม่หาย",
+  "toast.photoStored": "เก็บรูปปู่แล้ว",
+  "toast.photoBack": "วางรูปปู่กลับบนชั้นแล้ว"
 }

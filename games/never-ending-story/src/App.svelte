@@ -4,6 +4,7 @@
   import EditorView from './components/EditorView.svelte';
   import AssetBrowser from './components/AssetBrowser.svelte';
   import CalendarPanel from './components/CalendarPanel.svelte';
+  import PhotoPanel from './components/PhotoPanel.svelte';
   import { isDesignLocked, themeForDesign, type CalendarState } from './lib/calendarDecor';
   import { FlowView, createFlow, loadFlow } from './modules/event-core';
   import Hud from './components/Hud.svelte';
@@ -19,7 +20,7 @@
   import { minigameRoute } from './modules/minigame-core';
   import { loadPlayerRoom } from './lib/loadRoom';
   import { readSave, writeSave } from './lib/save';
-  import { DECOR_PHOTO, KEEPSAKE_SHELF_ID, isGrandpaPhoto } from './lib/decor';
+  import { DECOR_PHOTO, KEEPSAKE_SHELF_ID, isGrandpaPhoto, photoPlaced, type GrandpaPhotoState } from './lib/decor';
   import { appStorage } from './lib/deployment';
   import { buildInfo } from './lib/buildInfo';
   import {
@@ -38,7 +39,7 @@
   let room = $state<PlayerRoom | null>(null);
   let save = $state<SaveV1>(readSave());
   let error = $state<string | null>(null);
-  let overlay = $state<null | 'calendar' | 'settings' | 'decor'>(null);
+  let overlay = $state<null | 'calendar' | 'settings' | 'decor' | 'photo'>(null);
   let decorSlotId = $state<string | null>(null);
   let selectedId = $state<string | null>(null);
   let hintId = $state<string | null>(null);
@@ -129,7 +130,8 @@
       if (!hotspot) return;
       if (hotspot.kind === 'decor-slot') {
         decorSlotId = hotspot.id;
-        overlay = 'decor';
+        // once the story has placed Grandpa's photo, the shelf opens its own panel (put away / back)
+        overlay = hotspot.id === KEEPSAKE_SHELF_ID && photoPlaced(save.player.decor) ? 'photo' : 'decor';
       } else if (hotspot.action === 'event-select') void session.go('event-select');
       else if (hotspot.action === 'practice') session.enterPractice();
       else if (hotspot.action === 'calendar') overlay = 'calendar';
@@ -210,9 +212,18 @@
     }
     next[KEEPSAKE_SHELF_ID] = DECOR_PHOTO;
     save.player.decor = next;
+    save.player.room = { ...save.player.room, grandpaPhoto: 'shelf' };
     commit();
     overlay = null;
     showToast(t('toast.photoPlaced'));
+  }
+
+  /** Put the photo away or back. Only player.room changes; the placed decor (story record) stays. */
+  function setGrandpaPhoto(next: GrandpaPhotoState): void {
+    if (!photoPlaced(save.player.decor) || save.player.room.grandpaPhoto === next) return;
+    save.player.room = { ...save.player.room, grandpaPhoto: next };
+    commit();
+    showToast(t(next === 'stored' ? 'toast.photoStored' : 'toast.photoBack'));
   }
 
   function decorBody(): string {
@@ -370,6 +381,7 @@
           {hintId}
           decor={save.player.decor}
           calendar={save.player.room.calendar}
+          grandpaPhoto={save.player.room.grandpaPhoto}
           onTap={choose}
           onMiss={() => (selectedId = null)}
         />
@@ -434,6 +446,13 @@
         onTheme={setTheme}
         onWall={setCalendarWall}
         onEntry={onCalendarEntry}
+        onClose={() => (overlay = null)}
+      />
+    {:else if overlay === 'photo' && decorHotspot && session.screen === 'player-room'}
+      <PhotoPanel
+        title={decorHotspot.title}
+        photoState={save.player.room.grandpaPhoto}
+        onState={setGrandpaPhoto}
         onClose={() => (overlay = null)}
       />
     {:else if overlay === 'decor' && decorHotspot}

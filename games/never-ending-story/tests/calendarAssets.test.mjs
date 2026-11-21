@@ -180,4 +180,34 @@ for (let y = FOOTPRINT.y0; y <= FOOTPRINT.y1 + 20; y++) for (let x = FOOTPRINT.x
   assert.equal(patch.alpha(x, y), 255, `wall patch opaque at ${x},${y}`);
 }
 
+// 0.6.31: Grandpa's photo on the keepsake shelf (geometry alpha like the calendars; the shelf in the
+// backdrop is empty, so putting the photo away just drops this layer)
+{
+  const img = decodeRgba(await read('public/img/decor/keepsake-shelf-grandpa-photo.png'));
+  assert.equal(img.width, 720); assert.equal(img.height, 1280);
+  const FRAME = { x0: 452, y0: 265, x1: 556, y1: 387 }; // outer frame, backdrop px
+  const LIP_Y = 388; // shelf lip in front of the frame bottom
+  const opaque = { x0: Infinity, y0: Infinity, x1: -1, y1: -1 };
+  for (let y = 0; y < img.height; y++) for (let x = 0; x < img.width; x++) {
+    const a = img.alpha(x, y);
+    if (y >= LIP_Y) assert.equal(a, 0, `photo layer covers the shelf lip at ${x},${y}`);
+    if (a > 200) { opaque.x0 = Math.min(opaque.x0, x); opaque.x1 = Math.max(opaque.x1, x); opaque.y0 = Math.min(opaque.y0, y); opaque.y1 = Math.max(opaque.y1, y); }
+  }
+  for (const k of Object.keys(FRAME)) assert.ok(Math.abs(opaque[k] - FRAME[k]) <= 1, `photo frame ${k}=${opaque[k]} expected ${FRAME[k]}±1`);
+  assert.equal(components(img, 0), 1, 'photo: stray semi-transparent specks');
+  assert.equal(components(img, 200), 1, 'photo: frame must be one solid shape');
+  // straight anti-aliased frame sides (v0.6.25 was a feathered AI patch)
+  const cov = (x, y) => Math.min(1, Math.max(0, (img.alpha(x, y) - 100) / 155));
+  const wobble = (e) => { let w = 0; for (let i = 1; i < e.length - 1; i++) w = Math.max(w, Math.abs(e[i - 1] - 2 * e[i] + e[i + 1])); return w; };
+  const left = [], right = [], top = [];
+  for (let y = FRAME.y0 + 6; y < FRAME.y1 - 6; y++) {
+    let l = 0, r = 0;
+    for (let x = FRAME.x0 - 4; x < FRAME.x0 + 12; x++) l += cov(x, y);
+    for (let x = FRAME.x1 - 8; x < FRAME.x1 + 6; x++) r += cov(x, y);
+    left.push(l); right.push(r);
+  }
+  for (let x = FRAME.x0 + 12; x < FRAME.x1 - 6; x++) { let t = 0; for (let y = FRAME.y0 - 4; y < FRAME.y0 + 8; y++) t += cov(x, y); top.push(t); }
+  for (const [side, e] of [['left', left], ['right', right], ['top', top]]) assert.ok(wobble(e) <= 0.3, `photo ${side} edge is ragged (${wobble(e).toFixed(2)})`);
+}
+
 console.log('calendarAssets: ok');
