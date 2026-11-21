@@ -640,11 +640,8 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
 
   const subtitle = $derived.by(() => {
     if (screen === 'event-select') return 'แตะการ์ดเพื่อเริ่มเหตุการณ์';
-    if (screen === 'cutscene') return `หน้า ${page + 1}/3`;
-    if (screen === 'ending-comic') {
-      const total = flow?.pages.filter((item) => item.eventId === endingIdFor(primaryEventId(flow))).length ?? 5;
-      return `หน้า ${page + 1}/${total}`;
-    }
+    // comic pages: the dots in the panel's bottom bar are the page indicator (no extra pill over the caption)
+    if (screen === 'cutscene' || screen === 'ending-comic') return '';
     if (screen === 'difficulty') return 'เลือกได้ใหม่ทุกครั้งที่เริ่มคดี ไม่มีจำกัดเวลา';
     if (screen === 'practice') return '';
     if (screen === 'level-map') return practice ? '' : 'ผ่านด่านเพื่อปลดล็อกด่านถัดไป';
