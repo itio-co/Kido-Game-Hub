@@ -279,6 +279,26 @@ dialog.sheet::backdrop { display: none; }
   position: sticky;
   bottom: 0;
 }
+/* Calendar panel: only the body scrolls; the close bar sits outside it, so it never covers content. */
+.sheet.calendar-sheet {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding-bottom: 12px;
+}
+.calendar-sheet .sheet-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  position: relative;
+  padding-bottom: 4px;
+}
+.calendar-sheet .sheet-foot {
+  flex: 0 0 auto;
+  padding-top: 10px;
+}
+.calendar-sheet .sheet-foot .close { position: static; }
 .sheet .action { margin-bottom: 8px; background: #ffcf4a; color: #3a2a00; }
 
 .tutor {

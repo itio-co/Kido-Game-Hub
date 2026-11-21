@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { CalendarEntity, CalendarThemeEntity } from '../lib/types';
+  import { tick } from 'svelte';
   import { t } from '../lib/i18n';
   import { designForTheme, isCalendarState, isDesignLocked, themeForDesign, type CalendarState } from '../lib/calendarDecor';
 
@@ -72,6 +73,20 @@
     return title ?? '';
   });
 
+  let body = $state<HTMLDivElement | null>(null);
+
+  /** Expanding scrolls the options fully into the body, which ends above the close bar. */
+  async function toggleChange(): Promise<void> {
+    changeOpen = !changeOpen;
+    if (!changeOpen) return;
+    await tick();
+    const section = body?.querySelector<HTMLElement>('[data-testid="calendar-change"]');
+    if (!body || !section) return;
+    const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    const bottom = section.offsetTop + section.offsetHeight - body.clientHeight;
+    if (bottom > body.scrollTop) body.scrollTo({ top: bottom, behavior: reduce ? 'auto' : 'smooth' });
+  }
+
   function hangBack(): void {
     const design = designForTheme(calendar.themes, themeId);
     onWall(isDesignLocked(design, solvedCaseIds) ? 'original' : design);
@@ -84,7 +99,8 @@
 
 <div class="scrim" onclick={onClose} role="presentation">
   {#if theme}
-    <dialog class="sheet" aria-label={calendar.title} open onclick={(event) => event.stopPropagation()}>
+    <dialog class="sheet calendar-sheet" aria-label={calendar.title} open onclick={(event) => event.stopPropagation()}>
+      <div class="sheet-body" data-testid="calendar-scroll" bind:this={body}>
       <div class="cal" style="background:{theme.paper};color:{theme.ink};border:4px solid {theme.frame}">
         <div class="cal-head" style="background:{theme.head}">
           <span>{theme.art} {calendar.title}</span>
@@ -130,7 +146,7 @@
             data-testid="calendar-change-toggle"
             aria-expanded={changeOpen}
             aria-controls="calendar-change-options"
-            onclick={() => (changeOpen = !changeOpen)}
+            onclick={toggleChange}
           >
             <span class="label">{t('calendar.change')}</span>
             <span class="current">{currentLabel}</span>
@@ -167,7 +183,10 @@
           {/if}
         </div>
       {/if}
-      <button type="button" class="close" onclick={onClose}>{t('calendar.close')}</button>
+      </div>
+      <div class="sheet-foot">
+        <button type="button" class="close" data-testid="calendar-close" onclick={onClose}>{t('calendar.close')}</button>
+      </div>
     </dialog>
   {/if}
 </div>
