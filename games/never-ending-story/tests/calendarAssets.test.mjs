@@ -43,6 +43,12 @@ assert.match(panel, /aria-expanded=\{changeOpen\}/, 'toggle exposes aria-expande
 assert.match(panel, /data-testid="calendar-change-toggle"/, 'toggle test id');
 assert.match(panel, /data-testid="calendar-change"/, 'section test id kept');
 assert.match(panel, /\{#if changeOpen\}[\s\S]*calendar\.takeDown[\s\S]*\{\/if\}/, 'options and take-down live inside the collapsible part');
+// 0.6.28: the close bar lives outside the scrolling body so it cannot cover the take-down button.
+const bodyStart = panel.indexOf('data-testid="calendar-scroll"');
+const footStart = panel.indexOf('class="sheet-foot"');
+assert.ok(bodyStart > 0 && footStart > bodyStart, 'scroll body then foot');
+assert.ok(panel.indexOf('calendar.takeDown') > bodyStart && panel.indexOf('calendar.takeDown') < footStart, 'take-down is inside the scroll body');
+assert.ok(panel.indexOf("t('calendar.close')") > footStart, 'close button is in the foot, outside the scroll body');
 for (const locale of ['th', 'en']) {
   const table = JSON.parse(await read(`src/locales/${locale}.json`));
   for (const key of ['calendar.change', 'calendar.downShort', 'calendar.takeDown', 'calendar.hangBack', 'calendar.downNote']) {
