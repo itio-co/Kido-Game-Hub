@@ -3,6 +3,7 @@
 // the room data links each calendar skin to a wall design.
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
+import zlib from 'node:zlib';
 import { DESIGN_OVERLAY, WALL_PATCH, CALENDAR_STATES } from '../src/lib/calendarDecor.ts';
 
 const base = new URL('../', import.meta.url);
@@ -54,6 +55,80 @@ for (const locale of ['th', 'en']) {
   for (const key of ['calendar.change', 'calendar.downShort', 'calendar.takeDown', 'calendar.hangBack', 'calendar.downNote']) {
     assert.ok(table[key], `${locale} ${key}`);
   }
+}
+
+// 0.6.29: every design hangs on the original calendar's footprint (measured on the backdrop:
+// header top to page bottom incl. paper thickness) and from the same nail.
+const FOOTPRINT = { x0: 251, y0: 371, x1: 354, y1: 482 };
+const NAIL_TOP = { x: 301, y: 338 };
+const TOL = 2;
+
+function decodeRgba(buf) {
+  let off = 8, width = 0, height = 0;
+  const idat = [];
+  while (off < buf.length) {
+    const len = buf.readUInt32BE(off);
+    const type = buf.subarray(off + 4, off + 8).toString('latin1');
+    const data = buf.subarray(off + 8, off + 8 + len);
+    if (type === 'IHDR') {
+      width = data.readUInt32BE(0); height = data.readUInt32BE(4);
+      assert.equal(data[8], 8, 'bit depth 8'); assert.equal(data[9], 6, 'RGBA'); assert.equal(data[12], 0, 'not interlaced');
+    } else if (type === 'IDAT') idat.push(data);
+    off += 12 + len;
+  }
+  const raw = zlib.inflateSync(Buffer.concat(idat));
+  const stride = width * 4, out = Buffer.alloc(stride * height);
+  for (let y = 0; y < height; y++) {
+    const f = raw[y * (stride + 1)], src = y * (stride + 1) + 1, dst = y * stride;
+    for (let x = 0; x < stride; x++) {
+      const a = x >= 4 ? out[dst + x - 4] : 0, b = y ? out[dst - stride + x] : 0, c = x >= 4 && y ? out[dst - stride + x - 4] : 0;
+      let v = raw[src + x];
+      if (f === 1) v += a; else if (f === 2) v += b; else if (f === 3) v += (a + b) >> 1;
+      else if (f === 4) { const p = a + b - c, pa = Math.abs(p - a), pb = Math.abs(p - b), pc = Math.abs(p - c); v += pa <= pb && pa <= pc ? a : pb <= pc ? b : c; }
+      out[dst + x] = v & 255;
+    }
+  }
+  return { width, height, alpha: (x, y) => out[(y * width + x) * 4 + 3] };
+}
+
+function bodyFootprint(img) {
+  // calendar body = (nearly) opaque pixels; the contact shadow stays well below 200
+  const rows = new Array(img.height).fill(0);
+  for (let y = 0; y < img.height; y++) for (let x = 0; x < img.width; x++) if (img.alpha(x, y) > 200) rows[y]++;
+  const max = Math.max(...rows);
+  const headerTop = rows.findIndex((n) => n >= 0.6 * max);
+  const nailY = rows.findIndex((n) => n > 0);
+  const box = { x0: Infinity, y0: Infinity, x1: -1, y1: -1 };
+  let nx0 = Infinity, nx1 = -1;
+  for (let y = 0; y < img.height; y++) for (let x = 0; x < img.width; x++) {
+    if (img.alpha(x, y) <= 200) continue;
+    if (y >= headerTop) { box.x0 = Math.min(box.x0, x); box.x1 = Math.max(box.x1, x); box.y0 = Math.min(box.y0, y); box.y1 = Math.max(box.y1, y); }
+    if (y <= nailY + 4) { nx0 = Math.min(nx0, x); nx1 = Math.max(nx1, x); }
+  }
+  return { box, nail: { x: (nx0 + nx1) / 2, y: nailY } };
+}
+
+const shadowBoxes = [];
+for (const [design, file] of Object.entries(DESIGN_OVERLAY)) {
+  const img = decodeRgba(await read(`public/img/decor/${file}`));
+  const { box, nail } = bodyFootprint(img);
+  for (const k of Object.keys(FOOTPRINT)) {
+    assert.ok(Math.abs(box[k] - FOOTPRINT[k]) <= TOL, `${design} ${k}=${box[k]} expected ${FOOTPRINT[k]}±${TOL}`);
+  }
+  assert.ok(Math.abs(nail.x - NAIL_TOP.x) <= TOL && Math.abs(nail.y - NAIL_TOP.y) <= TOL, `${design} nail ${JSON.stringify(nail)}`);
+  // whole overlay (incl. contact shadow) lies inside the wall patch, so no old-calendar pixel can peek out
+  const any = { x0: Infinity, y0: Infinity, x1: -1, y1: -1 };
+  for (let y = 0; y < img.height; y++) for (let x = 0; x < img.width; x++) if (img.alpha(x, y) > 10) {
+    any.x0 = Math.min(any.x0, x); any.x1 = Math.max(any.x1, x); any.y0 = Math.min(any.y0, y); any.y1 = Math.max(any.y1, y);
+  }
+  shadowBoxes.push(any);
+}
+// all designs share one outer box (±TOL), so swapping never changes size or position
+for (const b of shadowBoxes) for (const k of Object.keys(b)) assert.ok(Math.abs(b[k] - shadowBoxes[0][k]) <= TOL, `outer box ${k} differs`);
+// the take-down patch covers the original footprint plus its drop shadow
+const patch = decodeRgba(await read(`public/img/decor/${WALL_PATCH}`));
+for (let y = FOOTPRINT.y0; y <= FOOTPRINT.y1 + 20; y++) for (let x = FOOTPRINT.x0; x <= FOOTPRINT.x1 + (y < 395 ? 8 : 12); x++) {
+  assert.equal(patch.alpha(x, y), 255, `wall patch opaque at ${x},${y}`);
 }
 
 console.log('calendarAssets: ok');
