@@ -474,7 +474,8 @@
           "head": "#ff9a62",
           "frame": "#7ec8e3",
           "art": "🎈",
-          "unlock": null
+          "unlock": null,
+          "wall": "original"
         },
         {
           "id": "cfe3efe9-05a8-4528-a0f0-7319e32ddf0f",
@@ -487,7 +488,8 @@
           "head": "#6b3f22",
           "frame": "#8a5a34",
           "art": "🌺",
-          "unlock": null
+          "unlock": null,
+          "wall": "wooden-home"
         },
         {
           "id": "5abeab1b-cd53-46ec-a629-a1213a7524c8",
@@ -503,7 +505,22 @@
           "unlock": {
             "afterCase": "case-01"
           },
-          "lockedHint": "ปลดล็อกเมื่อจบคดี 01"
+          "lockedHint": "ปลดล็อกเมื่อจบคดี 01",
+          "wall": "night-sky"
+        },
+        {
+          "id": "16b9004f-d830-4339-ae35-3eed2fe9d564",
+          "kind": "calendar-theme",
+          "title": "สวนใบไม้",
+          "titleEn": "Garden",
+          "slug": "player-room/calendar/theme/garden",
+          "paper": "#f6f1e2",
+          "ink": "#34432a",
+          "head": "#7f9a5c",
+          "frame": "#a8bf8c",
+          "art": "🌿",
+          "unlock": null,
+          "wall": "garden"
         }
       ]
     },

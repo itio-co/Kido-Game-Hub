@@ -1,3 +1,4 @@
+import type { RoomDecorState } from './calendarDecor';
 import type { EntityKind } from './catalog';
 
 export type Vec3 = [number, number, number];
@@ -109,6 +110,8 @@ export type CalendarThemeEntity = Identity & {
   art: string;
   unlock: { afterCase: string } | null;
   lockedHint?: string;
+  /** Wall design id this skin matches (see lib/calendarDecor.ts). */
+  wall?: string;
 };
 
 export type CalendarEntryEntity = Identity & {
@@ -238,6 +241,8 @@ export type PlayerProfile = {
   soundEnabled: boolean;
   calendarTheme: string | null;
   decor: Record<string, string | null>;
+  /** What hangs on the player-room wall (calendar design, or taken down). */
+  room: RoomDecorState;
 };
 
 /** What this player has learned. Not the case's objective facts. */

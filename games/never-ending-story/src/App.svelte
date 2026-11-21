@@ -4,6 +4,7 @@
   import EditorView from './components/EditorView.svelte';
   import AssetBrowser from './components/AssetBrowser.svelte';
   import CalendarPanel from './components/CalendarPanel.svelte';
+  import { isDesignLocked, themeForDesign, type CalendarState } from './lib/calendarDecor';
   import { FlowView, createFlow, loadFlow } from './modules/event-core';
   import Hud from './components/Hud.svelte';
   import Onboarding from './components/Onboarding.svelte';
@@ -188,6 +189,15 @@
     commit();
   }
 
+  /** Change what hangs on the wall; a design also switches the panel to its matching skin. */
+  function setCalendarWall(next: CalendarState): void {
+    if (!calendar || isDesignLocked(next, save.knowledge.solvedCaseIds)) return;
+    save.player.room = { ...save.player.room, calendar: next };
+    const theme = themeForDesign(calendar.themes, next);
+    if (theme) save.player.calendarTheme = theme;
+    commit();
+  }
+
   function canPlacePhoto(slotId: string | null): boolean {
     return !!slotId && slotId === KEEPSAKE_SHELF_ID;
   }
@@ -359,6 +369,7 @@
           {selectedId}
           {hintId}
           decor={save.player.decor}
+          calendar={save.player.room.calendar}
           onTap={choose}
           onMiss={() => (selectedId = null)}
         />
@@ -419,7 +430,9 @@
         calendar={calendar}
         {themeId}
         solvedCaseIds={save.knowledge.solvedCaseIds}
+        wall={save.player.room.calendar}
         onTheme={setTheme}
+        onWall={setCalendarWall}
         onEntry={onCalendarEntry}
         onClose={() => (overlay = null)}
       />

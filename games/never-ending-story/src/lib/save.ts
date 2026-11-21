@@ -2,6 +2,7 @@ import { appStorage } from './deployment';
 import type { FlowProgress, SaveV1, TextSize } from './types';
 import { markDirty } from './cloudSync';
 import { normalizeDecor } from './decor';
+import { DEFAULT_CALENDAR, normalizeRoomDecor } from './calendarDecor';
 
 export const SAVE_KEY = 'nesg.player.v1';
 
@@ -17,6 +18,7 @@ export function defaultSave(): SaveV1 {
       soundEnabled: false,
       calendarTheme: null,
       decor: {},
+      room: { calendar: DEFAULT_CALENDAR },
     },
     knowledge: {
       evidence: [],
@@ -67,6 +69,11 @@ export function readSave(): SaveV1 {
     const textSize = SIZES.includes(player.textSize as TextSize) ? (player.textSize as TextSize) : 'md';
     const rawDecor = isRecord(player.decor) ? (player.decor as Record<string, string | null>) : {};
     const decorReport = normalizeDecor(rawDecor);
+    const solvedCaseIds = Array.isArray(knowledge.solvedCaseIds)
+      ? knowledge.solvedCaseIds.filter((id): id is string => typeof id === 'string')
+      : [];
+    const solvedForRoom = flow.caseDone === true && !solvedCaseIds.includes('case-01') ? [...solvedCaseIds, 'case-01'] : solvedCaseIds;
+    const room = normalizeRoomDecor(player.room, solvedForRoom);
     const save: SaveV1 = {
       version: 1,
       player: {
@@ -76,12 +83,11 @@ export function readSave(): SaveV1 {
         soundEnabled: player.soundEnabled === true,
         calendarTheme: typeof player.calendarTheme === 'string' ? player.calendarTheme : null,
         decor: decorReport.decor,
+        room,
       },
       knowledge: {
         evidence: Array.isArray(knowledge.evidence) ? knowledge.evidence.filter((id) => typeof id === 'string') : [],
-        solvedCaseIds: Array.isArray(knowledge.solvedCaseIds)
-          ? knowledge.solvedCaseIds.filter((id) => typeof id === 'string')
-          : [],
+        solvedCaseIds,
         exploreHints: typeof knowledge.exploreHints === 'number' ? knowledge.exploreHints : 0,
       },
       caseState: {

@@ -2,12 +2,14 @@
   import type { PlayerRoom } from '../lib/types';
   import { t } from '../lib/i18n';
   import { KEEPSAKE_SHELF_ID, isGrandpaPhoto } from '../lib/decor';
+  import { calendarLayers, type CalendarState } from '../lib/calendarDecor';
 
   let {
     room,
     selectedId = null,
     hintId = null,
     decor = {},
+    calendar = 'original',
     onTap = () => {},
     onMiss = () => {},
     showMarkers = true,
@@ -16,6 +18,7 @@
     selectedId?: string | null;
     hintId?: string | null;
     decor?: Record<string, string | null>;
+    calendar?: CalendarState;
     onTap?: (id: string) => void;
     onMiss?: () => void;
     showMarkers?: boolean;
@@ -24,6 +27,8 @@
   const backdropSrc = $derived(`${import.meta.env.BASE_URL}img/${room.backdrop}`);
   const photoOverlaySrc = $derived(`${import.meta.env.BASE_URL}img/decor/keepsake-shelf-grandpa-photo.png`);
   const photoOnShelf = $derived(isGrandpaPhoto(decor[KEEPSAKE_SHELF_ID]));
+  const calendarLayer = $derived(calendarLayers(calendar));
+  const decorSrc = (file: string) => `${import.meta.env.BASE_URL}img/decor/${file}`;
 
   function center(hotspot: (typeof room.hotspots)[number]) {
     const { left, top, width, height } = hotspot.screen;
@@ -39,6 +44,12 @@
 
 <div class="room">
   <img class="backdrop" src={backdropSrc} alt={room.title} draggable="false" />
+  {#if calendarLayer.patch}
+    <img class="backdrop decor-overlay" data-layer="calendar-patch" src={decorSrc(calendarLayer.patch)} alt="" draggable="false" />
+  {/if}
+  {#if calendarLayer.design}
+    <img class="backdrop decor-overlay" data-layer="calendar-design" src={decorSrc(calendarLayer.design)} alt="" draggable="false" />
+  {/if}
   {#if photoOnShelf}
     <img class="backdrop decor-overlay" src={photoOverlaySrc} alt="" draggable="false" />
   {/if}

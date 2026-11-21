@@ -373,5 +373,12 @@
   "decor.place": "วางรูปปู่",
   "decor.ready": "มีรูปปู่จากคดีแล้ว วางลงชั้นของที่ระลึกได้",
   "decor.shelfOnly": "วางรูปปู่ได้เฉพาะชั้นของที่ระลึก",
-  "decor.empty": "ช่องนี้ว่าง"
+  "decor.empty": "ช่องนี้ว่าง",
+  "calendar.change": "เปลี่ยนปฏิทิน",
+  "calendar.takeDown": "เก็บปฏิทินลงจากผนัง",
+  "calendar.hangBack": "แขวนปฏิทินกลับที่เดิม",
+  "calendar.downNote": "ตอนนี้เก็บปฏิทินลงแล้ว ผนังว่าง เลือกแบบเพื่อแขวนใหม่ได้",
+  "calendar.locked": "ยังล็อกอยู่",
+  "calendar.lockedPrefix": "ล็อก ",
+  "calendar.close": "ปิด"
 }

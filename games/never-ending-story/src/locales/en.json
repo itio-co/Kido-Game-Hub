@@ -373,5 +373,12 @@
   "decor.place": "Place Grandpa's photo",
   "decor.ready": "You have Grandpa's photo from the case. Place it on the keepsake shelf.",
   "decor.shelfOnly": "Grandpa's photo can only go on the keepsake shelf",
-  "decor.empty": "This slot is empty"
+  "decor.empty": "This slot is empty",
+  "calendar.change": "Change calendar",
+  "calendar.takeDown": "Take the calendar down",
+  "calendar.hangBack": "Hang the calendar back",
+  "calendar.downNote": "The calendar is off the wall. Pick a design to hang one again.",
+  "calendar.locked": "Still locked",
+  "calendar.lockedPrefix": "Locked ",
+  "calendar.close": "Close"
 }
