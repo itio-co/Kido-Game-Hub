@@ -26,7 +26,10 @@ export const DESIGN_OVERLAY: Record<Exclude<CalendarDesign, 'original'>, string>
 };
 export const WALL_PATCH = 'calendar-wall-patch.png';
 
-export type RoomDecorState = { calendar: CalendarState };
+import { normalizeGrandpaPhoto, type GrandpaPhotoState } from './decor.ts';
+
+/** player.room: what hangs on the wall and whether Grandpa's photo is on the shelf. */
+export type RoomDecorState = { calendar: CalendarState; grandpaPhoto: GrandpaPhotoState };
 
 export function isCalendarState(value: unknown): value is CalendarState {
   return typeof value === 'string' && (CALENDAR_STATES as readonly string[]).includes(value);
@@ -46,9 +49,8 @@ export function normalizeCalendar(value: unknown, solvedCaseIds: readonly string
 }
 
 export function normalizeRoomDecor(raw: unknown, solvedCaseIds: readonly string[]): RoomDecorState {
-  const calendar =
-    raw && typeof raw === 'object' && !Array.isArray(raw) ? (raw as { calendar?: unknown }).calendar : undefined;
-  return { calendar: normalizeCalendar(calendar, solvedCaseIds) };
+  const obj = raw && typeof raw === 'object' && !Array.isArray(raw) ? (raw as { calendar?: unknown; grandpaPhoto?: unknown }) : {};
+  return { calendar: normalizeCalendar(obj.calendar, solvedCaseIds), grandpaPhoto: normalizeGrandpaPhoto(obj.grandpaPhoto) };
 }
 
 export type CalendarLayers = { patch: string | null; design: string | null };

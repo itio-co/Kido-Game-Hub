@@ -381,5 +381,16 @@
   "calendar.locked": "Still locked",
   "calendar.lockedPrefix": "Locked ",
   "calendar.close": "Close",
-  "calendar.downShort": "Taken down"
+  "calendar.downShort": "Taken down",
+  "photo.title": "Grandpa's photo",
+  "photo.manage": "Arrange the shelf",
+  "photo.onShelfShort": "On the shelf",
+  "photo.storedShort": "Put away",
+  "photo.store": "Put the photo away",
+  "photo.putBack": "Put the photo back on the shelf",
+  "photo.onShelfBody": "Young Grandpa's photo stands on the keepsake shelf.",
+  "photo.storedBody": "Grandpa's photo is put away and the shelf is empty. Put it back any time.",
+  "photo.storedNote": "The photo is still yours; putting it away never loses it.",
+  "toast.photoStored": "Put Grandpa's photo away",
+  "toast.photoBack": "Grandpa's photo is back on the shelf"
 }

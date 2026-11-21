@@ -49,6 +49,7 @@ test('normalizer: missing, junk, and unknown values fall back to original', () =
   ok(normalizeRoomDecor(undefined, []).calendar === 'original', 'no room');
   ok(normalizeRoomDecor([], []).calendar === 'original', 'array room');
   ok(normalizeRoomDecor({}, []).calendar === 'original', 'empty room');
+  ok(normalizeRoomDecor({}, []).grandpaPhoto === 'shelf', 'empty room keeps the photo on the shelf');
 });
 
 test('normalizer keeps take-down and unlocked designs', () => {

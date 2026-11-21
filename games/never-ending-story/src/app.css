@@ -445,6 +445,15 @@ dialog.sheet::backdrop { display: none; }
 .themes .change-toggle .chevron { transition: transform 150ms ease; }
 .themes.open .change-toggle .chevron { transform: rotate(180deg); }
 .themes .wall-action { width: 100%; background: #3a2a14; border-color: #ffcf4a; }
+/* Grandpa photo panel (reuses the calendar sheet layout: scrolling body + close bar outside it) */
+.photo-sheet h2 { margin: 0 0 10px; }
+.photo-sheet .keepsake { margin: 0 0 12px; display: grid; justify-items: center; gap: 8px; }
+.photo-sheet .keepsake .frame {
+  background-repeat: no-repeat;
+  filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.35));
+}
+.photo-sheet .keepsake.stored .frame { opacity: 0.5; filter: grayscale(0.5); }
+.photo-sheet .keepsake figcaption { font-size: var(--fs-sm); text-align: center; opacity: 0.9; }
 
 .toast {
   position: absolute;

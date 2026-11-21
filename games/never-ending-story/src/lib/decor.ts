@@ -42,3 +42,26 @@ export function normalizeDecor(decor: Record<string, string | null>): Normalized
     || decor[KEEPSAKE_SHELF_ID] !== DECOR_PHOTO;
   return { decor: next, violations, changed };
 }
+
+/**
+ * Where the placed photo is right now. Putting it away only hides it: the decor slot keeps
+ * DECOR_PHOTO (the story's record that it was placed), so no progress is ever lost.
+ */
+export const GRANDPA_PHOTO_STATES = ['shelf', 'stored'] as const;
+export type GrandpaPhotoState = (typeof GRANDPA_PHOTO_STATES)[number];
+export const DEFAULT_GRANDPA_PHOTO: GrandpaPhotoState = 'shelf';
+export const PHOTO_OVERLAY = 'keepsake-shelf-grandpa-photo.png';
+
+export function normalizeGrandpaPhoto(value: unknown): GrandpaPhotoState {
+  return value === 'stored' ? 'stored' : DEFAULT_GRANDPA_PHOTO;
+}
+
+/** The photo has been placed by the story (it lives in the keepsake slot). */
+export function photoPlaced(decor: Record<string, string | null | undefined>): boolean {
+  return isGrandpaPhoto(decor[KEEPSAKE_SHELF_ID]);
+}
+
+/** Shown on the shelf: placed and not put away. */
+export function photoOnShelf(decor: Record<string, string | null | undefined>, state: GrandpaPhotoState): boolean {
+  return photoPlaced(decor) && state !== 'stored';
+}

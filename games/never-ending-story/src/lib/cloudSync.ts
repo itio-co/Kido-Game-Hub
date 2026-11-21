@@ -110,11 +110,11 @@ function snapshot(): Record<string, unknown> {
   return out;
 }
 
-type SaveLike = { player?: { decor?: unknown; calendarTheme?: unknown; room?: { calendar?: unknown } }; flow?: Record<string, unknown> };
+type SaveLike = { player?: { decor?: unknown; calendarTheme?: unknown; room?: { calendar?: unknown; grandpaPhoto?: unknown } }; flow?: Record<string, unknown> };
 
 /** Home room document: what "my room" holds today, with room for future items. */
 function homeDoc(save: SaveLike): Record<string, unknown> {
-  return { roomId: 'player-room', decor: save.player?.decor ?? {}, calendarTheme: save.player?.calendarTheme ?? null, calendar: save.player?.room?.calendar ?? 'original', placed: [], unlocked: [] };
+  return { roomId: 'player-room', decor: save.player?.decor ?? {}, calendarTheme: save.player?.calendarTheme ?? null, calendar: save.player?.room?.calendar ?? 'original', grandpaPhoto: save.player?.room?.grandpaPhoto ?? 'shelf', placed: [], unlocked: [] };
 }
 
 function eventDoc(save: SaveLike) {

@@ -1,7 +1,7 @@
 import { appStorage } from './deployment';
 import type { FlowProgress, SaveV1, TextSize } from './types';
 import { markDirty } from './cloudSync';
-import { normalizeDecor } from './decor';
+import { DEFAULT_GRANDPA_PHOTO, normalizeDecor } from './decor';
 import { DEFAULT_CALENDAR, normalizeRoomDecor } from './calendarDecor';
 
 export const SAVE_KEY = 'nesg.player.v1';
@@ -18,7 +18,7 @@ export function defaultSave(): SaveV1 {
       soundEnabled: false,
       calendarTheme: null,
       decor: {},
-      room: { calendar: DEFAULT_CALENDAR },
+      room: { calendar: DEFAULT_CALENDAR, grandpaPhoto: DEFAULT_GRANDPA_PHOTO },
     },
     knowledge: {
       evidence: [],

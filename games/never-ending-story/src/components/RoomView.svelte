@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { PlayerRoom } from '../lib/types';
   import { t } from '../lib/i18n';
-  import { KEEPSAKE_SHELF_ID, isGrandpaPhoto } from '../lib/decor';
+  import { KEEPSAKE_SHELF_ID, PHOTO_OVERLAY, isGrandpaPhoto, photoOnShelf as onShelf, type GrandpaPhotoState } from '../lib/decor';
   import { calendarLayers, type CalendarState } from '../lib/calendarDecor';
 
   let {
@@ -10,6 +10,7 @@
     hintId = null,
     decor = {},
     calendar = 'original',
+    grandpaPhoto = 'shelf',
     onTap = () => {},
     onMiss = () => {},
     showMarkers = true,
@@ -19,14 +20,15 @@
     hintId?: string | null;
     decor?: Record<string, string | null>;
     calendar?: CalendarState;
+    grandpaPhoto?: GrandpaPhotoState;
     onTap?: (id: string) => void;
     onMiss?: () => void;
     showMarkers?: boolean;
   } = $props();
 
   const backdropSrc = $derived(`${import.meta.env.BASE_URL}img/${room.backdrop}`);
-  const photoOverlaySrc = $derived(`${import.meta.env.BASE_URL}img/decor/keepsake-shelf-grandpa-photo.png`);
-  const photoOnShelf = $derived(isGrandpaPhoto(decor[KEEPSAKE_SHELF_ID]));
+  const photoOverlaySrc = $derived(`${import.meta.env.BASE_URL}img/decor/${PHOTO_OVERLAY}`);
+  const photoOnShelf = $derived(onShelf(decor, grandpaPhoto));
   const calendarLayer = $derived(calendarLayers(calendar));
   const decorSrc = (file: string) => `${import.meta.env.BASE_URL}img/decor/${file}`;
 
@@ -51,7 +53,7 @@
     <img class="backdrop decor-overlay" data-layer="calendar-design" src={decorSrc(calendarLayer.design)} alt="" draggable="false" />
   {/if}
   {#if photoOnShelf}
-    <img class="backdrop decor-overlay" src={photoOverlaySrc} alt="" draggable="false" />
+    <img class="backdrop decor-overlay" data-layer="grandpa-photo" src={photoOverlaySrc} alt="" draggable="false" />
   {/if}
   {#if showMarkers}
     <button type="button" class="miss" aria-label="พื้นห้อง" onclick={() => onMiss()}></button>
@@ -60,7 +62,7 @@
     {#if showMarkers}
       {#each room.hotspots as hotspot (hotspot.id)}
         {@const at = center(hotspot)}
-        {@const filled = hotspot.kind === 'decor-slot' && !!decor[hotspot.id]}
+        {@const filled = hotspot.kind === 'decor-slot' && !!decor[hotspot.id] && !(hotspot.id === KEEPSAKE_SHELF_ID && !photoOnShelf)}
         <button
           type="button"
           class="spot"
