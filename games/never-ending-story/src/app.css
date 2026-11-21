@@ -397,6 +397,33 @@ dialog.sheet::backdrop { display: none; }
   line-height: 1;
   flex: 0 0 auto;
 }
+.themes .change-toggle {
+  width: 100%;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-radius: 10px;
+  border: 1px solid var(--cyan);
+  background: #0d4a66;
+  color: white;
+  padding: 8px 12px;
+  margin-bottom: 8px;
+  text-align: left;
+}
+.themes .change-toggle .label { font-weight: 700; }
+.themes .change-toggle .current {
+  flex: 1;
+  min-width: 0;
+  opacity: 0.8;
+  font-size: var(--fs-sm);
+  text-align: right;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.themes .change-toggle .chevron { transition: transform 150ms ease; }
+.themes.open .change-toggle .chevron { transform: rotate(180deg); }
 .themes .wall-action { width: 100%; background: #3a2a14; border-color: #ffcf4a; }
 
 .toast {

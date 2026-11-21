@@ -380,5 +380,6 @@
   "calendar.downNote": "ตอนนี้เก็บปฏิทินลงแล้ว ผนังว่าง เลือกแบบเพื่อแขวนใหม่ได้",
   "calendar.locked": "ยังล็อกอยู่",
   "calendar.lockedPrefix": "ล็อก ",
-  "calendar.close": "ปิด"
+  "calendar.close": "ปิด",
+  "calendar.downShort": "เก็บลงแล้ว"
 }

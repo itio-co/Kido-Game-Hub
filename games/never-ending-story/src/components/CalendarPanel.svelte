@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { CalendarEntity, CalendarThemeEntity } from '../lib/types';
   import { t } from '../lib/i18n';
-  import { designForTheme, isCalendarState, isDesignLocked, type CalendarState } from '../lib/calendarDecor';
+  import { designForTheme, isCalendarState, isDesignLocked, themeForDesign, type CalendarState } from '../lib/calendarDecor';
 
   let {
     calendar,
@@ -62,6 +62,16 @@
     else onTheme(item.id);
   }
 
+  /** Collapsed every time the panel opens; the calendar page stays the main content. */
+  let changeOpen = $state(false);
+
+  const currentLabel = $derived.by(() => {
+    if (wall === 'none') return t('calendar.downShort');
+    const id = themeForDesign(calendar.themes, wall);
+    const title = calendar.themes.find((item) => item.id === id)?.title;
+    return title ?? '';
+  });
+
   function hangBack(): void {
     const design = designForTheme(calendar.themes, themeId);
     onWall(isDesignLocked(design, solvedCaseIds) ? 'original' : design);
@@ -113,33 +123,48 @@
         </ul>
       </div>
       {#if calendar.themeSwitch}
-        <div class="themes" data-testid="calendar-change">
-          <p>{t('calendar.change')}</p>
-          {#if wall === 'none'}
-            <p class="note">{t('calendar.downNote')}</p>
+        <div class="themes" class:open={changeOpen} data-testid="calendar-change">
+          <button
+            type="button"
+            class="change-toggle"
+            data-testid="calendar-change-toggle"
+            aria-expanded={changeOpen}
+            aria-controls="calendar-change-options"
+            onclick={() => (changeOpen = !changeOpen)}
+          >
+            <span class="label">{t('calendar.change')}</span>
+            <span class="current">{currentLabel}</span>
+            <span class="chevron" aria-hidden="true">▾</span>
+          </button>
+          {#if changeOpen}
+            <div id="calendar-change-options" data-testid="calendar-change-options">
+              {#if wall === 'none'}
+                <p class="note">{t('calendar.downNote')}</p>
+              {/if}
+              <div class="row">
+                {#each calendar.themes as item (item.id)}
+                  <button
+                    type="button"
+                    class="choice"
+                    class:on={isOn(item)}
+                    class:locked={locked(item)}
+                    aria-pressed={isOn(item)}
+                    onclick={() => pick(item)}
+                  >
+                    <span class="swatch" style="background:{item.head};border-color:{item.frame}" aria-hidden="true">{item.art}</span>
+                    {locked(item) ? t('calendar.lockedPrefix') : ''}{item.title}
+                  </button>
+                {/each}
+              </div>
+              <div class="row">
+                {#if wall === 'none'}
+                  <button type="button" class="choice wall-action" onclick={hangBack}>{t('calendar.hangBack')}</button>
+                {:else}
+                  <button type="button" class="choice wall-action" onclick={() => onWall('none')}>{t('calendar.takeDown')}</button>
+                {/if}
+              </div>
+            </div>
           {/if}
-          <div class="row">
-            {#each calendar.themes as item (item.id)}
-              <button
-                type="button"
-                class="choice"
-                class:on={isOn(item)}
-                class:locked={locked(item)}
-                aria-pressed={isOn(item)}
-                onclick={() => pick(item)}
-              >
-                <span class="swatch" style="background:{item.head};border-color:{item.frame}" aria-hidden="true">{item.art}</span>
-                {locked(item) ? t('calendar.lockedPrefix') : ''}{item.title}
-              </button>
-            {/each}
-          </div>
-          <div class="row">
-            {#if wall === 'none'}
-              <button type="button" class="choice wall-action" onclick={hangBack}>{t('calendar.hangBack')}</button>
-            {:else}
-              <button type="button" class="choice wall-action" onclick={() => onWall('none')}>{t('calendar.takeDown')}</button>
-            {/if}
-          </div>
         </div>
       {/if}
       <button type="button" class="close" onclick={onClose}>{t('calendar.close')}</button>

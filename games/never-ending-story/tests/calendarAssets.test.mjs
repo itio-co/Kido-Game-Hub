@@ -36,4 +36,18 @@ assert.ok(garden && garden.unlock === null && garden.slug === 'player-room/calen
 const ids = calendar.themes.map((theme) => theme.id);
 assert.equal(new Set(ids).size, ids.length, 'theme ids unique');
 
+// Change-calendar menu starts collapsed each time the panel opens (0.6.27).
+const panel = (await read('src/components/CalendarPanel.svelte')).toString();
+assert.match(panel, /let changeOpen = \$state\(false\)/, 'menu starts collapsed');
+assert.match(panel, /aria-expanded=\{changeOpen\}/, 'toggle exposes aria-expanded');
+assert.match(panel, /data-testid="calendar-change-toggle"/, 'toggle test id');
+assert.match(panel, /data-testid="calendar-change"/, 'section test id kept');
+assert.match(panel, /\{#if changeOpen\}[\s\S]*calendar\.takeDown[\s\S]*\{\/if\}/, 'options and take-down live inside the collapsible part');
+for (const locale of ['th', 'en']) {
+  const table = JSON.parse(await read(`src/locales/${locale}.json`));
+  for (const key of ['calendar.change', 'calendar.downShort', 'calendar.takeDown', 'calendar.hangBack', 'calendar.downNote']) {
+    assert.ok(table[key], `${locale} ${key}`);
+  }
+}
+
 console.log('calendarAssets: ok');

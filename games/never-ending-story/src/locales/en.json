@@ -380,5 +380,6 @@
   "calendar.downNote": "The calendar is off the wall. Pick a design to hang one again.",
   "calendar.locked": "Still locked",
   "calendar.lockedPrefix": "Locked ",
-  "calendar.close": "Close"
+  "calendar.close": "Close",
+  "calendar.downShort": "Taken down"
 }
