@@ -2,7 +2,8 @@
 //   static server on dist/, then:
 //   BASE=http://127.0.0.1:4173/ CHROME=/usr/bin/google-chrome SHOTS=/tmp node tests/cutsceneLayout.e2e.mjs
 // 390×844 and 360×780, first play and replay (case done): caption, page pill (if any), dots, tap hint,
-// the single skip button and the app's bottom-left back button never overlap; there is no
+// the single skip button and the app's bottom-left back button never overlap; the scene caption sits at
+// the top (under the HUD and version badge, above every speech bubble) on every page; there is no
 // "previous" button and no second skip label; swiping left/right changes the page, a tap still advances.
 import assert from 'node:assert/strict';
 import { chromium } from 'playwright';
@@ -49,6 +50,25 @@ for (const [width, height] of VIEWPORTS) {
     await page.waitForSelector('[data-testid="comic-panel"]');
     await page.waitForTimeout(900); // screen fade
     assert.equal(await activeDot(page), 0, `${tag}: starts on page 1`);
+    for (let p = 0; p < 3; p++) {
+      if (p) { await page.locator('[data-testid="comic-tap"]').click({ position: { x: width / 2, y: height / 2 } }); await page.waitForTimeout(700); }
+      const cap = await page.locator('[data-testid="comic-caption"]').boundingBox();
+      assert.ok(cap.y + cap.height < height * 0.3, `${tag} p${p + 1}: caption at the top`);
+      const ver = page.locator('[data-testid="version-badge"]');
+      const top = [await page.locator('header.hud').boundingBox()];
+      if (await ver.count()) top.push(await ver.boundingBox());
+      for (const b of top) assert.ok(b && !overlaps(cap, b), `${tag} p${p + 1}: caption clear of HUD/version badge`);
+      const foot = await page.locator('[data-testid="comic-dots"]').boundingBox();
+      for (const bub of await page.locator('.bub').all()) {
+        const b = await bub.boundingBox();
+        assert.ok(b.y >= cap.y + cap.height, `${tag} p${p + 1}: bubble below the caption`);
+        assert.ok(b.y + b.height <= foot.y, `${tag} p${p + 1}: bubble above the bottom bar`);
+      }
+      if (p === 0 && SHOTS) await page.screenshot({ path: `${SHOTS}/v33-${tag}-p1.png` });
+    }
+    await swipe(page, 0.2, 0.8);
+    await swipe(page, 0.2, 0.8);
+    assert.equal(await activeDot(page), 0, `${tag}: swiped back to page 1`);
     // swipe left → next, swipe right → previous, tap → next
     await swipe(page, 0.8, 0.2);
     assert.equal(await activeDot(page), 1, `${tag}: swipe left goes to the next page`);
@@ -78,7 +98,7 @@ for (const [width, height] of VIEWPORTS) {
     for (const [name, b] of Object.entries(boxes)) assert.ok(b.x >= -0.5 && b.x + b.width <= width + 0.5 && b.y + b.height <= height + 0.5, `${tag}: ${name} on screen`);
     assert.equal(await page.getByRole('button', { name: 'ก่อนหน้า' }).count(), 0, `${tag}: no previous button`);
     assert.equal(await page.getByText('ข้ามเรื่องเปิด').count(), caseDone ? 1 : 0, `${tag}: one skip label at most`);
-    if (SHOTS) await page.screenshot({ path: `${SHOTS}/v32-${tag}.png` });
+    if (SHOTS) await page.screenshot({ path: `${SHOTS}/v33-${tag}-p2.png` });
     await page.locator('[data-testid="comic-tap"]').click({ position: { x: width / 2, y: 120 } });
     await page.waitForTimeout(500);
     assert.equal(await activeDot(page), 2, `${tag}: tap still advances`);

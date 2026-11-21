@@ -29,6 +29,9 @@
     actions?: Snippet;
   } = $props();
 
+  /** Height of the top caption box; bubbles are pushed below it so it never covers them. */
+  let capH = $state(0);
+
   let start: { x: number; y: number; id: number } | null = null;
   let swallowClick = false;
 
@@ -61,14 +64,15 @@
   onpointerdown={down}
   onpointerup={up}
   onpointercancel={() => (start = null)}
+  style="--cap-h:{capH}px"
 >
   <button type="button" class="tap" data-testid="comic-tap" aria-label={tapLabel} onclick={tap}></button>
   <img src={imageUrl(image)} alt="" draggable="false" />
   {#each lines as line (line.id)}
-    <span class="bub" style="left:{line.x}%;top:{line.y}%;max-width:{line.w}%"><b>{line.who}</b>{line.text}</span>
+    <span class="bub" style="left:{line.x}%;top:max({line.y}%, var(--bub-min-top));max-width:{line.w}%"><b>{line.who}</b>{line.text}</span>
   {/each}
+  <p class="cap" data-testid="comic-caption" bind:offsetHeight={capH}>{caption}</p>
   <div class="foot">
-    <p class="cap" data-testid="comic-caption">{caption}</p>
     <div class="bar">
       <span class="dots" data-testid="comic-dots" aria-label="{index + 1}/{count}">{#each { length: count } as _, i (i)}<i class:on={i === index}></i>{/each}</span>
       <span class="tapnext" data-testid="comic-tapnext">{tapLabel}</span>
@@ -83,10 +87,13 @@
   .cs img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; pointer-events: none; }
   .bub { position: absolute; z-index: 2; pointer-events: none; background: #fff; color: #2b2233; border-radius: 16px; padding: 8px 12px; font-size: var(--fs); line-height: 1.4; text-align: left; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35); }
   .bub b { display: block; font-size: var(--fs-sm); color: #b0567a; }
-  /* One bottom stack, top to bottom: caption, then a bar with the dots, the tap hint and the actions.
-     The bar keeps clear of the round back button the app draws at the bottom-left (12px + 64px). */
-  .foot { position: absolute; z-index: 3; left: 0; right: 0; bottom: 0; display: flex; flex-direction: column; gap: 10px; padding: 0 4% calc(14px + env(safe-area-inset-bottom)); pointer-events: none; }
-  .cap { margin: 0; background: #fff6dc; color: #3a2a10; border-radius: 10px; padding: 10px 12px; font-size: var(--fs); line-height: 1.45; text-align: left; }
+  /* The scene caption is read first, so it sits at the top, under the HUD title and the version badge
+     (badge: top 52px + ~20px). Speech bubbles never start above its bottom edge. */
+  .cs { --cap-top: calc(82px + env(safe-area-inset-top)); --bub-min-top: calc(var(--cap-top) + var(--cap-h) + 8px); }
+  .cap { position: absolute; z-index: 3; top: var(--cap-top); left: 4%; right: 4%; margin: 0; pointer-events: none; background: #fff6dc; color: #3a2a10; border-radius: 10px; padding: 10px 12px; font-size: var(--fs); line-height: 1.45; text-align: left; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35); }
+  /* Bottom bar: the dots, the tap hint and the actions; keeps clear of the app's round back button
+     at the bottom-left (12px + 64px). */
+  .foot { position: absolute; z-index: 3; left: 0; right: 0; bottom: 0; padding: 0 4% calc(14px + env(safe-area-inset-bottom)); pointer-events: none; }
   .bar { min-height: 64px; display: flex; align-items: center; gap: 10px; padding-left: 76px; }
   .dots { display: flex; gap: 8px; flex: 0 0 auto; }
   .dots i { width: 9px; height: 9px; border-radius: 50%; background: rgba(255, 255, 255, 0.4); }
