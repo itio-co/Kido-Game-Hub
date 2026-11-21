@@ -1,18 +1,24 @@
 <script lang="ts">
   import type { CalendarEntity, CalendarThemeEntity } from '../lib/types';
+  import { t } from '../lib/i18n';
+  import { designForTheme, isCalendarState, isDesignLocked, type CalendarState } from '../lib/calendarDecor';
 
   let {
     calendar,
     themeId,
     solvedCaseIds,
+    wall = 'original',
     onTheme,
+    onWall = () => {},
     onEntry,
     onClose,
   }: {
     calendar: CalendarEntity;
     themeId: string;
     solvedCaseIds: string[];
+    wall?: CalendarState;
     onTheme: (id: string) => void;
+    onWall?: (next: CalendarState) => void;
     onEntry: (message: string, kind?: string) => void;
     onClose: () => void;
   } = $props();
@@ -37,7 +43,28 @@
   });
 
   function locked(item: CalendarThemeEntity): boolean {
-    return !!item.unlock && !solvedCaseIds.includes(item.unlock.afterCase);
+    if (item.unlock && !solvedCaseIds.includes(item.unlock.afterCase)) return true;
+    return isCalendarState(item.wall) && isDesignLocked(item.wall, solvedCaseIds);
+  }
+
+  /** A theme with a wall design swaps the calendar on the wall too; others only reskin this panel. */
+  function isOn(item: CalendarThemeEntity): boolean {
+    if (isCalendarState(item.wall)) return wall === item.wall;
+    return item.id === theme?.id;
+  }
+
+  function pick(item: CalendarThemeEntity): void {
+    if (locked(item)) {
+      onEntry(item.lockedHint ?? t('calendar.locked'));
+      return;
+    }
+    if (isCalendarState(item.wall)) onWall(item.wall);
+    else onTheme(item.id);
+  }
+
+  function hangBack(): void {
+    const design = designForTheme(calendar.themes, themeId);
+    onWall(isDesignLocked(design, solvedCaseIds) ? 'original' : design);
   }
 
   function dayLabel(iso: string): string {
@@ -86,27 +113,36 @@
         </ul>
       </div>
       {#if calendar.themeSwitch}
-        <div class="themes">
-          <p>ธีม</p>
+        <div class="themes" data-testid="calendar-change">
+          <p>{t('calendar.change')}</p>
+          {#if wall === 'none'}
+            <p class="note">{t('calendar.downNote')}</p>
+          {/if}
           <div class="row">
             {#each calendar.themes as item (item.id)}
               <button
                 type="button"
                 class="choice"
-                class:on={item.id === theme.id}
-                aria-pressed={item.id === theme.id}
-                onclick={() => {
-                  if (locked(item)) onEntry(item.lockedHint ?? 'ยังล็อกอยู่');
-                  else onTheme(item.id);
-                }}
+                class:on={isOn(item)}
+                class:locked={locked(item)}
+                aria-pressed={isOn(item)}
+                onclick={() => pick(item)}
               >
-                {locked(item) ? 'ล็อก ' : ''}{item.title}
+                <span class="swatch" style="background:{item.head};border-color:{item.frame}" aria-hidden="true">{item.art}</span>
+                {locked(item) ? t('calendar.lockedPrefix') : ''}{item.title}
               </button>
             {/each}
           </div>
+          <div class="row">
+            {#if wall === 'none'}
+              <button type="button" class="choice wall-action" onclick={hangBack}>{t('calendar.hangBack')}</button>
+            {:else}
+              <button type="button" class="choice wall-action" onclick={() => onWall('none')}>{t('calendar.takeDown')}</button>
+            {/if}
+          </div>
         </div>
       {/if}
-      <button type="button" class="close" onclick={onClose}>ปิด</button>
+      <button type="button" class="close" onclick={onClose}>{t('calendar.close')}</button>
     </dialog>
   {/if}
 </div>

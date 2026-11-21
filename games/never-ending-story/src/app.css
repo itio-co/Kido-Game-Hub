@@ -384,6 +384,20 @@ dialog.sheet::backdrop { display: none; }
 }
 .themes { margin-bottom: 8px; }
 .themes p { margin: 0 0 6px; font-size: var(--fs-sm); }
+.themes .choice { display: inline-flex; align-items: center; gap: 6px; }
+.themes .choice.locked { opacity: 0.6; }
+.themes .swatch {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  border: 2px solid transparent;
+  display: inline-grid;
+  place-items: center;
+  font-size: 12px;
+  line-height: 1;
+  flex: 0 0 auto;
+}
+.themes .wall-action { width: 100%; background: #3a2a14; border-color: #ffcf4a; }
 
 .toast {
   position: absolute;
