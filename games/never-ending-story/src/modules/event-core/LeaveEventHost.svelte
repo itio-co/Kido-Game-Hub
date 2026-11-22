@@ -6,8 +6,23 @@
   let { session }: { session: FlowSession } = $props();
 
   let start: { x: number; y: number; id: number } | null = null;
+  let scrim = $state<HTMLDivElement | undefined>(undefined);
+  let card = $state<HTMLDivElement | undefined>(undefined);
 
   $effect(() => session.bindLeaveGuard());
+
+  /** Render the confirm layer on `.phone`, outside any swiped/translated event view. */
+  $effect(() => {
+    const node = scrim;
+    if (!node) return;
+    const host = document.querySelector('.phone');
+    if (!host) return;
+    if (node.parentElement !== host) host.appendChild(node);
+    card?.focus();
+    return () => {
+      node.remove();
+    };
+  });
 
   function inComic(target: EventTarget | null): boolean {
     return target instanceof Element && !!target.closest('[data-testid="comic-panel"]');
@@ -47,18 +62,21 @@
 
 {#if session.leaveConfirm}
   <div
+    bind:this={scrim}
     class="leave-scrim"
     data-testid="leave-event-dialog"
     role="presentation"
-    onclick={() => session.cancelLeave()}
+    onclick={(event) => { if (event.target === event.currentTarget) session.cancelLeave(); }}
   >
-    <dialog
+    <div
+      bind:this={card}
       class="leave-card"
+      role="dialog"
       aria-modal="true"
       aria-labelledby="leave-event-title"
       aria-describedby="leave-event-body"
-      open
-      onclick={(event) => event.stopPropagation()}
+      tabindex="-1"
+      onkeydown={(event) => { if (event.key === 'Escape') session.cancelLeave(); }}
     >
       <h2 id="leave-event-title">{t('event.leaveTitle')}</h2>
       <p id="leave-event-body">{t('event.leaveBody')}</p>
@@ -70,7 +88,7 @@
           {t('event.leaveConfirm')}
         </button>
       </div>
-    </dialog>
+    </div>
   </div>
 {/if}
 
@@ -78,25 +96,28 @@
   .leave-scrim {
     position: absolute;
     inset: 0;
-    z-index: 30;
+    z-index: 40;
     background: rgba(0, 0, 0, 0.62);
     display: flex;
     align-items: center;
     justify-content: center;
     padding: 24px 16px;
+    box-sizing: border-box;
   }
-  dialog.leave-card, .leave-card {
-    width: min(100%, 320px);
+  .leave-card {
+    position: relative;
+    inset: auto;
+    width: 100%;
+    max-width: 320px;
+    margin: 0;
     background: #06212f;
     border: 2px solid #39e0ff;
     border-radius: 16px;
     padding: 16px 16px 18px;
     color: #eaf6ff;
     box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
-    margin: 0;
-    appearance: none;
+    outline: none;
   }
-  dialog.leave-card::backdrop { display: none; }
   .leave-card h2 { margin: 0 0 8px; font-size: calc(var(--fs) + 2px); }
   .leave-card p { margin: 0 0 14px; line-height: 1.5; }
   .leave-actions { display: grid; gap: 8px; }
