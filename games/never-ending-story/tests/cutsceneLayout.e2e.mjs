@@ -4,7 +4,8 @@
 // 390×844, 360×740 and a wide desktop viewport, first play and replay (case done): caption, page pill (if any),
 // dots, tap hint, the single skip button and the app's bottom-left back button never overlap; the scene caption
 // sits in a reserved band above the panel art (never overlaps the art or a face) and above every speech bubble
-// on every page; bubbles stay inside the art; there is no "previous" button and no second skip label; swiping
+// on every page; bubbles stay inset from the art frame and their text is inset from the bubble border; there is
+// no "previous" button and no second skip label; swiping
 // left/right changes the page, a tap still advances.
 import assert from 'node:assert/strict';
 import { chromium } from 'playwright';
@@ -21,6 +22,27 @@ const seed = (caseDone) => JSON.stringify({
   flow: { caseDone, solved: caseDone, cleared: caseDone },
 });
 const overlaps = (a, b) => a.x < b.x + b.width - 0.5 && b.x < a.x + a.width - 0.5 && a.y < b.y + b.height - 0.5 && b.y < a.y + a.height - 0.5;
+const ART_INSET = 8; // CSS px; layout keeps >= 10px
+const INNER_X = 9;   // horizontal padding floor is 10px
+const INNER_Y = 7.5; // vertical padding floor is 8px
+async function innerPad(locator) {
+  return locator.evaluate((el) => {
+    const box = el.getBoundingClientRect();
+    const kids = [...el.children].map((c) => c.getBoundingClientRect());
+    if (kids.length) {
+      return {
+        left: Math.min(...kids.map((r) => r.left)) - box.left,
+        top: Math.min(...kids.map((r) => r.top)) - box.top,
+        right: box.right - Math.max(...kids.map((r) => r.right)),
+        bottom: box.bottom - Math.max(...kids.map((r) => r.bottom)),
+      };
+    }
+    const range = document.createRange();
+    range.selectNodeContents(el);
+    const t = range.getBoundingClientRect();
+    return { left: t.left - box.left, top: t.top - box.top, right: box.right - t.right, bottom: box.bottom - t.bottom };
+  });
+}
 const activeDot = (page) => page.evaluate(() => [...document.querySelectorAll('[data-testid="comic-dots"] i')].findIndex((el) => el.classList.contains('on')));
 async function swipe(page, from, to) {
   const panel = await page.locator('[data-testid="comic-panel"]').boundingBox();
@@ -63,13 +85,21 @@ for (const [width, height] of VIEWPORTS) {
       const top = [await page.locator('header.hud').boundingBox()];
       if (await ver.count()) top.push(await ver.boundingBox());
       for (const b of top) assert.ok(b && !overlaps(cap, b), `${tag} p${p + 1}: caption clear of HUD/version badge`);
+      const capPad = await innerPad(page.locator('[data-testid="comic-caption"]'));
+      assert.ok(capPad.left >= INNER_X && capPad.right >= INNER_X, `${tag} p${p + 1}: caption horizontal padding ${JSON.stringify(capPad)}`);
+      assert.ok(capPad.top >= INNER_Y && capPad.bottom >= INNER_Y, `${tag} p${p + 1}: caption vertical padding ${JSON.stringify(capPad)}`);
       const foot = await page.locator('[data-testid="comic-dots"]').boundingBox();
-      for (const bub of await page.locator('.bub').all()) {
+      for (const bub of await page.locator('[data-testid="comic-bubble"]').all()) {
         const b = await bub.boundingBox();
         assert.ok(b.y >= cap.y + cap.height, `${tag} p${p + 1}: bubble below the caption`);
         assert.ok(b.y + b.height <= foot.y, `${tag} p${p + 1}: bubble above the bottom bar`);
-        assert.ok(b.x >= art.x - 0.5 && b.x + b.width <= art.x + art.width + 0.5, `${tag} p${p + 1}: bubble horizontally inside the art`);
-        assert.ok(b.y >= art.y - 0.5 && b.y + b.height <= art.y + art.height + 0.5, `${tag} p${p + 1}: bubble vertically inside the art`);
+        assert.ok(b.x >= art.x + ART_INSET - 0.5, `${tag} p${p + 1}: bubble inset from the left of the art`);
+        assert.ok(b.x + b.width <= art.x + art.width - ART_INSET + 0.5, `${tag} p${p + 1}: bubble inset from the right of the art`);
+        assert.ok(b.y >= art.y + ART_INSET - 0.5, `${tag} p${p + 1}: bubble inset from the top of the art`);
+        assert.ok(b.y + b.height <= art.y + art.height - ART_INSET + 0.5, `${tag} p${p + 1}: bubble inset from the bottom of the art`);
+        const pad = await innerPad(bub);
+        assert.ok(pad.left >= INNER_X && pad.right >= INNER_X, `${tag} p${p + 1}: bubble horizontal padding ${JSON.stringify(pad)}`);
+        assert.ok(pad.top >= INNER_Y && pad.bottom >= INNER_Y, `${tag} p${p + 1}: bubble vertical padding ${JSON.stringify(pad)}`);
       }
       if (SHOTS) await page.screenshot({ path: `${SHOTS}/v34-${tag}-p${p + 1}.png` });
     }

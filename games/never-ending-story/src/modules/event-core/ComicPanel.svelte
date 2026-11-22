@@ -31,6 +31,37 @@
 
   let start: { x: number; y: number; id: number } | null = null;
   let swallowClick = false;
+  let linesBox: HTMLDivElement | undefined;
+
+  /** Keep every bubble inside the padded art frame (left/right/top/bottom). */
+  function clampBubbles(): void {
+    const node = linesBox;
+    if (!node) return;
+    const box = node.getBoundingClientRect();
+    for (const el of node.querySelectorAll<HTMLElement>('.bub')) {
+      el.style.transform = '';
+      const b = el.getBoundingClientRect();
+      let dx = 0;
+      let dy = 0;
+      if (b.left < box.left) dx = box.left - b.left;
+      else if (b.right > box.right) dx = box.right - b.right;
+      if (b.top < box.top) dy = box.top - b.top;
+      else if (b.bottom > box.bottom) dy = box.bottom - b.bottom;
+      if (dx || dy) el.style.transform = `translate(${dx}px, ${dy}px)`;
+    }
+  }
+
+  $effect(() => {
+    void image;
+    void lines;
+    void index;
+    const node = linesBox;
+    if (!node) return;
+    const ro = new ResizeObserver(() => clampBubbles());
+    ro.observe(node);
+    const id = requestAnimationFrame(() => clampBubbles());
+    return () => { cancelAnimationFrame(id); ro.disconnect(); };
+  });
 
   function down(event: PointerEvent): void {
     if (event.pointerType === 'mouse' && event.button !== 0) return;
@@ -69,9 +100,15 @@
   <div class="stage">
     <div class="art" data-testid="comic-art">
       <img src={imageUrl(image)} alt="" draggable="false" />
-      {#each lines as line (line.id)}
-        <span class="bub" style="left:{line.x}%;top:{line.y}%;max-width:{line.w}%"><b>{line.who}</b>{line.text}</span>
-      {/each}
+      <div class="lines" data-testid="comic-bubbles" bind:this={linesBox}>
+        {#each lines as line (line.id)}
+          <span
+            class="bub"
+            data-testid="comic-bubble"
+            style="--x:{line.x}%;--y:{line.y}%;--w:{line.w}%"
+          ><b>{line.who}</b><span class="txt">{line.text}</span></span>
+        {/each}
+      </div>
     </div>
   </div>
   <div class="foot">
@@ -105,10 +142,12 @@
     pointer-events: none;
   }
   .cap {
+    box-sizing: border-box;
     margin: 0;
     background: #fff6dc;
     color: #3a2a10;
     border-radius: 10px;
+    /* Same inner padding as the speech bubbles (10×12 at the design size). */
     padding: 10px 12px;
     font-size: var(--fs);
     line-height: 1.45;
@@ -134,9 +173,33 @@
     max-height: 100%;
   }
   .art img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: fill; pointer-events: none; }
+  /* Inset the bubble layer from the art frame (>= 10px, a little more on a wider art box). */
+  .lines { position: absolute; inset: max(10px, 3cqw); z-index: 2; pointer-events: none; }
   /* Bubble type tracks the art width (design size ~390px) so a long line cannot spill into the next strip. */
-  .bub { position: absolute; z-index: 2; pointer-events: none; background: #fff; color: #2b2233; border-radius: 16px; padding: clamp(5px, calc(8px * 100cqw / 390), 8px) clamp(8px, calc(12px * 100cqw / 390), 12px); font-size: clamp(12px, calc(var(--fs) * 100cqw / 390), var(--fs)); line-height: 1.4; text-align: left; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35); }
-  .bub b { display: block; font-size: clamp(10px, calc(var(--fs-sm) * 100cqw / 390), var(--fs-sm)); color: #b0567a; }
+  .bub {
+    position: absolute;
+    box-sizing: border-box;
+    z-index: 2;
+    pointer-events: none;
+    left: min(var(--x), calc(100% - var(--w)));
+    top: var(--y);
+    max-width: min(var(--w), 100%);
+    background: #fff;
+    color: #2b2233;
+    border-radius: 16px;
+    /* Same 10×12 rhythm as the caption, with a floor so small art never jams the text against the border.
+       Use a unitless coefficient times cqw — `10px * 100cqw` is an invalid length×length product and
+       the declaration was being dropped (computed padding 0). */
+    padding: 10px 12px;
+    padding: clamp(8px, calc(10 * 100cqw / 390), 10px) clamp(10px, calc(12 * 100cqw / 390), 12px);
+    font-size: var(--fs);
+    font-size: clamp(12px, calc(var(--fs) * (100cqw / 390px)), var(--fs));
+    line-height: 1.4;
+    text-align: left;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+  }
+  .bub b { display: block; font-size: var(--fs-sm); font-size: clamp(10px, calc(var(--fs-sm) * (100cqw / 390px)), var(--fs-sm)); color: #b0567a; }
+  .bub .txt { display: block; }
   /* Bottom bar: the dots, the tap hint and the actions; keeps clear of the app's round back button
      at the bottom-left (12px + 64px). */
   .foot { flex: 0 0 auto; z-index: 3; padding: 0 4% calc(14px + env(safe-area-inset-bottom)); pointer-events: none; }
