@@ -38,6 +38,8 @@ import {
   mapUnlockNeedsPersist,
   showHouseMapButton as houseMapButtonVisible,
 } from './progress';
+import { hasClockRewind, slotUnlocked, unlockCodes } from './rewindPower';
+import { enqueueNotice, flushNotice } from './noticeQueue';
 import {
   GRANDMA_WIN,
   caseStage,
@@ -63,7 +65,8 @@ import {
 } from './leaveEvent';
 
 export type TalkChoice = { title: string; run: () => void };
-export type Talk = { who: string; text: string; choices: TalkChoice[] };
+export type Talk = { who: string; text: string; choices: TalkChoice[]; notice?: boolean };
+export type NoteInspect = { front: string; back: string; side: 'front' | 'back' };
 
 const EVENT_CASE_SCREENS = new Set<ScreenId>([
   'house-map', 'living-room', 'study', 'kitchen', 'kitchen-close', 'table', 'tray',
@@ -97,6 +100,8 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
   /** House map floor on screen. */
   let mapFloor = $state<1 | 2>(1);
   let talk = $state<Talk | null>(null);
+  let note = $state<NoteInspect | null>(null);
+  let pendingNotices = $state<string[]>([]);
   let overlay = $state<null | 'calendar' | 'clock' | 'day' | 'bag'>(null);
   let slot = $state<'yesterday' | 'afternoon' | 'now'>('now');
   let evidence = $state<string[]>([]);
@@ -394,12 +399,55 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
     return evidence.includes(code);
   }
 
-  function addEvidence(code: string): void {
-    if (has(code)) return;
+  function evidenceMessage(code: string, hadClock: boolean): string {
+    const ready = !hadClock && hasClockRewind(flow?.slots, evidence);
+    const base = t('evidence.got', { code });
+    return ready ? `${base} · ${t('time.clockReady')}` : base;
+  }
+
+  function presentBottom(text: string): void {
+    talk = {
+      who: '',
+      text,
+      notice: true,
+      choices: [{ title: t('note.close'), run: dismissTalk }],
+    };
+  }
+
+  function announceBottom(text: string): void {
+    const busy = !!talk || !!note;
+    const next = enqueueNotice(busy, pendingNotices, text);
+    pendingNotices = next.pending;
+    if (next.show) presentBottom(next.show);
+  }
+
+  function dismissTalk(): void {
+    talk = null;
+    talkSlug = null;
+    flushBottom();
+  }
+
+  function flushBottom(): void {
+    const next = flushNotice(!!talk || !!note, pendingNotices);
+    pendingNotices = next.pending;
+    if (next.show) presentBottom(next.show);
+  }
+
+  function takeEvidence(code: string): string | null {
+    if (has(code)) return null;
+    const hadClock = hasClockRewind(flow?.slots, evidence);
     evidence = [...evidence, code];
-    const unlocked = flow?.slots.find((item) => item.unlockBy === code);
-    showToast(`ได้หลักฐาน ${code}${unlocked ? ` · ปลดล็อกเวลา: ${unlocked.title}` : ''}`);
     persist();
+    return evidenceMessage(code, hadClock);
+  }
+
+  function addEvidence(code: string): void {
+    const message = takeEvidence(code);
+    if (message) announceBottom(message);
+  }
+
+  function showPowerHint(text: string): void {
+    announceBottom(text);
   }
 
   function practiceOf(game: PuzzleKey) {
@@ -431,6 +479,7 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
           persist();
           if (choice.next) openDialogue(choice.next);
           else if (choice.action) void perform(choice.action);
+          else flushBottom();
         },
       })),
     };
@@ -450,7 +499,7 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
       text: lines[index] ?? '',
       choices: [
         last
-          ? { title: 'ปิด', run: () => (talk = null) }
+          ? { title: t('note.close'), run: dismissTalk }
           : { title: 'ต่อ', run: () => openLines(who, lines, index + 1) },
       ],
     };
@@ -458,10 +507,11 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
 
   function enter(next: ScreenId): void {
     const found = flow?.scenes.find((item) => item.screen === next);
-    if (next === 'uncle') addEvidence('E03');
+    const message = next === 'uncle' ? takeEvidence('E03') : null;
     if (!found) return;
     const slug = found.enter;
     if (slug) openDialogue(slug);
+    if (message) announceBottom(message);
   }
 
   async function go(next: ScreenId, replace = false, runEnter = true): Promise<void> {
@@ -541,8 +591,15 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
       return;
     }
     if (action.type === 'evidence') {
-      addEvidence(action.evidence);
+      const message = takeEvidence(action.evidence);
       openLines(action.who, [action.text]);
+      if (message) announceBottom(message);
+      return;
+    }
+    if (action.type === 'inspect-note') {
+      const message = action.evidence ? takeEvidence(action.evidence) : null;
+      note = { front: action.front, back: action.back, side: 'front' };
+      if (message) announceBottom(message);
       return;
     }
     if (action.type === 'dialogue') {
@@ -550,10 +607,16 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
       return;
     }
     if (action.type === 'lines') {
+      const message = action.evidence ? takeEvidence(action.evidence) : null;
       openLines(action.who, action.lines);
+      if (message) announceBottom(message);
       return;
     }
     if (action.type === 'clock') {
+      if (!hasClockRewind(flow?.slots, evidence)) {
+        showPowerHint(t('time.clockNeedClue'));
+        return;
+      }
       overlay = 'clock';
       return;
     }
@@ -901,6 +964,9 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
     get toastLow() { return toastLow; },
     get mapFloor() { return mapFloor; },
     setMapFloor,
+    get note() { return note; },
+    flipNote() { if (note) note = { ...note, side: note.side === 'front' ? 'back' : 'front' }; },
+    closeNote() { note = null; flushBottom(); },
     get talk() { return talk; },
     get overlay() { return overlay; },
     get slot() { return slot; },
@@ -1236,8 +1302,8 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
     chooseSlot(next: 'yesterday' | 'afternoon' | 'now') {
       const found = flow?.slots.find((item) => item.slot === next);
       if (!found) return;
-      if (found.unlockBy && !has(found.unlockBy)) {
-        showToast(found.hint ?? 'ยังล็อกอยู่');
+      if (!slotUnlocked(found.unlockBy, evidence)) {
+        showPowerHint(found.hint ?? t('time.slotLocked'));
         return;
       }
       overlay = null;
@@ -1245,7 +1311,15 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
       if (screen !== 'living-room') void go('living-room', true, false);
       showToast(`⏳ ${found.title}`);
     },
-    openDayTravel() { overlay = 'day'; },
+    openDayTravel() {
+      if (!flow?.calendarTravel) {
+        showPowerHint(t('time.calendarPowerWeak'));
+        return;
+      }
+      overlay = 'day';
+    },
+    hasClockRewind() { return hasClockRewind(flow?.slots, evidence); },
+    slotUnlocked(unlockBy: string | string[] | null) { return slotUnlocked(unlockBy, evidence); },
     openBag() { overlay = 'bag'; },
   };
 }

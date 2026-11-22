@@ -14,6 +14,7 @@
   import LeaveEventHost from './LeaveEventHost.svelte';
   import ComicPanel from './ComicPanel.svelte';
   import ImageScene from './ImageScene.svelte';
+  import NoteInspect from './NoteInspect.svelte';
   import Minigames from './Minigames.svelte';
 
   let { session }: { session: FlowSession } = $props();
@@ -286,12 +287,20 @@
     <Minigames {session} />
   {/if}
 
+  {#if session.note}
+    <NoteInspect note={session.note} onFlip={() => session.flipNote()} onClose={() => session.closeNote()} />
+  {/if}
+
   {#if session.talk}
-    <div class="dlg">
-      <p><b>{session.talk.who}:</b> “{session.talk.text}”</p>
+    <div class="dlg" class:notice={session.talk.notice} data-testid={session.talk.notice ? 'bottom-notice' : 'dialog'}>
+      {#if session.talk.notice}
+        <p>{session.talk.text}</p>
+      {:else}
+        <p><b>{session.talk.who}:</b> “{session.talk.text}”</p>
+      {/if}
       <div class="btns">
         {#each session.talk.choices as choice, index (index)}
-          <button type="button" onclick={() => choice.run()}>{choice.title}</button>
+          <button type="button" data-testid={session.talk.notice ? 'bottom-notice-close' : undefined} onclick={() => choice.run()}>{choice.title}</button>
         {/each}
       </div>
     </div>
@@ -318,7 +327,7 @@
       </div>
     </div>
   {:else if session.overlay}
-    <div class="time-sheet">
+    <div class="time-sheet" data-testid={session.overlay === 'clock' ? 'clock-panel' : session.overlay === 'calendar' ? 'calendar-panel' : 'day-panel'}>
       <button type="button" class="calx" aria-label="ปิด" onclick={() => session.closeOverlay()}>✕</button>
       <div class="calc">
         {#if session.overlay === 'calendar'}
@@ -334,20 +343,20 @@
             <li><b>12 ต.ค.</b> วันครบรอบแต่งงานของปู่กับย่า</li>
             <li class="clue"><button type="button" onclick={() => session.showToast('ย่าเขียนไว้เองว่าบ่ายนี้น้ารินมาเก็บบ้าน — ใครอาจย้ายอัลบั้มนะ?')}>⭕ <b>22 ต.ค.</b> วงแดงวันนี้: บ่ายนี้ รินมาช่วยเก็บกวาดบ้าน</button></li>
           </ul>
-          <button type="button" class="link" onclick={() => session.openDayTravel()}>ย้อนวันด้วยปฏิทิน</button>
+          <button type="button" class="link locked" data-testid="calendar-travel" onclick={() => session.openDayTravel()}>{t('time.calendarTravel')}</button>
         {:else}
           <div class="calh"><span>{session.overlay === 'clock' ? 'นาฬิกา: ย้อนชั่วโมง' : 'ปฏิทิน: ย้อนวัน'}</span><small>พลังย้อนเวลา</small></div>
           <ul>
             {#each (session.flow?.slots ?? []).filter((item) => session.overlay === 'day' || item.part === 'hour') as item (item.id)}
-              {@const open = !item.unlockBy || session.evidence.includes(item.unlockBy)}
+              {@const open = session.slotUnlocked(item.unlockBy)}
               <li>
-                <button type="button" class:locked={!open} onclick={() => session.chooseSlot(item.slot)}>
-                  {#if open}
+                {#if open}
+                  <button type="button" data-testid={'clock-slot-' + item.slot} onclick={() => session.chooseSlot(item.slot)}>
                     {item.slot === session.slot ? '▶ ' : ''}{item.title}
-                  {:else}
-                    ??? — {item.hint}
-                  {/if}
-                </button>
+                  </button>
+                {:else if session.overlay === 'day'}
+                  <button type="button" class="locked" data-testid={'clock-slot-' + item.slot} onclick={() => session.chooseSlot(item.slot)}>{item.title}</button>
+                {/if}
               </li>
             {/each}
           </ul>
@@ -470,6 +479,7 @@
   .clue button { background: rgba(255, 220, 200, 0.85); }
   .calx { position: absolute; right: 22px; top: 78px; width: 36px; height: 36px; border-radius: 50%; border: 0; background: #fff; color: #333; font-size: 18px; }
   .link { margin-top: 8px; background: #fff; color: #4a2e18; border: 1px solid #888; }
+  .link.locked { background: #2b3640; color: #c5d0d8; }
   .skip.loud { background: #39e0ff; color: #06212f; font-weight: 800; }
   .egg-modal { position: absolute; inset: 0; z-index: 20; background: rgba(0,0,0,0.55); display: grid; place-items: center; padding: 24px; }
   .egg-card { width: min(100%, 320px); background: #0d2a3c; border: 2px solid #39e0ff; border-radius: 16px; padding: 16px; text-align: center; }

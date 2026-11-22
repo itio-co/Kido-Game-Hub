@@ -1,61 +1,83 @@
 {
-  "meta": {
-    "id": "case-01",
-    "title": "อัลบั้มครอบครัวที่หายไป",
-    "version": "0.3.0",
-    "source": "games/never-ending-story/docs/design/never-ending-story-game-case-01-missing-family-album-th.md",
-    "language": "th",
-    "imageCoordSpace": "percent of 9:16 image (0-100); map uses image pixels"
-  },
-  "start": {
-    "hub": "player-room",
-    "room": "living",
-    "difficultyPicker": [
-      "easy",
-      "medium",
-      "hard"
-    ],
-    "flow": [
-      "hub",
-      "event-select",
-      "cutscene",
-      "difficulty",
-      "map"
-    ]
-  },
-  "event": {
-    "id": "case-01",
-    "title": "เยี่ยมบ้านคุณย่า",
-    "subtitle": "อัลบั้มครอบครัวหายไป",
-    "cover": "../../concepts/v2/cutscene-01-p2.jpg",
-    "order": 1,
-    "unlock": null,
-    "lockedHint": null
-  },
-  "cutscene": [
+  "id": "a4c0e001-0000-4000-8000-000000000094",
+  "kind": "story-flow",
+  "title": "คดี 01 อัลบั้มครอบครัวที่หายไป",
+  "slug": "flow/case-01",
+  "titleEn": "Case 01",
+  "difficulties": [
+    "ง่าย",
+    "ปานกลาง",
+    "ยาก"
+  ],
+  "events": [
     {
-      "image": "../../concepts/v2/cutscene-01-p1.jpg",
+      "id": "a4c0e001-0000-4000-8000-000000000063",
+      "kind": "event",
+      "title": "เยี่ยมบ้านคุณย่า",
+      "slug": "flow/event/case-01",
+      "titleEn": "Visit grandma",
+      "eventId": "case-01",
+      "subtitle": "อัลบั้มครอบครัวหายไป",
+      "cover": "cutscene-01-p2.jpg",
+      "unlockAfter": null,
+      "lockedHint": null
+    },
+    {
+      "id": "a4c0e001-0000-4000-8000-000000000064",
+      "kind": "event",
+      "title": "ห้องสมุดวันวาน",
+      "slug": "flow/event/case-02",
+      "titleEn": "Library of yesterday",
+      "eventId": "case-02",
+      "subtitle": "ลิ้นชักหมายเลข 7",
+      "cover": "study-wide.jpg",
+      "unlockAfter": "case-01",
+      "lockedHint": "ปลดล็อกเมื่อจบคดี 01"
+    },
+    {
+      "id": "a4c0e001-0000-4000-8000-000000000065",
+      "kind": "event",
+      "title": "ตลาดน้ำยามเช้า",
+      "slug": "flow/event/case-03",
+      "titleEn": "Morning market",
+      "eventId": "case-03",
+      "subtitle": "เร็ว ๆ นี้",
+      "cover": "kitchen-wide.jpg",
+      "unlockAfter": "case-02",
+      "lockedHint": "ปลดล็อกเมื่อจบคดี 02"
+    }
+  ],
+  "pages": [
+    {
+      "id": "a4c0e001-0000-4000-8000-000000000068",
+      "kind": "cutscene-page",
+      "title": "ย่าโทรมา",
+      "slug": "flow/cutscene/case-01/p1",
+      "eventId": "case-01",
+      "image": "cutscene-01-p1.jpg",
       "caption": "คืนวันศุกร์ คุณย่ามะลิโทรมาหาแม่",
       "lines": [
         {
-          "speaker": "mom",
-          "name": "แม่",
+          "id": "a4c0e001-0000-4000-8000-000000000066",
+          "kind": "speech-line",
+          "title": "แม่",
+          "slug": "flow/cutscene/case-01/p1/mom",
+          "who": "แม่",
           "text": "ได้ค่ะคุณแม่ พรุ่งนี้พวกเราจะไปเยี่ยมนะคะ",
-          "bubble": {
-            "x": 4,
-            "y": 10,
-            "w": 34
-          }
+          "x": 4,
+          "y": 10,
+          "w": 34
         },
         {
-          "speaker": "player",
-          "name": "หนู",
+          "id": "a4c0e001-0000-4000-8000-000000000067",
+          "kind": "speech-line",
+          "title": "หนู",
+          "slug": "flow/cutscene/case-01/p1/child",
+          "who": "หนู",
           "text": "เย้! ไปหาคุณย่า!",
-          "bubble": {
-            "x": 40,
-            "y": 58,
-            "w": 44
-          }
+          "x": 40,
+          "y": 58,
+          "w": 44
         }
       ],
       "faces": [
@@ -97,18 +119,24 @@
       ]
     },
     {
-      "image": "../../concepts/v2/cutscene-01-p2.jpg",
+      "id": "a4c0e001-0000-4000-8000-00000000006a",
+      "kind": "cutscene-page",
+      "title": "ถึงบ้านย่า",
+      "slug": "flow/cutscene/case-01/p2",
+      "eventId": "case-01",
+      "image": "cutscene-01-p2.jpg",
       "caption": "เช้าวันเสาร์ ครอบครัวมาถึงบ้านของคุณย่า",
       "lines": [
         {
-          "speaker": "grandma",
-          "name": "ย่ามะลิ",
+          "id": "a4c0e001-0000-4000-8000-000000000069",
+          "kind": "speech-line",
+          "title": "ย่ามะลิ",
+          "slug": "flow/cutscene/case-01/p2/grandma",
+          "who": "ย่ามะลิ",
           "text": "มาแล้วเหรอจ๊ะหลาน ย่าคิดถึงจังเลย",
-          "bubble": {
-            "x": 2,
-            "y": 36,
-            "w": 36
-          }
+          "x": 2,
+          "y": 36,
+          "w": 36
         }
       ],
       "faces": [
@@ -136,28 +164,35 @@
       ]
     },
     {
-      "image": "../../concepts/v2/cutscene-01-p3.jpg",
+      "id": "a4c0e001-0000-4000-8000-00000000006d",
+      "kind": "cutscene-page",
+      "title": "อัลบั้มหาย",
+      "slug": "flow/cutscene/case-01/p3",
+      "eventId": "case-01",
+      "image": "cutscene-01-p3.jpg",
       "caption": "แต่คุณย่าดูไม่สบายใจเลย…",
       "lines": [
         {
-          "speaker": "grandma",
-          "name": "ย่ามะลิ",
+          "id": "a4c0e001-0000-4000-8000-00000000006b",
+          "kind": "speech-line",
+          "title": "ย่ามะลิ",
+          "slug": "flow/cutscene/case-01/p3/grandma",
+          "who": "ย่ามะลิ",
           "text": "อัลบั้มรูปครอบครัวหายไปจากชั้นจ้ะ ในนั้นมีรูปปู่ตอนหนุ่ม ๆ ด้วย",
-          "bubble": {
-            "x": 2,
-            "y": 35,
-            "w": 28
-          }
+          "x": 2,
+          "y": 35,
+          "w": 28
         },
         {
-          "speaker": "player",
-          "name": "หนู",
+          "id": "a4c0e001-0000-4000-8000-00000000006c",
+          "kind": "speech-line",
+          "title": "หนู",
+          "slug": "flow/cutscene/case-01/p3/child",
+          "who": "หนู",
           "text": "ไม่ต้องห่วงนะย่า หนูจะช่วยตามหาเอง!",
-          "bubble": {
-            "x": 58,
-            "y": 74,
-            "w": 40
-          }
+          "x": 58,
+          "y": 74,
+          "w": 40
         }
       ],
       "faces": [
@@ -176,1751 +211,1643 @@
           "h": 18
         }
       ]
-    }
-  ],
-  "rooms": [
-    {
-      "id": "player-room",
-      "name": "ห้องของฉัน",
-      "wide": "../../concepts/v2/player-room-wide.jpg",
-      "isHub": true,
-      "decorSlots": [
-        "wall",
-        "keepsake-shelf",
-        "window-sill",
-        "desk",
-        "bed",
-        "rug-left",
-        "rug-center",
-        "rug-right"
-      ],
-      "doors": [
-        {
-          "to": "map",
-          "hotspot": "door-out"
-        }
-      ],
-      "calendar": {
-        "hotspot": {
-          "polygon": [
-            [
-              35,
-              27
-            ],
-            [
-              48,
-              27
-            ],
-            [
-              48,
-              37
-            ],
-            [
-              35,
-              37
-            ]
-          ],
-          "label": "ปฏิทิน"
-        },
-        "purpose": "upcoming",
-        "theme": "kid-room",
-        "themeSwitch": true,
-        "title": "ปฏิทินของฉัน",
-        "month": "2026-10",
-        "entries": [
-          {
-            "date": "2026-10-22",
-            "icon": "🎯",
-            "label": "ฝึกเล่นประจำวัน: เล่น 1 ด่าน รับ ⭐ โบนัส",
-            "type": "daily-practice"
-          },
-          {
-            "date": "2026-10-24",
-            "icon": "🏡",
-            "label": "เยี่ยมบ้านคุณย่า (คดี 01)",
-            "eventRef": "case-01"
-          },
-          {
-            "date": "2026-10-31",
-            "icon": "🔒",
-            "label": "ห้องสมุดวันวาน — ปลดล็อกเมื่อจบคดี 01",
-            "eventRef": "case-02"
-          }
-        ]
-      }
     },
     {
-      "id": "living",
-      "name": "ห้องนั่งเล่น",
-      "wide": "../../concepts/v2/living-wide.jpg",
-      "doors": [
+      "id": "a4c0e001-0000-4000-8000-000000000096",
+      "kind": "cutscene-page",
+      "title": "ตอนจบ 1",
+      "slug": "flow/cutscene/case-01-ending/p1",
+      "eventId": "case-01-ending",
+      "image": "ending-01.jpg",
+      "caption": "ending.caption.1",
+      "lines": [
         {
-          "to": "study",
-          "hotspot": "door-study"
+          "id": "a4c0e001-0000-4000-8000-000000000097",
+          "kind": "speech-line",
+          "title": "หนู",
+          "slug": "flow/cutscene/case-01-ending/p1/child",
+          "who": "หนู",
+          "text": "ending.line.1.child",
+          "x": 8,
+          "y": 18,
+          "w": 46
         },
         {
-          "to": "kitchen",
-          "hotspot": "door-kitchen"
-        }
-      ],
-      "closeups": [
-        {
-          "id": "grandma",
-          "image": "../../concepts/v2/living-grandma.jpg"
-        },
-        {
-          "id": "mek",
-          "image": "../../concepts/v2/uncle-mek.jpg"
-        },
-        {
-          "id": "table",
-          "image": "../../concepts/v2/living-table.jpg"
-        },
-        {
-          "id": "tray",
-          "image": "../../concepts/v2/living-shelf-tray.jpg"
-        }
-      ],
-      "calendar": {
-        "hotspot": {
-          "polygon": [
-            [
-              74,
-              22
-            ],
-            [
-              86,
-              22
-            ],
-            [
-              86,
-              32
-            ],
-            [
-              74,
-              32
-            ]
-          ],
-          "label": "ปฏิทินของย่า"
-        },
-        "purpose": "clue",
-        "theme": "wooden-home",
-        "title": "ปฏิทินของย่ามะลิ",
-        "month": "2026-10",
-        "timeControl": "day",
-        "entries": [
-          {
-            "date": "2026-10-12",
-            "icon": "💐",
-            "label": "วันครบรอบแต่งงานของปู่กับย่า"
-          },
-          {
-            "date": "2026-10-22",
-            "icon": "⭕",
-            "label": "วงแดงวันนี้: “บ่ายนี้ รินมาช่วยเก็บกวาดบ้าน”",
-            "clue": "ย่าเขียนไว้เองว่าบ่ายนี้น้ารินมาเก็บบ้าน — ใครอาจย้ายอัลบั้มนะ?"
-          }
-        ]
-      },
-      "clock": {
-        "hotspot": {
-          "polygon": [
-            [
-              8,
-              9
-            ],
-            [
-              18,
-              9
-            ],
-            [
-              18,
-              16
-            ],
-            [
-              8,
-              16
-            ]
-          ],
-          "label": "นาฬิกา"
-        },
-        "timeControl": "hour"
-      },
-      "states": {
-        "now": {
-          "image": "../../concepts/v2/living-wide.jpg",
-          "hotspots": "default (hotspots[] view=living)"
-        },
-        "afternoon": {
-          "image": "../../concepts/v2/living-wide-afternoon.jpg",
-          "lighting": "bright afternoon",
-          "changes": [
-            "น้ารินกำลังเช็ดน้ำ (ไม่มีคนอื่น)",
-            "แจกันล้ม น้ำนองโต๊ะ",
-            "อัลบั้มวางบนโต๊ะ",
-            "ยังไม่มีข้อความของน้าริน"
-          ],
-          "hotspots": [
-            {
-              "id": "rin-afternoon",
-              "polygon": [
-                [
-                  22,
-                  27
-                ],
-                [
-                  42,
-                  28
-                ],
-                [
-                  42,
-                  52
-                ],
-                [
-                  30,
-                  58
-                ],
-                [
-                  12,
-                  60
-                ],
-                [
-                  14,
-                  40
-                ]
-              ],
-              "label": "น้าริน (บ่ายนี้)",
-              "action": {
-                "dialogue": [
-                  {
-                    "speaker": "rin",
-                    "text": "แย่จัง แจกันล้ม น้ำหกเต็มโต๊ะเลย ต้องรีบเช็ดก่อน"
-                  },
-                  {
-                    "speaker": "rin",
-                    "text": "ของบนโต๊ะต้องยกออกไปก่อน เดี๋ยวเปียกหมด"
-                  }
-                ]
-              }
-            },
-            {
-              "id": "tipped-vase",
-              "polygon": [
-                [
-                  30,
-                  64
-                ],
-                [
-                  42,
-                  64
-                ],
-                [
-                  48,
-                  72
-                ],
-                [
-                  34,
-                  72
-                ]
-              ],
-              "label": "แจกันล้ม",
-              "action": {
-                "type": "evidence",
-                "id": "E02",
-                "say": "แจกันล้ม น้ำหกนองโต๊ะ — อัลบั้มวางอยู่ข้าง ๆ เกือบเปียก!"
-              }
-            },
-            {
-              "id": "album-afternoon",
-              "polygon": [
-                [
-                  48,
-                  66
-                ],
-                [
-                  68,
-                  66
-                ],
-                [
-                  68,
-                  73
-                ],
-                [
-                  48,
-                  73
-                ]
-              ],
-              "label": "อัลบั้ม (บ่ายนี้)",
-              "action": {
-                "say": "บ่ายนี้อัลบั้มยังอยู่บนโต๊ะ แต่ตอนนี้หายไป ใครยกไปตอนเช็ดน้ำนะ?"
-              }
-            },
-            {
-              "id": "tray-afternoon",
-              "polygon": [
-                [
-                  44,
-                  34
-                ],
-                [
-                  50,
-                  34
-                ],
-                [
-                  50,
-                  40
-                ],
-                [
-                  44,
-                  40
-                ]
-              ],
-              "label": "ถาดชิ้นแผนผัง",
-              "action": {
-                "toast": "ชิ้นแผนผังยังอยู่ในถาด"
-              }
-            }
-          ],
-          "characters": [
-            "rin"
-          ]
-        },
-        "yesterday": {
-          "image": "../../concepts/v2/living-wide-yesterday.jpg",
-          "lighting": "evening lamp",
-          "changes": [
-            "ย่ามะลิยืนข้างชั้นหนังสือ",
-            "อัลบั้มตั้งอยู่บนชั้นบน ถาดชิ้นแผนผังยังอยู่ชั้นกลาง",
-            "โต๊ะแห้ง ไม่มีข้อความ"
-          ],
-          "hotspots": [
-            {
-              "id": "grandma-yesterday",
-              "polygon": [
-                [
-                  20,
-                  25
-                ],
-                [
-                  34,
-                  25
-                ],
-                [
-                  36,
-                  40
-                ],
-                [
-                  34,
-                  52
-                ],
-                [
-                  18,
-                  52
-                ],
-                [
-                  18,
-                  40
-                ]
-              ],
-              "label": "ย่ามะลิ (เมื่อวาน)",
-              "action": {
-                "dialogue": [
-                  {
-                    "speaker": "grandma",
-                    "text": "พรุ่งนี้หลานจะมา ย่าจะหยิบอัลบั้มเล่มนี้ลงไปเปิดให้ดูตอนเช้า"
-                  },
-                  {
-                    "speaker": "grandma",
-                    "text": "รูปเก่า ๆ บ้านเรามีที่เก็บประจำนะ แต่เล่มนี้ย่าชอบไว้ใกล้ตัว"
-                  }
-                ]
-              }
-            },
-            {
-              "id": "album-shelf",
-              "polygon": [
-                [
-                  38,
-                  27
-                ],
-                [
-                  48,
-                  27
-                ],
-                [
-                  48,
-                  33
-                ],
-                [
-                  38,
-                  33
-                ]
-              ],
-              "label": "อัลบั้มบนชั้น",
-              "action": {
-                "say": "อัลบั้มปกดอกไม้ตั้งอยู่บนชั้นบน ใกล้มือย่า"
-              }
-            },
-            {
-              "id": "tray-yesterday",
-              "polygon": [
-                [
-                  37,
-                  35
-                ],
-                [
-                  48,
-                  35
-                ],
-                [
-                  48,
-                  40
-                ],
-                [
-                  37,
-                  40
-                ]
-              ],
-              "label": "ถาดชิ้นแผนผัง",
-              "action": {
-                "toast": "ชิ้นแผนผังยังเรียงอยู่ในถาดครบ"
-              }
-            }
-          ],
-          "characters": [
-            "grandma"
-          ]
-        }
-      }
-    },
-    {
-      "id": "study",
-      "name": "ห้องทำงาน",
-      "wide": "../../concepts/v2/study-wide.jpg",
-      "doors": [
-        {
-          "to": "living",
-          "via": "map"
-        }
-      ],
-      "closeups": [
-        {
-          "id": "box",
-          "image": "../../concepts/v2/study-box.jpg",
-          "lockedUntil": "deduction.solved"
-        },
-        {
-          "id": "album",
-          "image": "../../concepts/v2/album-found.jpg"
+          "id": "a4c0e001-0000-4000-8000-000000000098",
+          "kind": "speech-line",
+          "title": "ย่ามะลิ",
+          "slug": "flow/cutscene/case-01-ending/p1/grandma",
+          "who": "ย่ามะลิ",
+          "text": "ending.line.1.grandma",
+          "x": 48,
+          "y": 50,
+          "w": 46
         }
       ]
     },
     {
-      "id": "kitchen",
-      "name": "ครัว",
-      "optional": true,
-      "wide": "../../concepts/v2/kitchen-wide.jpg",
-      "doors": [
+      "id": "a4c0e001-0000-4000-8000-000000000099",
+      "kind": "cutscene-page",
+      "title": "ตอนจบ 2",
+      "slug": "flow/cutscene/case-01-ending/p2",
+      "eventId": "case-01-ending",
+      "image": "ending-02.jpg",
+      "caption": "ending.caption.2",
+      "lines": [
         {
-          "to": "living",
-          "via": "map"
-        }
-      ],
-      "closeups": [
+          "id": "a4c0e001-0000-4000-8000-00000000009a",
+          "kind": "speech-line",
+          "title": "ย่ามะลิ",
+          "slug": "flow/cutscene/case-01-ending/p2/grandma",
+          "who": "ย่ามะลิ",
+          "text": "ending.line.2.grandma",
+          "x": 6,
+          "y": 46,
+          "w": 50
+        },
         {
-          "id": "kclose",
-          "image": "../../concepts/v2/kitchen-close.jpg"
-        }
-      ]
-    }
-  ],
-  "map": {
-    "image": "../../concepts/v2/house-map.jpg",
-    "size": [
-      864,
-      1152
-    ],
-    "areas": [
-      {
-        "room": "living",
-        "polygon": [
-          [
-            107,
-            118
-          ],
-          [
-            760,
-            118
-          ],
-          [
-            760,
-            515
-          ],
-          [
-            107,
-            515
-          ]
-        ]
-      },
-      {
-        "room": "study",
-        "polygon": [
-          [
-            118,
-            530
-          ],
-          [
-            485,
-            530
-          ],
-          [
-            485,
-            905
-          ],
-          [
-            118,
-            905
-          ]
-        ]
-      },
-      {
-        "room": "kitchen",
-        "polygon": [
-          [
-            505,
-            530
-          ],
-          [
-            748,
-            530
-          ],
-          [
-            748,
-            905
-          ],
-          [
-            505,
-            905
-          ]
-        ]
-      }
-    ]
-  },
-  "hotspots": [
-    {
-      "id": "door-out",
-      "view": "player-room",
-      "label": "ประตู → ไปบ้านย่า",
-      "polygon": [
-        [
-          90,
-          18
-        ],
-        [
-          100,
-          18
-        ],
-        [
-          100,
-          61
-        ],
-        [
-          90,
-          61
-        ]
-      ],
-      "action": {
-        "type": "pickDifficultyThenGo",
-        "to": "map"
-      }
-    },
-    {
-      "id": "grandma",
-      "view": "living",
-      "label": "ย่ามะลิ",
-      "polygon": [
-        [
-          57,
-          37
-        ],
-        [
-          62,
-          36
-        ],
-        [
-          70,
-          38
-        ],
-        [
-          71,
-          44
-        ],
-        [
-          73,
-          48
-        ],
-        [
-          72,
-          54
-        ],
-        [
-          71,
-          60
-        ],
-        [
-          66,
-          63
-        ],
-        [
-          48,
-          65
-        ],
-        [
-          47,
-          60
-        ],
-        [
-          52,
-          54
-        ],
-        [
-          53,
-          48
-        ],
-        [
-          56,
-          44
-        ]
-      ],
-      "action": {
-        "type": "closeup",
-        "to": "grandma",
-        "dialogue": "grandma-open"
-      }
-    },
-    {
-      "id": "mek",
-      "view": "living",
-      "label": "ลุงเมฆ",
-      "polygon": [
-        [
-          8,
-          38
-        ],
-        [
-          16,
-          35
-        ],
-        [
-          23,
-          38
-        ],
-        [
-          24,
-          44
-        ],
-        [
-          34,
-          48
-        ],
-        [
-          34,
-          55
-        ],
-        [
-          30,
-          62
-        ],
-        [
-          22,
-          64
-        ],
-        [
-          10,
-          62
-        ],
-        [
-          2,
-          57
-        ],
-        [
-          2,
-          47
-        ],
-        [
-          8,
-          45
-        ]
-      ],
-      "action": {
-        "type": "closeup",
-        "to": "mek",
-        "dialogue": "mek-1",
-        "giveEvidence": "E03"
-      }
-    },
-    {
-      "id": "table",
-      "view": "living",
-      "label": "โต๊ะกลาง",
-      "polygon": [
-        [
-          13,
-          67
-        ],
-        [
-          45,
-          64
-        ],
-        [
-          74,
-          66
-        ],
-        [
-          73,
-          72
-        ],
-        [
-          56,
-          79
-        ],
-        [
-          20,
-          78
-        ],
-        [
-          13,
-          72
-        ]
-      ],
-      "action": {
-        "type": "closeup",
-        "to": "table"
-      }
-    },
-    {
-      "id": "tray",
-      "view": "living",
-      "label": "ถาดชิ้นแผนผัง",
-      "polygon": [
-        [
-          30,
-          33
-        ],
-        [
-          52,
-          33
-        ],
-        [
-          52,
-          41
-        ],
-        [
-          30,
-          41
-        ]
-      ],
-      "action": {
-        "type": "closeup",
-        "to": "tray"
-      }
-    },
-    {
-      "id": "decoy-star-box",
-      "view": "living",
-      "label": "กล่องรูปดาว (ข้างโซฟา)",
-      "polygon": [
-        [
-          76,
-          66
-        ],
-        [
-          92,
-          66
-        ],
-        [
-          93,
-          70
-        ],
-        [
-          91,
-          75
-        ],
-        [
-          84,
-          75
-        ],
-        [
-          76,
-          71
-        ]
-      ],
-      "action": {
-        "type": "say",
-        "line": "think-decoy-star"
-      }
-    },
-    {
-      "id": "door-study",
-      "view": "living",
-      "label": "ประตู → ห้องทำงาน",
-      "polygon": [
-        [
-          81,
-          19
-        ],
-        [
-          92,
-          21
-        ],
-        [
-          92,
-          48
-        ],
-        [
-          81,
-          46
-        ]
-      ],
-      "action": {
-        "type": "go",
-        "to": "study"
-      }
-    },
-    {
-      "id": "door-kitchen",
-      "view": "living",
-      "label": "ประตู → ครัว",
-      "polygon": [
-        [
-          2,
-          17
-        ],
-        [
-          22,
-          18
-        ],
-        [
-          22,
-          33
-        ],
-        [
-          2,
-          33
-        ]
-      ],
-      "action": {
-        "type": "go",
-        "to": "kitchen"
-      }
-    },
-    {
-      "id": "rin-note",
-      "view": "table",
-      "label": "ข้อความของน้าริน",
-      "polygon": [
-        [
-          18,
-          23
-        ],
-        [
-          45,
-          22
-        ],
-        [
-          51,
-          33
-        ],
-        [
-          25,
-          36
-        ]
-      ],
-      "action": {
-        "type": "evidence",
-        "id": "E01",
-        "line": "note-text"
-      }
-    },
-    {
-      "id": "water-ring",
-      "view": "table",
-      "label": "โต๊ะแห้งแล้ว",
-      "polygon": [
-        [
-          17,
-          42
-        ],
-        [
-          40,
-          40
-        ],
-        [
-          59,
-          48
-        ],
-        [
-          55,
-          58
-        ],
-        [
-          40,
-          62
-        ],
-        [
-          18,
-          61
-        ],
-        [
-          19,
-          52
-        ]
-      ],
-      "action": {
-        "type": "say",
-        "speaker": "ย่ามะลิ",
-        "text": "ย่าเช็ดโต๊ะแห้งแล้วจ้ะ ถ้าหลานย้อนเวลาไปตอนบ่ายอาจเห็นอะไรเพิ่มนะ (แตะนาฬิกาในห้องนั่งเล่น)"
-      }
-    },
-    {
-      "id": "album-spot",
-      "view": "table",
-      "label": "รอยที่อัลบั้มเคยวาง",
-      "polygon": [
-        [
-          55,
-          52
-        ],
-        [
-          87,
-          55
-        ],
-        [
-          85,
-          77
-        ],
-        [
-          53,
-          73
-        ]
-      ],
-      "action": {
-        "type": "toast",
-        "text": "ตรงนี้เคยมีอัลบั้มวางอยู่"
-      }
-    },
-    {
-      "id": "tray-pieces",
-      "view": "tray",
-      "label": "ต่อจิ๊กซอว์แผนผังบ้าน",
-      "polygon": [
-        [
-          2,
-          50
-        ],
-        [
-          95,
-          49
-        ],
-        [
-          100,
-          58
-        ],
-        [
-          97,
-          80
-        ],
-        [
-          55,
-          82
-        ],
-        [
-          3,
-          74
-        ]
-      ],
-      "action": {
-        "type": "minigame",
-        "id": "jigsaw-house-map"
-      }
-    },
-    {
-      "id": "star-box",
-      "view": "study",
-      "label": "กล่องรูปดาว (ใต้หน้าต่าง)",
-      "polygon": [
-        [
-          41,
-          58
-        ],
-        [
-          60,
-          58
-        ],
-        [
-          60,
-          68
-        ],
-        [
-          42,
-          68
-        ]
-      ],
-      "action": {
-        "type": "closeup",
-        "to": "box"
-      }
-    },
-    {
-      "id": "leaf-box",
-      "view": "study",
-      "label": "กล่องรูปใบไม้",
-      "polygon": [
-        [
-          58,
-          59
-        ],
-        [
-          75,
-          59
-        ],
-        [
-          75,
-          69
-        ],
-        [
-          58,
-          69
-        ]
-      ],
-      "action": {
-        "type": "say",
-        "line": "think-leaf"
-      }
-    },
-    {
-      "id": "box-lock",
-      "view": "box",
-      "label": "ตัวล็อกเลื่อนบล็อก",
-      "polygon": [
-        [
-          5,
-          35
-        ],
-        [
-          47,
-          34
-        ],
-        [
-          95,
-          43
-        ],
-        [
-          93,
-          55
-        ],
-        [
-          62,
-          58
-        ],
-        [
-          10,
-          49
-        ]
-      ],
-      "action": {
-        "type": "minigame",
-        "id": "sliding-lock",
-        "requires": "deduction.solved",
-        "lockedLine": "grandma-locked"
-      }
-    },
-    {
-      "id": "star-sticker",
-      "view": "box",
-      "label": "สติกเกอร์รูปดาว",
-      "polygon": [
-        [
-          41,
-          66
-        ],
-        [
-          53,
-          67
-        ],
-        [
-          50,
-          74
-        ],
-        [
-          42,
-          73
-        ]
-      ],
-      "action": {
-        "type": "toast",
-        "text": "กล่องสีน้ำเงินติดรูปดาว"
-      }
-    },
-    {
-      "id": "grandpa-photo",
-      "view": "album",
-      "label": "รูปปู่ตอนหนุ่ม",
-      "polygon": [
-        [
-          19,
-          31
-        ],
-        [
-          54,
-          31
-        ],
-        [
-          55,
-          58
-        ],
-        [
-          23,
-          58
-        ]
-      ],
-      "action": {
-        "type": "dialogue",
-        "id": "reveal"
-      }
-    },
-    {
-      "id": "postcard",
-      "view": "album",
-      "label": "โปสการ์ด",
-      "polygon": [
-        [
-          61,
-          31
-        ],
-        [
-          99,
-          33
-        ],
-        [
-          98,
-          60
-        ],
-        [
-          62,
-          56
-        ]
-      ],
-      "action": {
-        "type": "hook",
-        "id": "H01",
-        "then": "returnHome"
-      }
-    },
-    {
-      "id": "wet-cloth",
-      "view": "kclose",
-      "label": "ผ้าเช็ดโต๊ะ",
-      "polygon": [
-        [
-          8,
-          20
-        ],
-        [
-          46,
-          19
-        ],
-        [
-          48,
-          48
-        ],
-        [
-          33,
-          65
-        ],
-        [
-          8,
-          48
-        ]
-      ],
-      "action": {
-        "type": "toast",
-        "text": "ผ้าแห้งแล้ว — ลองย้อนเวลาไปตอนบ่ายดูสิ"
-      }
-    },
-    {
-      "id": "vase",
-      "view": "kclose",
-      "label": "แจกันเติมน้ำใหม่",
-      "polygon": [
-        [
-          52,
-          34
-        ],
-        [
-          90,
-          40
-        ],
-        [
-          85,
-          61
-        ],
-        [
-          80,
-          80
-        ],
-        [
-          53,
-          81
-        ],
-        [
-          52,
-          61
-        ]
-      ],
-      "action": {
-        "type": "toast",
-        "text": "แจกันถูกเติมน้ำใหม่ — มีน้ำหกจริง"
-      }
-    }
-  ],
-  "characters": [
-    {
-      "id": "grandma",
-      "name": "ย่ามะลิ",
-      "portrait": "../../concepts/v2/living-grandma.jpg",
-      "personality": "อบอุ่น ชอบเล่าเรื่องเก่า ไม่ขี้ลืมจนบดบังเบาะแส ผู้เปิดคดีและให้กำลังใจ ไม่ใช่ผู้ต้องสงสัย คำใบ้อ้อม"
-    },
-    {
-      "id": "mek",
-      "name": "ลุงเมฆ",
-      "portrait": "../../concepts/v2/uncle-mek.jpg"
-    },
-    {
-      "id": "rin",
-      "name": "น้าริน",
-      "portrait": "../../concepts/v2/rin.jpg",
-      "look": "ผู้หญิงราว 35 ผมหางม้าต่ำสีดำ เสื้อเขียวอ่อน ผ้ากันเปื้อนสีเบจ ถือผ้าเช็ดโต๊ะ"
-    }
-  ],
-  "dialogue": [
-    {
-      "id": "grandma-open",
-      "speaker": "grandma",
-      "text": "หลานมาแล้วเหรอจ๊ะ ย่าหาอัลบั้มรูปครอบครัวไม่เจอ ในนั้นมีรูปปู่ตอนหนุ่ม ๆ ด้วยนะ",
-      "options": [
-        {
-          "label": "ถามเรื่องอัลบั้ม",
-          "next": "grandma-ask"
+          "id": "a4c0e001-0000-4000-8000-00000000009b",
+          "kind": "speech-line",
+          "title": "หนู",
+          "slug": "flow/cutscene/case-01-ending/p2/child",
+          "who": "หนู",
+          "text": "ending.line.2.child",
+          "x": 52,
+          "y": 72,
+          "w": 42
         }
       ]
     },
     {
-      "id": "grandma-ask",
-      "speaker": "grandma",
-      "text": "เมื่อเช้าย่ายังเห็นวางอยู่บนโต๊ะกลางเลย แต่บ่ายนี้น้ารินเข้ามาเก็บกวาดนะ"
-    },
-    {
-      "id": "mek-1",
-      "speaker": "mek",
-      "text": "รินเอาอัลบั้มใส่กล่องที่ติดรูปดาว ลุงเห็นตอนเธอยกผ่านโต๊ะ แต่ไม่ได้มองว่าเอาไปวางที่ไหน",
-      "options": [
+      "id": "a4c0e001-0000-4000-8000-00000000009c",
+      "kind": "cutscene-page",
+      "title": "ตอนจบ 3",
+      "slug": "flow/cutscene/case-01-ending/p3",
+      "eventId": "case-01-ending",
+      "image": "ending-03.jpg",
+      "caption": "ending.caption.3",
+      "lines": [
         {
-          "label": "ช่วยเติมครอสเวิร์ด (เสริม)",
-          "next": "mek-2"
+          "id": "a4c0e001-0000-4000-8000-00000000009d",
+          "kind": "speech-line",
+          "title": "ย่ามะลิ",
+          "slug": "flow/cutscene/case-01-ending/p3/grandma",
+          "who": "ย่ามะลิ",
+          "text": "ending.line.3.grandma",
+          "x": 8,
+          "y": 18,
+          "w": 70
         }
       ]
     },
     {
-      "id": "mek-2",
-      "speaker": "mek",
-      "text": "ถ้าชอบเกมคำศัพท์ มาช่วยลุงเติมหน้านี้ด้วยก็ได้นะ อีกไม่กี่คำเอง",
-      "options": [
+      "id": "a4c0e001-0000-4000-8000-00000000009e",
+      "kind": "cutscene-page",
+      "title": "ตอนจบ 4",
+      "slug": "flow/cutscene/case-01-ending/p4",
+      "eventId": "case-01-ending",
+      "image": "ending-04.jpg",
+      "caption": "ending.caption.4",
+      "lines": [
         {
-          "label": "เปิดครอสเวิร์ด",
-          "minigame": "crossword-mek"
+          "id": "a4c0e001-0000-4000-8000-00000000009f",
+          "kind": "speech-line",
+          "title": "ย่ามะลิ",
+          "slug": "flow/cutscene/case-01-ending/p4/grandma",
+          "who": "ย่ามะลิ",
+          "text": "ending.line.4.grandma",
+          "x": 6,
+          "y": 46,
+          "w": 52
+        },
+        {
+          "id": "a4c0e001-0000-4000-8000-0000000000a0",
+          "kind": "speech-line",
+          "title": "หนู",
+          "slug": "flow/cutscene/case-01-ending/p4/child",
+          "who": "หนู",
+          "text": "ending.line.4.child",
+          "x": 50,
+          "y": 72,
+          "w": 44
         }
       ]
     },
     {
-      "id": "mek-done",
-      "speaker": "mek",
-      "text": "ครบแล้ว! เดี๋ยวให้ทุกคนลองเล่นกัน ขอบใจมากนะ"
-    },
-    {
-      "id": "note-text",
-      "speaker": "note",
-      "text": "ย่าคะ น้ำจากแจกันหกเปียกโต๊ะ หนูเลยย้ายอัลบั้มรูปไปเก็บก่อน กลัวเปียกค่ะ เก็บไว้ตามผังบ้านเดิมนะคะ — ริน"
-    },
-    {
-      "id": "think-decoy-star",
-      "speaker": "system",
-      "text": "กล่องนี้มีรูปดาวก็จริง แต่อยู่ห้องนั่งเล่น ลองดูผังเก็บภาพว่ารูปถ่ายเก็บไว้ห้องไหนนะ"
-    },
-    {
-      "id": "think-leaf",
-      "speaker": "system",
-      "text": "กล่องนี้ลายใบไม้ แต่ลุงเมฆเห็นกล่องที่มีรูปดาวนะ ลองหากล่องรูปดาวดู"
-    },
-    {
-      "id": "grandma-locked",
-      "speaker": "grandma",
-      "text": "กล่องนี้ล็อกอยู่นะ ลองสรุปคดีบนกระดานให้ครบก่อนสิจ๊ะ",
-      "status": "draft"
-    },
-    {
-      "id": "album-found",
-      "speaker": "grandma",
-      "text": "เจอแล้ว! หน้าปกดอกไม้เล่มนี้เอง"
-    },
-    {
-      "id": "reveal",
-      "speaker": "grandma",
-      "text": "นี่ไงรูปปู่ ขอบใจนะหลาน มานั่งดูด้วยกันมา ย่าจะเล่าให้ฟัง",
-      "next": "rin-1"
-    },
-    {
-      "id": "rin-1",
-      "speaker": "rin",
-      "text": "หาเจอแล้วใช่ไหม? เมื่อกี้น้ำหกบนโต๊ะ ฉันเลยรีบยกอัลบั้มใส่กล่อง แล้วทิ้งข้อความไว้",
-      "next": "grandma-2"
-    },
-    {
-      "id": "grandma-2",
-      "speaker": "grandma",
-      "text": "คราวหน้าช่วยเขียนด้วยนะว่าอยู่กล่องไหน วันนี้ทุกคนช่วยกันเป็นนักสืบเลย",
-      "next": "rin-2"
-    },
-    {
-      "id": "rin-2",
-      "speaker": "rin",
-      "text": "ได้เลย ครั้งหน้าเขียนให้ครบทั้งกล่องทั้งตำแหน่ง"
-    },
-    {
-      "id": "postcard-text",
-      "speaker": "postcard",
-      "text": "ภาพที่เหลือฝากไว้ที่ห้องสมุดวันวาน — ลิ้นชักหมายเลข 7"
+      "id": "a4c0e001-0000-4000-8000-0000000000a1",
+      "kind": "cutscene-page",
+      "title": "ตอนจบ 5",
+      "slug": "flow/cutscene/case-01-ending/p5",
+      "eventId": "case-01-ending",
+      "image": "ending-05.jpg",
+      "caption": "ending.caption.5",
+      "lines": [
+        {
+          "id": "a4c0e001-0000-4000-8000-0000000000a2",
+          "kind": "speech-line",
+          "title": "ย่ามะลิ",
+          "slug": "flow/cutscene/case-01-ending/p5/grandma",
+          "who": "ย่ามะลิ",
+          "text": "ending.line.5.grandma",
+          "x": 6,
+          "y": 46,
+          "w": 56
+        },
+        {
+          "id": "a4c0e001-0000-4000-8000-0000000000a3",
+          "kind": "speech-line",
+          "title": "หนู",
+          "slug": "flow/cutscene/case-01-ending/p5/child",
+          "who": "หนู",
+          "text": "ending.line.5.child",
+          "x": 48,
+          "y": 72,
+          "w": 46
+        }
+      ]
     }
   ],
   "evidence": [
     {
-      "id": "E01",
-      "name": "ข้อความของน้าริน",
-      "foundAt": "table/rin-note"
+      "id": "a4c0e001-0000-4000-8000-00000000006e",
+      "kind": "evidence",
+      "title": "ข้อความของน้าริน",
+      "slug": "flow/evidence/e01",
+      "code": "E01",
+      "text": "ข้อความของน้าริน: \"ขอย้ายเก็บก่อน — ริน / เก็บตามผังเดิมนะ โต๊ะยังเปียกอยู่\""
     },
     {
-      "id": "E02",
-      "name": "โต๊ะที่เปียก",
-      "foundAt": [
-        "table/water-ring",
-        "kclose/wet-cloth"
-      ]
+      "id": "a4c0e001-0000-4000-8000-00000000006f",
+      "kind": "evidence",
+      "title": "โต๊ะที่เปียก",
+      "slug": "flow/evidence/e02",
+      "code": "E02",
+      "text": "โต๊ะที่เปียก (น้ำจากแจกันหก)"
     },
     {
-      "id": "E03",
-      "name": "กล่องมีรูปดาว (ลุงเมฆ)",
-      "foundAt": "mek"
+      "id": "a4c0e001-0000-4000-8000-000000000070",
+      "kind": "evidence",
+      "title": "กล่องมีรูปดาว",
+      "slug": "flow/evidence/e03",
+      "code": "E03",
+      "text": "ลุงเมฆ: กล่องมีรูปดาว"
     },
     {
-      "id": "E04",
-      "name": "ภาพถ่ายเก็บใต้หน้าต่างห้องทำงาน",
-      "foundAt": "minigame/jigsaw-house-map"
+      "id": "a4c0e001-0000-4000-8000-000000000071",
+      "kind": "evidence",
+      "title": "แผนผังที่เก็บภาพ",
+      "slug": "flow/evidence/e04",
+      "code": "E04",
+      "text": "แผนผังบ้าน: ภาพถ่ายเก็บใต้หน้าต่างห้องทำงานชั้น 2"
     },
     {
-      "id": "E05",
-      "name": "พบอัลบั้มในกล่อง",
-      "foundAt": "minigame/sliding-lock"
+      "id": "a4c0e001-0000-4000-8000-0000000000b3",
+      "kind": "evidence",
+      "title": "ผ้าเปียกและแจกันเติมน้ำใหม่",
+      "slug": "flow/evidence/e06",
+      "code": "E06",
+      "text": "ผ้าในครัวยังเปียก และแจกันถูกเติมน้ำใหม่ — มีคนเช็ดน้ำหกแล้วจัดแจกันใหม่"
     }
   ],
-  "hooks": [
+  "slots": [
     {
-      "id": "H01",
-      "name": "โปสการ์ดห้องสมุดวันวาน",
-      "line": "postcard-text",
-      "nextCaseTitle": "ภาพที่เหลือในลิ้นชักหมายเลข 7"
-    }
-  ],
-  "minigames": [
-    {
-      "id": "crossword-mek",
-      "type": "crossword",
-      "optional": true,
-      "skill": "language",
-      "params": {
-        "rows": 3,
-        "cols": 5,
-        "grid": [
-          "ดาว##",
-          "##า##",
-          "##งาม"
-        ],
-        "clues": [
-          {
-            "n": 1,
-            "dir": "across",
-            "at": [
-              0,
-              0
-            ],
-            "clue": "สิ่งที่เห็นเป็นจุดส่องแสงบนท้องฟ้ายามค่ำคืน",
-            "answer": "ดาว"
-          },
-          {
-            "n": 2,
-            "dir": "down",
-            "at": [
-              0,
-              2
-            ],
-            "clue": "ทำให้สิ่งของอยู่บนโต๊ะ เช่น “___ หนังสือบนโต๊ะ”",
-            "answer": "วาง"
-          },
-          {
-            "n": 3,
-            "dir": "across",
-            "at": [
-              2,
-              2
-            ],
-            "clue": "อีกคำหนึ่งที่หมายถึง “สวย”",
-            "answer": "งาม"
-          }
-        ],
-        "input": "letter-buttons"
-      },
-      "onComplete": {
-        "dialogue": "mek-done"
-      },
-      "targetTimesHidden": {
-        "easy": "06:00",
-        "medium": "04:00",
-        "hard": "03:00"
-      }
-    },
-    {
-      "id": "jigsaw-house-map",
-      "type": "jigsaw",
-      "skill": "spatial",
-      "params": {
-        "image": "../../concepts/v2/house-map.jpg",
-        "pieces": {
-          "easy": 6,
-          "medium": 12,
-          "hard": 20
-        },
-        "rotate": false,
-        "noStarSymbol": true
-      },
-      "onComplete": {
-        "evidence": "E04"
-      },
-      "targetTimesHidden": {
-        "easy": "04:00",
-        "medium": "03:00",
-        "hard": "02:00"
-      }
-    },
-    {
-      "id": "sliding-lock",
-      "type": "sliding-block",
-      "skill": "logic",
-      "params": {
-        "size": [
-          4,
-          4
-        ],
-        "blocks": [
-          {
-            "id": "K",
-            "row": 1,
-            "col": 0,
-            "len": 2,
-            "dir": "h",
-            "isKey": true
-          },
-          {
-            "id": "A",
-            "row": 0,
-            "col": 2,
-            "len": 2,
-            "dir": "v"
-          },
-          {
-            "id": "B",
-            "row": 2,
-            "col": 1,
-            "len": 2,
-            "dir": "h"
-          }
-        ],
-        "exit": {
-          "row": 1,
-          "side": "right"
-        },
-        "solution": [
-          "B left 1",
-          "A down 2",
-          "K right 2"
-        ]
-      },
-      "onComplete": {
-        "evidence": "E05",
-        "go": "album",
-        "dialogue": "album-found"
-      },
-      "targetTimesHidden": {
-        "easy": "03:00",
-        "medium": "02:00",
-        "hard": "01:30"
-      }
-    }
-  ],
-  "stars": {
-    "1": "finished",
-    "2": "finished with <=1 minigame hint",
-    "3": "no minigame hints AND within hidden target time",
-    "note": "exploration and grandma hints are free"
-  },
-  "deduction": {
-    "unlockWhen": [
-      "E01",
-      "E02",
-      "E04"
-    ],
-    "questions": [
-      {
-        "id": "who",
-        "q": "ใครย้ายอัลบั้ม?",
-        "input": "portrait",
-        "options": [
-          {
-            "id": "grandma",
-            "label": "ย่ามะลิ"
-          },
-          {
-            "id": "mek",
-            "label": "ลุงเมฆ"
-          },
-          {
-            "id": "rin",
-            "label": "น้าริน"
-          }
-        ],
-        "answer": "rin",
-        "acceptEvidence": [
-          "E01",
-          "E03"
-        ],
-        "wrongLine": "ลองอ่านกระดาษบนโต๊ะอีกทีสิจ๊ะ ใครเป็นคนเขียนไว้นะ",
-        "wrongLineStatus": "draft"
-      },
-      {
-        "id": "why",
-        "q": "ย้ายทำไม?",
-        "input": "choice",
-        "options": [
-          {
-            "id": "water",
-            "label": "น้ำหกบนโต๊ะ"
-          },
-          {
-            "id": "hide",
-            "label": "แอบซ่อนไว้"
-          },
-          {
-            "id": "look",
-            "label": "หยิบไปดูรูป"
-          }
-        ],
-        "answer": "water",
-        "acceptEvidence": [
-          "E02"
-        ],
-        "wrongLine": "ตอนบ่ายน้ำหกเต็มโต๊ะเลยนะ หลานว่าเกิดอะไรขึ้น",
-        "wrongLineStatus": "draft"
-      },
-      {
-        "id": "where",
-        "q": "เก็บไว้ที่ไหน?",
-        "input": "map",
-        "options": [
-          {
-            "id": "living"
-          },
-          {
-            "id": "study"
-          },
-          {
-            "id": "kitchen"
-          }
-        ],
-        "answer": "study",
-        "acceptEvidence": [
-          "E04"
-        ],
-        "wrongLine": "รูปเก่า ๆ บ้านนี้เขาเก็บไว้ที่เดียวกันมาตลอดแหละ ลองต่อแผนที่ที่หล่นกระจายอยู่ดูสิ",
-        "wrongLineStatus": "approved"
-      }
-    ],
-    "wrongEvidenceLines": {
-      "q1": "หลักฐานใบนี้ยังไม่ได้บอกว่าใครย้ายอัลบั้มนะ ลองหาใบที่บอกชื่อคนย้ายดู",
-      "q2": "หลักฐานใบนี้ยังไม่ได้บอกว่าทำไมต้องย้ายนะ ลองหาใบที่เกี่ยวกับโต๊ะดู",
-      "q3": "หลักฐานใบนี้ยังไม่ได้บอกว่ารูปถ่ายเก็บไว้ห้องไหนนะ ลองหาใบที่บอกที่เก็บรูปดู"
-    },
-    "onSolved": {
-      "unlock": "box-lock"
-    }
-  },
-  "hints": [
-    {
-      "objective": "find-E01-E02",
-      "tier1": "ลองไปดูที่ห้องนั่งเล่น",
-      "tier2": {
-        "view": "living",
-        "hotspot": "table"
-      }
-    },
-    {
-      "objective": "find-E04",
-      "tier1": "ลองไปดูที่ห้องนั่งเล่น",
-      "tier2": {
-        "view": "living",
-        "hotspot": "tray"
-      }
-    },
-    {
-      "objective": "find-E03",
-      "tier1": "ลองไปดูที่ห้องนั่งเล่น",
-      "tier2": {
-        "view": "living",
-        "hotspot": "mek"
-      }
-    },
-    {
-      "objective": "deduce",
-      "tier1": "เปิดสมุดคดีแล้วกดสรุปคดี",
-      "tier2": {
-        "ui": "caseBoard"
-      }
-    },
-    {
-      "objective": "open-box",
-      "tier1": "ลองไปดูที่ห้องทำงาน",
-      "tier2": {
-        "view": "study",
-        "hotspot": "star-box"
-      }
-    }
-  ],
-  "rewards": [
-    {
-      "id": "grandpa-photo-frame",
-      "name": "รูปปู่จากอัลบั้ม",
-      "type": "decor",
-      "slotTypes": [
-        "wall",
-        "keepsake-shelf",
-        "desk"
-      ]
-    },
-    {
-      "id": "postcard-keepsake",
-      "name": "โปสการ์ดห้องสมุดวันวาน",
-      "type": "keepsake"
-    }
-  ],
-  "savePoints": [
-    "evidenceFound",
-    "minigameFinished",
-    "caseEnd"
-  ],
-  "audio": {
-    "bgm": "warm-countryside-home",
-    "sfx": [
-      "tap",
-      "evidence",
-      "star"
-    ],
-    "voiceOver": "th-TTS from dialogue.text (toggle)"
-  },
-  "calendarThemes": [
-    {
-      "id": "kid-room",
-      "name": "ห้องเด็ก",
-      "colors": {
-        "paper": "#fff7e8",
-        "header": [
-          "#ff9f6e",
-          "#ffcf4a"
-        ],
-        "ink": "#3a3550"
-      },
-      "frame": "thin-blue",
-      "paperTexture": "plain",
-      "font": "Itim",
-      "headerArt": "balloon",
-      "unlock": null
-    },
-    {
-      "id": "wooden-home",
-      "name": "บ้านไม้",
-      "colors": {
-        "paper": "#f3e3c3",
-        "header": [
-          "#6b3f22",
-          "#8a5a34"
-        ],
-        "ink": "#4a2e18"
-      },
-      "frame": "thick-wood",
-      "paperTexture": "lined-kraft",
-      "font": "Sarabun",
-      "headerArt": "frangipani",
-      "unlock": null
-    },
-    {
-      "id": "night-sky",
-      "name": "ท้องฟ้ายามค่ำ",
-      "colors": {
-        "paper": "#e7ecff",
-        "header": [
-          "#1f2a5c",
-          "#4b3f8f"
-        ],
-        "ink": "#1f2a5c"
-      },
-      "frame": "thin-indigo",
-      "paperTexture": "plain",
-      "font": "Noto Sans Thai",
-      "headerArt": "moon",
-      "unlock": {
-        "afterCase": "case-01"
-      },
-      "lockedHint": "ปลดล็อกเมื่อจบคดี 01 (ของตกแต่ง)",
-      "asDecor": true
-    }
-  ],
-  "timeSlots": [
-    {
-      "id": "yesterday",
-      "kind": "day",
-      "label": "เมื่อวานเย็น (21 ต.ค.)",
+      "id": "a4c0e001-0000-4000-8000-000000000073",
+      "kind": "time-slot",
+      "title": "เมื่อวานเย็น (21 ต.ค.)",
+      "slug": "flow/time/yesterday",
+      "slot": "yesterday",
+      "part": "day",
+      "image": "living-wide-yesterday.jpg",
       "unlockBy": "E02",
-      "lockedHint": "ลองย้อนไปดูโต๊ะตอนบ่ายนี้ก่อน"
+      "hint": "พลังย้อนเวลายังไม่พอสำหรับปฏิทิน"
     },
     {
-      "id": "afternoon",
-      "kind": "hour",
-      "label": "บ่ายนี้ 14:00",
-      "unlockBy": "E01",
-      "lockedHint": "ลองอ่านข้อความบนโต๊ะกลางก่อน"
+      "id": "a4c0e001-0000-4000-8000-000000000074",
+      "kind": "time-slot",
+      "title": "บ่ายนี้ 14:00",
+      "slug": "flow/time/afternoon",
+      "slot": "afternoon",
+      "part": "hour",
+      "image": "living-wide-afternoon.jpg",
+      "unlockBy": [
+        "E01",
+        "E06"
+      ],
+      "hint": "ลองอ่านข้อความบนโต๊ะ หรือดูผ้าเปียกกับแจกันในครัวก่อน"
     },
     {
-      "id": "now",
-      "kind": "hour",
-      "label": "ตอนนี้ 17:00",
+      "id": "a4c0e001-0000-4000-8000-000000000075",
+      "kind": "time-slot",
+      "title": "ตอนนี้ 17:00",
+      "slug": "flow/time/now",
+      "slot": "now",
+      "part": "hour",
+      "image": "living-wide.jpg",
       "unlockBy": null,
-      "default": true
+      "hint": null
     }
-  ]
+  ],
+  "scenes": [
+    {
+      "id": "a4c0e001-0000-4000-8000-00000000001b",
+      "kind": "scene",
+      "title": "แผนผังบ้านย่า",
+      "slug": "flow/scene/house-map",
+      "titleEn": "House map",
+      "screen": "house-map",
+      "image": "house-map.jpg",
+      "contain": true,
+      "hud": "เลือกห้องที่จะไป",
+      "floors": [
+        {
+          "floor": 1,
+          "title": "ชั้น 1",
+          "image": "house-map.jpg",
+          "hud": "ชั้น 1 · เลือกห้องที่จะไป"
+        },
+        {
+          "floor": 2,
+          "title": "ชั้น 2",
+          "image": "house-map-2f.jpg",
+          "hud": "ชั้น 2 · เลือกห้องที่จะไป"
+        }
+      ],
+      "spots": [
+        {
+          "id": "a4c0e001-0000-4000-8000-000000000018",
+          "kind": "hotspot",
+          "title": "ห้องนั่งเล่น (จุดเริ่ม)",
+          "slug": "flow/house-map/living",
+          "titleEn": "Living room",
+          "x": 50.2,
+          "y": 41,
+          "when": "always",
+          "action": {
+            "type": "go",
+            "screen": "living-room"
+          },
+          "doneEvidence": null,
+          "floor": 1
+        },
+        {
+          "id": "a4c0e001-0000-4000-8000-00000000001a",
+          "kind": "hotspot",
+          "title": "ครัว (เสริม)",
+          "slug": "flow/house-map/kitchen",
+          "titleEn": "Kitchen",
+          "x": 72.5,
+          "y": 62.3,
+          "when": "always",
+          "action": {
+            "type": "go",
+            "screen": "kitchen"
+          },
+          "doneEvidence": null,
+          "floor": 1
+        },
+        {
+          "id": "a4c0e001-0000-4000-8000-0000000002f1",
+          "kind": "hotspot",
+          "title": "ห้องนอนย่า (ล็อก)",
+          "slug": "flow/house-map/grandma-room",
+          "titleEn": "Grandma's bedroom (locked)",
+          "x": 34.9,
+          "y": 62.3,
+          "when": "always",
+          "action": {
+            "type": "locked",
+            "text": "ห้องนอนของย่า ล็อกไว้อยู่ ยังเข้าไม่ได้นะ"
+          },
+          "doneEvidence": null,
+          "floor": 1
+        },
+        {
+          "id": "a4c0e001-0000-4000-8000-0000000002f2",
+          "kind": "hotspot",
+          "title": "บันไดขึ้นชั้น 2",
+          "slug": "flow/house-map/stairs-up",
+          "titleEn": "Stairs up",
+          "x": 19.5,
+          "y": 27,
+          "when": "always",
+          "action": {
+            "type": "floor",
+            "floor": 2
+          },
+          "doneEvidence": null,
+          "floor": 1
+        },
+        {
+          "id": "a4c0e001-0000-4000-8000-000000000019",
+          "kind": "hotspot",
+          "title": "ห้องทำงาน (ชั้น 2)",
+          "slug": "flow/house-map/study",
+          "titleEn": "Study (upstairs)",
+          "x": 72.5,
+          "y": 62.3,
+          "when": "always",
+          "action": {
+            "type": "go",
+            "screen": "study"
+          },
+          "doneEvidence": null,
+          "floor": 2
+        },
+        {
+          "id": "a4c0e001-0000-4000-8000-0000000002f3",
+          "kind": "hotspot",
+          "title": "ห้องนอนลุงเมฆกับป้า (ล็อก)",
+          "slug": "flow/house-map/mek-room",
+          "titleEn": "Uncle Mek and Auntie's bedroom (locked)",
+          "x": 34.9,
+          "y": 62.3,
+          "when": "always",
+          "action": {
+            "type": "locked",
+            "text": "ห้องนอนลุงเมฆกับป้า ล็อกไว้อยู่ ยังเข้าไม่ได้นะ"
+          },
+          "doneEvidence": null,
+          "floor": 2
+        },
+        {
+          "id": "a4c0e001-0000-4000-8000-0000000002f4",
+          "kind": "hotspot",
+          "title": "บันไดลงชั้น 1",
+          "slug": "flow/house-map/stairs-down",
+          "titleEn": "Stairs down",
+          "x": 19.5,
+          "y": 27,
+          "when": "always",
+          "action": {
+            "type": "floor",
+            "floor": 1
+          },
+          "doneEvidence": null,
+          "floor": 2
+        }
+      ]
+    },
+    {
+      "id": "a4c0e001-0000-4000-8000-00000000002e",
+      "kind": "scene",
+      "title": "ห้องนั่งเล่น",
+      "slug": "flow/scene/living-room",
+      "titleEn": "Living room",
+      "screen": "living-room",
+      "image": "living-wide.jpg",
+      "images": {
+        "now": "living-wide.jpg",
+        "afternoon": "living-wide-afternoon.jpg",
+        "yesterday": "living-wide-yesterday.jpg"
+      },
+      "map": true,
+      "timed": true,
+      "hud": "ภารกิจ: ตามหาอัลบั้มครอบครัว",
+      "spots": [
+        {
+          "id": "a4c0e001-0000-4000-8000-00000000001c",
+          "kind": "hotspot",
+          "title": "นาฬิกา",
+          "slug": "flow/living-room/clock",
+          "titleEn": "Clock",
+          "x": 13,
+          "y": 12.5,
+          "when": "always",
+          "action": {
+            "type": "clock"
+          },
+          "doneEvidence": null
+        },
+        {
+          "id": "a4c0e001-0000-4000-8000-00000000001d",
+          "kind": "hotspot",
+          "title": "ปฏิทินของย่า",
+          "slug": "flow/living-room/calendar",
+          "titleEn": "Grandma calendar",
+          "x": 80,
+          "y": 27,
+          "when": "always",
+          "action": {
+            "type": "calendar"
+          },
+          "doneEvidence": null
+        },
+        {
+          "id": "a4c0e001-0000-4000-8000-00000000001e",
+          "kind": "hotspot",
+          "title": "ถาดชิ้นแผนผัง",
+          "slug": "flow/living-room/tray",
+          "titleEn": "Map tray",
+          "x": 41,
+          "y": 37,
+          "when": "now",
+          "action": {
+            "type": "go",
+            "screen": "tray"
+          },
+          "doneEvidence": "E04"
+        },
+        {
+          "id": "a4c0e001-0000-4000-8000-00000000001f",
+          "kind": "hotspot",
+          "title": "ประตูไปครัว",
+          "slug": "flow/living-room/kitchen-door",
+          "titleEn": "Door to the kitchen",
+          "x": 12,
+          "y": 25.3,
+          "when": "now",
+          "action": {
+            "type": "go",
+            "screen": "kitchen"
+          },
+          "doneEvidence": null
+        },
+        {
+          "id": "a4c0e001-0000-4000-8000-000000000020",
+          "kind": "hotspot",
+          "title": "ประตูห้องนอนย่า",
+          "slug": "flow/living-room/grandma-door",
+          "titleEn": "Door to Grandma's bedroom",
+          "x": 92,
+          "y": 33.8,
+          "when": "now",
+          "action": {
+            "type": "locked",
+            "text": "ห้องนอนของย่า ล็อกไว้อยู่ ยังเข้าไม่ได้นะ"
+          },
+          "doneEvidence": null
+        },
+        {
+          "id": "a4c0e001-0000-4000-8000-000000000021",
+          "kind": "hotspot",
+          "title": "กล่องรูปดาว (ข้างโซฟา)",
+          "slug": "flow/living-room/star-box",
+          "titleEn": "Star box by the sofa",
+          "x": 85.3,
+          "y": 70.5,
+          "when": "now",
+          "action": {
+            "type": "toast",
+            "text": "สัญลักษณ์ตรงแล้ว แต่ตำแหน่งนี้ตรงกับผังเก็บภาพถ่ายหรือยัง?"
+          },
+          "doneEvidence": null
+        },
+        {
+          "id": "a4c0e001-0000-4000-8000-000000000022",
+          "kind": "hotspot",
+          "title": "โต๊ะกลาง",
+          "slug": "flow/living-room/table",
+          "titleEn": "Coffee table",
+          "x": 42,
+          "y": 71.1,
+          "when": "now",
+          "action": {
+            "type": "go",
+            "screen": "table"
+          },
+          "doneEvidence": "E01"
+        },
+        {
+          "id": "a4c0e001-0000-4000-8000-000000000023",
+          "kind": "hotspot",
+          "title": "ลุงเมฆ",
+          "slug": "flow/living-room/mek",
+          "titleEn": "Uncle Mek",
+          "x": 17.8,
+          "y": 49.6,
+          "when": "now",
+          "action": {
+            "type": "go",
+            "screen": "uncle"
+          },
+          "doneEvidence": "E03"
+        },
+        {
+          "id": "a4c0e001-0000-4000-8000-000000000024",
+          "kind": "hotspot",
+          "title": "ย่ามะลิ",
+          "slug": "flow/living-room/grandma",
+          "titleEn": "Grandma Mali",
+          "x": 61.4,
+          "y": 50.1,
+          "when": "now",
+          "action": {
+            "type": "go",
+            "screen": "grandma"
+          },
+          "doneEvidence": null
+        },
+        {
+          "id": "a4c0e001-0000-4000-8000-000000000025",
+          "kind": "hotspot",
+          "title": "กล่องรูปดาว (ข้างโซฟา)",
+          "slug": "flow/living-room/star-box-past",
+          "x": 84.3,
+          "y": 70.5,
+          "when": "afternoon",
+          "action": {
+            "type": "toast",
+            "text": "กล่องนี้อยู่ที่เดิมทุกช่วงเวลา"
+          },
+          "doneEvidence": null
+        },
+        {
+          "id": "a4c0e001-0000-4000-8000-000000000026",
+          "kind": "hotspot",
+          "title": "น้าริน (บ่ายนี้)",
+          "slug": "flow/living-room/rin",
+          "titleEn": "Aunt Rin this afternoon",
+          "x": 27,
+          "y": 44.2,
+          "when": "afternoon",
+          "action": {
+            "type": "lines",
+            "who": "น้าริน",
+            "lines": [
+              "แย่จัง แจกันล้ม น้ำหกเต็มโต๊ะเลย ต้องรีบเช็ดก่อน",
+              "ของบนโต๊ะต้องยกออกไปก่อน เดี๋ยวเปียกหมด"
+            ],
+            "evidence": "E02"
+          },
+          "doneEvidence": "E02"
+        },
+        {
+          "id": "a4c0e001-0000-4000-8000-000000000027",
+          "kind": "hotspot",
+          "title": "แจกันล้ม",
+          "slug": "flow/living-room/fallen-vase",
+          "x": 38.5,
+          "y": 68,
+          "when": "afternoon",
+          "action": {
+            "type": "evidence",
+            "evidence": "E02",
+            "who": "ย้อนเวลา: บ่ายนี้",
+            "text": "แจกันล้ม น้ำหกนองโต๊ะ — น้ารินกำลังเช็ดอยู่ และอัลบั้มวางอยู่ข้าง ๆ เกือบเปียก!"
+          },
+          "doneEvidence": "E02"
+        },
+        {
+          "id": "a4c0e001-0000-4000-8000-000000000028",
+          "kind": "hotspot",
+          "title": "อัลบั้ม (บ่ายนี้)",
+          "slug": "flow/living-room/album-then",
+          "x": 58,
+          "y": 69.5,
+          "when": "afternoon",
+          "action": {
+            "type": "lines",
+            "who": "ย้อนเวลา: บ่ายนี้",
+            "lines": [
+              "บ่ายนี้อัลบั้มยังอยู่บนโต๊ะ แต่ตอนนี้หายไป ใครยกไปตอนเช็ดน้ำนะ?"
+            ]
+          },
+          "doneEvidence": null
+        },
+        {
+          "id": "a4c0e001-0000-4000-8000-000000000029",
+          "kind": "hotspot",
+          "title": "ถาดชิ้นแผนผัง",
+          "slug": "flow/living-room/tray-afternoon",
+          "x": 47,
+          "y": 37,
+          "when": "afternoon",
+          "action": {
+            "type": "toast",
+            "text": "ชิ้นแผนผังยังอยู่ในถาด"
+          },
+          "doneEvidence": null
+        },
+        {
+          "id": "a4c0e001-0000-4000-8000-00000000002a",
+          "kind": "hotspot",
+          "title": "กล่องรูปดาว (ข้างโซฟา)",
+          "slug": "flow/living-room/star-box-yesterday",
+          "x": 84.3,
+          "y": 70.5,
+          "when": "yesterday",
+          "action": {
+            "type": "toast",
+            "text": "กล่องนี้อยู่ที่เดิมทุกช่วงเวลา"
+          },
+          "doneEvidence": null
+        },
+        {
+          "id": "a4c0e001-0000-4000-8000-00000000002b",
+          "kind": "hotspot",
+          "title": "ย่ามะลิ (เมื่อวาน)",
+          "slug": "flow/living-room/grandma-yesterday",
+          "x": 26.7,
+          "y": 39,
+          "when": "yesterday",
+          "action": {
+            "type": "lines",
+            "who": "ย่ามะลิ",
+            "lines": [
+              "พรุ่งนี้หลานจะมา ย่าจะหยิบอัลบั้มเล่มนี้ลงไปเปิดให้ดูตอนเช้า",
+              "รูปเก่า ๆ บ้านเรามีที่เก็บประจำนะ แต่เล่มนี้ย่าชอบไว้ใกล้ตัว"
+            ]
+          },
+          "doneEvidence": null
+        },
+        {
+          "id": "a4c0e001-0000-4000-8000-00000000002c",
+          "kind": "hotspot",
+          "title": "อัลบั้มบนชั้น",
+          "slug": "flow/living-room/album-shelf",
+          "x": 43,
+          "y": 30,
+          "when": "yesterday",
+          "action": {
+            "type": "lines",
+            "who": "ย้อนเวลา: เมื่อวาน",
+            "lines": [
+              "อัลบั้มปกดอกไม้ตั้งอยู่บนชั้นบน ใกล้มือย่า"
+            ]
+          },
+          "doneEvidence": null
+        },
+        {
+          "id": "a4c0e001-0000-4000-8000-00000000002d",
+          "kind": "hotspot",
+          "title": "ถาดชิ้นแผนผัง",
+          "slug": "flow/living-room/tray-yesterday",
+          "x": 42.5,
+          "y": 37.5,
+          "when": "yesterday",
+          "action": {
+            "type": "toast",
+            "text": "ชิ้นแผนผังยังเรียงอยู่ในถาดครบ"
+          },
+          "doneEvidence": null
+        },
+        {
+          "id": "a4c0e001-0000-4000-8000-0000000000a9",
+          "kind": "hotspot",
+          "title": "พัดลมตั้งโต๊ะ",
+          "titleEn": "Desk fan",
+          "slug": "flow/living-room/fan",
+          "x": 91.5,
+          "y": 57.5,
+          "when": "always",
+          "action": {
+            "type": "egg-fan"
+          }
+        }
+      ]
+    },
+    {
+      "id": "a4c0e001-0000-4000-8000-000000000031",
+      "kind": "scene",
+      "title": "ห้องทำงาน (ชั้น 2)",
+      "slug": "flow/scene/study",
+      "titleEn": "Study (upstairs)",
+      "screen": "study",
+      "image": "study-wide.jpg",
+      "map": true,
+      "hud": "ภารกิจ: หากล่องที่ถูกต้อง",
+      "spots": [
+        {
+          "id": "a4c0e001-0000-4000-8000-00000000002f",
+          "kind": "hotspot",
+          "title": "กล่องรูปใบไม้",
+          "slug": "flow/study/leaf-box",
+          "titleEn": "Leaf box",
+          "x": 66.5,
+          "y": 64,
+          "when": "always",
+          "action": {
+            "type": "toast",
+            "text": "อยู่ในโซนที่หาแล้ว ลองเทียบสัญลักษณ์กับสิ่งที่ลุงเมฆเห็นอีกครั้ง"
+          },
+          "doneEvidence": null
+        },
+        {
+          "id": "a4c0e001-0000-4000-8000-000000000030",
+          "kind": "hotspot",
+          "title": "กล่องรูปดาว (ใต้หน้าต่าง)",
+          "slug": "flow/study/star-box",
+          "titleEn": "Star box under the window",
+          "x": 50.8,
+          "y": 63,
+          "when": "always",
+          "action": {
+            "type": "go",
+            "screen": "star-box"
+          },
+          "doneEvidence": null
+        }
+      ]
+    },
+    {
+      "id": "a4c0e001-0000-4000-8000-000000000034",
+      "kind": "scene",
+      "title": "ครัว",
+      "slug": "flow/scene/kitchen",
+      "titleEn": "Kitchen",
+      "screen": "kitchen",
+      "image": "kitchen-wide.jpg",
+      "map": true,
+      "hud": "ไม่บังคับ",
+      "spots": [
+        {
+          "id": "a4c0e001-0000-4000-8000-000000000032",
+          "kind": "hotspot",
+          "title": "ผ้าเปียกบนราว",
+          "slug": "flow/kitchen/cloth",
+          "titleEn": "Wet cloth",
+          "x": 68.5,
+          "y": 40.5,
+          "when": "always",
+          "action": {
+            "type": "go",
+            "screen": "kitchen-close"
+          },
+          "doneEvidence": null
+        },
+        {
+          "id": "a4c0e001-0000-4000-8000-000000000033",
+          "kind": "hotspot",
+          "title": "แจกันเติมน้ำใหม่",
+          "slug": "flow/kitchen/vase",
+          "titleEn": "Refilled vase",
+          "x": 20.5,
+          "y": 50,
+          "when": "always",
+          "action": {
+            "type": "go",
+            "screen": "kitchen-close"
+          },
+          "doneEvidence": null
+        }
+      ]
+    },
+    {
+      "id": "a4c0e001-0000-4000-8000-000000000037",
+      "kind": "scene",
+      "title": "ครัวมุมใกล้",
+      "slug": "flow/scene/kitchen-close",
+      "titleEn": "Kitchen close-up",
+      "screen": "kitchen-close",
+      "image": "kitchen-close.jpg",
+      "map": true,
+      "hud": "ร่องรอยน้ำหก",
+      "spots": [
+        {
+          "id": "a4c0e001-0000-4000-8000-000000000035",
+          "kind": "hotspot",
+          "title": "ผ้าเปียก",
+          "slug": "flow/kitchen-close/cloth",
+          "titleEn": "Wet cloth",
+          "x": 71.4,
+          "y": 40,
+          "when": "always",
+          "action": {
+            "type": "evidence",
+            "evidence": "E06",
+            "who": "ผ้าเปียก",
+            "text": "ผ้าที่ใช้เช็ดโต๊ะยังเปียก — มีคนเช็ดน้ำหกไปไม่นาน"
+          },
+          "doneEvidence": "E06"
+        },
+        {
+          "id": "a4c0e001-0000-4000-8000-000000000036",
+          "kind": "hotspot",
+          "title": "แจกันเติมน้ำใหม่",
+          "slug": "flow/kitchen-close/vase",
+          "titleEn": "Refilled vase",
+          "x": 31.3,
+          "y": 59.5,
+          "when": "always",
+          "action": {
+            "type": "evidence",
+            "evidence": "E06",
+            "who": "แจกันเติมน้ำใหม่",
+            "text": "แจกันถูกเติมน้ำใหม่ แถวฐานยังมีรอยน้ำ — มีคนจัดใหม่หลังน้ำหก"
+          },
+          "doneEvidence": "E06"
+        }
+      ]
+    },
+    {
+      "id": "a4c0e001-0000-4000-8000-00000000003b",
+      "kind": "scene",
+      "title": "โต๊ะกลาง",
+      "slug": "flow/scene/table",
+      "titleEn": "Coffee table",
+      "screen": "table",
+      "image": "living-table.jpg",
+      "map": true,
+      "hud": "แตะเพื่อตรวจ",
+      "spots": [
+        {
+          "id": "a4c0e001-0000-4000-8000-000000000038",
+          "kind": "hotspot",
+          "title": "ข้อความของน้าริน",
+          "slug": "flow/table/note",
+          "titleEn": "Aunt Rin's note",
+          "x": 35,
+          "y": 31.3,
+          "when": "always",
+          "action": {
+            "type": "inspect-note",
+            "evidence": "E01",
+            "front": "ขอย้ายเก็บก่อน\n\n— ริน",
+            "back": "เก็บตามผังเดิมนะ\nโต๊ะยังเปียกอยู่"
+          },
+          "doneEvidence": "E01"
+        }
+      ]
+    },
+    {
+      "id": "a4c0e001-0000-4000-8000-00000000003d",
+      "kind": "scene",
+      "title": "ถาดชิ้นแผนผัง",
+      "slug": "flow/scene/tray",
+      "titleEn": "Map-piece tray",
+      "screen": "tray",
+      "image": "living-shelf-tray.jpg",
+      "map": true,
+      "hud": "ชิ้นแผนผังแม่เหล็กหล่นกระจาย",
+      "spots": [
+        {
+          "id": "a4c0e001-0000-4000-8000-00000000003c",
+          "kind": "hotspot",
+          "title": "ต่อจิ๊กซอว์แผนผังบ้าน",
+          "slug": "flow/tray/jigsaw",
+          "titleEn": "House-map jigsaw",
+          "x": 58.7,
+          "y": 65.5,
+          "when": "always",
+          "action": {
+            "type": "minigame",
+            "screen": "jigsaw"
+          },
+          "doneEvidence": "E04"
+        }
+      ]
+    },
+    {
+      "id": "a4c0e001-0000-4000-8000-00000000003f",
+      "kind": "scene",
+      "title": "ย่ามะลิ",
+      "slug": "flow/scene/grandma",
+      "titleEn": "Grandma Mali",
+      "screen": "grandma",
+      "image": "living-grandma.jpg",
+      "map": true,
+      "hud": "คุยกับย่ามะลิ",
+      "enter": "flow/dialogue/grandma-open",
+      "enterWhenSolved": "flow/dialogue/grandma-win",
+      "spots": [
+        {
+          "id": "a4c0e001-0000-4000-8000-00000000003e",
+          "kind": "hotspot",
+          "title": "คุยกับย่า",
+          "slug": "flow/grandma/talk",
+          "titleEn": "Talk",
+          "x": 50,
+          "y": 42,
+          "when": "always",
+          "action": {
+            "type": "dialogue",
+            "dialogue": "flow/dialogue/grandma-open"
+          },
+          "doneEvidence": null
+        }
+      ]
+    },
+    {
+      "id": "a4c0e001-0000-4000-8000-000000000041",
+      "kind": "scene",
+      "title": "ลุงเมฆ",
+      "slug": "flow/scene/uncle",
+      "titleEn": "Uncle Mek",
+      "screen": "uncle",
+      "image": "uncle-mek.jpg",
+      "map": true,
+      "hud": "คุยกับลุงเมฆ",
+      "enter": "flow/dialogue/mek-open",
+      "spots": [
+        {
+          "id": "a4c0e001-0000-4000-8000-000000000040",
+          "kind": "hotspot",
+          "title": "คุยกับลุงเมฆ",
+          "slug": "flow/uncle/talk",
+          "titleEn": "Talk",
+          "x": 50,
+          "y": 40,
+          "when": "always",
+          "action": {
+            "type": "dialogue",
+            "dialogue": "flow/dialogue/mek-open"
+          },
+          "doneEvidence": null
+        }
+      ]
+    },
+    {
+      "id": "a4c0e001-0000-4000-8000-000000000044",
+      "kind": "scene",
+      "title": "กล่องรูปดาว",
+      "slug": "flow/scene/star-box",
+      "titleEn": "Star box",
+      "screen": "star-box",
+      "image": "study-box.jpg",
+      "map": true,
+      "hud": "กล่องสีน้ำเงินติดรูปดาว · ตัวล็อกเลื่อนบล็อกบนฝา",
+      "spots": [
+        {
+          "id": "a4c0e001-0000-4000-8000-000000000042",
+          "kind": "hotspot",
+          "title": "สติกเกอร์รูปดาว",
+          "slug": "flow/star-box/sticker",
+          "titleEn": "Star sticker",
+          "x": 46.5,
+          "y": 70,
+          "when": "always",
+          "action": {
+            "type": "toast",
+            "text": "กล่องสีน้ำเงินติดรูปดาว"
+          },
+          "doneEvidence": null
+        },
+        {
+          "id": "a4c0e001-0000-4000-8000-000000000043",
+          "kind": "hotspot",
+          "title": "ตัวล็อก",
+          "slug": "flow/star-box/lock",
+          "titleEn": "Lock",
+          "x": 52.6,
+          "y": 44.8,
+          "when": "always",
+          "action": {
+            "type": "box-lock"
+          },
+          "doneEvidence": null
+        }
+      ]
+    },
+    {
+      "id": "a4c0e001-0000-4000-8000-000000000047",
+      "kind": "scene",
+      "title": "พบอัลบั้มแล้ว",
+      "slug": "flow/scene/album",
+      "titleEn": "Album found",
+      "screen": "album",
+      "image": "album-found.jpg",
+      "hud": "นำอัลบั้มกลับไปให้ย่า",
+      "enter": "flow/dialogue/album-open",
+      "spots": [
+        {
+          "id": "a4c0e001-0000-4000-8000-000000000045",
+          "kind": "hotspot",
+          "title": "รูปปู่ตอนหนุ่ม",
+          "slug": "flow/album/portrait",
+          "titleEn": "Grandfather's photo",
+          "x": 37.8,
+          "y": 44.5,
+          "when": "always",
+          "action": {
+            "type": "dialogue",
+            "dialogue": "flow/dialogue/album-portrait"
+          },
+          "doneEvidence": null
+        },
+        {
+          "id": "a4c0e001-0000-4000-8000-000000000046",
+          "kind": "hotspot",
+          "title": "โปสเตอร์",
+          "slug": "flow/album/postcard",
+          "titleEn": "Poster",
+          "x": 80,
+          "y": 45,
+          "when": "always",
+          "action": {
+            "type": "dialogue",
+            "dialogue": "flow/dialogue/album-card"
+          },
+          "doneEvidence": null
+        }
+      ]
+    }
+  ],
+  "dialogues": [
+    {
+      "id": "a4c0e001-0000-4000-8000-00000000004a",
+      "kind": "dialogue",
+      "title": "ย่าเปิดเรื่อง",
+      "slug": "flow/dialogue/grandma-open",
+      "who": "ย่ามะลิ",
+      "text": "หลานมาแล้วเหรอจ๊ะ ย่าหาอัลบั้มรูปครอบครัวไม่เจอ ในนั้นมีรูปปู่ตอนหนุ่ม ๆ ด้วยนะ",
+      "choices": [
+        {
+          "id": "a4c0e001-0000-4000-8000-000000000048",
+          "kind": "choice",
+          "title": "ถามเรื่องอัลบั้ม",
+          "slug": "flow/dialogue/grandma-open/ask",
+          "next": "flow/dialogue/grandma-ask"
+        },
+        {
+          "id": "a4c0e001-0000-4000-8000-000000000049",
+          "kind": "choice",
+          "title": "ปิด",
+          "slug": "flow/dialogue/grandma-open/close"
+        }
+      ]
+    },
+    {
+      "id": "a4c0e001-0000-4000-8000-00000000004c",
+      "kind": "dialogue",
+      "title": "ย่าเล่าเรื่องอัลบั้ม",
+      "slug": "flow/dialogue/grandma-ask",
+      "who": "ย่ามะลิ",
+      "text": "เมื่อเช้าย่ายังเห็นวางอยู่บนโต๊ะกลางเลย แต่บ่ายนี้น้ารินเข้ามาเก็บกวาดนะ",
+      "choices": [
+        {
+          "id": "a4c0e001-0000-4000-8000-00000000004b",
+          "kind": "choice",
+          "title": "ปิด",
+          "slug": "flow/dialogue/grandma-ask/close"
+        }
+      ]
+    },
+    {
+      "id": "a4c0e001-0000-4000-8000-00000000004e",
+      "kind": "dialogue",
+      "title": "ย่าดีใจ",
+      "slug": "flow/dialogue/grandma-win",
+      "who": "ย่ามะลิ",
+      "text": "dialogue.grandmaShow.text",
+      "choices": [
+        {
+          "id": "a4c0e001-0000-4000-8000-0000000000a6",
+          "kind": "choice",
+          "title": "dialogue.grandmaShow.listen",
+          "slug": "flow/dialogue/grandma-win/listen",
+          "action": {
+            "type": "ending-comic"
+          }
+        }
+      ]
+    },
+    {
+      "id": "a4c0e001-0000-4000-8000-000000000051",
+      "kind": "dialogue",
+      "title": "ลุงเมฆเล่า",
+      "slug": "flow/dialogue/mek-open",
+      "who": "ลุงเมฆ",
+      "text": "รินเอาอัลบั้มใส่กล่องที่ติดรูปดาว ลุงเห็นตอนเธอยกผ่านโต๊ะ แต่ไม่ได้มองว่าเอาไปวางที่ไหน",
+      "choices": [
+        {
+          "id": "a4c0e001-0000-4000-8000-00000000004f",
+          "kind": "choice",
+          "title": "ช่วยเติมครอสเวิร์ด (เสริม)",
+          "slug": "flow/dialogue/mek-open/help",
+          "next": "flow/dialogue/mek-crossword"
+        },
+        {
+          "id": "a4c0e001-0000-4000-8000-000000000050",
+          "kind": "choice",
+          "title": "ปิด",
+          "slug": "flow/dialogue/mek-open/close"
+        }
+      ]
+    },
+    {
+      "id": "a4c0e001-0000-4000-8000-000000000054",
+      "kind": "dialogue",
+      "title": "ลุงชวนเล่นครอสเวิร์ด",
+      "slug": "flow/dialogue/mek-crossword",
+      "who": "ลุงเมฆ",
+      "text": "ถ้าชอบเกมคำศัพท์ มาช่วยลุงเติมหน้านี้ด้วยก็ได้นะ อีกไม่กี่คำเอง",
+      "choices": [
+        {
+          "id": "a4c0e001-0000-4000-8000-000000000052",
+          "kind": "choice",
+          "title": "เปิดครอสเวิร์ด",
+          "slug": "flow/dialogue/mek-crossword/play",
+          "action": {
+            "type": "minigame",
+            "screen": "crossword"
+          }
+        },
+        {
+          "id": "a4c0e001-0000-4000-8000-000000000053",
+          "kind": "choice",
+          "title": "ปิด",
+          "slug": "flow/dialogue/mek-crossword/close"
+        }
+      ]
+    },
+    {
+      "id": "a4c0e001-0000-4000-8000-000000000056",
+      "kind": "dialogue",
+      "title": "ลุงขอบคุณ",
+      "slug": "flow/dialogue/mek-thanks",
+      "who": "ลุงเมฆ",
+      "text": "ครบแล้ว! เดี๋ยวให้ทุกคนลองเล่นกัน ขอบใจมากนะ",
+      "choices": [
+        {
+          "id": "a4c0e001-0000-4000-8000-000000000055",
+          "kind": "choice",
+          "title": "ปิด",
+          "slug": "flow/dialogue/mek-thanks/close"
+        }
+      ]
+    },
+    {
+      "id": "a4c0e001-0000-4000-8000-000000000058",
+      "kind": "dialogue",
+      "title": "เปิดอัลบั้ม",
+      "slug": "flow/dialogue/album-open",
+      "who": "ย่ามะลิ",
+      "text": "เจอแล้ว! หน้าปกดอกไม้เล่มนี้เอง",
+      "choices": [
+        {
+          "id": "a4c0e001-0000-4000-8000-000000000057",
+          "kind": "choice",
+          "title": "ปิด",
+          "slug": "flow/dialogue/album-open/close"
+        }
+      ]
+    },
+    {
+      "id": "a4c0e001-0000-4000-8000-00000000005a",
+      "kind": "dialogue",
+      "title": "รูปปู่",
+      "slug": "flow/dialogue/album-portrait",
+      "who": "หนู",
+      "text": "dialogue.albumPortrait.hint",
+      "choices": [
+        {
+          "id": "a4c0e001-0000-4000-8000-0000000000a5",
+          "kind": "choice",
+          "title": "dialogue.albumPortrait.go",
+          "slug": "flow/dialogue/album-portrait/go",
+          "action": {
+            "type": "go",
+            "screen": "grandma"
+          }
+        }
+      ]
+    },
+    {
+      "id": "a4c0e001-0000-4000-8000-00000000005c",
+      "kind": "dialogue",
+      "title": "รินอธิบาย",
+      "slug": "flow/dialogue/album-rin",
+      "who": "ริน",
+      "text": "หาเจอแล้วใช่ไหม? เมื่อกี้น้ำหกบนโต๊ะ ฉันเลยรีบยกอัลบั้มใส่กล่อง แล้วทิ้งข้อความไว้",
+      "choices": [
+        {
+          "id": "a4c0e001-0000-4000-8000-00000000005b",
+          "kind": "choice",
+          "title": "ปิด",
+          "slug": "flow/dialogue/album-rin/close"
+        }
+      ]
+    },
+    {
+      "id": "a4c0e001-0000-4000-8000-00000000005e",
+      "kind": "dialogue",
+      "title": "โปสเตอร์",
+      "slug": "flow/dialogue/album-card",
+      "who": "โปสเตอร์",
+      "text": "ภาพที่เหลือฝากไว้ที่ห้องสมุดวันวาน — ลิ้นชักหมายเลข 7",
+      "choices": [
+        {
+          "id": "a4c0e001-0000-4000-8000-0000000000a4",
+          "kind": "choice",
+          "title": "dialogue.albumCard.keep",
+          "slug": "flow/dialogue/album-card/keep",
+          "action": {
+            "type": "take-poster"
+          }
+        }
+      ]
+    },
+    {
+      "id": "a4c0e001-0000-4000-8000-000000000060",
+      "kind": "dialogue",
+      "title": "สรุปคดีผ่าน",
+      "slug": "flow/dialogue/deduce-ok",
+      "who": "ย่ามะลิ",
+      "text": "เก่งมากหลาน! กุญแจอยู่ในกระเป๋าแล้ว เอาไปเปิดกล่องรูปดาวใต้หน้าต่างในห้องทำงานชั้น 2 นะ",
+      "choices": [
+        {
+          "id": "a4c0e001-0000-4000-8000-00000000005f",
+          "kind": "choice",
+          "title": "ขึ้นไปห้องทำงานชั้น 2",
+          "slug": "flow/dialogue/deduce-ok/go",
+          "action": {
+            "type": "go",
+            "screen": "study"
+          }
+        }
+      ]
+    },
+    {
+      "id": "a4c0e001-0000-4000-8000-000000000062",
+      "kind": "dialogue",
+      "title": "แผนผังบอกที่เก็บ",
+      "slug": "flow/dialogue/map-clue",
+      "who": "แผนผัง",
+      "text": "หมวด “ภาพถ่ายและจดหมาย” อยู่ใต้หน้าต่างห้องทำงานชั้น 2 ส่วนข้างโซฟาในห้องนั่งเล่นเป็นของเล่น",
+      "choices": [
+        {
+          "id": "a4c0e001-0000-4000-8000-000000000061",
+          "kind": "choice",
+          "title": "ปิด",
+          "slug": "flow/dialogue/map-clue/close"
+        }
+      ]
+    },
+    {
+      "id": "a4c0e001-0000-4000-8000-0000000000a7",
+      "kind": "dialogue",
+      "title": "ย่าเจออัลบั้มแล้ว",
+      "slug": "flow/dialogue/grandma-need-poster",
+      "who": "ย่ามะลิ",
+      "text": "dialogue.grandmaNeedPoster",
+      "choices": [
+        {
+          "id": "a4c0e001-0000-4000-8000-0000000000ac",
+          "kind": "choice",
+          "title": "dialogue.grandmaShowPhoto",
+          "slug": "flow/dialogue/grandma-need-poster/show",
+          "action": {
+            "type": "show-photo"
+          }
+        },
+        {
+          "id": "a4c0e001-0000-4000-8000-0000000000a8",
+          "kind": "choice",
+          "title": "ปิด",
+          "slug": "flow/dialogue/grandma-need-poster/close"
+        }
+      ]
+    },
+    {
+      "id": "a4c0e001-0000-4000-8000-0000000000aa",
+      "kind": "dialogue",
+      "title": "ย่าให้ใช้กุญแจ",
+      "slug": "flow/dialogue/grandma-has-key",
+      "who": "ย่ามะลิ",
+      "text": "dialogue.grandmaHasKey",
+      "choices": [
+        {
+          "id": "a4c0e001-0000-4000-8000-0000000000ab",
+          "kind": "choice",
+          "title": "ปิด",
+          "slug": "flow/dialogue/grandma-has-key/close"
+        }
+      ]
+    }
+  ],
+  "games": [
+    {
+      "id": "a4c0e001-0000-4000-8000-000000000076",
+      "kind": "minigame",
+      "title": "ครอสเวิร์ดของลุงเมฆ",
+      "slug": "flow/minigame/crossword",
+      "titleEn": "Crossword",
+      "game": "crossword",
+      "hud": "มินิเกม: ครอสเวิร์ด"
+    },
+    {
+      "id": "a4c0e001-0000-4000-8000-000000000077",
+      "kind": "minigame",
+      "title": "จิ๊กซอว์แผนผังบ้าน",
+      "slug": "flow/minigame/jigsaw",
+      "titleEn": "Jigsaw",
+      "game": "jigsaw",
+      "hud": "มินิเกม: จิ๊กซอว์ (ชิ้นไม่ต้องหมุน)",
+      "unlocksHouseMap": "E04"
+    },
+    {
+      "id": "a4c0e001-0000-4000-8000-000000000078",
+      "kind": "minigame",
+      "title": "ตัวล็อกเลื่อนบล็อก",
+      "slug": "flow/minigame/slide",
+      "titleEn": "Sliding block",
+      "game": "slide",
+      "hud": "มินิเกม: พากุญแจ K ไปทางออกด้านขวา"
+    }
+  ],
+  "practice": [
+    {
+      "id": "a4c0e001-0000-4000-8000-0000000000b0",
+      "kind": "practice-game",
+      "title": "ผัดกับย่า",
+      "slug": "flow/practice/stirfry",
+      "game": "stirfry",
+      "icon": "🍳",
+      "group": "ฝีมือ",
+      "caseNo": "hub",
+      "future": false,
+      "route": "#/play/stirfry"
+    },
+    {
+      "id": "a4c0e001-0000-4000-8000-000000000079",
+      "kind": "practice-game",
+      "title": "ครอสเวิร์ด",
+      "slug": "flow/practice/cross-0",
+      "game": "cross",
+      "icon": "📰",
+      "group": "คำ",
+      "caseNo": "01",
+      "future": false
+    },
+    {
+      "id": "a4c0e001-0000-4000-8000-00000000007a",
+      "kind": "practice-game",
+      "title": "จิ๊กซอว์แผนผัง",
+      "slug": "flow/practice/jig-1",
+      "game": "jig",
+      "icon": "🗺",
+      "group": "ภาพ",
+      "caseNo": "01",
+      "future": false
+    },
+    {
+      "id": "a4c0e001-0000-4000-8000-00000000007b",
+      "kind": "practice-game",
+      "title": "เลื่อนบล็อก",
+      "slug": "flow/practice/slide-2",
+      "game": "slide",
+      "icon": "🧩",
+      "group": "ตรรกะ",
+      "caseNo": "01",
+      "future": false
+    },
+    {
+      "id": "a4c0e001-0000-4000-8000-0000000000b1",
+      "kind": "practice-game",
+      "title": "ซ่อมใบพัดลม",
+      "slug": "flow/practice/fan",
+      "game": "fan",
+      "icon": "🪭",
+      "group": "ตรรกะ",
+      "caseNo": "soon",
+      "future": true,
+      "route": "#/play/fan"
+    },
+    {
+      "id": "a4c0e001-0000-4000-8000-0000000000b2",
+      "kind": "practice-game",
+      "title": "เรียงกล่องรูป",
+      "slug": "flow/practice/photobox",
+      "game": "photobox",
+      "icon": "📦",
+      "group": "ภาพ",
+      "caseNo": "soon",
+      "future": true,
+      "route": "#/play/photobox"
+    },
+    {
+      "id": "a4c0e001-0000-4000-8000-00000000007c",
+      "kind": "practice-game",
+      "title": "จับผิดภาพ",
+      "slug": "flow/practice/future-3",
+      "game": "ex",
+      "icon": "🔍",
+      "group": "ภาพ",
+      "caseNo": "02",
+      "future": true
+    },
+    {
+      "id": "a4c0e001-0000-4000-8000-00000000007d",
+      "kind": "practice-game",
+      "title": "จับคู่ความจำ",
+      "slug": "flow/practice/future-4",
+      "game": "ex",
+      "icon": "🃏",
+      "group": "ภาพ",
+      "caseNo": "03",
+      "future": true
+    },
+    {
+      "id": "a4c0e001-0000-4000-8000-00000000007e",
+      "kind": "practice-game",
+      "title": "ถอดรหัส",
+      "slug": "flow/practice/future-5",
+      "game": "ex",
+      "icon": "🔐",
+      "group": "คำ",
+      "caseNo": "02",
+      "future": true
+    },
+    {
+      "id": "a4c0e001-0000-4000-8000-00000000007f",
+      "kind": "practice-game",
+      "title": "เขาวงกต",
+      "slug": "flow/practice/future-6",
+      "game": "ex",
+      "icon": "🌀",
+      "group": "ตรรกะ",
+      "caseNo": "04",
+      "future": true
+    },
+    {
+      "id": "a4c0e001-0000-4000-8000-000000000080",
+      "kind": "practice-game",
+      "title": "ต่อท่อ",
+      "slug": "flow/practice/future-7",
+      "game": "ex",
+      "icon": "🚰",
+      "group": "ตรรกะ",
+      "caseNo": "05",
+      "future": true
+    },
+    {
+      "id": "a4c0e001-0000-4000-8000-000000000081",
+      "kind": "practice-game",
+      "title": "เรียงลำดับเหตุการณ์",
+      "slug": "flow/practice/future-8",
+      "game": "ex",
+      "icon": "🗓",
+      "group": "คำ",
+      "caseNo": "03",
+      "future": true
+    }
+  ],
+  "questions": [
+    {
+      "id": "a4c0e001-0000-4000-8000-000000000085",
+      "kind": "question",
+      "title": "ใครย้ายอัลบั้ม",
+      "slug": "flow/question/who",
+      "prompt": "1. ใครย้ายอัลบั้ม?",
+      "right": "rin",
+      "evidence": [
+        "E01",
+        "E03"
+      ],
+      "hint": "ลองอ่านกระดาษบนโต๊ะอีกทีสิจ๊ะ ใครเป็นคนเขียนไว้นะ",
+      "mode": "portrait",
+      "answers": [
+        {
+          "id": "a4c0e001-0000-4000-8000-000000000082",
+          "kind": "choice",
+          "title": "ย่ามะลิ",
+          "slug": "flow/question/who/grandma",
+          "value": "grandma",
+          "image": "living-grandma.jpg"
+        },
+        {
+          "id": "a4c0e001-0000-4000-8000-000000000083",
+          "kind": "choice",
+          "title": "ลุงเมฆ",
+          "slug": "flow/question/who/mek",
+          "value": "mek",
+          "image": "uncle-mek.jpg"
+        },
+        {
+          "id": "a4c0e001-0000-4000-8000-000000000084",
+          "kind": "choice",
+          "title": "น้าริน",
+          "slug": "flow/question/who/rin",
+          "value": "rin",
+          "image": "rin.jpg"
+        }
+      ]
+    },
+    {
+      "id": "a4c0e001-0000-4000-8000-000000000089",
+      "kind": "question",
+      "title": "ย้ายทำไม",
+      "slug": "flow/question/why",
+      "prompt": "2. ย้ายทำไม?",
+      "right": "water",
+      "evidence": [
+        "E02",
+        "E06"
+      ],
+      "hint": "ผ้าในครัวยังเปียก และแจกันถูกเติมน้ำใหม่ ลองย้อนเวลาดูว่าเกิดอะไรขึ้น",
+      "mode": "chips",
+      "answers": [
+        {
+          "id": "a4c0e001-0000-4000-8000-000000000086",
+          "kind": "choice",
+          "title": "น้ำหกบนโต๊ะ",
+          "slug": "flow/question/why/water",
+          "value": "water"
+        },
+        {
+          "id": "a4c0e001-0000-4000-8000-000000000087",
+          "kind": "choice",
+          "title": "แอบซ่อนไว้",
+          "slug": "flow/question/why/hide",
+          "value": "hide"
+        },
+        {
+          "id": "a4c0e001-0000-4000-8000-000000000088",
+          "kind": "choice",
+          "title": "หยิบไปดูรูป",
+          "slug": "flow/question/why/look",
+          "value": "look"
+        }
+      ]
+    },
+    {
+      "id": "a4c0e001-0000-4000-8000-00000000008d",
+      "kind": "question",
+      "title": "เก็บไว้ที่ไหน",
+      "slug": "flow/question/where",
+      "prompt": "3. เก็บไว้ที่ไหน? (แตะบนแผนผัง)",
+      "right": "study",
+      "evidence": [
+        "E04"
+      ],
+      "hint": "รูปเก่า ๆ บ้านนี้เขาเก็บไว้ที่เดียวกันมาตลอดแหละ ลองต่อแผนที่ที่หล่นกระจายอยู่ดูสิ",
+      "mode": "map",
+      "answers": [
+        {
+          "id": "a4c0e001-0000-4000-8000-00000000008a",
+          "kind": "choice",
+          "title": "ห้องนั่งเล่น",
+          "slug": "flow/question/where/living",
+          "value": "living"
+        },
+        {
+          "id": "a4c0e001-0000-4000-8000-00000000008b",
+          "kind": "choice",
+          "title": "ห้องทำงานชั้น 2 (ใต้หน้าต่าง)",
+          "slug": "flow/question/where/study",
+          "value": "study"
+        },
+        {
+          "id": "a4c0e001-0000-4000-8000-00000000008c",
+          "kind": "choice",
+          "title": "ครัว",
+          "slug": "flow/question/where/kitchen",
+          "value": "kitchen"
+        }
+      ]
+    }
+  ],
+  "goals": [
+    {
+      "id": "a4c0e001-0000-4000-8000-00000000008e",
+      "kind": "goal",
+      "title": "ตรวจโต๊ะกลาง",
+      "slug": "flow/goal/table",
+      "code": "table",
+      "room": "ห้องนั่งเล่น",
+      "at": "living-room",
+      "object": "โต๊ะกลาง"
+    },
+    {
+      "id": "a4c0e001-0000-4000-8000-00000000008f",
+      "kind": "goal",
+      "title": "ต่อแผนผัง",
+      "slug": "flow/goal/tray",
+      "code": "tray",
+      "room": "ห้องนั่งเล่น",
+      "at": "living-room",
+      "object": "ถาดชิ้นแผนผัง"
+    },
+    {
+      "id": "a4c0e001-0000-4000-8000-000000000090",
+      "kind": "goal",
+      "title": "คุยกับลุงเมฆ",
+      "slug": "flow/goal/mek",
+      "code": "mek",
+      "room": "ห้องนั่งเล่น",
+      "at": "living-room",
+      "object": "ลุงเมฆ"
+    },
+    {
+      "id": "a4c0e001-0000-4000-8000-000000000091",
+      "kind": "goal",
+      "title": "สรุปคดี",
+      "slug": "flow/goal/deduce",
+      "code": "deduce",
+      "room": "สมุดคดี",
+      "at": null,
+      "object": "ปุ่มสมุดคดี"
+    },
+    {
+      "id": "a4c0e001-0000-4000-8000-000000000092",
+      "kind": "goal",
+      "title": "เปิดกล่องรูปดาว",
+      "slug": "flow/goal/box",
+      "code": "box",
+      "room": "ห้องทำงาน ชั้น 2",
+      "at": "study",
+      "object": "กล่องรูปดาว"
+    },
+    {
+      "id": "a4c0e001-0000-4000-8000-000000000093",
+      "kind": "goal",
+      "title": "กลับบ้าน",
+      "slug": "flow/goal/home",
+      "code": "home",
+      "room": "บ้านของฉัน",
+      "at": "player-room",
+      "object": "ช่องวางของ"
+    }
+  ],
+  "calendarTravel": false
 }

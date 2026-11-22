@@ -37,7 +37,8 @@ export type FlowAction =
   | { type: 'floor'; floor: 1 | 2 }
   | { type: 'evidence'; evidence: string; who: string; text: string }
   | { type: 'dialogue'; dialogue: string }
-  | { type: 'lines'; who: string; lines: string[] }
+  | { type: 'lines'; who: string; lines: string[]; evidence?: string }
+  | { type: 'inspect-note'; evidence?: string; front: string; back: string }
   | { type: 'clock' }
   | { type: 'calendar' }
   | { type: 'minigame'; screen: 'crossword' | 'jigsaw' | 'slide' }
@@ -130,7 +131,7 @@ export type TimeSlot = Identity & {
   slot: 'yesterday' | 'afternoon' | 'now';
   part: 'day' | 'hour';
   image: string;
-  unlockBy: string | null;
+  unlockBy: string | string[] | null;
   hint: string | null;
 };
 
@@ -187,6 +188,8 @@ export type MiniGame = Identity & {
 
 export type CaseFlow = Identity & {
   kind: 'story-flow';
+  /** When false or omitted, day-rewind via the calendar stays locked. */
+  calendarTravel?: boolean;
   events: FlowEvent[];
   pages: CutscenePage[];
   evidence: EvidenceItem[];

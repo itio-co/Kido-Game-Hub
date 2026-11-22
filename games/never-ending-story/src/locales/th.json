@@ -397,5 +397,14 @@
   "photo.storedBody": "เก็บรูปปู่ไว้แล้ว ชั้นว่าง วางกลับเมื่อไหร่ก็ได้",
   "photo.storedNote": "รูปยังเป็นของหนูเสมอ เก็บแล้วไม่หาย",
   "toast.photoStored": "เก็บรูปปู่แล้ว",
-  "toast.photoBack": "วางรูปปู่กลับบนชั้นแล้ว"
+  "toast.photoBack": "วางรูปปู่กลับบนชั้นแล้ว",
+  "time.clockNeedClue": "ยังใช้พลังย้อนเวลาไม่ได้ ต้องมีเบาะแสก่อน",
+  "time.clockReady": "ใช้พลังย้อนเวลาได้ที่นาฬิกา",
+  "time.calendarPowerWeak": "พลังย้อนเวลายังไม่พอสำหรับปฏิทิน ตอนนี้ใช้ได้แค่นาฬิกา",
+  "time.calendarTravel": "ย้อนวันด้วยปฏิทิน",
+  "time.slotLocked": "ยังล็อกอยู่",
+  "note.flipHint": "แตะโน้ตเพื่อพลิกดูด้านหลัง",
+  "note.flipFront": "แตะโน้ตเพื่อกลับไปด้านหน้า",
+  "note.close": "ปิด",
+  "evidence.got": "ได้หลักฐาน {code}"
 }
