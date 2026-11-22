@@ -401,7 +401,7 @@
       onHint={onHint}
       onSettings={() => { void openSettings(); }}
     />
-    {#if session.subtitle && !session.talk && (session.showCaseUi || session.screen === 'cutscene' || session.screen === 'ending-comic' || session.screen === 'difficulty')}
+    {#if session.subtitle && !session.talk && !(session.toastText && session.toastLow) && (session.showCaseUi || session.screen === 'cutscene' || session.screen === 'ending-comic' || session.screen === 'difficulty')}
       <p class="flow-sub">{session.subtitle}</p>
     {/if}
 
@@ -504,7 +504,7 @@
     {/if}
 
     {#if session.toastText || toast}
-      <p class="toast" class:toast-low={session.context !== 'event'} role="status">{session.toastText || toast}</p>
+      <p class="toast" class:toast-low={session.context !== 'event' || session.toastLow} role="status">{session.toastText || toast}</p>
     {/if}
   {/if}
   {#if godFloatVisible(godReady, floatPrefs.on) && !editing && !browsing && overlay !== 'settings'}

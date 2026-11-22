@@ -31,6 +31,10 @@ export type ScreenId =
 export type FlowAction =
   | { type: 'go'; screen: ScreenId }
   | { type: 'toast'; text: string }
+  /** Locked room: a short message in the bottom message area. */
+  | { type: 'locked'; text: string }
+  /** Switch the house map to another floor (stairs). */
+  | { type: 'floor'; floor: 1 | 2 }
   | { type: 'evidence'; evidence: string; who: string; text: string }
   | { type: 'dialogue'; dialogue: string }
   | { type: 'lines'; who: string; lines: string[] }
@@ -64,7 +68,12 @@ export type FlowSpot = Identity & {
   when: SpotWhen;
   action: FlowAction;
   doneEvidence?: string | null;
+  /** On a multi-floor map: the floor this spot sits on. */
+  floor?: 1 | 2;
 };
+
+/** One floor of a multi-floor house map. */
+export type MapFloor = { floor: 1 | 2; title: string; image: string; hud?: string };
 
 export type FlowScene = Identity & {
   kind: 'scene';
@@ -77,6 +86,8 @@ export type FlowScene = Identity & {
   timed?: boolean;
   enter?: string;
   enterWhenSolved?: string;
+  /** House map floors; spots with a `floor` show only on that floor. */
+  floors?: MapFloor[];
   spots: FlowSpot[];
 };
 

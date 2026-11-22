@@ -38,9 +38,12 @@
     return t('box.needCase');
   }
 
+  const mapFloors = $derived(session.flow?.scenes.find((item) => item.screen === 'house-map')?.floors ?? []);
+
   function sceneImage(): string {
     const scene = session.scene;
     if (!scene) return '';
+    if (scene.floors) return scene.floors.find((item) => item.floor === session.mapFloor)?.image ?? scene.image;
     if (scene.images && session.slot in scene.images) return scene.images[session.slot];
     return scene.image;
   }
@@ -93,6 +96,8 @@
       {labelFor}
       onSpot={(spot) => session.tapSpot(spot)}
       onMiss={() => session.clearSpot()}
+      floor={session.mapFloor}
+      onFloor={(floor) => session.setMapFloor(floor)}
     />
     {#if session.screen === 'star-box' && session.solved}
       <p class="box-state" data-testid="star-box-open">{t('box.opened')}</p>
@@ -254,10 +259,16 @@
               {/each}
             </div>
           {:else}
-            <div class="mini" style="background-image:url('{imageUrl(artworkFile('prologue.house-map'))}')">
-              <button type="button" class:sel={session.picks[index] === 'living'} style="left:11%;top:12%;width:78%;height:44%" aria-label="ห้องนั่งเล่น" onclick={() => session.pickAnswer(index, 'living')}></button>
-              <button type="button" class:sel={session.picks[index] === 'study'} style="left:11%;top:57%;width:38%;height:31%" aria-label="ห้องทำงาน" onclick={() => session.pickAnswer(index, 'study')}></button>
-              <button type="button" class:sel={session.picks[index] === 'kitchen'} style="left:51%;top:57%;width:39%;height:31%" aria-label="ครัว" onclick={() => session.pickAnswer(index, 'kitchen')}></button>
+            <div class="minis">
+              <div class="mini" style="background-image:url('{imageUrl(artworkFile('prologue.house-map'))}')">
+                <span class="fl">{mapFloors[0]?.title ?? '1'}</span>
+                <button type="button" class:sel={session.picks[index] === 'living'} style="left:11%;top:12%;width:78%;height:44%" aria-label="ห้องนั่งเล่น" onclick={() => session.pickAnswer(index, 'living')}></button>
+                <button type="button" class:sel={session.picks[index] === 'kitchen'} style="left:51%;top:57%;width:39%;height:31%" aria-label="ครัว" onclick={() => session.pickAnswer(index, 'kitchen')}></button>
+              </div>
+              <div class="mini" style="background-image:url('{imageUrl(artworkFile('house.map-2f'))}')">
+                <span class="fl">{mapFloors[1]?.title ?? '2'}</span>
+                <button type="button" class:sel={session.picks[index] === 'study'} style="left:51%;top:57%;width:39%;height:31%" aria-label="ห้องทำงาน" onclick={() => session.pickAnswer(index, 'study')}></button>
+              </div>
             </div>
             <p>{question.answers.find((answer) => answer.value === session.picks[index])?.title ?? 'แตะห้องบนแผนผัง'}</p>
           {/if}
@@ -433,6 +444,8 @@
   .por { width: 72px; height: 72px; border-radius: 50%; background-size: cover; background-position: 50% 18%; border: 3px solid #2d6d8a; color: #fff; position: relative; }
   .por span { position: absolute; left: 50%; bottom: -8px; transform: translateX(-50%); background: rgba(0, 0, 0, 0.65); border-radius: 6px; padding: 0 4px; font-size: var(--fs-sm); white-space: nowrap; }
   .mini { position: relative; width: 120px; aspect-ratio: 3 / 4; background-color: #efe6d2; background-repeat: no-repeat; background-position: center; background-size: contain; border-radius: 6px; }
+  .minis { display: flex; gap: 8px; }
+  .mini .fl { position: absolute; left: 4px; top: 3px; z-index: 1; font-size: 11px; line-height: 1.4; padding: 0 5px; border-radius: 4px; background: rgba(6, 24, 40, 0.85); color: #eaf6ff; pointer-events: none; }
   .mini button { position: absolute; border: 0; background: transparent; }
   .mini button.sel { background: rgba(57, 224, 255, 0.35); outline: 2px solid #39e0ff; }
   .proof { margin-top: 6px; }

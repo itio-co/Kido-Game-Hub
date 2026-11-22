@@ -61,7 +61,7 @@
       <div class="jgb">
         {#each [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11] as index (index)}
           {#if session.jig.placed.includes(index)}
-            <div class="pc" style="background-image:url('{imageUrl(artworkFile('prologue.house-map'))}');background-position:{jigPosition(index)}"></div>
+            <div class="pc" style="background-image:url('{imageUrl(artworkFile('house.map-2f'))}');background-position:{jigPosition(index)}"></div>
           {:else}
             <button type="button" class="jgs" aria-label="ช่อง {index + 1}" onclick={() => session.placePiece(index)}></button>
           {/if}
@@ -75,7 +75,7 @@
             type="button"
             class="pc"
             class:sel={session.jig.sel === index}
-            style="background-image:url('{imageUrl(artworkFile('prologue.house-map'))}');background-position:{jigPosition(index)}"
+            style="background-image:url('{imageUrl(artworkFile('house.map-2f'))}');background-position:{jigPosition(index)}"
             aria-label="ชิ้น {index + 1}"
             onclick={() => session.pickPiece(index)}
           ></button>

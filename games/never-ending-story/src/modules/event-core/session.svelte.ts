@@ -92,6 +92,10 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
   let selected = $state<string | null>(null);
   let hintSpot = $state<string | null>(null);
   let toastText = $state<string | null>(null);
+  /** The toast belongs in the bottom message area (locked rooms). */
+  let toastLow = $state(false);
+  /** House map floor on screen. */
+  let mapFloor = $state<1 | 2>(1);
   let talk = $state<Talk | null>(null);
   let overlay = $state<null | 'calendar' | 'clock' | 'day' | 'bag'>(null);
   let slot = $state<'yesterday' | 'afternoon' | 'now'>('now');
@@ -371,9 +375,15 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
     bagPulseTimer = window.setTimeout(() => { bagPulse = false; }, 2600);
   }
 
-  function showToast(text: string): void {
+  function setMapFloor(floor: 1 | 2): void {
+    mapFloor = floor;
+    selected = null;
+  }
+
+  function showToast(text: string, low = false): void {
     if (!text) return;
     toastText = text;
+    toastLow = low;
     window.clearTimeout(toastTimer);
     toastTimer = window.setTimeout(() => {
       toastText = null;
@@ -475,6 +485,8 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
     if (!replace && next !== screen) history = [...history, screen];
     if (next !== 'living-room') slot = 'now';
     screen = next;
+    if (next === 'study') mapFloor = 2;
+    else if (next === 'living-room' || next === 'kitchen' || next === 'kitchen-close') mapFloor = 1;
     selected = null;
     overlay = null;
     talk = null;
@@ -518,6 +530,14 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
     }
     if (action.type === 'toast') {
       showToast(action.text);
+      return;
+    }
+    if (action.type === 'locked') {
+      showToast(action.text, true);
+      return;
+    }
+    if (action.type === 'floor') {
+      setMapFloor(action.floor);
       return;
     }
     if (action.type === 'evidence') {
@@ -757,9 +777,11 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
 
   const spots = $derived.by(() => {
     if (!scene) return [];
+    const hasFloors = !!scene.floors;
     return scene.spots.filter((item) => {
       if (item.when !== 'always' && item.when !== slot) return false;
       if (item.slug === 'flow/star-box/lock' && solved) return false;
+      if (hasFloors && item.floor && item.floor !== mapFloor) return false;
       return true;
     });
   });
@@ -787,7 +809,8 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
     }
     const clock = scene.timed ? `⏳ ${flow.slots.find((item) => item.slot === slot)?.title ?? ''} · ` : '';
     const found = countedEvidence(catalogCodes(flow), evidence).length;
-    return `${clock}${scene.hud} · ${t('hud.evidence', { n: found, total: catalogCodes(flow).length || 4 })}`;
+    const hud = scene.floors?.find((item) => item.floor === mapFloor)?.hud ?? scene.hud;
+    return `${clock}${hud} · ${t('hud.evidence', { n: found, total: catalogCodes(flow).length || 4 })}`;
   });
 
   function resetEventRun(): void {
@@ -875,6 +898,9 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
     get selected() { return selected; },
     get hintSpot() { return hintSpot; },
     get toastText() { return toastText; },
+    get toastLow() { return toastLow; },
+    get mapFloor() { return mapFloor; },
+    setMapFloor,
     get talk() { return talk; },
     get overlay() { return overlay; },
     get slot() { return slot; },

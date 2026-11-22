@@ -3,7 +3,7 @@ import { imageUrl } from '../../lib/imageUrl';
 import type { CaseFlow, ScreenRegistry } from './types';
 
 /** Bump when case-flow / screens JSON changes so clients skip a stale cache of the stable URL. */
-export const FLOW_DATA_REV = '0.6.34-faces';
+export const FLOW_DATA_REV = '0.6.35';
 
 export async function loadFlow(): Promise<{ flow: CaseFlow; screens: ScreenRegistry }> {
   const base = import.meta.env.BASE_URL;
