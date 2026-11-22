@@ -153,6 +153,8 @@
   "board.loading": "กำลังโหลด…",
   "board.onlineNote": "คะแนนดีที่สุดของแต่ละคน เฉพาะผู้เล่นที่ยืนยันแล้ว",
   "hud.houseMap": "แผนผังบ้าน",
+  "hud.bag": "กระเป๋า",
+  "hud.notebook": "สมุดคดี",
   "prologue.skip": "ข้าม",
   "prologue.tapNext": "แตะเพื่ออ่านต่อ",
   "prologue.tapName": "แตะเพื่อตั้งชื่อ",

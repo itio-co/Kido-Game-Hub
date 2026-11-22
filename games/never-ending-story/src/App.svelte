@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { t } from './lib/i18n';
+  import { showBagAndNotebook } from './lib/hudIcons';
   import EditorView from './components/EditorView.svelte';
   import AssetBrowser from './components/AssetBrowser.svelte';
   import CalendarPanel from './components/CalendarPanel.svelte';
@@ -410,17 +411,43 @@
       </svg>
     </button>
 
-    {#if session.showCaseUi || session.showHouseMapButton}
+    {#if showBagAndNotebook(session.showCaseUi, session.screen) || session.showHouseMapButton}
       <div class="bottom-actions">
         {#if session.showHouseMapButton}
           <button type="button" class="case mapbtn" class:fresh={session.mapUnlockPulse} data-testid="house-map-btn" onclick={() => session.go('house-map')}>
             {t('hud.houseMap')}
           </button>
         {/if}
-        {#if session.showCaseUi}
-          <button type="button" class="case" class:fresh={session.bagPulse} data-testid="bag-btn" onclick={() => session.openBag()}>{t('bag.title')}</button>
-          <button type="button" class="case" data-testid="case-notebook" onclick={() => (session.screen === 'notebook' ? session.back() : session.go('notebook'))}>
-            {room.hud.caseLabel}
+        {#if showBagAndNotebook(session.showCaseUi, session.screen)}
+          <button
+            type="button"
+            class="hud-icon"
+            class:fresh={session.bagPulse}
+            data-testid="bag-btn"
+            aria-label={t('hud.bag')}
+            title={t('hud.bag')}
+            onclick={() => session.openBag()}
+          >
+            <svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true">
+              <path d="M6 9.2h12v9.3a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V9.2z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" />
+              <path d="M9 9.2V7.6a3 3 0 0 1 6 0v1.6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+              <path d="M6 13.2h12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+            </svg>
+          </button>
+          <button
+            type="button"
+            class="hud-icon"
+            data-testid="case-notebook"
+            aria-label={t('hud.notebook')}
+            title={t('hud.notebook')}
+            onclick={() => (session.screen === 'notebook' ? session.back() : session.go('notebook'))}
+          >
+            <svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true">
+              <rect x="3.2" y="3.2" width="11.2" height="15.6" rx="1.4" fill="none" stroke="currentColor" stroke-width="2" />
+              <path d="M6.2 7.4h6M6.2 10.6h6M6.2 13.8h4.2" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" />
+              <circle cx="16.2" cy="15.2" r="3.6" fill="none" stroke="currentColor" stroke-width="2" />
+              <path d="M18.8 17.8 21.4 20.4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+            </svg>
           </button>
         {/if}
       </div>
@@ -498,8 +525,9 @@
     gap: 8px;
     align-items: flex-end;
   }
-  .bottom-actions .case { position: static; }
-  .mapbtn.fresh, .case.fresh { animation: map-unlock 0.7s ease; }
+  .bottom-actions .case,
+  .bottom-actions .hud-icon { position: static; }
+  .mapbtn.fresh, .case.fresh, .hud-icon.fresh { animation: map-unlock 0.7s ease; }
   @keyframes map-unlock {
     0% { transform: scale(0.86); box-shadow: 0 0 0 0 var(--cyan); }
     45% { transform: scale(1.08); box-shadow: 0 0 0 6px transparent; }
