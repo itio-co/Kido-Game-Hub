@@ -291,7 +291,7 @@ export const ARTWORKS: Artwork[] = [
     characterIds: [],
     prompt: `${STYLE} Wide Thai home kitchen, wooden cabinets, stove, window, no people. Also used as the locked cover for case-03.`,
     negative: NEGATIVE,
-    styleNotes: `Reconstructed. Mirrored left-right on 2026-11-22 (owner: the render was the wrong way round): stove and hood on the right, sink under the window on the left. This is the story kitchen, not the stir-fry minigame backdrop. ${sheet}`,
+    styleNotes: `Reconstructed. Mirrored left-right on 2026-11-22 (owner: the render was the wrong way round): stove and hood on the right, sink under the window on the left. Vase and pot swapped by hand on 2026-11-23 (owner: the close-up shows the vase under the towel), so the vase stands on the back counter under the towel and the pot by the faucet. This is the story kitchen, not the stir-fry minigame backdrop. ${sheet}`,
     promptSource: 'reconstructed',
     version: CUTSCENE_VERSION,
     order: 62,
