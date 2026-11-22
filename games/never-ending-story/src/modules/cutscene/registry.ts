@@ -22,7 +22,7 @@ export type Artwork = {
   order: number;
 };
 
-export const CUTSCENE_VERSION = '1.0.1';
+export const CUTSCENE_VERSION = '1.0.2';
 
 const STYLE =
   'Stylized low-poly 3D storybook illustration, faceted clay-like surfaces, warm cozy light, modern Thai two-storey family home, no text, no watermark.';
@@ -108,10 +108,10 @@ export const ARTWORKS: Artwork[] = [
     id: 'case-01.p2',
     file: 'cutscene-01-p2.jpg',
     usedIn: ['case-01', 'event-01'],
-    characterIds: ['grandma', 'mom', 'player'],
-    prompt: `${STYLE} Vertical three-panel comic in Saturday-morning light: (1) a modern Thai suburban two-storey house with cream walls, brown tiled roof, a balcony above the central wooden front door, low front steps and a small silver hatchback in the front yard; (2) Grandma Mali with short loose silver hair, lavender cardigan and purple pha sin welcoming with open arms in the open front doorway; (3) Mom hugging the laughing child at the front door, an indoor staircase behind. Character ids grandma, mom, player.`,
+    characterIds: ['grandma', 'player'],
+    prompt: `${STYLE} Vertical three-panel comic in Saturday-morning light: (1) a modern Thai suburban two-storey house with cream walls, brown tiled roof, a balcony above the central wooden front door, low front steps and a small silver hatchback in the front yard; (2) Grandma Mali with short loose silver hair, lavender cardigan and purple pha sin welcoming with open arms in the open front doorway; (3) the laughing child hugging Grandma Mali (same look as panel 2) at the front door, both faces visible, an indoor staircase behind; Mom is not in this panel. Character ids grandma, player.`,
     negative: `${NEGATIVE}, traditional Thai stilt house, raised wooden house, sunset`,
-    styleNotes: `Generated 2026-11-22 for house v2 phase 1; matches the modern interiors and house-map.jpg (front door in the middle, stairs inside). Grandma's hair stays short and loose. ${sheet}`,
+    styleNotes: `Generated 2026-11-22 for house v2 phase 1; matches the modern interiors and house-map.jpg (front door in the middle, stairs inside). Panel 3 regenerated 2026-11-22 (cutscene 1.0.2): the child hugs Grandma, not Mom; panels 1-2 kept losslessly. Grandma's hair stays short and loose. ${sheet}`,
     promptSource: 'original',
     version: CUTSCENE_VERSION,
     order: 2,
