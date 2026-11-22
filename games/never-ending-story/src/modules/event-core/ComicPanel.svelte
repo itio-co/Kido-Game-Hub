@@ -1,9 +1,11 @@
 <script lang="ts">
   import type { Snippet } from 'svelte';
   import { imageUrl } from '../../lib/imageUrl';
+  import { artPctToPx, placeBubble, type FaceMask } from './bubbleLayout';
   import { swipeDirection } from './swipe';
 
   export type ComicLine = { id: string; who: string; text: string; x: number; y: number; w: number };
+  export type { FaceMask };
 
   let {
     image,
@@ -15,6 +17,7 @@
     onNext,
     onPrev = undefined,
     actions = undefined,
+    faces = [],
   }: {
     image: string;
     lines: ComicLine[];
@@ -27,27 +30,44 @@
     onPrev?: () => void;
     /** Controls shown at the right end of the bottom bar (e.g. the single skip button). */
     actions?: Snippet;
+    /** Face/head masks in % of the source art. Authored bubble coords are only a preference. */
+    faces?: FaceMask[];
   } = $props();
 
   let start: { x: number; y: number; id: number } | null = null;
   let swallowClick = false;
   let linesBox: HTMLDivElement | undefined;
+  let artBox: HTMLDivElement | undefined;
+  const debugFaces = typeof location !== 'undefined' && new URLSearchParams(location.search).has('debugFaces');
 
-  /** Keep every bubble inside the padded art frame (left/right/top/bottom). */
+  /** Keep every bubble inside the padded art frame and off every face mask. */
   function clampBubbles(): void {
     const node = linesBox;
-    if (!node) return;
-    const box = node.getBoundingClientRect();
+    const art = artBox;
+    if (!node || !art) return;
+    const artR = art.getBoundingClientRect();
+    const boundR = node.getBoundingClientRect();
+    const bounds = { x: boundR.x - artR.x, y: boundR.y - artR.y, w: boundR.width, h: boundR.height };
+    const masks = faces.map((face) => artPctToPx(face, artR.width, artR.height));
     for (const el of node.querySelectorAll<HTMLElement>('.bub')) {
       el.style.transform = '';
+      el.style.left = '';
+      el.style.top = '';
+      el.style.maxWidth = '';
       const b = el.getBoundingClientRect();
-      let dx = 0;
-      let dy = 0;
-      if (b.left < box.left) dx = box.left - b.left;
-      else if (b.right > box.right) dx = box.right - b.right;
-      if (b.top < box.top) dy = box.top - b.top;
-      else if (b.bottom > box.bottom) dy = box.bottom - b.bottom;
-      if (dx || dy) el.style.transform = `translate(${dx}px, ${dy}px)`;
+      const placed = placeBubble({
+        box: { x: b.x - artR.x, y: b.y - artR.y, w: b.width, h: b.height },
+        bounds,
+        masks,
+        minW: Math.max(72, bounds.w * 0.22),
+        heightAtWidth: (width) => {
+          el.style.maxWidth = `${width}px`;
+          return el.getBoundingClientRect().height;
+        },
+      });
+      el.style.maxWidth = `${placed.w}px`;
+      el.style.left = `${placed.x - bounds.x}px`;
+      el.style.top = `${placed.y - bounds.y}px`;
     }
   }
 
@@ -55,6 +75,7 @@
     void image;
     void lines;
     void index;
+    void faces;
     const node = linesBox;
     if (!node) return;
     const ro = new ResizeObserver(() => clampBubbles());
@@ -98,8 +119,18 @@
     <p class="cap" data-testid="comic-caption">{caption}</p>
   </div>
   <div class="stage">
-    <div class="art" data-testid="comic-art">
+    <div class="art" data-testid="comic-art" bind:this={artBox}>
       <img src={imageUrl(image)} alt="" draggable="false" />
+      {#if debugFaces}
+        {#each faces as face (face.name)}
+          <i
+            class="face-mask"
+            data-testid="comic-face-mask"
+            style="left:{face.x}%;top:{face.y}%;width:{face.w}%;height:{face.h}%"
+            title={face.name}
+          ></i>
+        {/each}
+      {/if}
       <div class="lines" data-testid="comic-bubbles" bind:this={linesBox}>
         {#each lines as line (line.id)}
           <span
@@ -173,6 +204,14 @@
     max-height: 100%;
   }
   .art img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: fill; pointer-events: none; }
+  .face-mask {
+    position: absolute;
+    z-index: 3;
+    box-sizing: border-box;
+    pointer-events: none;
+    border: 2px solid #ff3b5c;
+    background: rgba(255, 59, 92, 0.28);
+  }
   /* Inset the bubble layer from the art frame (>= 10px, a little more on a wider art box). */
   .lines { position: absolute; inset: max(10px, 3cqw); z-index: 2; pointer-events: none; }
   /* Bubble type tracks the art width (design size ~390px) so a long line cannot spill into the next strip. */

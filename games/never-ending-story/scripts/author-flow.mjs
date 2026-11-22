@@ -354,6 +354,13 @@ const flow = ent('story-flow', 'คดี 01 อัลบั้มครอบ�
       eventId: 'case-01',
       image: 'cutscene-01-p1.jpg',
       caption: 'คืนวันศุกร์ คุณย่ามะลิโทรมาหาแม่',
+      faces: [
+        { name: 'p1-mom-s1', x: 41, y: 1, w: 38, h: 26 },
+        { name: 'p1-child-s2', x: 15, y: 33, w: 30, h: 21 },
+        { name: 'p1-mom-s2', x: 51, y: 33, w: 30, h: 21 },
+        { name: 'p1-child-s3', x: 15, y: 67, w: 30, h: 21 },
+        { name: 'p1-mom-s3', x: 43, y: 67, w: 32, h: 21 },
+      ],
       lines: [
         ent('speech-line', 'แม่', 'flow/cutscene/case-01/p1/mom', {
           who: 'แม่',
@@ -375,6 +382,11 @@ const flow = ent('story-flow', 'คดี 01 อัลบั้มครอบ�
       eventId: 'case-01',
       image: 'cutscene-01-p2.jpg',
       caption: 'เช้าวันเสาร์ ครอบครัวมาถึงบ้านของคุณย่า',
+      faces: [
+        { name: 'p2-grandma-s2', x: 41, y: 33, w: 26, h: 16 },
+        { name: 'p2-child-s3', x: 25, y: 67, w: 26, h: 18 },
+        { name: 'p2-mom-s3', x: 45, y: 67, w: 28, h: 18 },
+      ],
       lines: [
         ent('speech-line', 'ย่ามะลิ', 'flow/cutscene/case-01/p2/grandma', {
           who: 'ย่ามะลิ',
@@ -389,6 +401,10 @@ const flow = ent('story-flow', 'คดี 01 อัลบั้มครอบ�
       eventId: 'case-01',
       image: 'cutscene-01-p3.jpg',
       caption: 'แต่คุณย่าดูไม่สบายใจเลย…',
+      faces: [
+        { name: 'p3-grandma-s2', x: 31, y: 33, w: 34, h: 19 },
+        { name: 'p3-child-s3', x: 26, y: 67, w: 28, h: 18 },
+      ],
       lines: [
         ent('speech-line', 'ย่ามะลิ', 'flow/cutscene/case-01/p3/grandma', {
           who: 'ย่ามะลิ',

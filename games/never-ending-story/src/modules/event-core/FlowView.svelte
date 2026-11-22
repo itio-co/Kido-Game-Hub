@@ -125,6 +125,7 @@
         : (session.page < pages.length - 1 ? 'แตะเพื่ออ่านต่อ' : 'แตะเพื่อเริ่มคดี')}
       count={pages.length}
       index={session.page}
+      faces={cut.faces ?? []}
       onNext={() => session.nextPage()}
       onPrev={() => session.prevPage()}
     >
