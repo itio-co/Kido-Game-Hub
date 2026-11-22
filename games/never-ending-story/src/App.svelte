@@ -57,6 +57,7 @@
   // Prologue only on a plain home entry, never for deep links (challenge, practice, leaderboard...).
   const homeEntry = ['', '#', '#/'].includes(window.location.hash);
   let showPrologue = $state(homeEntry && !save.player.prologueSeen);
+  let prologueKey = $state(0);
   function finishPrologue(): void {
     showPrologue = false;
     save.player.prologueSeen = true;
@@ -94,7 +95,7 @@
   const session = createFlow((progress) => {
     save.flow = progress;
     save.knowledge.evidence = [...progress.evidence];
-    if (progress.caseDone && !save.knowledge.solvedCaseIds.includes('case-01')) {
+    if ((progress.caseDone || progress.cleared) && !save.knowledge.solvedCaseIds.includes('case-01')) {
       save.knowledge.solvedCaseIds = [...save.knowledge.solvedCaseIds, 'case-01'];
     }
     commit();
@@ -432,7 +433,7 @@
         onTextSize={setTextSize}
         onSound={setSound}
         onClose={() => (overlay = null)}
-        onReplayPrologue={() => { overlay = null; showPrologue = true; }}
+        onReplayPrologue={() => { overlay = null; prologueKey += 1; showPrologue = true; }}
         showGod={godButtonVisible(godReady)}
         godOn={floatPrefs.on}
         onGodToggle={toggleGod}
@@ -470,7 +471,9 @@
     {/if}
 
     {#if showPrologue && session.screen === 'player-room'}
-      <Prologue onDone={finishPrologue} />
+      {#key prologueKey}
+        <Prologue onDone={finishPrologue} />
+      {/key}
     {/if}
 
     {#if session.toastText || toast}

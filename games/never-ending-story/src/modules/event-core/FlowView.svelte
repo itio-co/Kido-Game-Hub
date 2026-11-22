@@ -100,17 +100,17 @@
     <div class="evlist">
       <p class="evh">ออกจากห้องแล้ว จะไปไหนดีนะ?</p>
       {#each session.flow?.events ?? [] as event (event.id)}
-        {@const open = !event.unlockAfter || (event.unlockAfter === storyId && session.caseDone)}
+        {@const open = !event.unlockAfter || (event.unlockAfter === storyId && session.cleared)}
         <button type="button" class="evcard" class:off={!open} onclick={() => session.openEvent(event.eventId)}>
           <img src={imageUrl(event.cover)} alt="" />
           {#if open}
-            <span class="badge">{event.eventId === storyId && session.solved ? 'ไขแล้ว · เล่นซ้ำได้' : 'ใหม่'}</span>
+            <span class="badge">{event.eventId === storyId && session.cleared ? 'ไขแล้ว · เล่นซ้ำได้' : 'ใหม่'}</span>
           {:else}
             <span class="lock">ล็อก</span>
           {/if}
           <span class="evt">
             <b>{open ? event.title : '???'}</b>
-            <small>{open ? event.subtitle : session.caseDone && event.unlockAfter === storyId ? 'เร็ว ๆ นี้' : event.lockedHint}</small>
+            <small>{open ? event.subtitle : session.cleared && event.unlockAfter === storyId ? 'เร็ว ๆ นี้' : event.lockedHint}</small>
           </span>
         </button>
       {/each}
@@ -129,8 +129,8 @@
       onPrev={() => session.prevPage()}
     >
       {#snippet actions()}
-        {#if session.screen === 'ending-comic' || session.caseDone}
-          <button type="button" class="skip" data-testid="comic-skip" class:loud={session.caseDone && session.screen !== 'ending-comic'} onclick={() => session.skipCutscene()}>
+        {#if session.screen === 'ending-comic' || session.cleared}
+          <button type="button" class="skip" data-testid="comic-skip" class:loud={session.cleared && session.screen !== 'ending-comic'} onclick={() => session.skipCutscene()}>
             {session.screen === 'ending-comic' ? t('ending.skip') : t('skip.intro')}
           </button>
         {/if}

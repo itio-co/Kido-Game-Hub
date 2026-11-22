@@ -29,9 +29,6 @@
     actions?: Snippet;
   } = $props();
 
-  /** Height of the top caption box; bubbles are pushed below it so it never covers them. */
-  let capH = $state(0);
-
   let start: { x: number; y: number; id: number } | null = null;
   let swallowClick = false;
 
@@ -64,14 +61,19 @@
   onpointerdown={down}
   onpointerup={up}
   onpointercancel={() => (start = null)}
-  style="--cap-h:{capH}px"
 >
   <button type="button" class="tap" data-testid="comic-tap" aria-label={tapLabel} onclick={tap}></button>
-  <img src={imageUrl(image)} alt="" draggable="false" />
-  {#each lines as line (line.id)}
-    <span class="bub" style="left:{line.x}%;top:max({line.y}%, var(--bub-min-top));max-width:{line.w}%"><b>{line.who}</b>{line.text}</span>
-  {/each}
-  <p class="cap" data-testid="comic-caption" bind:offsetHeight={capH}>{caption}</p>
+  <div class="head">
+    <p class="cap" data-testid="comic-caption">{caption}</p>
+  </div>
+  <div class="stage">
+    <div class="art" data-testid="comic-art">
+      <img src={imageUrl(image)} alt="" draggable="false" />
+      {#each lines as line (line.id)}
+        <span class="bub" style="left:{line.x}%;top:{line.y}%;max-width:{line.w}%"><b>{line.who}</b>{line.text}</span>
+      {/each}
+    </div>
+  </div>
   <div class="foot">
     <div class="bar">
       <span class="dots" data-testid="comic-dots" aria-label="{index + 1}/{count}">{#each { length: count } as _, i (i)}<i class:on={i === index}></i>{/each}</span>
@@ -82,18 +84,62 @@
 </div>
 
 <style>
-  .cs { position: absolute; inset: 0; background: #000; overflow: hidden; touch-action: pan-y; user-select: none; -webkit-user-select: none; }
+  .cs {
+    position: absolute;
+    inset: 0;
+    background: #000;
+    overflow: hidden;
+    touch-action: pan-y;
+    user-select: none;
+    -webkit-user-select: none;
+    display: flex;
+    flex-direction: column;
+  }
   .tap { position: absolute; inset: 0; z-index: 1; border: 0; padding: 0; background: transparent; }
-  .cs img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; pointer-events: none; }
-  .bub { position: absolute; z-index: 2; pointer-events: none; background: #fff; color: #2b2233; border-radius: 16px; padding: 8px 12px; font-size: var(--fs); line-height: 1.4; text-align: left; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35); }
-  .bub b { display: block; font-size: var(--fs-sm); color: #b0567a; }
-  /* The scene caption is read first, so it sits at the top, under the HUD title and the version badge
-     (badge: top 52px + ~20px). Speech bubbles never start above its bottom edge. */
-  .cs { --cap-top: calc(82px + env(safe-area-inset-top)); --bub-min-top: calc(var(--cap-top) + var(--cap-h) + 8px); }
-  .cap { position: absolute; z-index: 3; top: var(--cap-top); left: 4%; right: 4%; margin: 0; pointer-events: none; background: #fff6dc; color: #3a2a10; border-radius: 10px; padding: 10px 12px; font-size: var(--fs); line-height: 1.45; text-align: left; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35); }
+  /* Reserved band under the HUD title and the version badge (badge: top 52px + ~20px). */
+  .head {
+    flex: 0 0 auto;
+    z-index: 3;
+    padding: calc(82px + env(safe-area-inset-top)) 4% 8px;
+    box-sizing: border-box;
+    pointer-events: none;
+  }
+  .cap {
+    margin: 0;
+    background: #fff6dc;
+    color: #3a2a10;
+    border-radius: 10px;
+    padding: 10px 12px;
+    font-size: var(--fs);
+    line-height: 1.45;
+    text-align: left;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+  }
+  .stage {
+    flex: 1 1 auto;
+    min-height: 0;
+    position: relative;
+    container-type: size;
+    display: grid;
+    place-items: center;
+  }
+  /* Fit the whole 9:16 page in the remaining area so the caption never covers the art. */
+  .art {
+    position: relative;
+    container-type: inline-size;
+    aspect-ratio: 720 / 1280;
+    width: min(100%, calc(100cqh * 720 / 1280));
+    height: min(100%, calc(100cqw * 1280 / 720));
+    max-width: 100%;
+    max-height: 100%;
+  }
+  .art img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: fill; pointer-events: none; }
+  /* Bubble type tracks the art width (design size ~390px) so a long line cannot spill into the next strip. */
+  .bub { position: absolute; z-index: 2; pointer-events: none; background: #fff; color: #2b2233; border-radius: 16px; padding: clamp(5px, calc(8px * 100cqw / 390), 8px) clamp(8px, calc(12px * 100cqw / 390), 12px); font-size: clamp(12px, calc(var(--fs) * 100cqw / 390), var(--fs)); line-height: 1.4; text-align: left; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35); }
+  .bub b { display: block; font-size: clamp(10px, calc(var(--fs-sm) * 100cqw / 390), var(--fs-sm)); color: #b0567a; }
   /* Bottom bar: the dots, the tap hint and the actions; keeps clear of the app's round back button
      at the bottom-left (12px + 64px). */
-  .foot { position: absolute; z-index: 3; left: 0; right: 0; bottom: 0; padding: 0 4% calc(14px + env(safe-area-inset-bottom)); pointer-events: none; }
+  .foot { flex: 0 0 auto; z-index: 3; padding: 0 4% calc(14px + env(safe-area-inset-bottom)); pointer-events: none; }
   .bar { min-height: 64px; display: flex; align-items: center; gap: 10px; padding-left: 76px; }
   .dots { display: flex; gap: 8px; flex: 0 0 auto; }
   .dots i { width: 9px; height: 9px; border-radius: 50%; background: rgba(255, 255, 255, 0.4); }

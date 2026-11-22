@@ -61,10 +61,10 @@ export function mapUnlockNeedsPersist(savedFlag: boolean | undefined, unlocked: 
 /** Null until the player has actually started the case (same rule as before). */
 export function eventProgressBody(flow: Record<string, unknown> | undefined): EventProgressBody | null {
   const f = flow ?? {};
-  const started = (Array.isArray(f.evidence) && f.evidence.length > 0) || f.poster || f.caseDone || f.solved;
+  const started = (Array.isArray(f.evidence) && f.evidence.length > 0) || f.poster || f.caseDone || f.solved || f.cleared;
   if (!started) return null;
   return {
-    status: f.caseDone ? 'completed' : 'started',
+    status: f.caseDone || f.cleared ? 'completed' : 'started',
     progress: {
       evidence: f.evidence,
       solved: f.solved,
