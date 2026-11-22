@@ -11,6 +11,7 @@
   import { readStirFry } from '../stirfry';
   import { portraitFile } from '../character';
   import { artworkFile } from '../cutscene';
+  import LeaveEventHost from './LeaveEventHost.svelte';
   import ComicPanel from './ComicPanel.svelte';
   import ImageScene from './ImageScene.svelte';
   import Minigames from './Minigames.svelte';
@@ -354,6 +355,8 @@
       </div>
     </div>
   {/if}
+
+  <LeaveEventHost {session} />
 </div>
 
 <style>

@@ -52,6 +52,15 @@ import {
 import { tapFanEgg } from '../../lib/eggs';
 import { endingIdFor, primaryEventId } from './story';
 import { playModeFromContext, type PlayMode } from '../minigame-core/framework';
+import {
+  isEventRunActive,
+  isEventRunScreen,
+  restoreEventScroll,
+  resumeEventScreen,
+  shouldConfirmLeave,
+  snapshotEventScroll,
+  type ScrollShot,
+} from './leaveEvent';
 
 export type TalkChoice = { title: string; run: () => void };
 export type Talk = { who: string; text: string; choices: TalkChoice[] };
@@ -125,6 +134,15 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
   let bagPulse = $state(false);
   let bagPulseTimer = 0;
   let repaired = $state<CaseViolation[]>([]);
+  let leaveConfirm = $state(false);
+  let leaveDest = $state<ScreenId>('event-select');
+  let leaveReplace = false;
+  let leaveRunEnter = true;
+  let leaveFromBack = false;
+  let allowLeave = false;
+  let completionLeave = false;
+  let savedScroll: ScrollShot[] = [];
+  let resumeScreen: ScreenId | null = null;
 
   function mapIsUnlocked(): boolean {
     return houseMapUnlocked(flow, evidence);
@@ -213,10 +231,14 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
         }
       }
     }
+    if (isEventRunActive({ context, practice, practiceRun, caseDone }) && !isEventRunScreen(screen)) {
+      screen = resumeEventScreen({ context, practice, practiceRun, caseDone, screen, history });
+    }
     bag = report.bag;
     // The button reads the jigsaw evidence, not the saved flag. Write the flag when a real
     // win predates it, and clear a true flag that has no such evidence (visits and other clues do not count).
     if (report.changed || (gate && mapUnlockNeedsPersist(saved?.mapUnlocked, mapIsUnlocked()))) persist();
+    queueMicrotask(() => armEventGuard());
   }
 
   const scene = $derived(flow?.scenes.find((item) => item.screen === screen) ?? null);
@@ -251,6 +273,96 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
         lvN,
       },
     });
+  }
+
+  function eventLeaveState() {
+    return { context, practice, practiceRun, caseDone, screen };
+  }
+
+  function armEventGuard(): void {
+    if (typeof window === 'undefined') return;
+    if (!isEventRunActive(eventLeaveState())) return;
+    const state = window.history.state;
+    if (state && typeof state === 'object' && (state as { nesEventGuard?: boolean }).nesEventGuard) return;
+    window.history.pushState({ nesEventGuard: true }, '', window.location.href);
+  }
+
+  function clearEventGuard(): void {
+    if (typeof window === 'undefined') return;
+    const state = window.history.state;
+    if (state && typeof state === 'object' && (state as { nesEventGuard?: boolean }).nesEventGuard) {
+      window.history.replaceState(null, '', window.location.href);
+    }
+  }
+
+  function requestLeave(dest: ScreenId, opts?: { replace?: boolean; runEnter?: boolean; fromBack?: boolean }): boolean {
+    if (allowLeave || completionLeave) return false;
+    if (!shouldConfirmLeave(eventLeaveState(), dest, { isCompletion: completionLeave })) return false;
+    resumeScreen = screen;
+    savedScroll = typeof document !== 'undefined' ? snapshotEventScroll(document) : [];
+    leaveDest = dest;
+    leaveReplace = opts?.replace ?? false;
+    leaveRunEnter = opts?.runEnter ?? true;
+    leaveFromBack = opts?.fromBack ?? false;
+    leaveConfirm = true;
+    return true;
+  }
+
+  function cancelLeave(): void {
+    leaveConfirm = false;
+    const stay = resumeScreen ?? screen;
+    if (screen !== stay) {
+      allowLeave = true;
+      void go(stay, true, false).finally(() => { allowLeave = false; });
+    }
+    if (typeof document !== 'undefined') {
+      const shots = savedScroll;
+      requestAnimationFrame(() => restoreEventScroll(document, shots));
+    }
+    armEventGuard();
+  }
+
+  async function confirmLeave(): Promise<void> {
+    const dest = leaveDest;
+    const fromBack = leaveFromBack;
+    const replace = leaveReplace;
+    const runEnter = leaveRunEnter;
+    leaveConfirm = false;
+    resetEventRun();
+    clearEventGuard();
+    allowLeave = true;
+    try {
+      if (fromBack) {
+        const prev = history[history.length - 1];
+        if (prev === dest) history = history.slice(0, -1);
+        await go(dest, true, dest !== 'uncle' && runEnter);
+      } else {
+        await go(dest, replace, runEnter);
+      }
+    } finally {
+      allowLeave = false;
+    }
+  }
+
+  function attemptSwipeLeave(): void {
+    if (leaveConfirm) return;
+    if (screen === 'cutscene' || screen === 'ending-comic') return;
+    const prev = history[history.length - 1];
+    if (!prev) return;
+    requestLeave(prev, { fromBack: true });
+  }
+
+  function bindLeaveGuard(): () => void {
+    if (typeof window === 'undefined') return () => {};
+    armEventGuard();
+    const onPop = () => {
+      if (allowLeave || completionLeave) return;
+      if (!isEventRunActive(eventLeaveState())) return;
+      window.history.pushState({ nesEventGuard: true }, '', window.location.href);
+      requestLeave('event-select', { replace: true, runEnter: false });
+    };
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
   }
 
   function pulseBag(): void {
@@ -352,6 +464,7 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
         guard += 1;
       }
     }
+    if (requestLeave(next, { replace, runEnter })) return;
     if (next === 'house-map' && !mapIsUnlocked() && !cleared) {
       showToast(t('toast.mapLocked'));
       return;
@@ -388,6 +501,7 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
     }
     if (runEnter) enter(next);
     persist();
+    armEventGuard();
     await wait(30);
     fading = false;
   }
@@ -465,7 +579,14 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
       practiceRun = false;
       persist();
       history = [];
-      await go('player-room', true, false);
+      completionLeave = true;
+      allowLeave = true;
+      try {
+        await go('player-room', true, false);
+      } finally {
+        completionLeave = false;
+        allowLeave = false;
+      }
       showToast(t('toast.caseComplete'));
       return;
     }
@@ -832,6 +953,11 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
     get title() { return title; },
     get subtitle() { return subtitle; },
     get history() { return history; },
+    get leaveConfirm() { return leaveConfirm; },
+    confirmLeave,
+    cancelLeave,
+    attemptSwipeLeave,
+    bindLeaveGuard,
     starText: () => starText(hints),
     showToast,
     exploreHint,
@@ -839,10 +965,12 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
     closeOverlay() { overlay = null; },
     async go(next: ScreenId) { await go(next); },
     async back() {
+      if (leaveConfirm) { cancelLeave(); return; }
       if (talk) { talk = null; return; }
       if (overlay) { overlay = null; return; }
       const prev = history[history.length - 1];
       if (!prev) { showToast('อยู่หน้านี้แล้ว'); return; }
+      if (requestLeave(prev, { fromBack: true })) return;
       history = history.slice(0, -1);
       if (prev === 'player-room' || prev === 'level-map') endPractice();
       if (prev === 'player-room' || prev === 'event-select') {
@@ -897,7 +1025,11 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
       void go('difficulty');
     },
     prevPage() {
-      if (page <= 0) return;
+      if (page <= 0) {
+        const prev = history[history.length - 1] ?? 'event-select';
+        requestLeave(prev, { fromBack: !!history[history.length - 1] });
+        return;
+      }
       page -= 1;
       if (screen === 'ending-comic') {
         persist();
