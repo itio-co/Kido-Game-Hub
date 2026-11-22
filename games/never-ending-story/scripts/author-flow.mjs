@@ -68,7 +68,7 @@ const scenes = [
     contain: true,
     hud: 'เลือกห้องที่จะไป',
     spots: [
-      spot('ห้องนั่งเล่น (จุดเริ่ม)', 'flow/house-map/living', 50.2, 27.5, go('living-room'), { en: 'Living room' }),
+      spot('ห้องนั่งเล่น (จุดเริ่ม)', 'flow/house-map/living', 50.2, 41, go('living-room'), { en: 'Living room' }),
       spot('ห้องทำงาน', 'flow/house-map/study', 34.9, 62.3, go('study'), { en: 'Study' }),
       spot('ครัว (เสริม)', 'flow/house-map/kitchen', 72.5, 62.3, go('kitchen'), { en: 'Kitchen' }),
     ],
@@ -371,10 +371,10 @@ const flow = ent('story-flow', 'คดี 01 อัลบั้มครอบ�
         }),
       ],
     }),
-    ent('cutscene-page', 'ถึงบ้านไม้', 'flow/cutscene/case-01/p2', {
+    ent('cutscene-page', 'ถึงบ้านย่า', 'flow/cutscene/case-01/p2', {
       eventId: 'case-01',
       image: 'cutscene-01-p2.jpg',
-      caption: 'เช้าวันเสาร์ ครอบครัวมาถึงบ้านไม้ของคุณย่า',
+      caption: 'เช้าวันเสาร์ ครอบครัวมาถึงบ้านของคุณย่า',
       lines: [
         ent('speech-line', 'ย่ามะลิ', 'flow/cutscene/case-01/p2/grandma', {
           who: 'ย่ามะลิ',

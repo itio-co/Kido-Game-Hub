@@ -253,9 +253,9 @@
             </div>
           {:else}
             <div class="mini" style="background-image:url('{imageUrl(artworkFile('prologue.house-map'))}')">
-              <button type="button" class:sel={session.picks[index] === 'living'} style="left:10%;top:10%;width:80%;height:35%" aria-label="ห้องนั่งเล่น" onclick={() => session.pickAnswer(index, 'living')}></button>
-              <button type="button" class:sel={session.picks[index] === 'study'} style="left:12%;top:46%;width:40%;height:34%" aria-label="ห้องทำงาน" onclick={() => session.pickAnswer(index, 'study')}></button>
-              <button type="button" class:sel={session.picks[index] === 'kitchen'} style="left:53%;top:46%;width:35%;height:34%" aria-label="ครัว" onclick={() => session.pickAnswer(index, 'kitchen')}></button>
+              <button type="button" class:sel={session.picks[index] === 'living'} style="left:11%;top:12%;width:78%;height:44%" aria-label="ห้องนั่งเล่น" onclick={() => session.pickAnswer(index, 'living')}></button>
+              <button type="button" class:sel={session.picks[index] === 'study'} style="left:11%;top:57%;width:38%;height:31%" aria-label="ห้องทำงาน" onclick={() => session.pickAnswer(index, 'study')}></button>
+              <button type="button" class:sel={session.picks[index] === 'kitchen'} style="left:51%;top:57%;width:39%;height:31%" aria-label="ครัว" onclick={() => session.pickAnswer(index, 'kitchen')}></button>
             </div>
             <p>{question.answers.find((answer) => answer.value === session.picks[index])?.title ?? 'แตะห้องบนแผนผัง'}</p>
           {/if}

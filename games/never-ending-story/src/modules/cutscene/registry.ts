@@ -22,10 +22,10 @@ export type Artwork = {
   order: number;
 };
 
-export const CUTSCENE_VERSION = '1.0.0';
+export const CUTSCENE_VERSION = '1.0.1';
 
 const STYLE =
-  'Stylized low-poly 3D storybook illustration, faceted clay-like surfaces, warm cozy light, Thai wooden house, no text, no watermark.';
+  'Stylized low-poly 3D storybook illustration, faceted clay-like surfaces, warm cozy light, modern Thai two-storey family home, no text, no watermark.';
 const NEGATIVE =
   'photorealistic pores, extra fingers, text, watermark, logo, blurry, horror, grandma hair bun, grandma topknot';
 
@@ -49,10 +49,10 @@ export const ARTWORKS: Artwork[] = [
     file: 'house-map.jpg',
     usedIn: ['prologue', 'event-01', 'jigsaw'],
     characterIds: [],
-    prompt: `${STYLE} Illustrated top-down map of Grandma's wooden house and yard, rooms labelled by the picture itself, soft paper colors, used as the house plan and as the jigsaw photo.`,
-    negative: NEGATIVE,
-    styleNotes: `Reconstructed. ${sheet}`,
-    promptSource: 'reconstructed',
+    prompt: `${STYLE} Top-down clay miniature floor plan of the ground floor of Grandma's modern two-storey house on cream paper, no labels. Top of the image is the front: front steps and door in the middle of the top wall; front strip with the staircase (top-left), entrance hall with shoe rack (top-middle) and a bathroom (top-right). Full-width living room in the middle with the sofa against its bottom wall facing the entrance, coffee table and rug in front, teal armchair and bookshelf to the right, side table and blue star box to the left. Back: Grandma's bedroom bottom-left (bed, wardrobe, blue star box and yellow leaf box under the window), kitchen bottom-right (L counter, sink, stove, dining table). Used as the house plan and as the jigsaw photo.`,
+    negative: `${NEGATIVE}, text, labels, letters`,
+    styleNotes: `Generated 2026-11-22 for house v2 phase 1 (docs/design/house-v2-proposal.md). The living-room camera stands at the entrance looking down the plan, so the kitchen is on the left of living-wide.jpg and the bedroom door on the right. Keep the room footprint: the deduction map zones in event-core FlowView depend on it. ${sheet}`,
+    promptSource: 'original',
     version: CUTSCENE_VERSION,
     order: 70,
   },
@@ -109,10 +109,10 @@ export const ARTWORKS: Artwork[] = [
     file: 'cutscene-01-p2.jpg',
     usedIn: ['case-01', 'event-01'],
     characterIds: ['grandma', 'mom', 'player'],
-    prompt: `${STYLE} Three-panel comic at sunset: stilt wooden house and a small car, Grandma Mali in the doorway with arms open and short loose silver hair, then Mom hugging the child. Character ids grandma, mom, player.`,
-    negative: NEGATIVE,
-    styleNotes: `Reconstructed from cutscene-01-p2.jpg. Grandma's hair stays short and loose. ${sheet}`,
-    promptSource: 'reconstructed',
+    prompt: `${STYLE} Vertical three-panel comic in Saturday-morning light: (1) a modern Thai suburban two-storey house with cream walls, brown tiled roof, a balcony above the central wooden front door, low front steps and a small silver hatchback in the front yard; (2) Grandma Mali with short loose silver hair, lavender cardigan and purple pha sin welcoming with open arms in the open front doorway; (3) Mom hugging the laughing child at the front door, an indoor staircase behind. Character ids grandma, mom, player.`,
+    negative: `${NEGATIVE}, traditional Thai stilt house, raised wooden house, sunset`,
+    styleNotes: `Generated 2026-11-22 for house v2 phase 1; matches the modern interiors and house-map.jpg (front door in the middle, stairs inside). Grandma's hair stays short and loose. ${sheet}`,
+    promptSource: 'original',
     version: CUTSCENE_VERSION,
     order: 2,
   },

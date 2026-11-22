@@ -84,11 +84,11 @@
     {
       "id": "a4c0e001-0000-4000-8000-00000000006a",
       "kind": "cutscene-page",
-      "title": "ถึงบ้านไม้",
+      "title": "ถึงบ้านย่า",
       "slug": "flow/cutscene/case-01/p2",
       "eventId": "case-01",
       "image": "cutscene-01-p2.jpg",
-      "caption": "เช้าวันเสาร์ ครอบครัวมาถึงบ้านไม้ของคุณย่า",
+      "caption": "เช้าวันเสาร์ ครอบครัวมาถึงบ้านของคุณย่า",
       "lines": [
         {
           "id": "a4c0e001-0000-4000-8000-000000000069",
@@ -379,7 +379,7 @@
           "slug": "flow/house-map/living",
           "titleEn": "Living room",
           "x": 50.2,
-          "y": 27.5,
+          "y": 41,
           "when": "always",
           "action": {
             "type": "go",
