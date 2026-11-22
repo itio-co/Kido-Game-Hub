@@ -1,10 +1,11 @@
-// HUD bag/notebook icon buttons: `node --experimental-strip-types tests/hudIcons.test.mjs`
+// HUD bag/notebook/map icon buttons: `node --experimental-strip-types tests/hudIcons.test.mjs`
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   isMinigameHudScreen,
   showBagAndNotebook,
+  showHouseMapHud,
 } from '../src/lib/hudIcons.ts';
 
 let failed = 0;
@@ -26,10 +27,16 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const app = readFileSync(join(root, 'src/App.svelte'), 'utf8');
 const css = readFileSync(join(root, 'src/app.css'), 'utf8');
 
-test('bag and notebook stay hidden during every minigame', () => {
+test('bag, notebook, and house map stay hidden during every minigame', () => {
   for (const screen of ['crossword', 'jigsaw', 'slide']) {
     ok(isMinigameHudScreen(screen), screen);
-    ok(showBagAndNotebook(true, screen) === false, `hidden on ${screen}`);
+    ok(showBagAndNotebook(true, screen) === false, `bag hidden on ${screen}`);
+    ok(showHouseMapHud({
+      screen,
+      showHouseMapButton: true,
+      showCaseUi: true,
+      sceneHasMap: true,
+    }) === false, `map hidden on ${screen} even if unlocked`);
   }
   ok(showBagAndNotebook(true, 'living-room') === true, 'visible in living room');
   ok(showBagAndNotebook(true, 'table') === true, 'visible on a close-up');
@@ -37,20 +44,49 @@ test('bag and notebook stay hidden during every minigame', () => {
   ok(isMinigameHudScreen('kitchen') === false, 'kitchen is not a minigame');
 });
 
-test('App uses icon buttons with Thai locale labels and keeps the bag pulse', () => {
+test('house map icon is shown locked on map scenes and unlocked when the gate opens', () => {
+  ok(showHouseMapHud({
+    screen: 'living-room',
+    showHouseMapButton: false,
+    showCaseUi: true,
+    sceneHasMap: true,
+  }) === true, 'locked map still visible on a map scene');
+  ok(showHouseMapHud({
+    screen: 'living-room',
+    showHouseMapButton: true,
+    showCaseUi: true,
+    sceneHasMap: true,
+  }) === true, 'unlocked map visible');
+  ok(showHouseMapHud({
+    screen: 'house-map',
+    showHouseMapButton: false,
+    showCaseUi: true,
+    sceneHasMap: false,
+  }) === false, 'hidden on the map screen itself');
+  ok(showHouseMapHud({
+    screen: 'living-room',
+    showHouseMapButton: false,
+    showCaseUi: false,
+    sceneHasMap: true,
+  }) === false, 'hidden in the hub');
+});
+
+test('App uses icon buttons with Thai locale labels and keeps pulses', () => {
   ok(app.includes('data-testid="bag-btn"'), 'bag test id');
   ok(app.includes('data-testid="case-notebook"'), 'notebook test id');
-  ok(app.includes('showBagAndNotebook(session.showCaseUi, session.screen)'), 'minigame gate');
-  ok(app.includes("t('hud.bag')") && app.includes("t('hud.notebook')"), 'locale labels');
-  ok(app.includes("aria-label={t('hud.bag')}") && app.includes("title={t('hud.bag')}"), 'bag a11y');
-  ok(app.includes("aria-label={t('hud.notebook')}") && app.includes("title={t('hud.notebook')}"), 'notebook a11y');
+  ok(app.includes('data-testid="house-map-btn"'), 'map test id');
+  ok(app.includes('showBagAndNotebook(session.showCaseUi, session.screen)'), 'bag minigame gate');
+  ok(app.includes('showHouseMapHud({'), 'map minigame/lock gate');
+  ok(app.includes("t('hud.bag')") && app.includes("t('hud.notebook')"), 'bag/notebook labels');
+  ok(app.includes("t('hud.houseMap')") && app.includes("t('hud.houseMapLocked')"), 'map labels');
+  ok(app.includes("aria-label={session.mapUnlocked ? t('hud.houseMap') : t('hud.houseMapLocked')}"), 'map a11y');
   ok(app.includes('class:fresh={session.bagPulse}'), 'bag pulse kept');
-  ok(app.includes('data-testid="house-map-btn"'), 'map button stays a separate pill');
-  const bagAt = app.indexOf('data-testid="bag-btn"');
-  const noteAt = app.indexOf('data-testid="case-notebook"');
-  ok(app.slice(bagAt - 400, bagAt + 800).includes('<svg'), 'bag SVG');
-  ok(app.slice(noteAt - 200, noteAt + 900).includes('<svg'), 'notebook SVG');
-  ok(!/data-testid="bag-btn"[^>]*>\s*\{t\('bag\.title'\)\}/.test(app), 'bag is not a text label');
+  ok(app.includes('class:fresh={session.mapUnlockPulse}'), 'map unlock pulse kept');
+  ok(app.includes("onclick={() => session.go('house-map')}"), 'locked tap still goes to house-map');
+  ok(app.includes('class="lock-badge"'), 'lock badge');
+  const mapAt = app.indexOf('data-testid="house-map-btn"');
+  ok(app.slice(mapAt - 200, mapAt + 1200).includes('<svg') && app.slice(mapAt - 400, mapAt + 200).includes('class="hud-icon"'), 'map SVG icon');
+  ok(!/data-testid="house-map-btn"[^>]*>\s*\{t\('hud\.houseMap'\)\}/.test(app), 'map is not a text label');
 });
 
 test('icon buttons are round, cyan-ringed, and at least 44px', () => {
@@ -67,8 +103,12 @@ test('locale strings for the HUD icons', () => {
   const en = JSON.parse(readFileSync(join(root, 'src/locales/en.json'), 'utf8'));
   ok(th['hud.bag'] === 'กระเป๋า', th['hud.bag']);
   ok(th['hud.notebook'] === 'สมุดคดี', th['hud.notebook']);
+  ok(th['hud.houseMap'] === 'แผนผังบ้าน', th['hud.houseMap']);
+  ok(th['hud.houseMapLocked'] === 'แผนผังบ้าน (ล็อกอยู่)', th['hud.houseMapLocked']);
   ok(en['hud.bag'] === 'Bag', en['hud.bag']);
   ok(en['hud.notebook'] === 'Case notebook', en['hud.notebook']);
+  ok(en['hud.houseMap'] === 'House map', en['hud.houseMap']);
+  ok(en['hud.houseMapLocked'] === 'House map (locked)', en['hud.houseMapLocked']);
 });
 
 if (failed) process.exitCode = 1;
