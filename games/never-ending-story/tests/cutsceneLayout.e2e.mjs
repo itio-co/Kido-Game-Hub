@@ -4,7 +4,8 @@
 // 390×844, 360×740 and a wide desktop viewport, first play and replay (case done): caption, page pill (if any),
 // dots, tap hint, the single skip button and the app's bottom-left back button never overlap; the scene caption
 // sits in a reserved band above the panel art (never overlaps the art or a face) and above every speech bubble
-// on every page; bubbles stay inset from the art frame and their text is inset from the bubble border; there is
+// on every page; bubbles stay inset from the art frame, their text is inset from the bubble border, and no bubble
+// overlaps a defined face/head box on any panel; there is
 // no "previous" button and no second skip label; swiping
 // left/right changes the page, a tap still advances.
 import assert from 'node:assert/strict';
@@ -22,6 +23,31 @@ const seed = (caseDone) => JSON.stringify({
   flow: { caseDone, solved: caseDone, cleared: caseDone },
 });
 const overlaps = (a, b) => a.x < b.x + b.width - 0.5 && b.x < a.x + a.width - 0.5 && a.y < b.y + b.height - 0.5 && b.y < a.y + a.height - 0.5;
+// Face / head boxes as % of the 720×1280 comic art (hair included). Opening cutscene only.
+const FACES = {
+  1: [
+    { id: 'p1-mom-s1', x: 42, y: 2, w: 36, h: 24 },
+    { id: 'p1-child-s2', x: 16, y: 33, w: 28, h: 20 },
+    { id: 'p1-mom-s2', x: 52, y: 33, w: 28, h: 20 },
+    { id: 'p1-child-s3', x: 16, y: 67, w: 28, h: 20 },
+    { id: 'p1-mom-s3', x: 44, y: 67, w: 30, h: 19 },
+  ],
+  2: [
+    { id: 'p2-grandma-s2', x: 42, y: 33, w: 24, h: 15 },
+    { id: 'p2-child-s3', x: 26, y: 67, w: 24, h: 17 },
+    { id: 'p2-mom-s3', x: 46, y: 66, w: 26, h: 17 },
+  ],
+  3: [
+    { id: 'p3-grandma-s2', x: 32, y: 33, w: 32, h: 18 },
+    { id: 'p3-child-s3', x: 27, y: 67, w: 26, h: 17 },
+  ],
+};
+const faceBox = (art, face) => ({
+  x: art.x + art.width * face.x / 100,
+  y: art.y + art.height * face.y / 100,
+  width: art.width * face.w / 100,
+  height: art.height * face.h / 100,
+});
 const ART_INSET = 8; // CSS px; layout keeps >= 10px
 const INNER_X = 9;   // horizontal padding floor is 10px
 const INNER_Y = 7.5; // vertical padding floor is 8px
@@ -100,6 +126,9 @@ for (const [width, height] of VIEWPORTS) {
         const pad = await innerPad(bub);
         assert.ok(pad.left >= INNER_X && pad.right >= INNER_X, `${tag} p${p + 1}: bubble horizontal padding ${JSON.stringify(pad)}`);
         assert.ok(pad.top >= INNER_Y && pad.bottom >= INNER_Y, `${tag} p${p + 1}: bubble vertical padding ${JSON.stringify(pad)}`);
+        for (const face of FACES[p + 1]) {
+          assert.ok(!overlaps(b, faceBox(art, face)), `${tag} p${p + 1}: bubble overlaps face ${face.id}`);
+        }
       }
       if (SHOTS) await page.screenshot({ path: `${SHOTS}/v34-${tag}-p${p + 1}.png` });
     }
