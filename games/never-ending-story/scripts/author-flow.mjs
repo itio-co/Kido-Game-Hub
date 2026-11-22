@@ -68,7 +68,7 @@ const scenes = [
     contain: true,
     hud: 'เลือกห้องที่จะไป',
     spots: [
-      spot('ห้องนั่งเล่น (จุดเริ่ม)', 'flow/house-map/living', 50.2, 27.5, go('living-room'), { en: 'Living room' }),
+      spot('ห้องนั่งเล่น (จุดเริ่ม)', 'flow/house-map/living', 50.2, 41, go('living-room'), { en: 'Living room' }),
       spot('ห้องทำงาน', 'flow/house-map/study', 34.9, 62.3, go('study'), { en: 'Study' }),
       spot('ครัว (เสริม)', 'flow/house-map/kitchen', 72.5, 62.3, go('kitchen'), { en: 'Kitchen' }),
     ],
@@ -354,13 +354,20 @@ const flow = ent('story-flow', 'คดี 01 อัลบั้มครอบ�
       eventId: 'case-01',
       image: 'cutscene-01-p1.jpg',
       caption: 'คืนวันศุกร์ คุณย่ามะลิโทรมาหาแม่',
+      faces: [
+        { name: 'p1-mom-s1', x: 41, y: 1, w: 38, h: 26 },
+        { name: 'p1-child-s2', x: 15, y: 33, w: 30, h: 21 },
+        { name: 'p1-mom-s2', x: 51, y: 33, w: 30, h: 21 },
+        { name: 'p1-child-s3', x: 15, y: 67, w: 30, h: 21 },
+        { name: 'p1-mom-s3', x: 43, y: 67, w: 32, h: 21 },
+      ],
       lines: [
         ent('speech-line', 'แม่', 'flow/cutscene/case-01/p1/mom', {
           who: 'แม่',
-          text: 'พรุ่งนี้เราไปเยี่ยมบ้านคุณย่ากันนะ',
+          text: 'ได้ค่ะคุณแม่ พรุ่งนี้พวกเราจะไปเยี่ยมนะคะ',
           x: 4,
-          y: 22,
-          w: 48,
+          y: 10,
+          w: 34,
         }),
         ent('speech-line', 'หนู', 'flow/cutscene/case-01/p1/child', {
           who: 'หนู',
@@ -371,17 +378,22 @@ const flow = ent('story-flow', 'คดี 01 อัลบั้มครอบ�
         }),
       ],
     }),
-    ent('cutscene-page', 'ถึงบ้านไม้', 'flow/cutscene/case-01/p2', {
+    ent('cutscene-page', 'ถึงบ้านย่า', 'flow/cutscene/case-01/p2', {
       eventId: 'case-01',
       image: 'cutscene-01-p2.jpg',
-      caption: 'เช้าวันเสาร์ ครอบครัวมาถึงบ้านไม้ของคุณย่า',
+      caption: 'เช้าวันเสาร์ ครอบครัวมาถึงบ้านของคุณย่า',
+      faces: [
+        { name: 'p2-grandma-s2', x: 41, y: 33, w: 26, h: 16 },
+        { name: 'p2-child-s3', x: 25, y: 67, w: 26, h: 18 },
+        { name: 'p2-mom-s3', x: 45, y: 67, w: 28, h: 18 },
+      ],
       lines: [
         ent('speech-line', 'ย่ามะลิ', 'flow/cutscene/case-01/p2/grandma', {
           who: 'ย่ามะลิ',
           text: 'มาแล้วเหรอจ๊ะหลาน ย่าคิดถึงจังเลย',
           x: 2,
-          y: 46,
-          w: 50,
+          y: 36,
+          w: 36,
         }),
       ],
     }),
@@ -389,20 +401,24 @@ const flow = ent('story-flow', 'คดี 01 อัลบั้มครอบ�
       eventId: 'case-01',
       image: 'cutscene-01-p3.jpg',
       caption: 'แต่คุณย่าดูไม่สบายใจเลย…',
+      faces: [
+        { name: 'p3-grandma-s2', x: 31, y: 33, w: 34, h: 19 },
+        { name: 'p3-child-s3', x: 26, y: 67, w: 28, h: 18 },
+      ],
       lines: [
         ent('speech-line', 'ย่ามะลิ', 'flow/cutscene/case-01/p3/grandma', {
           who: 'ย่ามะลิ',
           text: 'อัลบั้มรูปครอบครัวหายไปจากชั้นจ้ะ ในนั้นมีรูปปู่ตอนหนุ่ม ๆ ด้วย',
           x: 2,
-          y: 50,
-          w: 34,
+          y: 35,
+          w: 28,
         }),
         ent('speech-line', 'หนู', 'flow/cutscene/case-01/p3/child', {
           who: 'หนู',
           text: 'ไม่ต้องห่วงนะย่า หนูจะช่วยตามหาเอง!',
-          x: 56,
-          y: 72,
-          w: 42,
+          x: 58,
+          y: 74,
+          w: 40,
         }),
       ],
     }),

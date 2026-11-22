@@ -2,6 +2,7 @@
 export { default as FlowView } from './FlowView.svelte';
 export { default as ComicPanel } from './ComicPanel.svelte';
 export type { ComicLine } from './ComicPanel.svelte';
+export type { FaceMask } from './bubbleLayout';
 export { loadFlow, imageUrl } from './loadFlow';
 export { createFlow } from './session.svelte';
 export type { FlowSession } from './session.svelte';

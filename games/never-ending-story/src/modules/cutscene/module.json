@@ -2,7 +2,7 @@
   "id": "cutscene",
   "name": "Cut Scene",
   "kind": "cutscene",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Cut Scene registry: prologue, case-01 opening and ending scenes, and room art already used in the game, with generation prompts. People in a frame are character ids.",
   "entry": "src/modules/cutscene/index.ts",
   "publicEntries": [

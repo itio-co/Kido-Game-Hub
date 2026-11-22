@@ -44,6 +44,7 @@ export function defaultFlow(): FlowProgress {
     levels: { cross: [], jig: [], slide: [] },
     poster: false,
     caseDone: false,
+    cleared: false,
     bag: [],
     nav: undefined,
   };
@@ -72,7 +73,8 @@ export function readSave(): SaveV1 {
     const solvedCaseIds = Array.isArray(knowledge.solvedCaseIds)
       ? knowledge.solvedCaseIds.filter((id): id is string => typeof id === 'string')
       : [];
-    const solvedForRoom = flow.caseDone === true && !solvedCaseIds.includes('case-01') ? [...solvedCaseIds, 'case-01'] : solvedCaseIds;
+    const everCleared = flow.caseDone === true || flow.cleared === true;
+    const solvedForRoom = everCleared && !solvedCaseIds.includes('case-01') ? [...solvedCaseIds, 'case-01'] : solvedCaseIds;
     const room = normalizeRoomDecor(player.room, solvedForRoom);
     const save: SaveV1 = {
       version: 1,
@@ -108,6 +110,7 @@ export function readSave(): SaveV1 {
         },
         poster: flow.poster === true,
         caseDone: flow.caseDone === true,
+        cleared: flow.cleared === true || flow.caseDone === true,
         mapUnlocked: flow.mapUnlocked === true,
         bag: Array.isArray(flow.bag) ? flow.bag.filter((id) => typeof id === 'string') : [],
         nav: isRecord(flow.nav)

@@ -272,6 +272,8 @@ export type FlowProgress = {
   poster: boolean;
   /** Case-01 fully finished (ending comic done / home). Enables replay skip. */
   caseDone: boolean;
+  /** The case has been cleared at least once. Kept across a replay; skip-intro and the badge read this. */
+  cleared?: boolean;
   /** Sync copy of the jigsaw gate. The button reads the evidence code, not this flag. A true flag without that evidence is cleared on load. */
   mapUnlocked?: boolean;
   /** Item ids in the bag. The case key is awarded when the deduction is solved, not as evidence. */

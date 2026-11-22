@@ -1,4 +1,5 @@
 import type { Identity } from '../../lib/types';
+import type { FaceMask } from './bubbleLayout';
 
 export type ScreenStatus = 'demo' | 'real';
 
@@ -103,6 +104,8 @@ export type CutscenePage = Identity & {
   image: string;
   caption: string;
   lines: SpeechLine[];
+  /** Face/head masks in % of the source art. Used at runtime to keep bubbles off faces. */
+  faces?: FaceMask[];
 };
 
 export type EvidenceItem = Identity & {

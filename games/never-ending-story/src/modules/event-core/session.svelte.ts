@@ -25,6 +25,7 @@ import type {
   ScreenRegistry,
 } from './types';
 import type { NavContext } from '../../lib/types';
+import { replayEventRun } from './replay';
 import { t } from '../../lib/i18n';
 import {
   CASE_KEY_ID,
@@ -91,6 +92,7 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
   let reward = $state(false);
   let poster = $state(false);
   let caseDone = $state(false);
+  let cleared = $state(false);
   let talkSlug = $state<string | null>(null);
   let eggReveal = $state(false);
   let difficulty = $state('ปานกลาง');
@@ -162,6 +164,7 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
     };
     poster = report.poster;
     caseDone = report.caseDone;
+    cleared = saved?.cleared === true || report.caseDone;
     ready = true;
     if (saved?.nav?.screen) {
       const navScreen = saved.nav.screen as ScreenId;
@@ -232,6 +235,7 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
       levels: { cross: [...levels.cross], jig: [...levels.jig], slide: [...levels.slide] },
       poster,
       caseDone,
+      cleared,
       mapUnlocked: houseMapGate(flow) ? mapIsUnlocked() : undefined,
       bag: [...bag],
       nav: {
@@ -348,7 +352,7 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
         guard += 1;
       }
     }
-    if (next === 'house-map' && !mapIsUnlocked() && !caseDone) {
+    if (next === 'house-map' && !mapIsUnlocked() && !cleared) {
       showToast(t('toast.mapLocked'));
       return;
     }
@@ -453,6 +457,7 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
     if (action.type === 'home') {
       reward = true;
       caseDone = true;
+      cleared = true;
       talk = null;
       talkSlug = null;
       context = 'hub';
@@ -664,6 +669,82 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
     return `${clock}${scene.hud} · ${t('hud.evidence', { n: found, total: catalogCodes(flow).length || 4 })}`;
   });
 
+  function resetEventRun(): void {
+    const next = replayEventRun({
+      evidence,
+      bag,
+      solved,
+      deduced,
+      reward,
+      poster,
+      caseDone,
+      cleared,
+      difficulty,
+      played,
+      seen,
+      levels,
+      page,
+      slot,
+      hints,
+      hintTier,
+      hintGoal,
+      cross,
+      jig,
+      slide,
+      snap,
+      picks,
+      proof,
+      marks,
+      talk,
+      talkSlug,
+      overlay,
+      selected,
+      hintSpot,
+      toastText,
+      eggReveal,
+      mapUnlockPulse,
+      bagPulse,
+    }, { cross: freshCross(), jig: freshJig(), slide: freshSlide() });
+    evidence = next.evidence;
+    bag = next.bag;
+    solved = next.solved;
+    deduced = next.deduced;
+    reward = next.reward;
+    poster = next.poster;
+    caseDone = next.caseDone;
+    cleared = next.cleared;
+    difficulty = next.difficulty;
+    page = next.page;
+    slot = next.slot;
+    hints = next.hints;
+    hintTier = next.hintTier;
+    hintGoal = next.hintGoal;
+    cross = next.cross;
+    jig = next.jig;
+    slide = next.slide;
+    snap = next.snap;
+    picks = next.picks;
+    proof = next.proof;
+    marks = next.marks;
+    talk = null;
+    talkSlug = next.talkSlug;
+    overlay = next.overlay;
+    selected = next.selected;
+    hintSpot = next.hintSpot;
+    toastText = next.toastText;
+    eggReveal = next.eggReveal;
+    mapUnlockPulse = next.mapUnlockPulse;
+    bagPulse = next.bagPulse;
+    window.clearTimeout(toastTimer);
+    window.clearTimeout(hintTimer);
+    window.clearTimeout(mapPulseTimer);
+    window.clearTimeout(bagPulseTimer);
+    toastTimer = 0;
+    hintTimer = 0;
+    mapPulseTimer = 0;
+    bagPulseTimer = 0;
+  }
+
   return {
     get ready() { return ready; },
     get flow() { return flow; },
@@ -682,6 +763,7 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
     get reward() { return reward; },
     get poster() { return poster; },
     get caseDone() { return caseDone; },
+    get cleared() { return cleared; },
     get mapUnlocked() { return mapIsUnlocked(); },
     get bag() { return bag; },
     get bagPulse() { return bagPulse; },
@@ -786,10 +868,10 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
       const event = flow?.events.find((item) => item.eventId === eventId);
       if (!event) return;
       if (event.unlockAfter) {
-        showToast(caseDone && event.unlockAfter === primaryEventId(flow) ? 'เร็ว ๆ นี้' : event.lockedHint ?? 'ยังล็อกอยู่');
+        showToast(cleared && event.unlockAfter === primaryEventId(flow) ? 'เร็ว ๆ นี้' : event.lockedHint ?? 'ยังล็อกอยู่');
         return;
       }
-      page = 0;
+      resetEventRun();
       context = 'event';
       practice = false;
       practiceRun = false;
@@ -828,15 +910,15 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
         void perform({ type: 'home' });
         return;
       }
-      if (!caseDone) return; // first play: intro not skippable
+      if (!cleared) return; // first play: intro not skippable
       void go('difficulty');
     },
     skipIntro() {
-      if (!caseDone) return;
+      if (!cleared) return;
       void go('difficulty');
     },
     skipToMap() {
-      if (!caseDone) return;
+      if (!cleared) return;
       context = 'event';
       practice = false;
       practiceRun = false;

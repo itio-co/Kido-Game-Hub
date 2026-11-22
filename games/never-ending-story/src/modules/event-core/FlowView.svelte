@@ -100,17 +100,17 @@
     <div class="evlist">
       <p class="evh">ออกจากห้องแล้ว จะไปไหนดีนะ?</p>
       {#each session.flow?.events ?? [] as event (event.id)}
-        {@const open = !event.unlockAfter || (event.unlockAfter === storyId && session.caseDone)}
+        {@const open = !event.unlockAfter || (event.unlockAfter === storyId && session.cleared)}
         <button type="button" class="evcard" class:off={!open} onclick={() => session.openEvent(event.eventId)}>
           <img src={imageUrl(event.cover)} alt="" />
           {#if open}
-            <span class="badge">{event.eventId === storyId && session.solved ? 'ไขแล้ว · เล่นซ้ำได้' : 'ใหม่'}</span>
+            <span class="badge">{event.eventId === storyId && session.cleared ? 'ไขแล้ว · เล่นซ้ำได้' : 'ใหม่'}</span>
           {:else}
             <span class="lock">ล็อก</span>
           {/if}
           <span class="evt">
             <b>{open ? event.title : '???'}</b>
-            <small>{open ? event.subtitle : session.caseDone && event.unlockAfter === storyId ? 'เร็ว ๆ นี้' : event.lockedHint}</small>
+            <small>{open ? event.subtitle : session.cleared && event.unlockAfter === storyId ? 'เร็ว ๆ นี้' : event.lockedHint}</small>
           </span>
         </button>
       {/each}
@@ -125,12 +125,13 @@
         : (session.page < pages.length - 1 ? 'แตะเพื่ออ่านต่อ' : 'แตะเพื่อเริ่มคดี')}
       count={pages.length}
       index={session.page}
+      faces={cut.faces ?? []}
       onNext={() => session.nextPage()}
       onPrev={() => session.prevPage()}
     >
       {#snippet actions()}
-        {#if session.screen === 'ending-comic' || session.caseDone}
-          <button type="button" class="skip" data-testid="comic-skip" class:loud={session.caseDone && session.screen !== 'ending-comic'} onclick={() => session.skipCutscene()}>
+        {#if session.screen === 'ending-comic' || session.cleared}
+          <button type="button" class="skip" data-testid="comic-skip" class:loud={session.cleared && session.screen !== 'ending-comic'} onclick={() => session.skipCutscene()}>
             {session.screen === 'ending-comic' ? t('ending.skip') : t('skip.intro')}
           </button>
         {/if}
@@ -253,9 +254,9 @@
             </div>
           {:else}
             <div class="mini" style="background-image:url('{imageUrl(artworkFile('prologue.house-map'))}')">
-              <button type="button" class:sel={session.picks[index] === 'living'} style="left:10%;top:10%;width:80%;height:35%" aria-label="ห้องนั่งเล่น" onclick={() => session.pickAnswer(index, 'living')}></button>
-              <button type="button" class:sel={session.picks[index] === 'study'} style="left:12%;top:46%;width:40%;height:34%" aria-label="ห้องทำงาน" onclick={() => session.pickAnswer(index, 'study')}></button>
-              <button type="button" class:sel={session.picks[index] === 'kitchen'} style="left:53%;top:46%;width:35%;height:34%" aria-label="ครัว" onclick={() => session.pickAnswer(index, 'kitchen')}></button>
+              <button type="button" class:sel={session.picks[index] === 'living'} style="left:11%;top:12%;width:78%;height:44%" aria-label="ห้องนั่งเล่น" onclick={() => session.pickAnswer(index, 'living')}></button>
+              <button type="button" class:sel={session.picks[index] === 'study'} style="left:11%;top:57%;width:38%;height:31%" aria-label="ห้องทำงาน" onclick={() => session.pickAnswer(index, 'study')}></button>
+              <button type="button" class:sel={session.picks[index] === 'kitchen'} style="left:51%;top:57%;width:39%;height:31%" aria-label="ครัว" onclick={() => session.pickAnswer(index, 'kitchen')}></button>
             </div>
             <p>{question.answers.find((answer) => answer.value === session.picks[index])?.title ?? 'แตะห้องบนแผนผัง'}</p>
           {/if}
