@@ -149,17 +149,17 @@
         },
         {
           "name": "p2-child-s3",
-          "x": 25,
-          "y": 67,
-          "w": 26,
-          "h": 18
+          "x": 29,
+          "y": 71,
+          "w": 22,
+          "h": 15
         },
         {
-          "name": "p2-mom-s3",
-          "x": 45,
-          "y": 67,
-          "w": 28,
-          "h": 18
+          "name": "p2-grandma-s3",
+          "x": 42,
+          "y": 66,
+          "w": 24,
+          "h": 15
         }
       ]
     },
@@ -398,7 +398,15 @@
       "title": "แผนผังที่เก็บภาพ",
       "slug": "flow/evidence/e04",
       "code": "E04",
-      "text": "แผนผังบ้าน: ภาพถ่ายเก็บใต้หน้าต่างห้องทำงาน"
+      "text": "แผนผังบ้าน: ภาพถ่ายเก็บใต้หน้าต่างห้องทำงานชั้น 2"
+    },
+    {
+      "id": "a4c0e001-0000-4000-8000-0000000000b3",
+      "kind": "evidence",
+      "title": "ผ้าเปียกและแจกันเติมน้ำใหม่",
+      "slug": "flow/evidence/e06",
+      "code": "E06",
+      "text": "ผ้าในครัวยังเปียก และแจกันถูกเติมน้ำใหม่ — มีคนเช็ดน้ำหกแล้วจัดแจกันใหม่"
     }
   ],
   "slots": [
@@ -410,8 +418,8 @@
       "slot": "yesterday",
       "part": "day",
       "image": "living-wide-yesterday.jpg",
-      "unlockBy": "E01",
-      "hint": "ลองหาข้อความบนโต๊ะกลางก่อน"
+      "unlockBy": "E02",
+      "hint": "พลังย้อนเวลายังไม่พอสำหรับปฏิทิน"
     },
     {
       "id": "a4c0e001-0000-4000-8000-000000000074",
@@ -421,8 +429,11 @@
       "slot": "afternoon",
       "part": "hour",
       "image": "living-wide-afternoon.jpg",
-      "unlockBy": "E02",
-      "hint": "ลองตรวจรอยน้ำบนโต๊ะก่อน"
+      "unlockBy": [
+        "E01",
+        "E06"
+      ],
+      "hint": "ลองอ่านข้อความบนโต๊ะ หรือดูผ้าเปียกกับแจกันในครัวก่อน"
     },
     {
       "id": "a4c0e001-0000-4000-8000-000000000075",
@@ -447,6 +458,20 @@
       "image": "house-map.jpg",
       "contain": true,
       "hud": "เลือกห้องที่จะไป",
+      "floors": [
+        {
+          "floor": 1,
+          "title": "ชั้น 1",
+          "image": "house-map.jpg",
+          "hud": "ชั้น 1 · เลือกห้องที่จะไป"
+        },
+        {
+          "floor": 2,
+          "title": "ชั้น 2",
+          "image": "house-map-2f.jpg",
+          "hud": "ชั้น 2 · เลือกห้องที่จะไป"
+        }
+      ],
       "spots": [
         {
           "id": "a4c0e001-0000-4000-8000-000000000018",
@@ -454,29 +479,15 @@
           "title": "ห้องนั่งเล่น (จุดเริ่ม)",
           "slug": "flow/house-map/living",
           "titleEn": "Living room",
-          "x": 50.2,
-          "y": 41,
+          "x": 38.7,
+          "y": 48.4,
           "when": "always",
           "action": {
             "type": "go",
             "screen": "living-room"
           },
-          "doneEvidence": null
-        },
-        {
-          "id": "a4c0e001-0000-4000-8000-000000000019",
-          "kind": "hotspot",
-          "title": "ห้องทำงาน",
-          "slug": "flow/house-map/study",
-          "titleEn": "Study",
-          "x": 34.9,
-          "y": 62.3,
-          "when": "always",
-          "action": {
-            "type": "go",
-            "screen": "study"
-          },
-          "doneEvidence": null
+          "doneEvidence": null,
+          "floor": 1
         },
         {
           "id": "a4c0e001-0000-4000-8000-00000000001a",
@@ -484,14 +495,95 @@
           "title": "ครัว (เสริม)",
           "slug": "flow/house-map/kitchen",
           "titleEn": "Kitchen",
-          "x": 72.5,
-          "y": 62.3,
+          "x": 76.7,
+          "y": 60.8,
           "when": "always",
           "action": {
             "type": "go",
             "screen": "kitchen"
           },
-          "doneEvidence": null
+          "doneEvidence": null,
+          "floor": 1
+        },
+        {
+          "id": "a4c0e001-0000-4000-8000-0000000002f1",
+          "kind": "hotspot",
+          "title": "ห้องนอนย่า (ล็อก)",
+          "slug": "flow/house-map/grandma-room",
+          "titleEn": "Grandma's bedroom (locked)",
+          "x": 29.6,
+          "y": 79.9,
+          "when": "always",
+          "action": {
+            "type": "locked",
+            "text": "ห้องนอนของย่า ล็อกไว้อยู่ ยังเข้าไม่ได้นะ"
+          },
+          "doneEvidence": null,
+          "floor": 1
+        },
+        {
+          "id": "a4c0e001-0000-4000-8000-0000000002f2",
+          "kind": "hotspot",
+          "title": "บันไดขึ้นชั้น 2",
+          "slug": "flow/house-map/stairs-up",
+          "titleEn": "Stairs up",
+          "x": 38.0,
+          "y": 27.3,
+          "when": "always",
+          "action": {
+            "type": "floor",
+            "floor": 2
+          },
+          "doneEvidence": null,
+          "floor": 1
+        },
+        {
+          "id": "a4c0e001-0000-4000-8000-000000000019",
+          "kind": "hotspot",
+          "title": "ห้องทำงาน (ชั้น 2)",
+          "slug": "flow/house-map/study",
+          "titleEn": "Study (upstairs)",
+          "x": 76.7,
+          "y": 60.8,
+          "when": "always",
+          "action": {
+            "type": "go",
+            "screen": "study"
+          },
+          "doneEvidence": null,
+          "floor": 2
+        },
+        {
+          "id": "a4c0e001-0000-4000-8000-0000000002f3",
+          "kind": "hotspot",
+          "title": "ห้องนอนลุงเมฆกับป้า (ล็อก)",
+          "slug": "flow/house-map/mek-room",
+          "titleEn": "Uncle Mek and Auntie's bedroom (locked)",
+          "x": 51.3,
+          "y": 79.9,
+          "when": "always",
+          "action": {
+            "type": "locked",
+            "text": "ห้องนอนลุงเมฆกับป้า ล็อกไว้อยู่ ยังเข้าไม่ได้นะ"
+          },
+          "doneEvidence": null,
+          "floor": 2
+        },
+        {
+          "id": "a4c0e001-0000-4000-8000-0000000002f4",
+          "kind": "hotspot",
+          "title": "บันไดลงชั้น 1",
+          "slug": "flow/house-map/stairs-down",
+          "titleEn": "Stairs down",
+          "x": 38.0,
+          "y": 27.3,
+          "when": "always",
+          "action": {
+            "type": "floor",
+            "floor": 1
+          },
+          "doneEvidence": null,
+          "floor": 2
         }
       ]
     },
@@ -573,15 +665,15 @@
         {
           "id": "a4c0e001-0000-4000-8000-000000000020",
           "kind": "hotspot",
-          "title": "ประตูไปห้องทำงาน",
-          "slug": "flow/living-room/study-door",
-          "titleEn": "Door to the study",
+          "title": "ประตูห้องนอนย่า",
+          "slug": "flow/living-room/grandma-door",
+          "titleEn": "Door to Grandma's bedroom",
           "x": 92,
           "y": 33.8,
           "when": "now",
           "action": {
-            "type": "go",
-            "screen": "study"
+            "type": "locked",
+            "text": "ห้องนอนของย่า ล็อกไว้อยู่ ยังเข้าไม่ได้นะ"
           },
           "doneEvidence": null
         },
@@ -674,9 +766,10 @@
             "lines": [
               "แย่จัง แจกันล้ม น้ำหกเต็มโต๊ะเลย ต้องรีบเช็ดก่อน",
               "ของบนโต๊ะต้องยกออกไปก่อน เดี๋ยวเปียกหมด"
-            ]
+            ],
+            "evidence": "E02"
           },
-          "doneEvidence": null
+          "doneEvidence": "E02"
         },
         {
           "id": "a4c0e001-0000-4000-8000-000000000027",
@@ -687,13 +780,12 @@
           "y": 68,
           "when": "afternoon",
           "action": {
-            "type": "lines",
+            "type": "evidence",
+            "evidence": "E02",
             "who": "ย้อนเวลา: บ่ายนี้",
-            "lines": [
-              "แจกันล้ม น้ำหกนองโต๊ะ — อัลบั้มวางอยู่ข้าง ๆ เกือบเปียก!"
-            ]
+            "text": "แจกันล้ม น้ำหกนองโต๊ะ — น้ารินกำลังเช็ดอยู่ และอัลบั้มวางอยู่ข้าง ๆ เกือบเปียก!"
           },
-          "doneEvidence": null
+          "doneEvidence": "E02"
         },
         {
           "id": "a4c0e001-0000-4000-8000-000000000028",
@@ -807,9 +899,9 @@
     {
       "id": "a4c0e001-0000-4000-8000-000000000031",
       "kind": "scene",
-      "title": "ห้องทำงาน",
+      "title": "ห้องทำงาน (ชั้น 2)",
       "slug": "flow/scene/study",
-      "titleEn": "Study",
+      "titleEn": "Study (upstairs)",
       "screen": "study",
       "image": "study-wide.jpg",
       "map": true,
@@ -864,7 +956,7 @@
           "title": "ผ้าเปียกบนราว",
           "slug": "flow/kitchen/cloth",
           "titleEn": "Wet cloth",
-          "x": 31.5,
+          "x": 68.5,
           "y": 40.5,
           "when": "always",
           "action": {
@@ -879,7 +971,7 @@
           "title": "แจกันเติมน้ำใหม่",
           "slug": "flow/kitchen/vase",
           "titleEn": "Refilled vase",
-          "x": 79.5,
+          "x": 57,
           "y": 50,
           "when": "always",
           "action": {
@@ -907,16 +999,16 @@
           "title": "ผ้าเปียก",
           "slug": "flow/kitchen-close/cloth",
           "titleEn": "Wet cloth",
-          "x": 28.6,
+          "x": 71.4,
           "y": 40,
           "when": "always",
           "action": {
             "type": "evidence",
-            "evidence": "E02",
+            "evidence": "E06",
             "who": "ผ้าเปียก",
-            "text": "ผ้าที่ใช้เช็ดโต๊ะยังเปียก"
+            "text": "ผ้าที่ใช้เช็ดโต๊ะยังเปียก — มีคนเช็ดน้ำหกไปไม่นาน"
           },
-          "doneEvidence": null
+          "doneEvidence": "E06"
         },
         {
           "id": "a4c0e001-0000-4000-8000-000000000036",
@@ -924,14 +1016,16 @@
           "title": "แจกันเติมน้ำใหม่",
           "slug": "flow/kitchen-close/vase",
           "titleEn": "Refilled vase",
-          "x": 68.7,
+          "x": 31.3,
           "y": 59.5,
           "when": "always",
           "action": {
-            "type": "toast",
-            "text": "แจกันถูกเติมน้ำใหม่ — มีน้ำหกจริง"
+            "type": "evidence",
+            "evidence": "E06",
+            "who": "แจกันเติมน้ำใหม่",
+            "text": "แจกันถูกเติมน้ำใหม่ แถวฐานยังมีรอยน้ำ — มีคนจัดใหม่หลังน้ำหก"
           },
-          "doneEvidence": null
+          "doneEvidence": "E06"
         }
       ]
     },
@@ -956,44 +1050,12 @@
           "y": 31.3,
           "when": "always",
           "action": {
-            "type": "evidence",
+            "type": "inspect-note",
             "evidence": "E01",
-            "who": "ข้อความ",
-            "text": "ขอย้ายเก็บก่อน — ริน / (ด้านหลัง) เก็บตามผังเดิมนะ โต๊ะยังเปียกอยู่"
+            "front": "ขอย้ายเก็บก่อน\n\n— ริน",
+            "back": "เก็บตามผังเดิมนะ\nโต๊ะยังเปียกอยู่"
           },
           "doneEvidence": "E01"
-        },
-        {
-          "id": "a4c0e001-0000-4000-8000-000000000039",
-          "kind": "hotspot",
-          "title": "รอยน้ำ",
-          "slug": "flow/table/water",
-          "titleEn": "Water mark",
-          "x": 39.8,
-          "y": 53.3,
-          "when": "always",
-          "action": {
-            "type": "evidence",
-            "evidence": "E02",
-            "who": "รอยน้ำ",
-            "text": "โต๊ะเปียก — น้ำหกจากแจกัน"
-          },
-          "doneEvidence": "E02"
-        },
-        {
-          "id": "a4c0e001-0000-4000-8000-00000000003a",
-          "kind": "hotspot",
-          "title": "รอยที่อัลบั้มเคยวาง",
-          "slug": "flow/table/album-mark",
-          "titleEn": "Where the album sat",
-          "x": 70,
-          "y": 64.3,
-          "when": "always",
-          "action": {
-            "type": "toast",
-            "text": "ตรงนี้เคยมีอัลบั้มวางอยู่"
-          },
-          "doneEvidence": null
         }
       ]
     },
@@ -1371,12 +1433,12 @@
       "title": "สรุปคดีผ่าน",
       "slug": "flow/dialogue/deduce-ok",
       "who": "ย่ามะลิ",
-      "text": "เก่งมากหลาน! กุญแจอยู่ในกระเป๋าแล้ว เอาไปเปิดกล่องรูปดาวใต้หน้าต่างในห้องทำงานนะ",
+      "text": "เก่งมากหลาน! กุญแจอยู่ในกระเป๋าแล้ว เอาไปเปิดกล่องรูปดาวใต้หน้าต่างในห้องทำงานชั้น 2 นะ",
       "choices": [
         {
           "id": "a4c0e001-0000-4000-8000-00000000005f",
           "kind": "choice",
-          "title": "ไปห้องทำงาน",
+          "title": "ขึ้นไปห้องทำงานชั้น 2",
           "slug": "flow/dialogue/deduce-ok/go",
           "action": {
             "type": "go",
@@ -1391,7 +1453,7 @@
       "title": "แผนผังบอกที่เก็บ",
       "slug": "flow/dialogue/map-clue",
       "who": "แผนผัง",
-      "text": "หมวด “ภาพถ่ายและจดหมาย” อยู่ใต้หน้าต่างห้องทำงาน ส่วนข้างโซฟาในห้องนั่งเล่นเป็นของเล่น",
+      "text": "หมวด “ภาพถ่ายและจดหมาย” อยู่ใต้หน้าต่างห้องทำงานชั้น 2 ส่วนข้างโซฟาในห้องนั่งเล่นเป็นของเล่น",
       "choices": [
         {
           "id": "a4c0e001-0000-4000-8000-000000000061",
@@ -1659,9 +1721,10 @@
       "prompt": "2. ย้ายทำไม?",
       "right": "water",
       "evidence": [
-        "E02"
+        "E02",
+        "E06"
       ],
-      "hint": "โต๊ะยังเปียกอยู่เลยนะ หลานว่าเกิดอะไรขึ้น",
+      "hint": "ผ้าในครัวยังเปียก และแจกันถูกเติมน้ำใหม่ ลองย้อนเวลาดูว่าเกิดอะไรขึ้น",
       "mode": "chips",
       "answers": [
         {
@@ -1710,7 +1773,7 @@
         {
           "id": "a4c0e001-0000-4000-8000-00000000008b",
           "kind": "choice",
-          "title": "ห้องทำงาน (ใต้หน้าต่าง)",
+          "title": "ห้องทำงานชั้น 2 (ใต้หน้าต่าง)",
           "slug": "flow/question/where/study",
           "value": "study"
         },
@@ -1771,7 +1834,7 @@
       "title": "เปิดกล่องรูปดาว",
       "slug": "flow/goal/box",
       "code": "box",
-      "room": "ห้องทำงาน",
+      "room": "ห้องทำงาน ชั้น 2",
       "at": "study",
       "object": "กล่องรูปดาว"
     },
@@ -1785,5 +1848,6 @@
       "at": "player-room",
       "object": "ช่องวางของ"
     }
-  ]
+  ],
+  "calendarTravel": false
 }

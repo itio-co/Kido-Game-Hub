@@ -384,8 +384,8 @@ const flow = ent('story-flow', 'คดี 01 อัลบั้มครอบ�
       caption: 'เช้าวันเสาร์ ครอบครัวมาถึงบ้านของคุณย่า',
       faces: [
         { name: 'p2-grandma-s2', x: 41, y: 33, w: 26, h: 16 },
-        { name: 'p2-child-s3', x: 25, y: 67, w: 26, h: 18 },
-        { name: 'p2-mom-s3', x: 45, y: 67, w: 28, h: 18 },
+        { name: 'p2-child-s3', x: 29, y: 71, w: 22, h: 15 },
+        { name: 'p2-grandma-s3', x: 42, y: 66, w: 24, h: 15 },
       ],
       lines: [
         ent('speech-line', 'ย่ามะลิ', 'flow/cutscene/case-01/p2/grandma', {

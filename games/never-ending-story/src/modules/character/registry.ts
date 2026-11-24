@@ -23,7 +23,7 @@ export type Character = {
   version: string;
 };
 
-export const CHARACTER_VERSION = '1.0.1';
+export const CHARACTER_VERSION = '1.0.2';
 
 const STYLE =
   'Stylized low-poly 3D storybook render, faceted clay-like surfaces, large glossy eyes, warm cozy light, Thai family home, no text, no watermark.';
@@ -60,7 +60,7 @@ export const CHARACTERS: Character[] = [
     id: 'mom',
     nameKey: 'character.mom.name',
     roleKey: 'character.mom.role',
-    portraits: ['cutscene-01-p1.jpg', 'cutscene-01-p2.jpg'],
+    portraits: ['cutscene-01-p1.jpg'],
     prompt: `${STYLE} Mom, a Thai woman in her thirties, black hair in a neat bun, cream long-sleeve blouse, purple patterned skirt, warm smile, holding a phone or hugging the child.`,
     negative: NEGATIVE_BASE,
     styleNotes: 'Reconstructed from cutscene-01-p1.jpg. Her bun is part of this character only, not Grandma.',

@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { t } from './lib/i18n';
+  import { showBagAndNotebook, showHouseMapHud } from './lib/hudIcons';
   import EditorView from './components/EditorView.svelte';
   import AssetBrowser from './components/AssetBrowser.svelte';
   import CalendarPanel from './components/CalendarPanel.svelte';
@@ -400,7 +401,7 @@
       onHint={onHint}
       onSettings={() => { void openSettings(); }}
     />
-    {#if session.subtitle && !session.talk && (session.showCaseUi || session.screen === 'cutscene' || session.screen === 'ending-comic' || session.screen === 'difficulty')}
+    {#if session.subtitle && !session.talk && !(session.toastText && session.toastLow) && (session.showCaseUi || session.screen === 'cutscene' || session.screen === 'ending-comic' || session.screen === 'difficulty')}
       <p class="flow-sub">{session.subtitle}</p>
     {/if}
 
@@ -410,17 +411,65 @@
       </svg>
     </button>
 
-    {#if session.showCaseUi || session.showHouseMapButton}
+    {#if showBagAndNotebook(session.showCaseUi, session.screen) || showHouseMapHud({ screen: session.screen, showHouseMapButton: session.showHouseMapButton, showCaseUi: session.showCaseUi, sceneHasMap: session.scene?.map === true })}
       <div class="bottom-actions">
-        {#if session.showHouseMapButton}
-          <button type="button" class="case mapbtn" class:fresh={session.mapUnlockPulse} data-testid="house-map-btn" onclick={() => session.go('house-map')}>
-            {t('hud.houseMap')}
+        {#if showHouseMapHud({ screen: session.screen, showHouseMapButton: session.showHouseMapButton, showCaseUi: session.showCaseUi, sceneHasMap: session.scene?.map === true })}
+          <button
+            type="button"
+            class="hud-icon"
+            class:fresh={session.mapUnlockPulse}
+            class:locked={!session.mapUnlocked}
+            data-testid="house-map-btn"
+            data-locked={session.mapUnlocked ? 'false' : 'true'}
+            aria-label={session.mapUnlocked ? t('hud.houseMap') : t('hud.houseMapLocked')}
+            title={session.mapUnlocked ? t('hud.houseMap') : t('hud.houseMapLocked')}
+            onclick={() => session.go('house-map')}
+          >
+            <svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true">
+              <rect x="3.2" y="3.2" width="17.6" height="17.6" rx="1.5" fill="none" stroke="currentColor" stroke-width="2" />
+              <path d="M3.2 13h17.6M12 13v8" fill="none" stroke="currentColor" stroke-width="2" />
+              <path d="M8.2 3.2v3.2M15.8 3.2v3.2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+            </svg>
+            {#if !session.mapUnlocked}
+              <span class="lock-badge" aria-hidden="true">
+                <svg viewBox="0 0 12 12" width="11" height="11">
+                  <rect x="2.2" y="5.4" width="7.6" height="5.2" rx="1.2" fill="currentColor" />
+                  <path d="M3.8 5.4V4a2.2 2.2 0 0 1 4.4 0v1.4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+                </svg>
+              </span>
+            {/if}
           </button>
         {/if}
-        {#if session.showCaseUi}
-          <button type="button" class="case" class:fresh={session.bagPulse} data-testid="bag-btn" onclick={() => session.openBag()}>{t('bag.title')}</button>
-          <button type="button" class="case" data-testid="case-notebook" onclick={() => (session.screen === 'notebook' ? session.back() : session.go('notebook'))}>
-            {room.hud.caseLabel}
+        {#if showBagAndNotebook(session.showCaseUi, session.screen)}
+          <button
+            type="button"
+            class="hud-icon"
+            class:fresh={session.bagPulse}
+            data-testid="bag-btn"
+            aria-label={t('hud.bag')}
+            title={t('hud.bag')}
+            onclick={() => session.openBag()}
+          >
+            <svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true">
+              <path d="M6 9.2h12v9.3a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V9.2z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" />
+              <path d="M9 9.2V7.6a3 3 0 0 1 6 0v1.6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+              <path d="M6 13.2h12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+            </svg>
+          </button>
+          <button
+            type="button"
+            class="hud-icon"
+            data-testid="case-notebook"
+            aria-label={t('hud.notebook')}
+            title={t('hud.notebook')}
+            onclick={() => (session.screen === 'notebook' ? session.back() : session.go('notebook'))}
+          >
+            <svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true">
+              <rect x="3.2" y="3.2" width="11.2" height="15.6" rx="1.4" fill="none" stroke="currentColor" stroke-width="2" />
+              <path d="M6.2 7.4h6M6.2 10.6h6M6.2 13.8h4.2" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" />
+              <circle cx="16.2" cy="15.2" r="3.6" fill="none" stroke="currentColor" stroke-width="2" />
+              <path d="M18.8 17.8 21.4 20.4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+            </svg>
           </button>
         {/if}
       </div>
@@ -477,7 +526,7 @@
     {/if}
 
     {#if session.toastText || toast}
-      <p class="toast" class:toast-low={session.context !== 'event'} role="status">{session.toastText || toast}</p>
+      <p class="toast" class:toast-low={session.context !== 'event' || session.toastLow} role="status">{session.toastText || toast}</p>
     {/if}
   {/if}
   {#if godFloatVisible(godReady, floatPrefs.on) && !editing && !browsing && overlay !== 'settings'}
@@ -498,8 +547,22 @@
     gap: 8px;
     align-items: flex-end;
   }
-  .bottom-actions .case { position: static; }
-  .mapbtn.fresh, .case.fresh { animation: map-unlock 0.7s ease; }
+  .bottom-actions .hud-icon { position: relative; }
+  .hud-icon .lock-badge {
+    position: absolute;
+    right: -2px;
+    bottom: -2px;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    border: 2px solid var(--cyan);
+    background: var(--hud);
+    color: var(--ink);
+    display: grid;
+    place-items: center;
+    pointer-events: none;
+  }
+  .hud-icon.fresh { animation: map-unlock 0.7s ease; }
   @keyframes map-unlock {
     0% { transform: scale(0.86); box-shadow: 0 0 0 0 var(--cyan); }
     45% { transform: scale(1.08); box-shadow: 0 0 0 6px transparent; }

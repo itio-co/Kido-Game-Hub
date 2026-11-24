@@ -1,4 +1,12 @@
 @font-face {
+  font-family: "Itim";
+  src: url("./fonts/Itim-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
   font-family: "Noto Sans Thai";
   src: url("./fonts/NotoSansThai-Regular.ttf") format("truetype");
   font-weight: 400;
@@ -212,7 +220,7 @@ button { cursor: pointer; -webkit-tap-highlight-color: transparent; }
 .icon svg { display: block; }
 .hud .spacer { width: 40px; flex: none; }
 
-.back, .case {
+.back, .case, .hud-icon {
   position: absolute;
   z-index: 7;
   bottom: calc(14px + env(safe-area-inset-bottom));
@@ -236,6 +244,17 @@ button { cursor: pointer; -webkit-tap-highlight-color: transparent; }
   padding: 8px 14px;
   font-weight: 700;
 }
+.hud-icon {
+  width: 64px;
+  height: 64px;
+  min-width: 44px;
+  min-height: 44px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  padding: 0;
+}
+.hud-icon svg { display: block; }
 
 .scrim {
   position: absolute;

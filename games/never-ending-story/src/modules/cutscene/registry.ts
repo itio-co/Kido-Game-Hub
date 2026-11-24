@@ -22,7 +22,7 @@ export type Artwork = {
   order: number;
 };
 
-export const CUTSCENE_VERSION = '1.0.1';
+export const CUTSCENE_VERSION = '1.0.2';
 
 const STYLE =
   'Stylized low-poly 3D storybook illustration, faceted clay-like surfaces, warm cozy light, modern Thai two-storey family home, no text, no watermark.';
@@ -49,12 +49,24 @@ export const ARTWORKS: Artwork[] = [
     file: 'house-map.jpg',
     usedIn: ['prologue', 'event-01', 'jigsaw'],
     characterIds: [],
-    prompt: `${STYLE} Top-down clay miniature floor plan of the ground floor of Grandma's modern two-storey house on cream paper, no labels. Top of the image is the front: front steps and door in the middle of the top wall; front strip with the staircase (top-left), entrance hall with shoe rack (top-middle) and a bathroom (top-right). Full-width living room in the middle with the sofa against its bottom wall facing the entrance, coffee table and rug in front, teal armchair and bookshelf to the right, side table and blue star box to the left. Back: Grandma's bedroom bottom-left (bed, wardrobe, blue star box and yellow leaf box under the window), kitchen bottom-right (L counter, sink, stove, dining table). Used as the house plan and as the jigsaw photo.`,
+    prompt: `${STYLE} Top-down clay miniature floor plan of the ground floor of Grandma's modern two-storey house on cream paper, no labels. L-shaped footprint, top of the image is the front. Front door with steps at the left of the top wall into an entrance hall with a shoe rack (top-left). Stairs in the top middle, 0.9 m wide: the foot opens into the middle of the living room's front wall, run 1 (6 treads) climbs toward the front, a flat corner landing, run 2 (3 treads) to the right along the front wall, a second flat landing in the front-right corner, run 3 (5 treads) climbs toward the back; 15 risers. A small guest toilet under runs 2-3, its door right beside the stair foot. An open lawn garden with round bushes beside the house at the top-right (no building there). Living room across the middle: rug, coffee table with two flowers, tan sofa against the back wall facing the front, side table with the blue star box on its left, teal armchair on its right, low bookshelf by the kitchen door. Grandma's bedroom across the back-left, door at the left end of the living room's back wall, bed with its head on the top wall, wardrobe bottom-left, windows on the left and bottom walls. Right wing: kitchen entered from a door near the back of the living room's right wall (counter and sink under a window along its top wall looking onto the garden, stove counter along its right wall, patterned rug by the door), and below it Grandma's en-suite of the same depth, opened only from her bedroom. Used as the house plan and as the case-challenge jigsaw photo.`,
     negative: `${NEGATIVE}, text, labels, letters`,
-    styleNotes: `Generated 2026-11-22 for house v2 phase 1 (docs/design/house-v2-proposal.md). The living-room camera stands at the entrance looking down the plan, so the kitchen is on the left of living-wide.jpg and the bedroom door on the right. Keep the room footprint: the deduction map zones in event-core FlowView depend on it. ${sheet}`,
+    styleNotes: `Generated 2026-11-22 for house v2 phase 1 (docs/design/house-v2-proposal.md). Relaid out 2026-11-23 to the owner-approved L footprint (draft v9): rendered 2026-11-23 as a low-poly clay 3D scene in Blender (top-down camera, soft sun shadows, cream paper) built on the exact layout grid, so walls, doors and windows match the approved plan and stay aligned with the tap spots. Drawn as an architectural plan cut: the last stair run (over the guest bath) is left out with a break line on the upper landing, so the bath under the stairs is fully visible. Room cameras stand at the door looking in: living-wide looks from the stair foot toward the back (kitchen door on the left of the picture, Grandma's door on the right); kitchen-wide looks from its door toward the right wing's far wall (window and sink on the left = garden side, Grandma's en-suite side on the right). Map spots and the deduction zones in event-core FlowView follow this footprint. ${sheet}`,
     promptSource: 'original',
     version: CUTSCENE_VERSION,
     order: 70,
+  },
+  {
+    id: 'house.map-2f',
+    file: 'house-map-2f.jpg',
+    usedIn: ['event-01', 'jigsaw'],
+    characterIds: [],
+    prompt: `${STYLE} Top-down clay miniature floor plan of the UPPER floor of Grandma's modern two-storey house on cream paper, same L footprint and framing as house-map.jpg, no labels, no front door. The open stairwell over the ground-floor stairs (three runs, two landings, wooden balustrade) in the top middle, arriving at the front-right; a small storage cupboard between the runs; an outdoor wooden balcony with railings at the front-left above the entrance hall, glass door from the hall. The garden at the top-right stays open lawn. Open upstairs hall with a bench, plant and rug in the middle. Uncle Mek and Auntie's bedroom across the back (double bed with its head on the top wall, two bedside tables, wardrobe), their en-suite in the bottom-right directly above Grandma's, same size, opened only from their bedroom. The study above the kitchen only, door at the top of its left wall: desk with lamp and chair along its top wall, window in its right wall with a blue star box (upper) and a yellow leaf box (lower) under it, tall bookshelf along its bottom wall.`,
+    negative: `${NEGATIVE}, text, labels, letters`,
+    styleNotes: `Generated 2026-11-22 for house v2 phase 2; relaid out 2026-11-23 to the owner-approved floor-2 draft v4 on the same grid as house-map.jpg, rendered as the same low-poly clay 3D Blender scene. The study-wide.jpg camera stands at the study door (left wall) looking toward the right wall: desk on the picture's left = the plan's top wall, window on the far wall = the plan's right wall, bookshelf on the right = the plan's bottom wall, so the star box sits above the leaf box on the plan. Also the event jigsaw photo, because E04 points at the upstairs study. ${sheet}`,
+    promptSource: 'original',
+    version: CUTSCENE_VERSION,
+    order: 71,
   },
   {
     id: 'prologue.grandma',
@@ -108,10 +120,10 @@ export const ARTWORKS: Artwork[] = [
     id: 'case-01.p2',
     file: 'cutscene-01-p2.jpg',
     usedIn: ['case-01', 'event-01'],
-    characterIds: ['grandma', 'mom', 'player'],
-    prompt: `${STYLE} Vertical three-panel comic in Saturday-morning light: (1) a modern Thai suburban two-storey house with cream walls, brown tiled roof, a balcony above the central wooden front door, low front steps and a small silver hatchback in the front yard; (2) Grandma Mali with short loose silver hair, lavender cardigan and purple pha sin welcoming with open arms in the open front doorway; (3) Mom hugging the laughing child at the front door, an indoor staircase behind. Character ids grandma, mom, player.`,
+    characterIds: ['grandma', 'player'],
+    prompt: `${STYLE} Vertical three-panel comic in Saturday-morning light: (1) a modern Thai suburban two-storey house with cream walls, brown tiled roof, a balcony above the central wooden front door, low front steps and a small silver hatchback in the front yard; (2) Grandma Mali with short loose silver hair, lavender cardigan and purple pha sin welcoming with open arms in the open front doorway; (3) the laughing child hugging Grandma Mali (same look as panel 2) at the front door, both faces visible, an indoor staircase behind; Mom is not in this panel. Character ids grandma, player.`,
     negative: `${NEGATIVE}, traditional Thai stilt house, raised wooden house, sunset`,
-    styleNotes: `Generated 2026-11-22 for house v2 phase 1; matches the modern interiors and house-map.jpg (front door in the middle, stairs inside). Grandma's hair stays short and loose. ${sheet}`,
+    styleNotes: `Generated 2026-11-22 for house v2 phase 1; matches the modern interiors and house-map.jpg (front door in the middle, stairs inside). Panel 3 regenerated 2026-11-22 (cutscene 1.0.2): the child hugs Grandma, not Mom; panels 1-2 kept losslessly. Grandma's hair stays short and loose. ${sheet}`,
     promptSource: 'original',
     version: CUTSCENE_VERSION,
     order: 2,
@@ -255,7 +267,7 @@ export const ARTWORKS: Artwork[] = [
     characterIds: [],
     prompt: `${STYLE} Wide study with a wooden desk, window, and shelves, afternoon light, no people.`,
     negative: NEGATIVE,
-    styleNotes: `Reconstructed. Also the locked cover for case-02. ${sheet}`,
+    styleNotes: `Reconstructed. Since house v2 phase 2 this is the upstairs study above the kitchen (screen id stays study). Also the locked cover for case-02. ${sheet}`,
     promptSource: 'reconstructed',
     version: CUTSCENE_VERSION,
     order: 60,
@@ -279,7 +291,7 @@ export const ARTWORKS: Artwork[] = [
     characterIds: [],
     prompt: `${STYLE} Wide Thai home kitchen, wooden cabinets, stove, window, no people. Also used as the locked cover for case-03.`,
     negative: NEGATIVE,
-    styleNotes: `Reconstructed. This is the story kitchen, not the stir-fry minigame backdrop. ${sheet}`,
+    styleNotes: `Reconstructed. Mirrored left-right on 2026-11-22 (owner: the render was the wrong way round): stove and hood on the right, sink under the window on the left. Vase and pot swapped by hand on 2026-11-23 (owner: the close-up shows the vase under the towel), so the vase stands on the back counter under the towel and the pot by the faucet. This is the story kitchen, not the stir-fry minigame backdrop. ${sheet}`,
     promptSource: 'reconstructed',
     version: CUTSCENE_VERSION,
     order: 62,
@@ -291,7 +303,7 @@ export const ARTWORKS: Artwork[] = [
     characterIds: [],
     prompt: `${STYLE} Close view of the kitchen counter and a damp cloth, wooden cabinets, warm light.`,
     negative: NEGATIVE,
-    styleNotes: `Reconstructed. ${sheet}`,
+    styleNotes: `Reconstructed. Mirrored left-right on 2026-11-22 with kitchen-wide.jpg: vase on the left, wet cloth on the right. ${sheet}`,
     promptSource: 'reconstructed',
     version: CUTSCENE_VERSION,
     order: 63,

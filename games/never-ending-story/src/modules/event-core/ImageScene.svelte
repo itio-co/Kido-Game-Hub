@@ -12,6 +12,8 @@
     labelFor,
     onSpot,
     onMiss,
+    floor = 1,
+    onFloor,
   }: {
     scene: FlowScene;
     image: string;
@@ -22,6 +24,8 @@
     labelFor: (spot: FlowSpot) => string;
     onSpot: (spot: FlowSpot) => void;
     onMiss: () => void;
+    floor?: 1 | 2;
+    onFloor?: (floor: 1 | 2) => void;
   } = $props();
 
   const width = $derived(scene.contain ? 864 : 720);
@@ -68,6 +72,9 @@
           }}
         />
         <circle class="dot" cx={at.cx} cy={at.cy} r={scene.contain ? 12 : 14} />
+        {#if spot.action.type === 'locked'}
+          <text class="lock" x={at.cx} y={at.cy + 9} font-size="26" text-anchor="middle">🔒</text>
+        {/if}
         {#if selected === spot.id}
           <g class="lbl">
             <rect x={at.lx} y={at.ly} width={at.tw} height={font + 22} rx={(font + 22) / 2} />
@@ -77,6 +84,19 @@
       </g>
     {/each}
   </svg>
+  {#if scene.floors && onFloor}
+    <div class="floors" role="group">
+      {#each scene.floors as item (item.floor)}
+        <button
+          type="button"
+          class:on={item.floor === floor}
+          aria-pressed={item.floor === floor}
+          data-testid={'map-floor-' + item.floor}
+          onclick={() => onFloor?.(item.floor)}
+        >{item.title}</button>
+      {/each}
+    </div>
+  {/if}
 </div>
 
 <style>
@@ -88,6 +108,10 @@
   .dot { fill: #bff6ff; pointer-events: none; }
   .done .dot { fill: #9aa; }
   .hint .dot { fill: #ffe066; transform-box: fill-box; transform-origin: center; transform: scale(1.8); }
+  .lock { pointer-events: none; }
+  .floors { position: absolute; z-index: 3; top: calc(96px + env(safe-area-inset-top)); left: 50%; transform: translateX(-50%); display: flex; gap: 0; border: 2px solid #39e0ff; border-radius: 999px; overflow: hidden; background: rgba(6, 30, 48, 0.9); }
+  .floors button { border: 0; background: transparent; color: #cfe9f5; font-weight: 700; font-size: var(--fs-sm, 15px); padding: 6px 18px; min-width: 76px; }
+  .floors button.on { background: #39e0ff; color: #06212f; }
   .lbl { pointer-events: none; }
   .lbl rect { fill: rgba(6, 30, 48, 0.94); stroke: #39e0ff; stroke-width: 3; }
   .lbl text { fill: #eaf6ff; font-family: "Noto Sans Thai", "Noto Sans", sans-serif; font-weight: 700; }

@@ -11,8 +11,10 @@
   import { readStirFry } from '../stirfry';
   import { portraitFile } from '../character';
   import { artworkFile } from '../cutscene';
+  import LeaveEventHost from './LeaveEventHost.svelte';
   import ComicPanel from './ComicPanel.svelte';
   import ImageScene from './ImageScene.svelte';
+  import NoteInspect from './NoteInspect.svelte';
   import Minigames from './Minigames.svelte';
 
   let { session }: { session: FlowSession } = $props();
@@ -37,9 +39,12 @@
     return t('box.needCase');
   }
 
+  const mapFloors = $derived(session.flow?.scenes.find((item) => item.screen === 'house-map')?.floors ?? []);
+
   function sceneImage(): string {
     const scene = session.scene;
     if (!scene) return '';
+    if (scene.floors) return scene.floors.find((item) => item.floor === session.mapFloor)?.image ?? scene.image;
     if (scene.images && session.slot in scene.images) return scene.images[session.slot];
     return scene.image;
   }
@@ -92,6 +97,8 @@
       {labelFor}
       onSpot={(spot) => session.tapSpot(spot)}
       onMiss={() => session.clearSpot()}
+      floor={session.mapFloor}
+      onFloor={(floor) => session.setMapFloor(floor)}
     />
     {#if session.screen === 'star-box' && session.solved}
       <p class="box-state" data-testid="star-box-open">{t('box.opened')}</p>
@@ -253,10 +260,16 @@
               {/each}
             </div>
           {:else}
-            <div class="mini" style="background-image:url('{imageUrl(artworkFile('prologue.house-map'))}')">
-              <button type="button" class:sel={session.picks[index] === 'living'} style="left:11%;top:12%;width:78%;height:44%" aria-label="ห้องนั่งเล่น" onclick={() => session.pickAnswer(index, 'living')}></button>
-              <button type="button" class:sel={session.picks[index] === 'study'} style="left:11%;top:57%;width:38%;height:31%" aria-label="ห้องทำงาน" onclick={() => session.pickAnswer(index, 'study')}></button>
-              <button type="button" class:sel={session.picks[index] === 'kitchen'} style="left:51%;top:57%;width:39%;height:31%" aria-label="ครัว" onclick={() => session.pickAnswer(index, 'kitchen')}></button>
+            <div class="minis">
+              <div class="mini" style="background-image:url('{imageUrl(artworkFile('prologue.house-map'))}')">
+                <span class="fl">{mapFloors[0]?.title ?? '1'}</span>
+                <button type="button" class:sel={session.picks[index] === 'living'} style="left:10.5%;top:34%;width:53.5%;height:28.7%" aria-label="ห้องนั่งเล่น" onclick={() => session.pickAnswer(index, 'living')}></button>
+                <button type="button" class:sel={session.picks[index] === 'kitchen'} style="left:64%;top:49.3%;width:25.5%;height:22.9%" aria-label="ครัว" onclick={() => session.pickAnswer(index, 'kitchen')}></button>
+              </div>
+              <div class="mini" style="background-image:url('{imageUrl(artworkFile('house.map-2f'))}')">
+                <span class="fl">{mapFloors[1]?.title ?? '2'}</span>
+                <button type="button" class:sel={session.picks[index] === 'study'} style="left:64%;top:49.3%;width:25.5%;height:22.9%" aria-label="ห้องทำงาน" onclick={() => session.pickAnswer(index, 'study')}></button>
+              </div>
             </div>
             <p>{question.answers.find((answer) => answer.value === session.picks[index])?.title ?? 'แตะห้องบนแผนผัง'}</p>
           {/if}
@@ -274,12 +287,20 @@
     <Minigames {session} />
   {/if}
 
+  {#if session.note}
+    <NoteInspect note={session.note} onFlip={() => session.flipNote()} onClose={() => session.closeNote()} />
+  {/if}
+
   {#if session.talk}
-    <div class="dlg">
-      <p><b>{session.talk.who}:</b> “{session.talk.text}”</p>
+    <div class="dlg" class:notice={session.talk.notice} data-testid={session.talk.notice ? 'bottom-notice' : 'dialog'}>
+      {#if session.talk.notice}
+        <p>{session.talk.text}</p>
+      {:else}
+        <p><b>{session.talk.who}:</b> “{session.talk.text}”</p>
+      {/if}
       <div class="btns">
         {#each session.talk.choices as choice, index (index)}
-          <button type="button" onclick={() => choice.run()}>{choice.title}</button>
+          <button type="button" data-testid={session.talk.notice ? 'bottom-notice-close' : undefined} onclick={() => choice.run()}>{choice.title}</button>
         {/each}
       </div>
     </div>
@@ -306,7 +327,7 @@
       </div>
     </div>
   {:else if session.overlay}
-    <div class="time-sheet">
+    <div class="time-sheet" data-testid={session.overlay === 'clock' ? 'clock-panel' : session.overlay === 'calendar' ? 'calendar-panel' : 'day-panel'}>
       <button type="button" class="calx" aria-label="ปิด" onclick={() => session.closeOverlay()}>✕</button>
       <div class="calc">
         {#if session.overlay === 'calendar'}
@@ -322,20 +343,20 @@
             <li><b>12 ต.ค.</b> วันครบรอบแต่งงานของปู่กับย่า</li>
             <li class="clue"><button type="button" onclick={() => session.showToast('ย่าเขียนไว้เองว่าบ่ายนี้น้ารินมาเก็บบ้าน — ใครอาจย้ายอัลบั้มนะ?')}>⭕ <b>22 ต.ค.</b> วงแดงวันนี้: บ่ายนี้ รินมาช่วยเก็บกวาดบ้าน</button></li>
           </ul>
-          <button type="button" class="link" onclick={() => session.openDayTravel()}>ย้อนวันด้วยปฏิทิน</button>
+          <button type="button" class="link locked" data-testid="calendar-travel" onclick={() => session.openDayTravel()}>{t('time.calendarTravel')}</button>
         {:else}
           <div class="calh"><span>{session.overlay === 'clock' ? 'นาฬิกา: ย้อนชั่วโมง' : 'ปฏิทิน: ย้อนวัน'}</span><small>พลังย้อนเวลา</small></div>
           <ul>
             {#each (session.flow?.slots ?? []).filter((item) => session.overlay === 'day' || item.part === 'hour') as item (item.id)}
-              {@const open = !item.unlockBy || session.evidence.includes(item.unlockBy)}
+              {@const open = session.slotUnlocked(item.unlockBy)}
               <li>
-                <button type="button" class:locked={!open} onclick={() => session.chooseSlot(item.slot)}>
-                  {#if open}
+                {#if open}
+                  <button type="button" data-testid={'clock-slot-' + item.slot} onclick={() => session.chooseSlot(item.slot)}>
                     {item.slot === session.slot ? '▶ ' : ''}{item.title}
-                  {:else}
-                    ??? — {item.hint}
-                  {/if}
-                </button>
+                  </button>
+                {:else if session.overlay === 'day'}
+                  <button type="button" class="locked" data-testid={'clock-slot-' + item.slot} onclick={() => session.chooseSlot(item.slot)}>{item.title}</button>
+                {/if}
               </li>
             {/each}
           </ul>
@@ -354,6 +375,8 @@
       </div>
     </div>
   {/if}
+
+  <LeaveEventHost {session} />
 </div>
 
 <style>
@@ -430,6 +453,8 @@
   .por { width: 72px; height: 72px; border-radius: 50%; background-size: cover; background-position: 50% 18%; border: 3px solid #2d6d8a; color: #fff; position: relative; }
   .por span { position: absolute; left: 50%; bottom: -8px; transform: translateX(-50%); background: rgba(0, 0, 0, 0.65); border-radius: 6px; padding: 0 4px; font-size: var(--fs-sm); white-space: nowrap; }
   .mini { position: relative; width: 120px; aspect-ratio: 3 / 4; background-color: #efe6d2; background-repeat: no-repeat; background-position: center; background-size: contain; border-radius: 6px; }
+  .minis { display: flex; gap: 8px; }
+  .mini .fl { position: absolute; left: 4px; top: 3px; z-index: 1; font-size: 11px; line-height: 1.4; padding: 0 5px; border-radius: 4px; background: rgba(6, 24, 40, 0.85); color: #eaf6ff; pointer-events: none; }
   .mini button { position: absolute; border: 0; background: transparent; }
   .mini button.sel { background: rgba(57, 224, 255, 0.35); outline: 2px solid #39e0ff; }
   .proof { margin-top: 6px; }
@@ -454,6 +479,7 @@
   .clue button { background: rgba(255, 220, 200, 0.85); }
   .calx { position: absolute; right: 22px; top: 78px; width: 36px; height: 36px; border-radius: 50%; border: 0; background: #fff; color: #333; font-size: 18px; }
   .link { margin-top: 8px; background: #fff; color: #4a2e18; border: 1px solid #888; }
+  .link.locked { background: #2b3640; color: #c5d0d8; }
   .skip.loud { background: #39e0ff; color: #06212f; font-weight: 800; }
   .egg-modal { position: absolute; inset: 0; z-index: 20; background: rgba(0,0,0,0.55); display: grid; place-items: center; padding: 24px; }
   .egg-card { width: min(100%, 320px); background: #0d2a3c; border: 2px solid #39e0ff; border-radius: 16px; padding: 16px; text-align: center; }
