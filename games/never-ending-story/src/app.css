@@ -45,6 +45,10 @@
   --hud: rgba(6, 24, 40, 0.92);
   --fs: 17px;
   --fs-sm: 14px;
+  --hud-btn-bottom: 14px;
+  --hud-btn-size: 64px;
+  --hud-msg-gap: 16px;
+  --hud-msg-bottom: calc(var(--hud-btn-bottom) + var(--hud-btn-size) + var(--hud-msg-gap));
 }
 
 * { box-sizing: border-box; }
@@ -223,7 +227,7 @@ button { cursor: pointer; -webkit-tap-highlight-color: transparent; }
 .back, .case, .hud-icon {
   position: absolute;
   z-index: 7;
-  bottom: calc(14px + env(safe-area-inset-bottom));
+  bottom: calc(var(--hud-btn-bottom) + env(safe-area-inset-bottom));
   border: 3px solid var(--cyan);
   background: var(--hud);
   color: var(--ink);
@@ -493,7 +497,7 @@ dialog.sheet::backdrop { display: none; }
 }
 .toast.toast-low {
   top: auto;
-  bottom: calc(88px + env(safe-area-inset-bottom));
+  bottom: calc(var(--hud-msg-bottom) + env(safe-area-inset-bottom));
 }
 
 .status, .error {

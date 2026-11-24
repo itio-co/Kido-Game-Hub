@@ -39,6 +39,14 @@ export function houseMapUnlocked(flow: HouseMapFlow, evidence: readonly string[]
   return gate === null || evidence.includes(gate);
 }
 
+/**
+ * Opening the house-map screen follows the evidence gate only.
+ * A previous case clear does not bypass a locked button.
+ */
+export function allowHouseMapTravel(unlocked: boolean): boolean {
+  return unlocked === true;
+}
+
 /** The one bottom-bar rule for every scene. `sceneHasMap` is the scene's `map` flag. */
 export function showHouseMapButton(input: {
   context: string;
