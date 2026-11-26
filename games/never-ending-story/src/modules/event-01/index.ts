@@ -2,6 +2,7 @@
 import { endingIdFor } from '../event-core';
 import { filesForUse } from '../cutscene';
 import './houseMap';
+import './items';
 
 export const EVENT_ID = 'case-01';
 /** Ending cutscene id. event-core joins pages whose eventId is `endingIdFor(EVENT_ID)`. */

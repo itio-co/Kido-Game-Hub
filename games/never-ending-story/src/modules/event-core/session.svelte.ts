@@ -142,6 +142,7 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
   let mapUnlockPulse = $state(false);
   let bag = $state<string[]>([]);
   let bagPulse = $state(false);
+  let bagFreshId = $state<string | null>(null);
   let bagPulseTimer = 0;
   let repaired = $state<CaseViolation[]>([]);
   let leaveConfirm = $state(false);
@@ -375,10 +376,11 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
     return () => window.removeEventListener('popstate', onPop);
   }
 
-  function pulseBag(): void {
+  function pulseBag(id?: string): void {
     bagPulse = true;
+    bagFreshId = id ?? null;
     window.clearTimeout(bagPulseTimer);
-    bagPulseTimer = window.setTimeout(() => { bagPulse = false; }, 2600);
+    bagPulseTimer = window.setTimeout(() => { bagPulse = false; bagFreshId = null; }, 2600);
   }
 
   function setMapFloor(floor: 1 | 2): void {
@@ -680,7 +682,7 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
         return;
       }
       bag = openBoxBag(bag);
-      pulseBag();
+      pulseBag(CASE_PHOTO_ID);
       persist();
       showToast(t('toast.photoAwarded'));
       return;
@@ -806,7 +808,7 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
     }
     solved = true;
     bag = openBoxBag(bag);
-    pulseBag();
+    pulseBag(CASE_PHOTO_ID);
     showToast(t('toast.photoAwarded'));
     history = ['study', 'star-box'];
     await go('album', true);
@@ -943,6 +945,7 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
     eggReveal = next.eggReveal;
     mapUnlockPulse = next.mapUnlockPulse;
     bagPulse = next.bagPulse;
+    bagFreshId = null;
     window.clearTimeout(toastTimer);
     window.clearTimeout(hintTimer);
     window.clearTimeout(mapPulseTimer);
@@ -981,6 +984,7 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
     get mapUnlocked() { return mapIsUnlocked(); },
     get bag() { return bag; },
     get bagPulse() { return bagPulse; },
+    get bagFreshId() { return bagFreshId; },
     get canSolve() { return canSolveCase(catalogCodes(flow), evidence); },
     get stateCheck() {
       const gate = houseMapGate(flow);
@@ -1294,7 +1298,7 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
         deduced = true;
         if (!solved && !bag.includes(CASE_KEY_ID)) {
           bag = [...bag, CASE_KEY_ID];
-          pulseBag();
+          pulseBag(CASE_KEY_ID);
           showToast(t('toast.keyAwarded'));
         }
         persist();

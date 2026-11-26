@@ -1,0 +1,16 @@
+{
+  "id": "item-box",
+  "name": "Item box",
+  "kind": "feature",
+  "version": "1.0.0",
+  "description": "Reusable inventory grid of item icon slots. Tap an icon to open the item detail view.",
+  "entry": "src/modules/item-box/index.ts",
+  "publicEntries": [
+    "src/modules/item-box/index.ts"
+  ],
+  "dependsOn": {
+    "core": ">=0.6.37",
+    "item": "^1.0.0"
+  },
+  "gdd": "src/modules/item-box/GDD.md"
+}

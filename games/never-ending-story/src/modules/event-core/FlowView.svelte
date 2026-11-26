@@ -4,13 +4,14 @@
   import { LEVEL_COUNT, LEVEL_THEME } from './puzzles';
   import type { FlowSession } from './session.svelte';
   import type { FlowSpot } from './types';
-  import { CASE_KEY_ID, CASE_PHOTO_ID } from './progress';
+  import { CASE_KEY_ID } from './progress';
   import { endingIdFor, primaryEventId } from './story';
   import { t } from '../../lib/i18n';
   import { readEggs } from '../../lib/eggs';
   import { readStirFry } from '../stirfry';
   import { portraitFile } from '../character';
   import { artworkFile } from '../cutscene';
+  import { ItemBox } from '../item-box';
   import LeaveEventHost from './LeaveEventHost.svelte';
   import ComicPanel from './ComicPanel.svelte';
   import ImageScene from './ImageScene.svelte';
@@ -307,25 +308,15 @@
   {/if}
 
   {#if session.overlay === 'bag'}
-    <div class="time-sheet" data-testid="bag-panel">
-      <button type="button" class="calx" aria-label={t('bag.close')} onclick={() => session.closeOverlay()}>✕</button>
-      <div class="calc">
-        <div class="calh"><span>{t('bag.title')}</span></div>
-        {#if session.bag.length === 0}
-          <p>{t('bag.empty')}</p>
-        {:else}
-          <ul>
-            {#each session.bag as id (id)}
-              <li class="have">
-                <b>{id === CASE_KEY_ID ? t('bag.key') : id === CASE_PHOTO_ID ? t('bag.photo') : id}</b>
-                {#if id === CASE_KEY_ID}<span>{t('bag.keyBody')}</span>{/if}
-                {#if id === CASE_PHOTO_ID}<span>{t('bag.photoBody')}</span>{/if}
-              </li>
-            {/each}
-          </ul>
-        {/if}
-      </div>
-    </div>
+    <ItemBox
+      title={t('bag.title')}
+      ownedIds={session.bag}
+      freshId={session.bagFreshId}
+      emptyText={t('bag.empty')}
+      closeLabel={t('bag.close')}
+      testid="bag-panel"
+      onClose={() => session.closeOverlay()}
+    />
   {:else if session.overlay}
     <div class="time-sheet" data-testid={session.overlay === 'clock' ? 'clock-panel' : session.overlay === 'calendar' ? 'calendar-panel' : 'day-panel'}>
       <button type="button" class="calx" aria-label="ปิด" onclick={() => session.closeOverlay()}>✕</button>
@@ -441,8 +432,7 @@
   .note-list ul { list-style: none; padding: 0; margin: 0 0 12px; }
   .note-list li { margin: 8px 0; padding: 8px 10px; border-radius: 10px; background: rgba(255, 255, 255, 0.06); opacity: 0.55; }
   .note-list li.have { opacity: 1; }
-  .note-list li span, .deduce p, .time-sheet li.have span { display: block; font-size: var(--fs-sm); margin-top: 4px; }
-  .time-sheet li.have { padding: 8px 0; }
+  .note-list li span, .deduce p { display: block; font-size: var(--fs-sm); margin-top: 4px; }
   .deduce { display: flex; flex-direction: column; gap: 8px; }
   .deduce section { background: rgba(6, 24, 40, 0.93); border: 1px solid #39e0ff; border-radius: 12px; padding: 8px 10px; }
   .deduce section.ok { border-color: #5fd38a; }
