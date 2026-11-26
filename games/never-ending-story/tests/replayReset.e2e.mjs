@@ -5,9 +5,11 @@ import { chromium } from 'playwright';
 
 const BASE = process.env.BASE ?? 'http://127.0.0.1:4173/';
 const browser = await chromium.launch({ executablePath: process.env.CHROME || undefined, args: ['--no-sandbox'] });
+const SHELF = '6bb33448-6b61-4564-91e1-125bae9cf57c';
+const PHOTO = '📷 รูปปู่';
 const leftover = JSON.stringify({
   version: 1,
-  player: { onboardingComplete: true, prologueSeen: true, textSize: 'md', soundEnabled: false, calendarTheme: null, decor: {}, room: { calendar: 'original', grandpaPhoto: 'shelf' } },
+  player: { onboardingComplete: true, prologueSeen: true, textSize: 'md', soundEnabled: false, calendarTheme: null, decor: { [SHELF]: PHOTO }, room: { calendar: 'original', grandpaPhoto: 'shelf' } },
   knowledge: { evidence: ['E01', 'E02', 'E04'], solvedCaseIds: ['case-01'], exploreHints: 0 },
   caseState: { facts: {} },
   flow: {

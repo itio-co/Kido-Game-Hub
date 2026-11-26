@@ -20,7 +20,8 @@
     "god": "^2.0.0",
     "god-mode": "^1.0.0",
     "character": "^1.0.0",
-    "cutscene": "^1.0.0"
+    "cutscene": "^1.0.0",
+    "item": "^1.0.0"
   },
   "paths": [
     "src",

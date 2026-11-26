@@ -22,7 +22,7 @@ export type Artwork = {
   order: number;
 };
 
-export const CUTSCENE_VERSION = '1.0.2';
+export const CUTSCENE_VERSION = '1.0.3';
 
 const STYLE =
   'Stylized low-poly 3D storybook illustration, faceted clay-like surfaces, warm cozy light, modern Thai two-storey family home, no text, no watermark.';
@@ -199,6 +199,18 @@ export const ARTWORKS: Artwork[] = [
     promptSource: 'reconstructed',
     version: CUTSCENE_VERSION,
     order: 84,
+  },
+  {
+    id: 'hub.photo-placement',
+    file: 'photo-placement.jpg',
+    usedIn: ['photo-placement'],
+    characterIds: ['grandpa-young'],
+    prompt: `${STYLE} Three-strip comic of the player's bedroom from the same camera as player-room-wide.jpg: empty keepsake shelf, young Grandpa's framed photo being set on the shelf, then the photo seated on the shelf. Character id grandpa-young appears only in the frame. No new room, no text, no watermark.`,
+    negative: NEGATIVE,
+    styleNotes: `Composed 2026-11-26 from player-room-wide.jpg and decor/keepsake-shelf-grandpa-photo.png (assets-src/tools/compose_photo_placement.py). The room was not regenerated; panels are crops of the existing backdrop with the existing shelf overlay. ${sheet}`,
+    promptSource: 'original',
+    version: CUTSCENE_VERSION,
+    order: 85,
   },
   {
     id: 'scene.living-afternoon',
