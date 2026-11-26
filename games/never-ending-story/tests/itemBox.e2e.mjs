@@ -96,7 +96,11 @@ await icon.waitFor({ state: 'visible', timeout: 5000 });
 assert.equal(await page.locator('[data-testid="item-detail"]').count(), 0, 'details stay closed until the icon is tapped');
 const bagText = await page.locator('[data-testid="bag-panel"]').innerText();
 assert.ok(bagText.includes('กระเป๋า'), bagText);
+assert.ok(bagText.includes(PHOTO_TITLE), 'grid shows the unique item name');
 assert.ok(!bagText.includes(PHOTO_BODY), 'bag grid must not show the item description yet');
+const iconSrc = await icon.locator('img').getAttribute('src');
+assert.ok(iconSrc && iconSrc.includes('picture-frame'), `grid icon should be the kind icon, got ${iconSrc}`);
+assert.ok(iconSrc && !iconSrc.includes('young-grandpa-photo'), `grid icon must not be the grandpa photo, got ${iconSrc}`);
 
 if (SHOTS) {
   await page.screenshot({ path: join(SHOTS, 'bag-with-icon.png'), type: 'png' });
@@ -108,6 +112,8 @@ await detail.waitFor({ state: 'visible', timeout: 5000 });
 const detailText = await detail.innerText();
 assert.ok(detailText.includes(PHOTO_TITLE), detailText);
 assert.ok(detailText.includes(PHOTO_BODY), detailText);
+const detailSrc = await detail.locator('img').getAttribute('src');
+assert.ok(detailSrc && detailSrc.includes('young-grandpa-photo'), `detail should show the real photo, got ${detailSrc}`);
 assert.ok(await page.locator('[data-testid="bag-panel"]').isVisible(), 'bag stays open on the detail view');
 
 if (SHOTS) {

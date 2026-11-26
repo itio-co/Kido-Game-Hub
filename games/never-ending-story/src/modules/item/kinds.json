@@ -1,0 +1,18 @@
+[
+  {
+    "id": "e0b95b34-eed9-45f7-943a-897bbfd2c3ed",
+    "kind": "item-kind",
+    "title": "กรอบรูป",
+    "titleEn": "Picture frame",
+    "slug": "picture-frame",
+    "icon": "items/picture-frame.png"
+  },
+  {
+    "id": "b05c90d7-ebb3-4c7a-afcd-b4cb2bd9e889",
+    "kind": "item-kind",
+    "title": "กุญแจ",
+    "titleEn": "Key",
+    "slug": "key",
+    "icon": "items/star-box-key.png"
+  }
+]

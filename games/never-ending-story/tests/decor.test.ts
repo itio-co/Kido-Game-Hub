@@ -14,7 +14,7 @@ import {
   GRANDPA_PHOTO_SLUG,
 } from '../src/lib/decor.ts';
 import { normalizeRoomDecor } from '../src/lib/calendarDecor.ts';
-import { itemBySlug, registerItems, type Item } from '../src/modules/item/catalog.ts';
+import { itemBySlug, itemIconFile, itemImageFile, registerItems, registerKinds, type Item, type ItemKindRecord } from '../src/modules/item/catalog.ts';
 
 declare const process: { exitCode?: number };
 let failed = 0;
@@ -126,21 +126,32 @@ test('placement scene plays at home after a clear, only until the photo is place
 });
 
 test('the placed keepsake photo is the album-photo item from the item catalog', () => {
+  const frame: ItemKindRecord = {
+    id: 'e0b95b34-eed9-45f7-943a-897bbfd2c3ed',
+    kind: 'item-kind',
+    title: 'กรอบรูป',
+    titleEn: 'Picture frame',
+    slug: 'picture-frame',
+    icon: 'items/picture-frame.png',
+  };
   const photo: Item = {
     id: '37b6ab64-1fff-4767-8bcb-dd4b6de88b8e',
-    kind: 'item-photo',
+    kind: 'picture-frame',
     title: 'รูปปู่ตอนหนุ่ม',
     titleEn: "Young Grandpa's photo",
     slug: 'album-photo',
-    icon: 'items/young-grandpa-photo.png',
+    image: 'items/young-grandpa-photo.png',
     description: 'อยู่ในอัลบั้มจากกล่องรูปดาว พร้อมโปสเตอร์ เอาไปให้ย่าดู',
   };
+  registerKinds([frame]);
   registerItems([photo]);
   const item = itemBySlug(GRANDPA_PHOTO_SLUG);
   ok(!!item, 'catalog has album-photo');
   ok(item!.slug === GRANDPA_PHOTO_SLUG, item!.slug);
   ok(item!.title === 'รูปปู่ตอนหนุ่ม', item!.title);
-  ok(item!.icon === 'items/young-grandpa-photo.png', item!.icon);
+  ok(item!.kind === 'picture-frame', item!.kind);
+  ok(itemIconFile(item!) === 'items/picture-frame.png', String(itemIconFile(item!)));
+  ok(itemImageFile(item!) === 'items/young-grandpa-photo.png', String(itemImageFile(item!)));
   ok(isGrandpaPhoto(item!.slug), 'catalog slug');
   ok(isGrandpaPhoto(item!.title), 'catalog title');
 });

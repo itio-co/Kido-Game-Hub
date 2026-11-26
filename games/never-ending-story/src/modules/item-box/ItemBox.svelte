@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { ItemDetail, ItemIcon, itemCopy, itemForBagId } from '../item';
+  import { ItemDetail, ItemIcon, itemCopy, itemForBagId, itemIconFile, itemImageFile } from '../item';
   import { getLocale } from '../../lib/i18n';
   import { imageUrl } from '../../lib/imageUrl';
 
@@ -28,8 +28,8 @@
   const views = $derived(ownedIds.map((id) => {
     const item = itemForBagId(id);
     const copy = item ? itemCopy(item, getLocale()) : { title: id, description: '' };
-    const file = item?.image || item?.icon;
-    const icon = item?.icon || item?.image;
+    const icon = item ? itemIconFile(item) : undefined;
+    const file = item ? itemImageFile(item) : undefined;
     return {
       id,
       title: copy.title,
@@ -135,11 +135,25 @@
   }
   .empty-slot {
     width: 100%;
-    aspect-ratio: 1;
     min-width: 72px;
+    display: flex;
+    flex-direction: column;
+    padding: 8px 6px 6px;
+    box-sizing: border-box;
+  }
+  .empty-slot::before {
+    content: '';
+    width: 100%;
+    aspect-ratio: 1;
     min-height: 72px;
     border-radius: 16px;
     border: 3px dashed rgba(57, 224, 255, 0.45);
     background: rgba(6, 24, 40, 0.18);
+    box-sizing: border-box;
+  }
+  .empty-slot::after {
+    content: '';
+    min-height: 2.5em;
+    margin-top: 4px;
   }
 </style>
