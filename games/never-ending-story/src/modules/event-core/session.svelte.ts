@@ -33,6 +33,7 @@ import {
   canSolveCase,
   catalogCodes,
   countedEvidence,
+  allowHouseMapTravel,
   houseMapGate,
   houseMapUnlocked,
   mapUnlockNeedsPersist,
@@ -525,7 +526,7 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
       }
     }
     if (requestLeave(next, { replace, runEnter })) return;
-    if (next === 'house-map' && !mapIsUnlocked() && !cleared) {
+    if (next === 'house-map' && !allowHouseMapTravel(mapIsUnlocked())) {
       showToast(t('toast.mapLocked'));
       return;
     }
@@ -1056,6 +1057,7 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
     closeTalk() { talk = null; talkSlug = null; persist(); },
     closeOverlay() { overlay = null; },
     async go(next: ScreenId) { await go(next); },
+    openHouseMap() { void go('house-map'); },
     async back() {
       if (leaveConfirm) { cancelLeave(); return; }
       if (talk) { talk = null; return; }
@@ -1147,7 +1149,7 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
       practice = false;
       practiceRun = false;
       history = ['player-room', 'event-select'];
-      void go('house-map', true, false);
+      void go(mapIsUnlocked() ? 'house-map' : 'living-room', true, false);
     },
     closeEgg() { eggReveal = false; },
     jumpEndingComic() {

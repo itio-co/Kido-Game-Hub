@@ -423,7 +423,7 @@
             data-locked={session.mapUnlocked ? 'false' : 'true'}
             aria-label={session.mapUnlocked ? t('hud.houseMap') : t('hud.houseMapLocked')}
             title={session.mapUnlocked ? t('hud.houseMap') : t('hud.houseMapLocked')}
-            onclick={() => session.go('house-map')}
+            onclick={() => session.openHouseMap()}
           >
             <svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true">
               <rect x="3.2" y="3.2" width="17.6" height="17.6" rx="1.5" fill="none" stroke="currentColor" stroke-width="2" />
@@ -542,12 +542,17 @@
     position: absolute;
     z-index: 7;
     right: 12px;
-    bottom: calc(14px + env(safe-area-inset-bottom));
+    bottom: calc(var(--hud-btn-bottom) + env(safe-area-inset-bottom));
     display: flex;
     gap: 8px;
-    align-items: flex-end;
+    align-items: center;
   }
-  .bottom-actions .hud-icon { position: relative; }
+  .bottom-actions .hud-icon {
+    position: relative;
+    bottom: auto;
+    left: auto;
+    right: auto;
+  }
   .hud-icon .lock-badge {
     position: absolute;
     right: -2px;
@@ -573,7 +578,7 @@
     z-index: 5;
     left: 50%;
     transform: translateX(-50%);
-    bottom: calc(88px + env(safe-area-inset-bottom));
+    bottom: calc(var(--hud-msg-bottom) + env(safe-area-inset-bottom));
     width: max-content;
     max-width: min(78%, 320px);
     margin: 0;

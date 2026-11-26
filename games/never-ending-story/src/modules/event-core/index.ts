@@ -9,6 +9,7 @@ export type { FlowSession } from './session.svelte';
 export {
   eventProgressBody,
   houseMapGate,
+  allowHouseMapTravel,
   houseMapUnlocked,
   mapUnlockNeedsPersist,
   registerHouseMapGate,

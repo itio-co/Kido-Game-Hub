@@ -1,5 +1,6 @@
 import '../src/modules/event-01/houseMap.ts';
 import {
+  allowHouseMapTravel,
   eventProgressBody,
   houseMapGate,
   houseMapUnlocked,
@@ -87,6 +88,14 @@ test('progress sync carries the unlocked flag from the save', () => {
   ok(locked?.progress.mapUnlocked === false, JSON.stringify(locked));
   const staleFlag = eventProgressBody({ evidence: ['E01', 'E02'], mapUnlocked: true });
   ok(staleFlag?.progress.mapUnlocked === true, 'the document still reports the stored flag');
+});
+
+
+test('opening the house map follows the evidence gate, not a previous clear', () => {
+  ok(allowHouseMapTravel(houseMapUnlocked(staleCase01, ['E01', 'E02', 'E03', 'E06'])) === false, 'four clues without E04 stay blocked');
+  ok(allowHouseMapTravel(houseMapUnlocked(staleCase01, ['E01', 'E02', 'E03', 'E04'])) === true, 'opens after the jigsaw evidence');
+  ok(allowHouseMapTravel(false) === false, 'a cleared flag must not be able to bypass a locked gate');
+  ok(allowHouseMapTravel(true) === true, 'unlocked travel is allowed');
 });
 
 if (failed) process.exitCode = 1;
