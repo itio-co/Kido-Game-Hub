@@ -10,9 +10,9 @@ const BASE = process.env.BASE ?? 'http://127.0.0.1:4173/';
 const SHOTS = process.env.SHOTS ?? '';
 
 const DIFFS = [
-  { label: 'ง่าย', id: 'easy', cols: 3, rows: 3, rotation: 'none', count: 9 },
-  { label: 'ปานกลาง', id: 'medium', cols: 3, rows: 4, rotation: 'quarter', count: 12 },
-  { label: 'ยาก', id: 'hard', cols: 4, rows: 4, rotation: 'free', count: 16 },
+  { label: 'ง่าย', id: 'easy', cols: 3, rows: 3, rotation: 'none', count: 9, rotationText: 'ไม่ต้องหมุน' },
+  { label: 'ปานกลาง', id: 'medium', cols: 3, rows: 4, rotation: 'quarter', count: 12, rotationText: 'แตะเพื่อหมุน 90°' },
+  { label: 'ยาก', id: 'hard', cols: 4, rows: 4, rotation: 'free', count: 16, rotationText: 'หมุนได้อิสระ' },
 ];
 
 function seed(difficulty, screen = 'jigsaw') {
@@ -164,6 +164,14 @@ for (const diff of DIFFS) {
   assert.equal(await board.getAttribute('data-rotation'), diff.rotation, `${diff.id} rotation`);
   assert.equal(await board.getAttribute('data-diff'), diff.id, `${diff.id} profile`);
   assert.equal(await page.locator('[data-testid^="jigsaw-piece-"]').count(), diff.count, `${diff.id} piece count`);
+  const subtitle = (await page.locator('.flow-sub').innerText()).replace(/\s+/g, ' ').trim();
+  assert.ok(subtitle.includes(`${diff.count} ชิ้น`), `${diff.id} subtitle piece count: ${subtitle}`);
+  assert.ok(subtitle.includes(diff.rotationText), `${diff.id} subtitle rotation: ${subtitle}`);
+  assert.ok(!subtitle.includes('ชิ้นไม่ต้องหมุน') || diff.rotation === 'none', `${diff.id} stale hud: ${subtitle}`);
+  if (diff.rotation !== 'none') {
+    assert.ok(!subtitle.includes('ไม่ต้องหมุน'), `${diff.id} must not say no-rotation: ${subtitle}`);
+  }
+  await shot(page, `${diff.id}-subtitle.png`);
   if (diff.rotation === 'none') {
     assert.equal(await page.locator('[data-testid^="jigsaw-rotate-"]').count(), 0, 'easy has no rotate handles');
   } else {

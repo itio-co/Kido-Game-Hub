@@ -9,6 +9,8 @@ import {
   freshJig,
   freshSlide,
   isJigBoard,
+  jigProfile,
+  jigProfileForLabel,
   placeHint,
   practiceSetup,
   selectPiece,
@@ -890,7 +892,18 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
     if (screen === 'case-board') return 'ตอบ 3 ข้อ แล้วเลือกหลักฐานยืนยัน';
     if (screen === 'crossword' || screen === 'jigsaw' || screen === 'slide') {
       if (practice) return '';
-      return `${flow?.games.find((item) => item.game === (screen === 'slide' ? 'slide' : screen === 'jigsaw' ? 'jigsaw' : 'crossword'))?.hud ?? ''} · คำใบ้ ${hints}`;
+      if (screen === 'jigsaw') {
+        const profile = isJigBoard(jig)
+          ? jigProfile(jig.profileId, jig.version)
+          : jigProfileForLabel(difficulty);
+        const n = isJigBoard(jig) ? jig.cols * jig.rows : profile.cols * profile.rows;
+        return t('jigsaw.hud', {
+          n,
+          rotation: t(`jigsaw.rotation.${profile.rotation}`),
+          hints,
+        });
+      }
+      return `${flow?.games.find((item) => item.game === (screen === 'slide' ? 'slide' : 'crossword'))?.hud ?? ''} · คำใบ้ ${hints}`;
     }
     if (!scene || !flow) return '';
     if (screen === 'star-box' && solved) {
