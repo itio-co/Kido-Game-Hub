@@ -15,6 +15,7 @@
   import ShowcaseView from './components/ShowcaseView.svelte';
   import SettingsPanel from './components/SettingsPanel.svelte';
   import Sheet from './components/Sheet.svelte';
+  import LoadingDialog from './components/LoadingDialog.svelte';
   import VersionBadge from './components/VersionBadge.svelte';
   import { StirFryGame } from './modules/stirfry';
   import { ChallengeView, LeaderboardView, parseChallengeHash } from './modules/challenge';
@@ -579,6 +580,9 @@
   {/if}
   {#if godFloatVisible(godReady, floatPrefs.on) && !editing && !browsing && overlay !== 'settings'}
     <GodFloat page={inspectPage} prefs={floatPrefs} onPrefs={setFloat} />
+  {/if}
+  {#if session.loading}
+    <LoadingDialog title={t('loading.title')} body={t('loading.body')} />
   {/if}
 </div>
 

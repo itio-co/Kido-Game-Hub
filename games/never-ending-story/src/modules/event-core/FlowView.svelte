@@ -139,14 +139,14 @@
     >
       {#snippet actions()}
         {#if session.screen === 'ending-comic' || session.cleared}
-          <button type="button" class="skip" data-testid="comic-skip" class:loud={session.cleared && session.screen !== 'ending-comic'} onclick={() => session.skipCutscene()}>
+          <button type="button" class="skip" data-testid="comic-skip" class:loud={session.cleared && session.screen !== 'ending-comic'} disabled={session.loading} aria-busy={session.loading} onclick={() => session.skipCutscene()}>
             {session.screen === 'ending-comic' ? t('ending.skip') : t('skip.intro')}
           </button>
         {/if}
       {/snippet}
     </ComicPanel>
   {:else if session.screen === 'difficulty'}
-    <div class="pick">
+    <div class="pick" data-testid="difficulty-pick">
       <h1>เลือกระดับความยากของคดีนี้</h1>
       <p>เลือกได้ใหม่ทุกครั้งที่เริ่มคดี ไม่มีจำกัดเวลา</p>
       {#each session.flow?.difficulties ?? [] as name (name)}

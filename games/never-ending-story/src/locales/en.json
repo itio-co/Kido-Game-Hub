@@ -56,6 +56,8 @@
   "egg.close": "Keep sticker",
   "skip.intro": "Skip intro",
   "skip.ending": "Skip ending",
+  "loading.title": "Loading…",
+  "loading.body": "Please wait",
   "event.replayBadge": "Replay",
   "event.leaveTitle": "Leave this event?",
   "event.leaveBody": "Leaving now will reset your progress in this run. Do you really want to leave?",

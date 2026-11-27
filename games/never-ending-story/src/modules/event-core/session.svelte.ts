@@ -94,6 +94,9 @@ function wait(ms: number): Promise<void> {
   });
 }
 
+/** Keep a loading dialog on screen long enough to register as feedback. */
+const LOADING_MIN_MS = 200;
+
 export function createFlow(onSave: (progress: FlowProgress) => void) {
   let flow = $state<CaseFlow | null>(null);
   let registry = $state<ScreenRegistry | null>(null);
@@ -101,6 +104,8 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
   let screen = $state<ScreenId>('player-room');
   let history = $state<ScreenId[]>([]);
   let fading = $state(false);
+  /** Shared loading dialog for slow scene transitions. */
+  let loading = $state(false);
   let selected = $state<string | null>(null);
   let hintSpot = $state<string | null>(null);
   let toastText = $state<string | null>(null);
@@ -527,7 +532,20 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
     if (message) announceBottom(message);
   }
 
-  async function go(next: ScreenId, replace = false, runEnter = true): Promise<void> {
+  async function withLoading(task: () => Promise<void>): Promise<void> {
+    if (loading) return;
+    loading = true;
+    const started = Date.now();
+    try {
+      await task();
+    } finally {
+      const left = LOADING_MIN_MS - (Date.now() - started);
+      if (left > 0) await wait(left);
+      loading = false;
+    }
+  }
+
+  async function go(next: ScreenId, replace = false, runEnter = true, opts?: { fade?: boolean }): Promise<void> {
     // Wait out an in-flight fade instead of dropping the navigation (practice list
     // used void go() then immediate openLevel, which previously no-op'd).
     if (fading) {
@@ -543,8 +561,13 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
       return;
     }
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    fading = true;
-    await wait(reduce ? 0 : 300);
+    const useFade = opts?.fade !== false && !loading && !reduce;
+    if (useFade) {
+      fading = true;
+      await wait(300);
+    } else {
+      fading = false;
+    }
     if (!replace && next !== screen) history = [...history, screen];
     if (next !== 'living-room') slot = 'now';
     screen = next;
@@ -1002,6 +1025,8 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
     use,
     get screen() { return screen; },
     get fading() { return fading; },
+    get loading() { return loading; },
+    runWithLoading: withLoading,
     get selected() { return selected; },
     get hintSpot() { return hintSpot; },
     get toastText() { return toastText; },
@@ -1176,12 +1201,20 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
       void go('cutscene', true, false);
     },
     skipCutscene() {
+      if (loading) return;
       if (screen === 'ending-comic') {
-        void perform({ type: 'home' });
+        void withLoading(async () => {
+          await perform({ type: 'home' });
+        });
         return;
       }
       if (!cleared) return; // first play: intro not skippable
-      void go('difficulty');
+      void withLoading(async () => {
+        // Hold the dialog over the comic first so the tap is obvious, then
+        // switch without the 300ms blank fade. Difficulty itself is instant.
+        await wait(LOADING_MIN_MS);
+        await go('difficulty', false, true, { fade: false });
+      });
     },
     skipIntro() {
       if (!cleared) return;
