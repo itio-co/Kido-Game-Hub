@@ -106,7 +106,7 @@ const kinds = (page) => page.locator('[data-testid="streak-week"] li').evaluateA
   assert.ok((await page.locator('[data-testid="streak-best"]').innerText()).includes('12 วัน'));
   assert.ok((await page.locator('[data-testid="streak-wins"]').innerText()).includes('31 เกม'));
   assert.equal(await page.locator('[data-testid="streak-offline"]').count(), 0);
-  assert.equal(await page.locator('.streak-sheet .day.today').getAttribute('data-date'), '2026-11-26');
+  assert.equal(await page.locator('.streak-sheet .st-day.today').getAttribute('data-date'), '2026-11-26');
   assert.ok(seen.getTokens.length >= 1, 'board fetched from the server');
   assert.ok(seen.getTokens.at(-1) === FAKE_STREAK, 'stored streak token is sent back');
   const stored = await page.evaluate(() => JSON.parse(localStorage.getItem('nesg.streak.v1') ?? 'null'));
@@ -159,6 +159,7 @@ const kinds = (page) => page.locator('[data-testid="streak-week"] li').evaluateA
 // 5. Winning a story jigsaw reports the win and refreshes the stored board.
 {
   const { ctx, page, seen } = await open({
+    view: VIEWS.active,
     nav: { screen: 'jigsaw', history: ['player-room', 'event-select', 'living-room', 'tray'], context: 'event' },
     onWin: { ...VIEWS.active, count: 13, best: 13 },
   });
@@ -168,12 +169,27 @@ const kinds = (page) => page.locator('[data-testid="streak-week"] li').evaluateA
     for (let id = 0; id < 9; id += 1) {
       const piece = page.locator(`[data-testid="jigsaw-piece-${id}"]`);
       if ((await piece.getAttribute('data-locked')) === 'true') continue;
-      await piece.dragTo(page.locator(`[data-testid="jigsaw-slot-${id}"]`), { force: true, targetPosition: { x: 8, y: 8 } });
+      const slotEl = page.locator(`[data-testid="jigsaw-slot-${id}"]`);
+      await piece.dragTo(slotEl, { force: true, targetPosition: { x: 8, y: 8 } });
       await page.waitForTimeout(120);
+      if ((await piece.getAttribute('data-locked')) !== 'true') {
+        const slot = await slotEl.boundingBox();
+        const box = await piece.boundingBox();
+        if (slot && box) {
+          await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+          await page.mouse.down();
+          await page.mouse.move(slot.x + slot.width / 2, slot.y + slot.height / 2, { steps: 12 });
+          await page.mouse.up();
+          await page.waitForTimeout(150);
+        }
+      }
     }
     if ((await page.locator('[data-testid^="jigsaw-piece-"][data-locked="true"]').count()) === 9) break;
   }
-  await page.locator('[data-testid="minigame-win-dialog"]').waitFor({ timeout: 15000 });
+  await page.locator('[data-testid="minigame-win-dialog"]').waitFor({ timeout: 15000 }).catch(async (e) => {
+    await shot(page, 'debug-jigsaw.png');
+    throw e;
+  });
   await page.waitForFunction(() => JSON.parse(localStorage.getItem('nesg.streak.v1') ?? 'null')?.view?.count === 13, null, { timeout: 5000 });
   assert.equal(seen.wins.length, 1, 'one win report');
   assert.equal(seen.wins[0].game, 'jig');
