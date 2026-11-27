@@ -371,7 +371,7 @@
 </div>
 
 <style>
-  .flow { position: absolute; inset: 0; color: #eaf6ff; font-size: var(--fs); }
+  .flow { position: absolute; inset: 0; color: #eaf6ff; font-size: var(--fs); overscroll-behavior-y: none; }
   .box-state {
     position: absolute;
     z-index: 6;
@@ -388,7 +388,7 @@
     font-weight: 800;
     pointer-events: none;
   }
-  .evlist, .pgrid, .note-list, .deduce, .pick, .lvwrap { position: absolute; inset: 0; overflow: auto; padding: 78px 12px 96px; }
+  .evlist, .pgrid, .note-list, .deduce, .pick, .lvwrap { position: absolute; inset: 0; overflow: auto; overscroll-behavior-y: contain; padding: 78px 12px 96px; }
   .evlist { background: linear-gradient(170deg, #2a2440, #3a2f2a); display: flex; flex-direction: column; gap: 12px; }
   .evh, .pick p, .note-list p { text-align: center; margin: 0; }
   .evcard { position: relative; border: 0; border-radius: 16px; overflow: hidden; min-height: 150px; background: #1a1a22; text-align: left; padding: 0; color: #fff; }
@@ -452,7 +452,7 @@
   .dlg b { color: #7fe9ff; }
   .btns { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
   .btns button { background: #0d4a66; border: 1px solid #39e0ff; color: #fff; border-radius: 8px; padding: 8px 12px; font-size: var(--fs-sm); font-weight: 700; }
-  .time-sheet { position: absolute; inset: 0; z-index: 6; background: rgba(0, 0, 0, 0.55); padding: 72px 14px 96px; overflow: auto; }
+  .time-sheet { position: absolute; inset: 0; z-index: 6; background: rgba(0, 0, 0, 0.55); padding: 72px 14px 96px; overflow: auto; overscroll-behavior-y: contain; }
   .calc { background: repeating-linear-gradient(0deg, #f3e3c3 0 6px, #efdcb8 6px 7px); color: #4a2e18; border: 8px solid #8a5a34; border-radius: 14px; padding: 12px; }
   .calh { display: flex; justify-content: space-between; align-items: center; background: linear-gradient(90deg, #6b3f22, #8a5a34); color: #fff; border-radius: 10px; padding: 8px 10px; font-weight: 800; }
   .calh small { font-weight: 500; font-size: var(--fs-sm); }

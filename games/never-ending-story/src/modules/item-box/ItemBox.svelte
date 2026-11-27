@@ -89,6 +89,7 @@
     background: rgba(0, 0, 0, 0.55);
     padding: 72px 14px 96px;
     overflow: auto;
+    overscroll-behavior-y: contain;
   }
   .calc {
     background: repeating-linear-gradient(0deg, #f3e3c3 0 6px, #efdcb8 6px 7px);

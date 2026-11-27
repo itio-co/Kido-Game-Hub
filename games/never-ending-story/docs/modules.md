@@ -67,7 +67,7 @@ A **mechanism** (`kind: "engine"`) owns the rules: timing, judging, combo, scori
 - Rhythm packs implement `RhythmPack` (`src/modules/rhythm/types.ts`): `id`, `leaderboardId`, `copy` (i18n prefix), `storageKey`, `route`, `version`, `rulesets`, `theme`, `Stage` (gets `StageProps`: progress, pressure, pressureZone, combo, beat, extraDue, last judgement, pulse, packVersion) and optional hooks `onBeat` / `onJudge` / `onFinish`.
 - Leaderboards are keyed by the pack's `leaderboardId` **and** the ruleset (engine version + pack version). The app version is not part of that key.
 - The registry lists `pack` on packs and `packs` (ids) on mechanisms, and still emits `edition` / `editions` as aliases. `/never/god/games/<id>` shows the relationship.
-- God admin is its own module (`kind: "admin"`, `src/modules/god`). The page is still `/never/god` and the API is still `/never/api/god/*`. The in-game float is `god-mode` (`kind: "feature"`).
+- God admin is its own module (`kind: "admin"`, `src/modules/god`). The page is still `/never/god` and the API is still `/never/api/god/*`. The in-game float is `god-mode` (`kind: "feature"`). On Chrome Android, both `/never/` and `/never/god` set `overscroll-behavior-y: none` on the page so pull-to-refresh is off; inner lists (case board, admin tables, dialogs) use `contain` and still scroll.
 - `npm run check:modules` requires every `minigame`, `engine`, and `pack`, plus the `challenge` feature, to depend on `minigame-core`. Every `event` must depend on `event-core`.
 
 ## Why challenge stays a feature

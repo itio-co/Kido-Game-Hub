@@ -2,7 +2,7 @@
   "id": "item-box",
   "name": "Item box",
   "kind": "feature",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Reusable inventory grid of item icon slots. Tap an icon to open the item detail view.",
   "entry": "src/modules/item-box/index.ts",
   "publicEntries": [

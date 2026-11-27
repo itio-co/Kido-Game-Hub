@@ -351,8 +351,9 @@
 {/if}
 
 <style>
+  :global(html), :global(body) { overscroll-behavior-y: none; }
   :global(body) { overflow: auto !important; background: #0d1117; }
-  :global(#god) { min-height: 100vh; }
+  :global(#god) { min-height: 100vh; overscroll-behavior-y: none; }
   .center { text-align: center; padding: 40px; }
   .login { min-height: 100vh; display: grid; place-items: center; padding: 16px; }
   .login form { width: min(360px, 100%); background: var(--hud); border: 2px solid var(--cyan); border-radius: 16px; padding: 24px; display: grid; gap: 12px; }
@@ -371,7 +372,7 @@
   header b { color: var(--cyan); font-size: 1.2em; }
   .crumb { opacity: 0.7; }
   .burger { display: none; order: -1; }
-  .content { grid-column: 2; grid-row: 2; padding: 20px; overflow-x: auto; min-width: 0; }
+  .content { grid-column: 2; grid-row: 2; padding: 20px; overflow-x: auto; min-width: 0; overscroll-behavior-y: contain; }
   nav { grid-column: 1; grid-row: 2; border-right: 1px solid #234; background: #0b1520; padding: 16px 12px; display: flex; flex-direction: column; gap: 6px; }
   nav a { padding: 10px 14px; border-radius: 10px; color: var(--ink); text-decoration: none; }
   nav a.on { background: #12324a; color: var(--cyan); font-weight: 700; }
@@ -405,7 +406,7 @@
   dl { display: grid; grid-template-columns: max-content 1fr; gap: 4px 12px; font-size: 0.9em; }
   dt { opacity: 0.7; }
   dd { margin: 0; word-break: break-all; }
-  pre { background: #0b1622; padding: 10px; border-radius: 10px; font-size: 0.8em; overflow: auto; max-height: 260px; }
+  pre { background: #0b1622; padding: 10px; border-radius: 10px; font-size: 0.8em; overflow: auto; max-height: 260px; overscroll-behavior-y: contain; }
   .admin { margin-top: 24px; padding: 16px; border: 1px solid #5a1620; border-radius: 12px; }
   .danger-note { color: #ffb3bb; font-size: 0.9em; }
   .gback { display: inline-block; margin-bottom: 8px; }
@@ -423,7 +424,7 @@
     nav { position: fixed; top: 0; left: 0; bottom: 0; width: 240px; z-index: 30; transform: translateX(-100%); transition: transform 0.2s; }
     nav.open { transform: none; }
     .scrim-god { display: block; position: fixed; inset: 0; z-index: 29; background: rgba(0, 0, 0, 0.5); border: 0; border-radius: 0; }
-    table.wide { display: block; overflow-x: auto; white-space: nowrap; }
+    table.wide { display: block; overflow-x: auto; overscroll-behavior: contain; white-space: nowrap; }
     .bar { grid-template-columns: 120px 1fr 32px; }
   }
 </style>
