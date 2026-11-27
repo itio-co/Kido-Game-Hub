@@ -1068,6 +1068,38 @@
         "width": 28,
         "height": 14
       }
+    },
+    {
+      "id": "e7c1a0b2-4d5e-4f81-9c3a-7b2d6e5f8a11",
+      "kind": "hotspot",
+      "title": "กล่องเก็บของ",
+      "titleEn": "Storage box",
+      "slug": "player-room/hotspot/storage",
+      "action": "storage",
+      "targetId": "464ce4ea-51d4-46c8-9b70-93f53ab317f9",
+      "anchor": [
+        0.02,
+        0.2,
+        0.35
+      ],
+      "hit": {
+        "position": [
+          0.18,
+          0.12,
+          0.45
+        ],
+        "size": [
+          0.28,
+          0.24,
+          0.28
+        ]
+      },
+      "screen": {
+        "left": 22,
+        "top": 64,
+        "width": 16,
+        "height": 12
+      }
     }
   ],
   "hud": {

@@ -140,6 +140,7 @@
       else if (hotspot.action === 'practice') session.enterPractice();
       else if (hotspot.action === 'calendar') overlay = 'calendar';
       else if (hotspot.action === 'case-board') void session.go('notebook');
+      else if (hotspot.action === 'storage') session.openStorage();
       return;
     }
     selectedId = id;

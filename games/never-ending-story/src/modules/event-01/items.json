@@ -18,5 +18,15 @@
     "image": "items/star-box-key.png",
     "description": "ได้จากการสรุปคดี ใช้เปิดกล่องรูปดาว",
     "descriptionEn": "Awarded for solving the case. Opens the star box."
+  },
+  {
+    "id": "5db3ee82-770e-4f8c-90db-48474c80dbc4",
+    "kind": "sticker",
+    "title": "สติกเกอร์ลับรูปปู่ตอนหนุ่ม",
+    "titleEn": "Secret young-Grandpa sticker",
+    "slug": "fan-sticker",
+    "image": "items/fan-sticker.png",
+    "description": "พบในใบพัดลมตั้งโต๊ะที่บ้านย่า เก็บเข้ากล่องเก็บของเมื่อกลับห้อง",
+    "descriptionEn": "Found on the desk fan at Grandma's house. Goes into the storage box when you return to your room."
   }
 ]

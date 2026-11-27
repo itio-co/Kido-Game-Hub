@@ -96,6 +96,13 @@ export const CASE_KEY_ID = 'case-key';
  */
 export const CASE_PHOTO_ID = 'album-photo';
 
+export const FAN_STICKER_ID = 'fan-sticker';
+
+/** Collectibles that stay with the player after a trip or replay. */
+export function isKeepableItem(id: string): boolean {
+  return id === FAN_STICKER_ID;
+}
+
 type EvidenceFlow = { evidence?: { code?: unknown }[] } | null | undefined;
 
 /** Evidence codes this pack lists in the notebook. The HUD denominator is this length. */

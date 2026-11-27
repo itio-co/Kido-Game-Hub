@@ -14,5 +14,13 @@
     "titleEn": "Key",
     "slug": "key",
     "icon": "items/star-box-key.png"
+  },
+  {
+    "id": "c89f5fdc-5c61-4c0d-880a-97139f690e74",
+    "kind": "item-kind",
+    "title": "สติกเกอร์",
+    "titleEn": "Sticker",
+    "slug": "sticker",
+    "icon": "items/sticker.png"
   }
 ]

@@ -38,6 +38,8 @@ import { t } from '../../lib/i18n';
 import {
   CASE_KEY_ID,
   CASE_PHOTO_ID,
+  FAN_STICKER_ID,
+  isKeepableItem,
   canSolveCase,
   catalogCodes,
   countedEvidence,
@@ -117,7 +119,7 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
   let talk = $state<Talk | null>(null);
   let note = $state<NoteInspect | null>(null);
   let pendingNotices = $state<string[]>([]);
-  let overlay = $state<null | 'calendar' | 'clock' | 'day' | 'bag'>(null);
+  let overlay = $state<null | 'calendar' | 'clock' | 'day' | 'bag' | 'trip-summary' | 'storage'>(null);
   let slot = $state<'yesterday' | 'afternoon' | 'now'>('now');
   let evidence = $state<string[]>([]);
   let solved = $state(false);
@@ -160,6 +162,8 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
   let mapPulseTimer = 0;
   let mapUnlockPulse = $state(false);
   let bag = $state<string[]>([]);
+  let storage = $state<string[]>([]);
+  let tripLoot = $state<string[]>([]);
   let bagPulse = $state(false);
   let bagFreshId = $state<string | null>(null);
   let bagPulseTimer = 0;
@@ -329,6 +333,8 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
       screen = resumeEventScreen({ context, practice, practiceRun, caseDone, screen, history });
     }
     bag = report.bag;
+    storage = [...(saved?.storage ?? [])];
+    tripLoot = [...(saved?.tripLoot ?? [])];
     // The button reads the jigsaw evidence, not the saved flag. Write the flag when a real
     // win predates it, and clear a true flag that has no such evidence (visits and other clues do not count).
     if (report.changed || (gate && mapUnlockNeedsPersist(saved?.mapUnlocked, mapIsUnlocked()))) persist();
@@ -356,6 +362,8 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
       cleared,
       mapUnlocked: houseMapGate(flow) ? mapIsUnlocked() : undefined,
       bag: [...bag],
+      storage: [...storage],
+      tripLoot: [...tripLoot],
       nav: {
         screen,
         history: [...history],
@@ -774,12 +782,15 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
       history = [];
       completionLeave = true;
       allowLeave = true;
+      const loot = [...new Set([...bag, ...tripLoot])].filter(isKeepableItem);
+      tripLoot = loot;
       try {
         await go('player-room', true, false);
       } finally {
         completionLeave = false;
         allowLeave = false;
       }
+      if (loot.length) overlay = 'trip-summary';
       showToast(t('toast.caseComplete'));
       return;
     }
@@ -1054,6 +1065,9 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
       mapUnlockPulse,
       bagPulse,
     }, { cross: freshCross(), jig: freshJig(), slide: freshSlide() });
+    const keepables = [...new Set([...bag, ...tripLoot])].filter(isKeepableItem);
+    storage = [...new Set([...storage, ...keepables])];
+    tripLoot = [];
     evidence = next.evidence;
     bag = next.bag;
     solved = next.solved;
@@ -1209,6 +1223,16 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
     showToast,
     exploreHint,
     closeTalk() { talk = null; talkSlug = null; persist(); },
+    get storage() { return storage; },
+    get tripLoot() { return tripLoot; },
+    openStorage() { overlay = 'storage'; },
+    confirmTrip() {
+      storage = [...new Set([...storage, ...tripLoot])];
+      bag = bag.filter((id) => !tripLoot.includes(id));
+      tripLoot = [];
+      overlay = null;
+      persist();
+    },
     closeOverlay() { overlay = null; },
     async go(next: ScreenId) { await go(next); },
     openHouseMap() { void go('house-map'); },
@@ -1314,7 +1338,16 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
       history = ['player-room', 'event-select'];
       void go(mapIsUnlocked() ? 'house-map' : 'living-room', true, false);
     },
-    closeEgg() { eggReveal = false; },
+    closeEgg() {
+      if (!storage.includes(FAN_STICKER_ID) && !bag.includes(FAN_STICKER_ID)) {
+        bag = [...bag, FAN_STICKER_ID];
+        tripLoot = [...new Set([...tripLoot, FAN_STICKER_ID])];
+        pulseBag(FAN_STICKER_ID);
+        persist();
+        showToast(t('toast.stickerKept'));
+      }
+      eggReveal = false;
+    },
     jumpEndingComic() {
       poster = true;
       solved = true;

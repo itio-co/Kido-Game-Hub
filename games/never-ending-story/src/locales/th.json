@@ -424,5 +424,12 @@
   "note.flipHint": "แตะโน้ตเพื่อพลิกดูด้านหลัง",
   "note.flipFront": "แตะโน้ตเพื่อกลับไปด้านหน้า",
   "note.close": "ปิด",
-  "evidence.got": "ได้หลักฐาน {code}"
+  "evidence.got": "ได้หลักฐาน {code}",
+  "trip.title": "ของที่ได้ในทริปนี้",
+  "trip.body": "เก็บของเหล่านี้เข้ากล่องเก็บของในห้องของเรา",
+  "trip.continue": "เก็บเข้ากล่อง",
+  "storage.title": "กล่องเก็บของ",
+  "storage.empty": "กล่องยังว่างอยู่",
+  "storage.close": "ปิด",
+  "toast.stickerKept": "เก็บสติกเกอร์ใส่กระเป๋าแล้ว"
 }

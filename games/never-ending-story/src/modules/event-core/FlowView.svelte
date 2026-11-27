@@ -6,7 +6,8 @@
   import type { FlowSpot } from './types';
   import { CASE_KEY_ID } from './progress';
   import { endingIdFor, primaryEventId } from './story';
-  import { t } from '../../lib/i18n';
+  import { getLocale, t } from '../../lib/i18n';
+  import { itemCopy, itemForBagId } from '../item';
   import { readEggs } from '../../lib/eggs';
   import { readStirFry } from '../stirfry';
   import { portraitFile } from '../character';
@@ -317,6 +318,29 @@
       testid="bag-panel"
       onClose={() => session.closeOverlay()}
     />
+  {:else if session.overlay === 'storage'}
+    <ItemBox
+      title={t('storage.title')}
+      ownedIds={session.storage}
+      emptyText={t('storage.empty')}
+      closeLabel={t('storage.close')}
+      testid="storage-panel"
+      onClose={() => session.closeOverlay()}
+    />
+  {:else if session.overlay === 'trip-summary'}
+    <div class="trip" data-testid="trip-summary" role="dialog" aria-label={t('trip.title')}>
+      <div class="trip-card">
+        <h2>{t('trip.title')}</h2>
+        <p>{t('trip.body')}</p>
+        <ul>
+          {#each session.tripLoot as id (id)}
+            {@const item = itemForBagId(id)}
+            <li data-testid="trip-item-{id}">{item ? itemCopy(item, getLocale()).title : id}</li>
+          {/each}
+        </ul>
+        <button type="button" data-testid="trip-continue" onclick={() => session.confirmTrip()}>{t('trip.continue')}</button>
+      </div>
+    </div>
   {:else if session.overlay}
     <div class="time-sheet" data-testid={session.overlay === 'clock' ? 'clock-panel' : session.overlay === 'calendar' ? 'calendar-panel' : 'day-panel'}>
       <button type="button" class="calx" aria-label="ปิด" onclick={() => session.closeOverlay()}>✕</button>
@@ -477,4 +501,35 @@
   .egg-card h2 { margin: 0 0 8px; font-size: calc(var(--fs) + 4px); }
   .egg-card p { margin: 0 0 12px; font-size: var(--fs-sm); line-height: 1.4; }
   .egg-card button { min-height: 44px; border-radius: 12px; border: 0; background: #39e0ff; color: #06212f; font-weight: 800; padding: 8px 16px; }
+  .trip {
+    position: absolute;
+    inset: 0;
+    z-index: 9;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px 16px calc(var(--hud-btn-bottom, 14px) + var(--hud-btn-size, 64px) + 16px);
+    background: rgba(8, 14, 22, 0.72);
+  }
+  .trip-card {
+    width: min(92%, 360px);
+    background: #102433;
+    border: 1px solid #39e0ff;
+    border-radius: 16px;
+    padding: 18px 16px 16px;
+    color: #eaf6ff;
+  }
+  .trip-card h2 { margin: 0 0 8px; font-size: calc(var(--fs) + 4px); }
+  .trip-card p { margin: 0 0 12px; font-size: var(--fs-sm); }
+  .trip-card ul { margin: 0 0 16px; padding: 0 0 0 18px; }
+  .trip-card li { margin: 0 0 6px; }
+  .trip-card button {
+    width: 100%;
+    min-height: 48px;
+    border-radius: 12px;
+    border: 1px solid #39e0ff;
+    background: #0d4a66;
+    color: #fff;
+    font-weight: 800;
+  }
 </style>
