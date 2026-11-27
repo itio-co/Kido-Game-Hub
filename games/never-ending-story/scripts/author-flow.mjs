@@ -70,7 +70,7 @@ const scenes = [
     spots: [
       spot('ห้องนั่งเล่น (จุดเริ่ม)', 'flow/house-map/living', 50.2, 41, go('living-room'), { en: 'Living room' }),
       spot('ห้องทำงาน', 'flow/house-map/study', 34.9, 62.3, go('study'), { en: 'Study' }),
-      spot('ครัว (เสริม)', 'flow/house-map/kitchen', 72.5, 62.3, go('kitchen'), { en: 'Kitchen' }),
+      spot('ครัว', 'flow/house-map/kitchen', 72.5, 62.3, go('kitchen'), { en: 'Kitchen' }),
     ],
   }),
   ent('scene', 'ห้องนั่งเล่น', 'flow/scene/living-room', {
@@ -253,9 +253,9 @@ const dialogues = [
   }),
   ent('dialogue', 'ลุงเมฆเล่า', 'flow/dialogue/mek-open', {
     who: 'ลุงเมฆ',
-    text: 'รินเอาอัลบั้มใส่กล่องที่ติดรูปดาว ลุงเห็นตอนเธอยกผ่านโต๊ะ แต่ไม่ได้มองว่าเอาไปวางที่ไหน',
+    text: 'หนูมาได้ยังไงเนี่ย? ลุงกำลังเติมครอสเวิร์ดอยู่เลย ช่วยลุงหน่อยได้ไหม?',
     choices: [
-      choice('ช่วยเติมครอสเวิร์ด (เสริม)', 'flow/dialogue/mek-open/help', { next: 'flow/dialogue/mek-crossword' }),
+      choice('ช่วยเติมครอสเวิร์ด', 'flow/dialogue/mek-open/help', { next: 'flow/dialogue/mek-crossword' }),
       choice('ปิด', 'flow/dialogue/mek-open/close', {}),
     ],
   }),
@@ -269,7 +269,7 @@ const dialogues = [
   }),
   ent('dialogue', 'ลุงขอบคุณ', 'flow/dialogue/mek-thanks', {
     who: 'ลุงเมฆ',
-    text: 'ครบแล้ว! เดี๋ยวให้ทุกคนลองเล่นกัน ขอบใจมากนะ',
+    text: 'ครบแล้ว! ขอบใจมากนะ รินเอาอัลบั้มใส่กล่องที่ติดรูปดาว ลุงเห็นตอนเธอยกผ่านโต๊ะ แต่ไม่ได้มองว่าเอาไปวางที่ไหน',
     choices: [choice('ปิด', 'flow/dialogue/mek-thanks/close', {})],
   }),
   ent('dialogue', 'เปิดอัลบั้ม', 'flow/dialogue/album-open', {

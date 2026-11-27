@@ -164,6 +164,7 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
   let bag = $state<string[]>([]);
   let storage = $state<string[]>([]);
   let tripLoot = $state<string[]>([]);
+  let clearedPuzzles = $state<string[]>([]);
   let bagPulse = $state(false);
   let bagFreshId = $state<string | null>(null);
   let bagPulseTimer = 0;
@@ -335,6 +336,7 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
     bag = report.bag;
     storage = [...(saved?.storage ?? [])];
     tripLoot = [...(saved?.tripLoot ?? [])];
+    clearedPuzzles = [...(saved?.clearedPuzzles ?? [])];
     // The button reads the jigsaw evidence, not the saved flag. Write the flag when a real
     // win predates it, and clear a true flag that has no such evidence (visits and other clues do not count).
     if (report.changed || (gate && mapUnlockNeedsPersist(saved?.mapUnlocked, mapIsUnlocked()))) persist();
@@ -364,6 +366,7 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
       bag: [...bag],
       storage: [...storage],
       tripLoot: [...tripLoot],
+      clearedPuzzles: [...clearedPuzzles],
       nav: {
         screen,
         history: [...history],
@@ -601,13 +604,30 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
     };
   }
 
+  function puzzleCleared(id: string): boolean {
+    return clearedPuzzles.includes(id);
+  }
+
+  function markPuzzleCleared(id: string): void {
+    if (clearedPuzzles.includes(id)) return;
+    clearedPuzzles = [...clearedPuzzles, id];
+  }
+
   function enter(next: ScreenId): void {
     const found = flow?.scenes.find((item) => item.screen === next);
-    const message = next === 'uncle' ? takeEvidence('E03') : null;
     if (!found) return;
+    if (next === 'uncle') {
+      if (puzzleCleared('crossword')) {
+        const message = takeEvidence('E03');
+        openDialogue('flow/dialogue/mek-thanks');
+        if (message) announceBottom(message);
+        return;
+      }
+      if (found.enter) openDialogue(found.enter);
+      return;
+    }
     const slug = found.enter;
     if (slug) openDialogue(slug);
-    if (message) announceBottom(message);
   }
 
   async function withLoading(task: () => Promise<void>): Promise<void> {
@@ -1068,6 +1088,7 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
     const keepables = [...new Set([...bag, ...tripLoot])].filter(isKeepableItem);
     storage = [...new Set([...storage, ...keepables])];
     tripLoot = [];
+    clearedPuzzles = [];
     evidence = next.evidence;
     bag = next.bag;
     solved = next.solved;
@@ -1430,9 +1451,12 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
       if (!practice && !crossCorrect(cross.fill)) { showToast('ยังไม่ครบหรือไม่ถูก — ลองคำใบ้ได้'); return; }
       offerWin(async () => {
         if (practice) { await finishPracticeLevel(); return; }
+        markPuzzleCleared('crossword');
+        const message = takeEvidence('E03');
         history = history.slice(0, -1);
         await go('uncle', true, false);
         openDialogue('flow/dialogue/mek-thanks');
+        if (message) announceBottom(message);
       });
     },
     pickPiece(index: number) {

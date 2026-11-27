@@ -282,6 +282,8 @@ export type FlowProgress = {
   storage?: string[];
   /** Keepable items obtained in the current event trip, still in the bag until homecoming. */
   tripLoot?: string[];
+  /** Story puzzles won in this event run, e.g. 'crossword'. Reset on replay. */
+  clearedPuzzles?: string[];
 
   /** Restored navigation after refresh. */
   nav?: {
