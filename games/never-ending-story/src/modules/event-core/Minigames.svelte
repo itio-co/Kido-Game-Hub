@@ -27,8 +27,7 @@
 <div class="mg">
   <div class="mgbar">
     {#if session.practice}<span class="prac">ฝึก · ด่าน {session.lvN}</span>{/if}
-    <span class="t">⏱ {elapsed} · 🏆 {bestText} <small>({difficultyLabel})</small></span>
-    <span class="stars">{session.starText()}</span>
+    <span class="t">⏱ {elapsed} · 🏆 <span data-testid="minigame-hud-best">{bestText}</span> <small>({difficultyLabel})</small></span>
     <button type="button" class="mgbtn" onclick={() => session.puzzleHint()}>คำใบ้</button>
   </div>
 
@@ -113,7 +112,6 @@
   .mg { position: absolute; inset: 0; z-index: 1; padding: 78px 12px 96px; display: flex; flex-direction: column; gap: 10px; overflow: auto; background: linear-gradient(160deg, #1d3346, #2c4a5e); }
   .mgbar { display: flex; align-items: center; justify-content: space-between; gap: 6px; flex-wrap: wrap; background: rgba(6, 30, 48, 0.92); color: #eaf6ff; border: 1px solid #39e0ff; border-radius: 12px; padding: 8px 10px; font-size: var(--fs-sm); }
   .t { font-variant-numeric: tabular-nums; }
-  .stars { letter-spacing: 1px; }
   .prac { background: #ffcf4a; color: #3a2a00; border-radius: 8px; padding: 2px 6px; font-weight: 800; }
   .mgbtn { background: #0d4a66; border: 1px solid #39e0ff; color: #fff; border-radius: 10px; padding: 8px 12px; font-weight: 700; }
   .done { align-self: flex-end; }

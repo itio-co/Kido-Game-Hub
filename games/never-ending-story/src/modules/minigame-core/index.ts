@@ -6,6 +6,10 @@ export { default as UnsupportedRuleset } from './UnsupportedRuleset.svelte';
 export { default as WinResultDialog } from './WinResultDialog.svelte';
 export {
   BEST_STORAGE_KEY,
+  migrateBests,
+  difficultyId,
+  canonicalBestKey,
+  DIFFICULTY_IDS,
   applyBest,
   bestKey,
   formatTime,
@@ -14,6 +18,7 @@ export {
   readBests,
   recordBest,
   type BestEntry,
+  type DifficultyId,
   type BestStore,
   type WinResult,
 } from './result';
