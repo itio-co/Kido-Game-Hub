@@ -7,12 +7,15 @@ import { normalizeAppBase } from '../src/lib/deployment';
 import { godApi } from '../src/modules/god/server';
 import { decodeRun, tagFor, unb64url, type ChallengeRunPb } from '../src/modules/challenge/proto';
 import { acceptRuleset, legacyRuleset, rhythmFor, scoringFor, versionIn, resolveGame } from '../src/lib/rulesetCatalog';
+import { streakRead, streakWin, type StreakReply } from './streak';
 
 interface Env {
   ASSETS_KV: KVNamespace;
   DB: D1Database;
   GOD_ADMIN_PASSWORD?: string;
   APP_BASE?: string;
+  /** Secret: seals the client streak token (AES-GCM). Without it the streak still counts, just with no token. */
+  STREAK_TOKEN_KEY?: string;
 }
 
 const GAMES = ['cross', 'jig', 'slide'];
@@ -142,9 +145,27 @@ async function revDoc(req: Request, env: Env, pid: string, table: 'player_state'
   return json({ ok: true, rev: rev + 1, updated_at: now });
 }
 
+const WIN_GAME_RE = /^[a-z][a-z0-9-]{1,24}$/;
+
+/** Streak replies never break the request they ride on; the token check result is returned, never logged. */
+async function safeStreak(work: () => Promise<StreakReply>): Promise<StreakReply | null> {
+  try { return await work(); } catch { return null; }
+}
+
 async function meApi(req: Request, env: Env, path: string): Promise<Response> {
   const pid = await playerFromToken(env, req);
   if (!pid) return err(401, 'unauthorized');
+  if (path === '/streak' && req.method === 'GET') {
+    const streak = await safeStreak(() => streakRead(env, pid, req.headers.get('x-streak-token')));
+    return streak ? json({ ok: true, streak }) : err(503, 'streak unavailable');
+  }
+  if (path === '/streak/win' && req.method === 'POST') {
+    // Wins outside ranked runs (story and practice puzzles). Ranked runs count through POST /runs.
+    const b = await body(req);
+    if (!WIN_GAME_RE.test(String(b.game ?? ''))) return err(400, 'bad game');
+    const streak = await safeStreak(() => streakWin(env, pid, b.streakToken));
+    return streak ? json({ ok: true, streak }) : err(503, 'streak unavailable');
+  }
   if (path === '/state') return revDoc(req, env, pid, 'player_state', 'state_json');
   if (path === '/home') return revDoc(req, env, pid, 'player_home', 'room_json');
   if (path === '/events' && req.method === 'GET') {
@@ -239,6 +260,11 @@ async function api(req: Request, env: Env, path: string): Promise<Response> {
     }
     const nick = cleanNick(run.nickname);
     const ruleset = rulesetFor(run) ?? legacyRuleset(run.game);
+    // A finished verified run with a score is a win for the daily streak, once per session.
+    const prior = verified
+      ? await env.DB.prepare('SELECT verified FROM runs WHERE sessionId=?').bind(run.sessionId).first<{ verified: number }>()
+      : null;
+    const countsForStreak = verified === 1 && run.score > 0 && prior?.verified !== 1;
     // Unverified (challenger) runs only create an unclaimed player row; they never change a claimed one.
     await env.DB.prepare(
       `INSERT INTO players (playerId,nickname,token_hash,created_at,last_seen) VALUES (?,?,NULL,?,?)
@@ -252,7 +278,9 @@ async function api(req: Request, env: Env, path: string): Promise<Response> {
        ON CONFLICT(sessionId) DO UPDATE SET verified=1 WHERE excluded.verified=1 AND runs.playerId=excluded.playerId`,
     ).bind(run.sessionId, run.playerId, nick, run.game, run.difficulty, run.seed, run.score, run.timeMs, run.version, ruleset, run.timestampMs || now,
       run.challengerSessionId || null, verified, now).run();
-    return json({ ok: true, sessionId: run.sessionId, verified: !!verified, stored: (res.meta?.changes ?? 0) > 0 });
+    const stored = (res.meta?.changes ?? 0) > 0;
+    const streak = countsForStreak && stored ? await safeStreak(() => streakWin(env, run.playerId, b.streakToken)) : null;
+    return json({ ok: true, sessionId: run.sessionId, verified: !!verified, stored, ...(streak ? { streak } : {}) });
   }
 
   if (path === '/leaderboard' && req.method === 'GET') {
