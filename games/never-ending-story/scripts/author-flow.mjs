@@ -89,7 +89,7 @@ const scenes = [
       spot('นาฬิกา', 'flow/living-room/clock', 13, 12.5, { type: 'clock' }, { en: 'Clock' }),
       spot('ปฏิทินของย่า', 'flow/living-room/calendar', 80, 27, { type: 'calendar' }, { en: 'Grandma calendar' }),
       spot('ถาดชิ้นแผนผัง', 'flow/living-room/tray', 41, 37, go('tray'), { en: 'Map tray', when: 'now', done: 'E04' }),
-      spot('ประตูไปครัว', 'flow/living-room/kitchen-door', 12, 25.3, go('kitchen'), { en: 'Door to the kitchen', when: 'now' }),
+      spot('ประตูไปครัว', 'flow/living-room/kitchen-door', 12, 25.3, go('kitchen'), { en: 'Door to the kitchen', when: 'always' }),
       spot('ประตูไปห้องทำงาน', 'flow/living-room/study-door', 92, 33.8, go('study'), { en: 'Door to the study', when: 'now' }),
       spot('กล่องรูปดาว (ข้างโซฟา)', 'flow/living-room/star-box', 85.3, 70.5, toast('สัญลักษณ์ตรงแล้ว แต่ตำแหน่งนี้ตรงกับผังเก็บภาพถ่ายหรือยัง?'), { en: 'Star box by the sofa', when: 'now' }),
       spot('โต๊ะกลาง', 'flow/living-room/table', 42, 71.1, go('table'), { en: 'Coffee table', when: 'now', done: 'E01' }),
@@ -141,11 +141,12 @@ const scenes = [
     titleEn: 'Kitchen',
     screen: 'kitchen',
     image: 'kitchen-wide.jpg',
+    images: { now: 'kitchen-wide.jpg', afternoon: 'kitchen-wide-past.jpg', yesterday: 'kitchen-wide-past.jpg' },
     map: true,
     hud: 'ไม่บังคับ',
     spots: [
-      spot('ผ้าเปียกบนราว', 'flow/kitchen/cloth', 31.5, 40.5, go('kitchen-close'), { en: 'Wet cloth' }),
-      spot('แจกันเติมน้ำใหม่', 'flow/kitchen/vase', 79.5, 50, go('kitchen-close'), { en: 'Refilled vase' }),
+      spot('ผ้าเปียกบนราว', 'flow/kitchen/cloth', 31.5, 40.5, go('kitchen-close'), { en: 'Wet cloth', when: 'now' }),
+      spot('แจกันเติมน้ำใหม่', 'flow/kitchen/vase', 79.5, 50, go('kitchen-close'), { en: 'Refilled vase', when: 'now' }),
     ],
   }),
   ent('scene', 'ครัวมุมใกล้', 'flow/scene/kitchen-close', {
@@ -155,8 +156,8 @@ const scenes = [
     map: true,
     hud: 'ร่องรอยน้ำหก',
     spots: [
-      spot('ผ้าเปียก', 'flow/kitchen-close/cloth', 28.6, 40, { type: 'evidence', evidence: 'E02', who: 'ผ้าเปียก', text: 'ผ้าที่ใช้เช็ดโต๊ะยังเปียก' }, { en: 'Wet cloth' }),
-      spot('แจกันเติมน้ำใหม่', 'flow/kitchen-close/vase', 68.7, 59.5, toast('แจกันถูกเติมน้ำใหม่ — มีน้ำหกจริง'), { en: 'Refilled vase' }),
+      spot('ผ้าเปียก', 'flow/kitchen-close/cloth', 28.6, 40, { type: 'evidence', evidence: 'E02', who: 'ผ้าเปียก', text: 'ผ้าที่ใช้เช็ดโต๊ะยังเปียก' }, { en: 'Wet cloth', when: 'now' }),
+      spot('แจกันเติมน้ำใหม่', 'flow/kitchen-close/vase', 68.7, 59.5, toast('แจกันถูกเติมน้ำใหม่ — มีน้ำหกจริง'), { en: 'Refilled vase', when: 'now' }),
     ],
   }),
   ent('scene', 'โต๊ะกลาง', 'flow/scene/table', {

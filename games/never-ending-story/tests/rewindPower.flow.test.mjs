@@ -34,6 +34,16 @@ assert.equal(table[0].action?.evidence, 'E01');
 
 const kitchen = grants('E06');
 assert.ok(kitchen.length >= 2 && kitchen.every((spot) => spot.scene === 'flow/scene/kitchen-close'));
+assert.ok(kitchen.every((spot) => spot.when === 'now'), 'E06 close-up spots are present-day only');
+
+const kitchenWide = flow.scenes.find((scene) => scene.screen === 'kitchen');
+assert.ok(kitchenWide.images.now === 'kitchen-wide.jpg');
+assert.ok(kitchenWide.images.afternoon === 'kitchen-wide-past.jpg');
+assert.ok(kitchenWide.images.yesterday === 'kitchen-wide-past.jpg');
+assert.ok((kitchenWide.spots ?? []).every((spot) => spot.when === 'now'), 'vase and towel hidden in the past');
+
+const door = spots.find((spot) => spot.slug === 'flow/living-room/kitchen-door');
+assert.equal(door.when, 'always', 'kitchen door works in every time slot');
 
 const why = flow.questions.find((item) => item.slug === 'flow/question/why');
 assert.deepEqual([...(why?.evidence ?? [])].sort(), ['E02', 'E06']);

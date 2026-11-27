@@ -639,7 +639,6 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
       fading = false;
     }
     if (!replace && next !== screen) history = [...history, screen];
-    if (next !== 'living-room') slot = 'now';
     screen = next;
     if (next === 'study') mapFloor = 2;
     else if (next === 'living-room' || next === 'kitchen' || next === 'kitchen-close') mapFloor = 1;
@@ -1012,7 +1011,8 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
     if (solved && !poster && !caseDone && bag.includes(CASE_PHOTO_ID)) {
       return `${t('hud.takePoster')} · ${t('hud.evidence', { n: countedEvidence(catalogCodes(flow), evidence).length, total: catalogCodes(flow).length || 4 })}`;
     }
-    const clock = scene.timed ? `⏳ ${flow.slots.find((item) => item.slot === slot)?.title ?? ''} · ` : '';
+    const slotTitle = flow.slots.find((item) => item.slot === slot)?.title ?? '';
+    const clock = (scene.timed || slot !== 'now') && slotTitle ? `⏳ ${slotTitle} · ` : '';
     const found = countedEvidence(catalogCodes(flow), evidence).length;
     const hud = scene.floors?.find((item) => item.floor === mapFloor)?.hud ?? scene.hud;
     return `${clock}${hud} · ${t('hud.evidence', { n: found, total: catalogCodes(flow).length || 4 })}`;

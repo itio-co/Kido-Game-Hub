@@ -655,7 +655,7 @@
           "titleEn": "Door to the kitchen",
           "x": 12,
           "y": 25.3,
-          "when": "now",
+          "when": "always",
           "action": {
             "type": "go",
             "screen": "kitchen"
@@ -958,7 +958,7 @@
           "titleEn": "Wet cloth",
           "x": 68.5,
           "y": 40.5,
-          "when": "always",
+          "when": "now",
           "action": {
             "type": "go",
             "screen": "kitchen-close"
@@ -973,14 +973,19 @@
           "titleEn": "Refilled vase",
           "x": 57,
           "y": 50,
-          "when": "always",
+          "when": "now",
           "action": {
             "type": "go",
             "screen": "kitchen-close"
           },
           "doneEvidence": null
         }
-      ]
+      ],
+      "images": {
+        "now": "kitchen-wide.jpg",
+        "afternoon": "kitchen-wide-past.jpg",
+        "yesterday": "kitchen-wide-past.jpg"
+      }
     },
     {
       "id": "a4c0e001-0000-4000-8000-000000000037",
@@ -1001,7 +1006,7 @@
           "titleEn": "Wet cloth",
           "x": 71.4,
           "y": 40,
-          "when": "always",
+          "when": "now",
           "action": {
             "type": "evidence",
             "evidence": "E06",
@@ -1018,7 +1023,7 @@
           "titleEn": "Refilled vase",
           "x": 31.3,
           "y": 59.5,
-          "when": "always",
+          "when": "now",
           "action": {
             "type": "evidence",
             "evidence": "E06",
