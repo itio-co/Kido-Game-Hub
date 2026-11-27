@@ -78,7 +78,7 @@ import {
 
 export type TalkChoice = { title: string; run: () => void };
 export type Talk = { who: string; text: string; choices: TalkChoice[]; notice?: boolean };
-export type NoteInspect = { front: string; back: string; side: 'front' | 'back' };
+export type NoteInspect = { front: string; back?: string; side?: 'front' | 'back' };
 
 const EVENT_CASE_SCREENS = new Set<ScreenId>([
   'house-map', 'living-room', 'study', 'kitchen', 'kitchen-close', 'table', 'tray',

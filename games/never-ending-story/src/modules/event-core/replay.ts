@@ -33,7 +33,7 @@ export type EventRunState = {
   marks: number[];
   talk: unknown | null;
   talkSlug: string | null;
-  overlay: null | 'calendar' | 'clock' | 'day' | 'bag';
+  overlay: null | 'calendar' | 'clock' | 'day' | 'bag' | 'trip-summary' | 'storage';
   selected: string | null;
   hintSpot: string | null;
   toastText: string | null;

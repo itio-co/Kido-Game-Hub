@@ -94,7 +94,6 @@
 
   let drags = $state<Drag[]>([]);
   let pinch = $state<Pinch | null>(null);
-  let handleDrag = $state<{ id: number; pointerId: number } | null>(null);
   let rightRotate = $state<{ id: number; pointerId: number } | null>(null);
   const pointers = new Map<number, { x: number; y: number; pieceId: number }>();
 
@@ -173,25 +172,6 @@
     emit(selectPiece(board, id));
   }
 
-  function downOnHandle(event: PointerEvent, id: number): void {
-    if (!board) return;
-    const piece = pieceAt(id);
-    if (!piece || piece.locked || board.rotation === 'none') return;
-    event.preventDefault();
-    event.stopPropagation();
-    (event.currentTarget as HTMLElement).setPointerCapture?.(event.pointerId);
-    handleDrag = { id, pointerId: event.pointerId, };
-    pointers.set(event.pointerId, { x: event.clientX, y: event.clientY, pieceId: id });
-    emit(selectPiece(board, id));
-    if (board.rotation === 'quarter') {
-      // Rotation happens on a short tap (pointerup) so a drag doesn't also spin it.
-      return;
-    }
-    const cell = toCell(event.clientX, event.clientY);
-    const angle = Math.atan2(cell.y - piece.y, cell.x - piece.x) * (180 / Math.PI) + 90;
-    emit(setPieceAngle(selectPiece(board, id), id, angle));
-  }
-
   function onPointerMove(event: PointerEvent): void {
     if (!board) return;
     const tracked = pointers.get(event.pointerId);
@@ -219,16 +199,6 @@
       return;
     }
 
-    if (handleDrag && handleDrag.pointerId === event.pointerId && board.rotation === 'free') {
-      const piece = pieceAt(handleDrag.id);
-      if (!piece) return;
-      event.preventDefault();
-      const cell = toCell(event.clientX, event.clientY);
-      const angle = Math.atan2(cell.y - piece.y, cell.x - piece.x) * (180 / Math.PI) + 90;
-      emit(setPieceAngle(board, handleDrag.id, angle));
-      return;
-    }
-
     const drag = drags.find((item) => item.pointerId === event.pointerId);
     if (!drag) return;
     event.preventDefault();
@@ -238,21 +208,19 @@
 
   function release(event: PointerEvent): void {
     if (!board) return;
-    const idFromHandle = handleDrag && handleDrag.pointerId === event.pointerId ? handleDrag.id : null;
     const idFromRight = rightRotate && rightRotate.pointerId === event.pointerId ? rightRotate.id : null;
     const idFromPinch = pinch && (event.pointerId === pinch.a || event.pointerId === pinch.b) ? pinch.pieceId : null;
     const drag = drags.find((item) => item.pointerId === event.pointerId);
-    const id = idFromHandle ?? idFromRight ?? idFromPinch ?? drag?.ids[0];
+    const id = idFromRight ?? idFromPinch ?? drag?.ids[0];
 
     let current = isJigBoard(jig) ? jig : board;
-    if (drag && current.rotation === 'quarter' && idFromHandle === null && idFromPinch === null) {
+    if (drag && current.rotation === 'quarter' && idFromPinch === null) {
       const moved = Math.hypot(event.clientX - drag.startX, event.clientY - drag.startY);
       if (moved < 10) current = tapRotate(current, drag.ids[0], 90);
     }
 
     pointers.delete(event.pointerId);
     drags = drags.filter((item) => item.pointerId !== event.pointerId);
-    if (handleDrag && handleDrag.pointerId === event.pointerId) handleDrag = null;
     if (rightRotate && rightRotate.pointerId === event.pointerId) rightRotate = null;
     if (pinch && (event.pointerId === pinch.a || event.pointerId === pinch.b)) pinch = null;
 
@@ -317,6 +285,8 @@
     data-complete={jigComplete(board) ? 'true' : 'false'}
     data-seed={board.seed}
     style="--aspect:{aspect}"
+    role="application"
+    aria-label="กระดานจิ๊กซอว์"
     oncontextmenu={(event) => event.preventDefault()}
   >
     <div class="frame" bind:this={boardEl} data-testid="jigsaw-frame">
@@ -336,7 +306,7 @@
     </div>
 
     {#each board.pieces as piece (piece.id)}
-      {@const dragging = drags.some((item) => item.ids.includes(piece.id)) || (pinch?.pieceId === piece.id) || handleDrag?.id === piece.id || rightRotate?.id === piece.id}
+      {@const dragging = drags.some((item) => item.ids.includes(piece.id)) || (pinch?.pieceId === piece.id) || rightRotate?.id === piece.id}
       {@const d = piecePath(board.edges[piece.id], cellW, cellH, tab)}
       {@const img = imageAttrs(piece.col, piece.row)}
       {@const clipId = `jig-clip-${board.seed}-${piece.id}`}
@@ -455,28 +425,5 @@
     stroke: rgba(255, 232, 196, 0.55);
     stroke-width: 1;
     stroke-linejoin: round;
-  }
-  .rot {
-    position: absolute;
-    left: 50%;
-    top: -2px;
-    width: 28px;
-    height: 28px;
-    transform: translate(-50%, -110%);
-    border: 2px solid #f3e2c2;
-    border-radius: 50%;
-    background: #6b4328;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
-    padding: 0;
-    cursor: pointer;
-    touch-action: none;
-  }
-  .rot::before {
-    content: '';
-    position: absolute;
-    inset: 6px;
-    border: 2px solid #f3e2c2;
-    border-left-color: transparent;
-    border-radius: 50%;
   }
 </style>
