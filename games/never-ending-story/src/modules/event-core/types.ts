@@ -38,7 +38,7 @@ export type FlowAction =
   | { type: 'evidence'; evidence: string; who: string; text: string }
   | { type: 'dialogue'; dialogue: string }
   | { type: 'lines'; who: string; lines: string[]; evidence?: string }
-  | { type: 'inspect-note'; evidence?: string; front: string; back: string }
+  | { type: 'inspect-note'; evidence?: string; front: string; back?: string }
   | { type: 'clock' }
   | { type: 'calendar' }
   | { type: 'minigame'; screen: 'crossword' | 'jigsaw' | 'slide' }

@@ -290,7 +290,7 @@
   {/if}
 
   {#if session.note}
-    <NoteInspect note={session.note} onFlip={() => session.flipNote()} onClose={() => session.closeNote()} />
+    <NoteInspect note={session.note} onClose={() => session.closeNote()} />
   {/if}
 
   {#if session.talk}

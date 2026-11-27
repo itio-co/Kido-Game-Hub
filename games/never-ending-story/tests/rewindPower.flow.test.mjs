@@ -31,6 +31,10 @@ assert.equal(table.length, 1);
 assert.equal(table[0].slug, 'flow/table/note');
 assert.equal(table[0].action?.type, 'inspect-note');
 assert.equal(table[0].action?.evidence, 'E01');
+assert.match(table[0].action?.front ?? '', /ขอย้ายเก็บก่อน/);
+assert.match(table[0].action?.front ?? '', /เก็บตามผังเดิมนะ/);
+assert.match(table[0].action?.front ?? '', /โต๊ะยังเปียกอยู่/);
+assert.ok(!(table[0].action?.back), 'note has no back side');
 
 const kitchen = grants('E06');
 assert.ok(kitchen.length >= 2 && kitchen.every((spot) => spot.scene === 'flow/scene/kitchen-close'));

@@ -171,7 +171,7 @@ const scenes = [
         type: 'evidence',
         evidence: 'E01',
         who: 'ข้อความ',
-        text: 'ขอย้ายเก็บก่อน — ริน / (ด้านหลัง) เก็บตามผังเดิมนะ โต๊ะยังเปียกอยู่',
+        text: 'ขอย้ายเก็บก่อน\nเก็บตามผังเดิมนะ\nโต๊ะยังเปียกอยู่\n\n— ริน',
       }, { en: "Aunt Rin's note", done: 'E01' }),
       spot('รอยน้ำ', 'flow/table/water', 39.8, 53.3, { type: 'evidence', evidence: 'E02', who: 'รอยน้ำ', text: 'โต๊ะเปียก — น้ำหกจากแจกัน' }, { en: 'Water mark', done: 'E02' }),
       spot('รอยที่อัลบั้มเคยวาง', 'flow/table/album-mark', 70, 64.3, toast('ตรงนี้เคยมีอัลบั้มวางอยู่'), { en: 'Where the album sat' }),
@@ -427,7 +427,7 @@ const flow = ent('story-flow', 'คดี 01 อัลบั้มครอบ�
   evidence: [
     ent('evidence', 'ข้อความของน้าริน', 'flow/evidence/e01', {
       code: 'E01',
-      text: 'ข้อความของน้าริน: "ขอย้ายเก็บก่อน — ริน / เก็บตามผังเดิมนะ โต๊ะยังเปียกอยู่"',
+      text: 'ข้อความของน้าริน: "ขอย้ายเก็บก่อน เก็บตามผังเดิมนะ โต๊ะยังเปียกอยู่ — ริน"',
     }),
     ent('evidence', 'โต๊ะที่เปียก', 'flow/evidence/e02', {
       code: 'E02',
