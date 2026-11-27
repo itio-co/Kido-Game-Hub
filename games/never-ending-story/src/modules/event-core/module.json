@@ -2,7 +2,7 @@
   "id": "event-core",
   "name": "Event framework",
   "kind": "event-core",
-  "version": "1.2.12",
+  "version": "1.2.13",
   "description": "Shared event framework: lifecycle, cutscenes, stage map, case notebook, event HUD, and the D1 progress document. Story packs such as event-01 supply the content.",
   "entry": "src/modules/event-core/index.ts",
   "publicEntries": [
@@ -11,7 +11,7 @@
   ],
   "dependsOn": {
     "core": ">=0.6.24",
-    "minigame-core": "^1.1.0",
+    "minigame-core": "^1.2.0",
     "character": "^1.0.0",
     "cutscene": "^1.0.0",
     "crossword": "^1.0.0",

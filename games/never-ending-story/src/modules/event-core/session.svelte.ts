@@ -66,6 +66,7 @@ import { tapFanEgg } from '../../lib/eggs';
 import { endingIdFor, primaryEventId } from './story';
 import { playModeFromContext, type PlayMode } from '../minigame-core/framework';
 import { bestKey, readBest, recordBest, type WinResult } from '../minigame-core/result';
+import { reportWin } from '../minigame-core/report';
 import {
   isEventRunActive,
   isEventRunScreen,
@@ -226,6 +227,7 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
     const stars = starCount(hints);
     const game = puzzleGame();
     const rec = recordBest(currentBestKey(), timeMs, stars);
+    reportWin(game);
     winProceed = proceed;
     winResult = {
       game,
