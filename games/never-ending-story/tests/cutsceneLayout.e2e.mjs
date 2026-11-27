@@ -15,12 +15,14 @@ import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
 
 const BASE = process.env.BASE ?? 'http://127.0.0.1:4173/';
+const SHELF = '6bb33448-6b61-4564-91e1-125bae9cf57c';
+const PHOTO = '📷 รูปปู่';
 const SHOTS = process.env.SHOTS ?? '';
 const VIEWPORTS = [[390, 844], [360, 740], [1280, 800]];
 const browser = await chromium.launch({ executablePath: process.env.CHROME || undefined, args: ['--no-sandbox'] });
 const seed = (caseDone) => JSON.stringify({
   version: 1,
-  player: { onboardingComplete: true, prologueSeen: true, textSize: 'md', soundEnabled: false, calendarTheme: null, decor: {}, room: { calendar: 'original', grandpaPhoto: 'shelf' } },
+  player: { onboardingComplete: true, prologueSeen: true, textSize: 'md', soundEnabled: false, calendarTheme: null, decor: caseDone ? { [SHELF]: PHOTO } : {}, room: { calendar: 'original', grandpaPhoto: 'shelf' } },
   knowledge: { evidence: [], solvedCaseIds: caseDone ? ['case-01'] : [], exploreHints: 0 },
   caseState: { facts: {} },
   flow: { caseDone, solved: caseDone, cleared: caseDone },

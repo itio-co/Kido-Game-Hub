@@ -10,8 +10,11 @@ import {
   normalizeGrandpaPhoto,
   photoOnShelf,
   photoPlaced,
+  shouldPlayPhotoPlacement,
+  GRANDPA_PHOTO_SLUG,
 } from '../src/lib/decor.ts';
 import { normalizeRoomDecor } from '../src/lib/calendarDecor.ts';
+import { itemBySlug, itemIconFile, itemImageFile, registerItems, registerKinds, type Item, type ItemKindRecord } from '../src/modules/item/catalog.ts';
 
 declare const process: { exitCode?: number };
 let failed = 0;
@@ -34,6 +37,7 @@ const RUG = 'd49d729b-1f63-42c2-8e9b-bee5e4d5e896';
 test('isGrandpaPhoto accepts the new label, the legacy ตา label, and album-photo', () => {
   ok(isGrandpaPhoto(DECOR_PHOTO), 'new');
   ok(isGrandpaPhoto(DECOR_PHOTO_LEGACY), 'legacy');
+  ok(isGrandpaPhoto(GRANDPA_PHOTO_SLUG), 'slug');
   ok(isGrandpaPhoto('album-photo'), 'id');
   ok(!isGrandpaPhoto(null), 'null');
   ok(!isGrandpaPhoto('lamp'), 'other');
@@ -109,5 +113,47 @@ test('putting the photo away hides it but never un-places it', () => {
   ok(!photoOnShelf({ [KEEPSAKE_SHELF_ID]: null }, 'shelf'), 'empty slot');
 });
 
+
+test('placement scene plays at home after a clear, only until the photo is placed', () => {
+  ok(!shouldPlayPhotoPlacement({ placed: false, screen: 'player-room' }), 'unsolved room');
+  ok(!shouldPlayPhotoPlacement({ placed: false, screen: 'player-room', reward: false, cleared: false, caseDone: false }), 'flags false');
+  ok(shouldPlayPhotoPlacement({ placed: false, screen: 'player-room', reward: true }), 'reward');
+  ok(shouldPlayPhotoPlacement({ placed: false, screen: 'player-room', cleared: true }), 'cleared');
+  ok(shouldPlayPhotoPlacement({ placed: false, screen: 'player-room', caseDone: true }), 'caseDone');
+  ok(!shouldPlayPhotoPlacement({ placed: false, screen: 'ending-comic', reward: true, cleared: true, caseDone: true }), 'not in the room');
+  ok(!shouldPlayPhotoPlacement({ placed: true, screen: 'player-room', reward: true, cleared: true, caseDone: true }), 'already placed');
+  ok(!shouldPlayPhotoPlacement({ placed: true, screen: 'player-room', cleared: true, caseDone: false }), 'replay keeps the photo, no scene');
+});
+
+test('the placed keepsake photo is the album-photo item from the item catalog', () => {
+  const frame: ItemKindRecord = {
+    id: 'e0b95b34-eed9-45f7-943a-897bbfd2c3ed',
+    kind: 'item-kind',
+    title: 'กรอบรูป',
+    titleEn: 'Picture frame',
+    slug: 'picture-frame',
+    icon: 'items/picture-frame.png',
+  };
+  const photo: Item = {
+    id: '37b6ab64-1fff-4767-8bcb-dd4b6de88b8e',
+    kind: 'picture-frame',
+    title: 'รูปปู่ตอนหนุ่ม',
+    titleEn: "Young Grandpa's photo",
+    slug: 'album-photo',
+    image: 'items/young-grandpa-photo.png',
+    description: 'อยู่ในอัลบั้มจากกล่องรูปดาว พร้อมโปสเตอร์ เอาไปให้ย่าดู',
+  };
+  registerKinds([frame]);
+  registerItems([photo]);
+  const item = itemBySlug(GRANDPA_PHOTO_SLUG);
+  ok(!!item, 'catalog has album-photo');
+  ok(item!.slug === GRANDPA_PHOTO_SLUG, item!.slug);
+  ok(item!.title === 'รูปปู่ตอนหนุ่ม', item!.title);
+  ok(item!.kind === 'picture-frame', item!.kind);
+  ok(itemIconFile(item!) === 'items/picture-frame.png', String(itemIconFile(item!)));
+  ok(itemImageFile(item!) === 'items/young-grandpa-photo.png', String(itemImageFile(item!)));
+  ok(isGrandpaPhoto(item!.slug), 'catalog slug');
+  ok(isGrandpaPhoto(item!.title), 'catalog title');
+});
 console.log(failed ? `decor: ${failed} failed` : 'decor: all passed');
 if (failed) process.exitCode = 1;

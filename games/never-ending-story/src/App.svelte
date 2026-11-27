@@ -7,7 +7,7 @@
   import CalendarPanel from './components/CalendarPanel.svelte';
   import PhotoPanel from './components/PhotoPanel.svelte';
   import { isDesignLocked, themeForDesign, type CalendarState } from './lib/calendarDecor';
-  import { FlowView, createFlow, loadFlow } from './modules/event-core';
+  import { ComicPanel, FlowView, createFlow, loadFlow } from './modules/event-core';
   import Hud from './components/Hud.svelte';
   import Onboarding from './components/Onboarding.svelte';
   import Prologue from './components/Prologue.svelte';
@@ -21,7 +21,8 @@
   import { minigameRoute } from './modules/minigame-core';
   import { loadPlayerRoom } from './lib/loadRoom';
   import { readSave, writeSave } from './lib/save';
-  import { DECOR_PHOTO, KEEPSAKE_SHELF_ID, isGrandpaPhoto, photoPlaced, type GrandpaPhotoState } from './lib/decor';
+  import { DECOR_PHOTO, GRANDPA_PHOTO_SLUG, KEEPSAKE_SHELF_ID, isGrandpaPhoto, photoPlaced, shouldPlayPhotoPlacement, type GrandpaPhotoState } from './lib/decor';
+  import { itemBySlug, itemCopy } from './modules/item';
   import { appStorage } from './lib/deployment';
   import { buildInfo } from './lib/buildInfo';
   import {
@@ -144,6 +145,10 @@
   }
 
   function onBack(): void {
+    if (placingPhoto) {
+      finishPlacement();
+      return;
+    }
     if (overlay) {
       overlay = null;
       return;
@@ -206,8 +211,8 @@
     return !!slotId && slotId === KEEPSAKE_SHELF_ID;
   }
 
-  function placeReward(): void {
-    if (!canPlacePhoto(decorSlotId) || !session.reward) return;
+  function placeGrandpaPhoto(): boolean {
+    if (photoPlaced(save.player.decor)) return false;
     const next = { ...save.player.decor };
     for (const key of Object.keys(next)) {
       if (isGrandpaPhoto(next[key])) next[key] = null;
@@ -216,8 +221,34 @@
     save.player.decor = next;
     save.player.room = { ...save.player.room, grandpaPhoto: 'shelf' };
     commit();
+    return true;
+  }
+
+  function placeReward(): void {
+    if (!canPlacePhoto(decorSlotId) || !session.reward) return;
+    if (!placeGrandpaPhoto()) return;
     overlay = null;
     showToast(t('toast.photoPlaced'));
+  }
+
+  const albumPhotoItem = $derived(itemBySlug(GRANDPA_PHOTO_SLUG));
+
+  const placingPhoto = $derived(
+    !showTutor
+      && !showPrologue
+      && session.ready
+      && shouldPlayPhotoPlacement({
+        placed: photoPlaced(save.player.decor),
+        screen: session.screen,
+        reward: session.reward,
+        cleared: session.cleared,
+        caseDone: session.caseDone,
+      }),
+  );
+
+  function finishPlacement(): void {
+    placeGrandpaPhoto();
+    session.showToast(t('toast.photoPlaced'));
   }
 
   /** Put the photo away or back. Only player.room changes; the placed decor (story record) stays. */
@@ -391,13 +422,30 @@
       {#if session.ready && session.screen !== 'player-room'}
         <FlowView {session} />
       {/if}
+      {#if placingPhoto}
+        <div class="placement-layer" data-testid="photo-placement" data-item={GRANDPA_PHOTO_SLUG} aria-label={albumPhotoItem ? itemCopy(albumPhotoItem).title : t('photo.title')}>
+          <ComicPanel
+            image="photo-placement.jpg"
+            lines={[]}
+            caption={t('placement.caption')}
+            tapLabel={t('placement.tapDone')}
+            count={1}
+            index={0}
+            onNext={finishPlacement}
+          >
+            {#snippet actions()}
+              <button type="button" class="skip" data-testid="comic-skip" onclick={finishPlacement}>{t('ending.skip')}</button>
+            {/snippet}
+          </ComicPanel>
+        </div>
+      {/if}
     </div>
 
     <Hud
       title={session.screen === 'player-room' ? room.title : session.title}
       hintLabel={room.hud.hintLabel}
       settingsLabel={room.hud.settingsLabel}
-      showHint={!['event-select', 'cutscene', 'ending-comic', 'difficulty', 'practice', 'level-map', 'crossword', 'jigsaw', 'slide'].includes(session.screen)}
+      showHint={!placingPhoto && !['event-select', 'cutscene', 'ending-comic', 'difficulty', 'practice', 'level-map', 'crossword', 'jigsaw', 'slide'].includes(session.screen)}
       onHint={onHint}
       onSettings={() => { void openSettings(); }}
     />
@@ -525,7 +573,7 @@
       {/key}
     {/if}
 
-    {#if session.toastText || toast}
+    {#if !placingPhoto && (session.toastText || toast)}
       <p class="toast" class:toast-low={session.context !== 'event' || session.toastLow} role="status">{session.toastText || toast}</p>
     {/if}
   {/if}
@@ -535,6 +583,8 @@
 </div>
 
 <style>
+  .placement-layer { position: absolute; inset: 0; z-index: 6; }
+  .placement-layer :global(.skip) { background: rgba(0, 0, 0, 0.55); color: #fff; border: 0; border-radius: 16px; padding: 8px 14px; font-size: var(--fs-sm); font-weight: 700; white-space: nowrap; }
   .phone.wide { width: 100vw; }
   .room-layer { position: absolute; inset: 0; }
   .room-layer.hidden { visibility: hidden; pointer-events: none; }

@@ -10,6 +10,10 @@ export function setLocale(next: Locale): void {
   locale = next in tables ? next : 'th';
 }
 
+export function getLocale(): Locale {
+  return locale;
+}
+
 export function t(key: string, vars?: Record<string, string | number>): string {
   const table = tables[locale] as Record<string, string>;
   const fallback = tables.en as Record<string, string>;

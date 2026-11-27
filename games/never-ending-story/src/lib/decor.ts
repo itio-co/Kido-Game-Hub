@@ -8,9 +8,12 @@ export const DECOR_PHOTO_LEGACY = '📷 รูปตา';
 
 export type DecorViolation = { code: string; detail: string };
 
+/** Bag / catalog slug for young Grandpa's photo (`item` module, event-01 items.json). */
+export const GRANDPA_PHOTO_SLUG = 'album-photo';
+
 export function isGrandpaPhoto(value: string | null | undefined): boolean {
   if (!value) return false;
-  return value.includes('รูปปู่') || value.includes('รูปตา') || value === 'album-photo';
+  return value.includes('รูปปู่') || value.includes('รูปตา') || value === GRANDPA_PHOTO_SLUG;
 }
 
 export type NormalizedDecor = {
@@ -64,4 +67,16 @@ export function photoPlaced(decor: Record<string, string | null | undefined>): b
 /** Shown on the shelf: placed and not put away. */
 export function photoOnShelf(decor: Record<string, string | null | undefined>, state: GrandpaPhotoState): boolean {
   return photoPlaced(decor) && state !== 'stored';
+}
+
+/** Play the one-page placement comic when the player is home after a clear, and the story has not placed the photo yet. */
+export function shouldPlayPhotoPlacement(input: {
+  placed: boolean;
+  screen: string;
+  reward?: boolean;
+  cleared?: boolean;
+  caseDone?: boolean;
+}): boolean {
+  if (input.placed || input.screen !== 'player-room') return false;
+  return input.reward === true || input.cleared === true || input.caseDone === true;
 }

@@ -1,0 +1,15 @@
+{
+  "id": "item",
+  "name": "Items",
+  "kind": "feature",
+  "version": "1.0.0",
+  "description": "Reusable item kinds and unique item instances, plus the icon and detail views used in an inventory.",
+  "entry": "src/modules/item/index.ts",
+  "publicEntries": [
+    "src/modules/item/index.ts"
+  ],
+  "dependsOn": {
+    "core": ">=0.6.24"
+  },
+  "gdd": "src/modules/item/GDD.md"
+}

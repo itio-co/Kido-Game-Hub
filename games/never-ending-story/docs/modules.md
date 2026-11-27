@@ -12,6 +12,8 @@ The game ships as one bundle but the code is split into modules under `src/modul
 | `challenge` | feature | puzzle challenge mode and leaderboards. Stays its own feature and depends on `minigame-core` (see below) |
 | `event-core` | event-core | shared event framework: cutscenes, stage map, case notebook, event HUD, D1 progress document |
 | `event-01` | event | Event 01 content (`case-01`) on top of `event-core` |
+| `item` | feature | item identities (UUID, kind, title, slug, icon, description) plus the icon and detail views |
+| `item-box` | feature | reusable inventory grid of item icon slots; tap an icon to open the detail view |
 | `god` | admin | admin page `/never/god` and `/never/api/god` |
 | `god-mode` | feature | in-game GOD float: Settings toggle, bubble, Admin/Inspect, redacted page JSON |
 | `character` | character | people already in the story: names, portraits, generation prompts |

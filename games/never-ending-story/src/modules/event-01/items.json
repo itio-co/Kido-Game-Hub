@@ -1,0 +1,22 @@
+[
+  {
+    "id": "37b6ab64-1fff-4767-8bcb-dd4b6de88b8e",
+    "kind": "picture-frame",
+    "title": "รูปปู่ตอนหนุ่ม",
+    "titleEn": "Young Grandpa's photo",
+    "slug": "album-photo",
+    "image": "items/young-grandpa-photo.png",
+    "description": "อยู่ในอัลบั้มจากกล่องรูปดาว พร้อมโปสเตอร์ เอาไปให้ย่าดู",
+    "descriptionEn": "From the album in the star box, with the poster. Show it to Grandma."
+  },
+  {
+    "id": "dd2ce341-9985-4d84-ae99-79bbff468fcd",
+    "kind": "key",
+    "title": "กุญแจกล่องรูปดาว",
+    "titleEn": "Star-box key",
+    "slug": "case-key",
+    "image": "items/star-box-key.png",
+    "description": "ได้จากการสรุปคดี ใช้เปิดกล่องรูปดาว",
+    "descriptionEn": "Awarded for solving the case. Opens the star box."
+  }
+]

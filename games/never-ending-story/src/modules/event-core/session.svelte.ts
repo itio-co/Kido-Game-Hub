@@ -4,14 +4,22 @@ import {
   cloneJig,
   cloneSlide,
   crossCorrect,
+  firstFreePiece,
   freshCross,
   freshJig,
   freshSlide,
+  isJigBoard,
+  jigProfile,
+  jigProfileForLabel,
+  placeHint,
   practiceSetup,
+  selectPiece,
+  startJigsaw,
   starCount,
   starText,
   stepBlock,
   type CrossState,
+  type JigBoard,
   type JigState,
   type SlideState,
 } from './puzzles';
@@ -131,6 +139,7 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
   let hintGoal = $state(-1);
   let cross = $state<CrossState>(freshCross());
   let jig = $state<JigState>(freshJig());
+  let jigCompleting = false;
   let slide = $state<SlideState>(freshSlide());
   let snap = $state<{ cross: CrossState; jig: JigState; slide: SlideState } | null>(null);
   let picks = $state<(string | null)[]>([null, null, null]);
@@ -142,6 +151,7 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
   let mapUnlockPulse = $state(false);
   let bag = $state<string[]>([]);
   let bagPulse = $state(false);
+  let bagFreshId = $state<string | null>(null);
   let bagPulseTimer = 0;
   let repaired = $state<CaseViolation[]>([]);
   let leaveConfirm = $state(false);
@@ -248,6 +258,7 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
     // The button reads the jigsaw evidence, not the saved flag. Write the flag when a real
     // win predates it, and clear a true flag that has no such evidence (visits and other clues do not count).
     if (report.changed || (gate && mapUnlockNeedsPersist(saved?.mapUnlocked, mapIsUnlocked()))) persist();
+    if (screen === 'jigsaw') jig = startJigsaw(difficulty);
     queueMicrotask(() => armEventGuard());
   }
 
@@ -375,10 +386,11 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
     return () => window.removeEventListener('popstate', onPop);
   }
 
-  function pulseBag(): void {
+  function pulseBag(id?: string): void {
     bagPulse = true;
+    bagFreshId = id ?? null;
     window.clearTimeout(bagPulseTimer);
-    bagPulseTimer = window.setTimeout(() => { bagPulse = false; }, 2600);
+    bagPulseTimer = window.setTimeout(() => { bagPulse = false; bagFreshId = null; }, 2600);
   }
 
   function setMapFloor(floor: 1 | 2): void {
@@ -636,6 +648,7 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
         levels = { ...levels, [key]: row };
         persist();
       }
+      if (action.screen === 'jigsaw') ensureJigBoard();
       await go(action.screen);
       return;
     }
@@ -680,7 +693,7 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
         return;
       }
       bag = openBoxBag(bag);
-      pulseBag();
+      pulseBag(CASE_PHOTO_ID);
       persist();
       showToast(t('toast.photoAwarded'));
       return;
@@ -787,6 +800,16 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
     slide = cloneSlide(slide);
   }
 
+  /** Start a board for the case difficulty, or keep an in-progress one of the same profile. */
+  function ensureJigBoard(): void {
+    if (isJigBoard(jig)) {
+      const total = jig.cols * jig.rows;
+      const inProgress = jig.placed.length > 0 && jig.placed.length < total;
+      if (inProgress) return;
+    }
+    jig = startJigsaw(difficulty);
+  }
+
   async function finishPracticeLevel(): Promise<void> {
     const stars = starCount(hints);
     const row = levels[lvGame].slice();
@@ -806,7 +829,7 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
     }
     solved = true;
     bag = openBoxBag(bag);
-    pulseBag();
+    pulseBag(CASE_PHOTO_ID);
     showToast(t('toast.photoAwarded'));
     history = ['study', 'star-box'];
     await go('album', true);
@@ -816,11 +839,16 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
     hints += 1;
     if (hints === 1) {
       if (screen === 'crossword') showToast('คำใบ้: ช่องที่ต้องเติมคือข้อ 3 แนวนอน');
-      else if (screen === 'jigsaw') showToast('คำใบ้: เลือกชิ้นให้แล้ว ลองหาช่องของมัน');
+      else if (screen === 'jigsaw') showToast('คำใบ้: ลากชิ้นไปวางที่ช่องของมัน');
       else showToast('คำใบ้: บล็อก A ขวางทางกุญแจอยู่ — ลองขยับ A');
       if (screen === 'crossword') cross = { ...cross, sel: '2,2' };
       if (screen === 'jigsaw') {
-        jig = { ...jig, sel: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].find((index) => !jig.placed.includes(index)) ?? null };
+        if (isJigBoard(jig)) {
+          const free = firstFreePiece(jig);
+          jig = free ? selectPiece(jig, free.id) : jig;
+        } else {
+          jig = { ...jig, sel: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].find((index) => !jig.placed.includes(index)) ?? null };
+        }
       }
       return;
     }
@@ -830,8 +858,11 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
       return;
     }
     if (screen === 'jigsaw') {
-      const index = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].find((item) => !jig.placed.includes(item));
-      if (index !== undefined) jig = { placed: [...jig.placed, index], sel: null };
+      if (isJigBoard(jig)) jig = placeHint(jig);
+      else {
+        const index = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].find((item) => !jig.placed.includes(item));
+        if (index !== undefined) jig = { placed: [...jig.placed, index], sel: null };
+      }
       return;
     }
     const move = stepBlock(slide, slide.A.r < 2 ? 'A' : 'K');
@@ -861,7 +892,18 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
     if (screen === 'case-board') return 'ตอบ 3 ข้อ แล้วเลือกหลักฐานยืนยัน';
     if (screen === 'crossword' || screen === 'jigsaw' || screen === 'slide') {
       if (practice) return '';
-      return `${flow?.games.find((item) => item.game === (screen === 'slide' ? 'slide' : screen === 'jigsaw' ? 'jigsaw' : 'crossword'))?.hud ?? ''} · คำใบ้ ${hints}`;
+      if (screen === 'jigsaw') {
+        const profile = isJigBoard(jig)
+          ? jigProfile(jig.profileId, jig.version)
+          : jigProfileForLabel(difficulty);
+        const n = isJigBoard(jig) ? jig.cols * jig.rows : profile.cols * profile.rows;
+        return t('jigsaw.hud', {
+          n,
+          rotation: t(`jigsaw.rotation.${profile.rotation}`),
+          hints,
+        });
+      }
+      return `${flow?.games.find((item) => item.game === (screen === 'slide' ? 'slide' : 'crossword'))?.hud ?? ''} · คำใบ้ ${hints}`;
     }
     if (!scene || !flow) return '';
     if (screen === 'star-box' && solved) {
@@ -943,6 +985,7 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
     eggReveal = next.eggReveal;
     mapUnlockPulse = next.mapUnlockPulse;
     bagPulse = next.bagPulse;
+    bagFreshId = null;
     window.clearTimeout(toastTimer);
     window.clearTimeout(hintTimer);
     window.clearTimeout(mapPulseTimer);
@@ -981,6 +1024,7 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
     get mapUnlocked() { return mapIsUnlocked(); },
     get bag() { return bag; },
     get bagPulse() { return bagPulse; },
+    get bagFreshId() { return bagFreshId; },
     get canSolve() { return canSolveCase(catalogCodes(flow), evidence); },
     get stateCheck() {
       const gate = houseMapGate(flow);
@@ -1235,14 +1279,18 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
       await go('uncle', true, false);
       openDialogue('flow/dialogue/mek-thanks');
     },
-    pickPiece(index: number) { jig = { ...jig, sel: index }; },
+    pickPiece(index: number) {
+      jig = isJigBoard(jig) ? selectPiece(jig, index) : { ...jig, sel: index };
+    },
     placePiece(index: number) {
-      if (jig.sel === index) jig = { placed: [...jig.placed, index], sel: null };
+      if (jig.sel === index) jig = { ...jig, placed: [...jig.placed, index], sel: null };
       else if (jig.sel !== null) showToast('ยังไม่ใช่ช่องนี้ ลองอีกที');
     },
+    setJig(next: JigBoard) { jig = next; },
     async finishJigsaw() {
       if (practice) { await finishPracticeLevel(); return; }
-      jig = { placed: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11], sel: null };
+      if (screen !== 'jigsaw' || jigCompleting) return;
+      jigCompleting = true;
       const gate = houseMapGate(flow);
       const firstUnlock = gate !== null && !has(gate);
       addEvidence(gate ?? 'E04');
@@ -1294,7 +1342,7 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
         deduced = true;
         if (!solved && !bag.includes(CASE_KEY_ID)) {
           bag = [...bag, CASE_KEY_ID];
-          pulseBag();
+          pulseBag(CASE_KEY_ID);
           showToast(t('toast.keyAwarded'));
         }
         persist();

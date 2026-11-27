@@ -1,7 +1,9 @@
 <script lang="ts">
   import { imageUrl } from '../../lib/imageUrl';
   import { artworkFile } from '../cutscene';
-  import { CROSS_GRID, CROSS_KEYS, CROSS_NUM, FAKE_TIME, jigPosition } from './puzzles';
+  import { jigComplete } from '../jigsaw';
+  import JigsawBoard from '../jigsaw/JigsawBoard.svelte';
+  import { CROSS_GRID, CROSS_KEYS, CROSS_NUM, FAKE_TIME } from './puzzles';
   import type { FlowSession } from './session.svelte';
 
   let { session }: { session: FlowSession } = $props();
@@ -57,34 +59,17 @@
       {session.practice ? `ผ่านด่าน ${session.lvN}` : 'ส่งคำตอบ'}
     </button>
   {:else if session.screen === 'jigsaw'}
-    <div class="jg">
-      <div class="jgb">
-        {#each [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11] as index (index)}
-          {#if session.jig.placed.includes(index)}
-            <div class="pc" style="background-image:url('{imageUrl(artworkFile('house.map-2f'))}');background-position:{jigPosition(index)}"></div>
-          {:else}
-            <button type="button" class="jgs" aria-label="ช่อง {index + 1}" onclick={() => session.placePiece(index)}></button>
-          {/if}
-        {/each}
-      </div>
-    </div>
-    {#if session.jig.placed.length < 12}
-      <div class="jgt">
-        {#each [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].filter((index) => !session.jig.placed.includes(index)) as index (index)}
-          <button
-            type="button"
-            class="pc"
-            class:sel={session.jig.sel === index}
-            style="background-image:url('{imageUrl(artworkFile('house.map-2f'))}');background-position:{jigPosition(index)}"
-            aria-label="ชิ้น {index + 1}"
-            onclick={() => session.pickPiece(index)}
-          ></button>
-        {/each}
-      </div>
+    <JigsawBoard
+      jig={session.jig}
+      imageSrc={imageUrl(artworkFile('house.map-2f'))}
+      onUpdate={(next) => session.setJig(next)}
+      onComplete={() => session.finishJigsaw()}
+    />
+    {#if session.practice || jigComplete(session.jig)}
+      <button type="button" class="mgbtn done" data-testid="jigsaw-done" onclick={() => session.finishJigsaw()}>
+        {session.practice ? `ผ่านด่าน ${session.lvN}` : 'เสร็จ'}
+      </button>
     {/if}
-    <button type="button" class="mgbtn done" onclick={() => session.finishJigsaw()}>
-      {session.practice ? `ผ่านด่าน ${session.lvN}` : session.jig.placed.length === 12 ? 'เสร็จ' : 'ต่อที่เหลือให้'}
-    </button>
   {:else}
     <div class="sb">
       <div class="sbg">
@@ -129,13 +114,6 @@
   .clues b { color: #0d4a66; }
   .keys { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
   .keys button { width: 48px; height: 48px; font-size: calc(var(--fs) + 6px); border-radius: 10px; border: 2px solid #39a8d8; background: #fff; color: #13324a; font-weight: 800; }
-  .jg { background: #6b4a2f; border-radius: 12px; padding: 10px; }
-  .jgb { position: relative; margin: 0 auto; width: min(100%, 300px); aspect-ratio: 3 / 4; background: #efe6d2; display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(4, 1fr); gap: 2px; }
-  .jgs { border: 1px dashed rgba(0, 0, 0, 0.25); background: transparent; }
-  .pc { background-size: 300% 400%; border-radius: 4px; border: 0; padding: 0; }
-  .jgt { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; background: #8a8f96; border-radius: 12px; padding: 10px; }
-  .jgt .pc { width: 62px; height: 62px; }
-  .jgt .pc.sel { outline: 3px solid #39e0ff; }
   .sb { background: #2d55a6; border-radius: 16px; padding: 16px; width: min(100%, 320px); margin: 0 auto; }
   .sbg { position: relative; background: #c9a676; border-radius: 8px; aspect-ratio: 1; box-shadow: inset 0 0 0 4px #a07c4c; }
   .sbcell { position: absolute; width: 25%; height: 25%; border: 1px dashed rgba(0, 0, 0, 0.15); }

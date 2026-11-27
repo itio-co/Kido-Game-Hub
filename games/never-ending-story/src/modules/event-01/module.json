@@ -1,8 +1,8 @@
 {
   "id": "event-01",
-  "name": "Event 01 \u00b7 Visit Grandma",
+  "name": "Event 01 · Visit Grandma",
   "kind": "event",
-  "version": "1.0.10",
+  "version": "1.0.11",
   "description": "First story event (case-01): data in public/data/case-flow.json.",
   "entry": "src/modules/event-01/index.ts",
   "publicEntries": [
@@ -14,7 +14,8 @@
     "cutscene": "^1.0.0",
     "crossword": "^1.0.0",
     "jigsaw": "^1.0.0",
-    "slide": "^1.0.0"
+    "slide": "^1.0.0",
+    "item": "^1.0.0"
   },
   "assets": [
     "public/data/case-flow.json#case-01"

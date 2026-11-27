@@ -1,6 +1,6 @@
 import type { PuzzleKey } from './types';
 import { CROSS_KEYS, type CrossState } from '../crossword';
-import type { JigState } from '../jigsaw';
+import { startPracticeJig, type JigState } from '../jigsaw';
 import type { SlideState } from '../slide';
 
 // Puzzle rules live in their minigame modules; re-exported here for the event session.
@@ -20,9 +20,8 @@ export function practiceSetup(game: PuzzleKey, level: number, cross: CrossState,
     cross.sel = '2,2';
   }
   if (game === 'jig') {
-    const order = [0, 5, 10, 3, 6, 9, 1, 8, 11, 2, 4, 7];
-    jig.placed = order.slice(0, Math.max(0, 8 - level));
-    jig.sel = null;
+    const next = startPracticeJig('ปานกลาง', Math.max(0, 8 - level));
+    Object.assign(jig, next);
   }
   if (game === 'slide') {
     slide.K.r = 1;
