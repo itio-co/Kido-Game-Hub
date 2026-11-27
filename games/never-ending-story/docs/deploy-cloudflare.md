@@ -17,7 +17,9 @@ Why KV and not Workers Static Assets: the deploy connection's asset-upload JWT f
 1. `npm run build` (Vite `base: './'` → works under `/never/`; routing is hash-based).
 2. Upload `dist/*` to KV with bulk PUT `/accounts/{acct}/storage/kv/namespaces/{ns}/bulk` — `[{key, value(base64), base64:true, metadata:{ct,h}}]`. `scripts/cloudflare/mk.mjs` + `kv.mjs` build the manifest and ≤2 MB batches. Keep old hashed `/assets/*` keys (clients with an old cached `index.html` still need them).
 3. Apply `worker/schema.sql` with D1 `/query`. If the database already exists from before 0.6.11, also run `worker/migrations/002_ruleset.sql` once (adds `runs.ruleset` and backfills the v0.6.10 ruleset). Skip that file on a brand-new database that already got the column from `schema.sql`.
-4. PUT the worker script (multipart: metadata `{main_module, compatibility_date, bindings:[kv ASSETS_KV, d1 DB]}` + `worker.js`).
+   From 0.6.39, `worker/migrations/003_streak.sql` adds `player_streak` (the Worker also creates it on first use, so this step is optional).
+4. Secrets: `GOD_ADMIN_PASSWORD` and, from 0.6.39, `STREAK_TOKEN_KEY` (random 32 bytes, base64). Set them as Worker secrets only, never in source or metadata; generate the value inside the call that sets it so it is never printed. Deploys keep existing secret bindings.
+5. PUT the worker script (multipart: metadata `{main_module, compatibility_date, bindings:[kv ASSETS_KV, d1 DB]}` + `worker.js`).
 
 A GitHub Action would need a `CLOUDFLARE_API_TOKEN` secret with Workers Scripts/KV/D1 edit on the account (not created).
 

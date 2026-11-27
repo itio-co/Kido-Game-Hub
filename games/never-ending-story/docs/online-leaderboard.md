@@ -27,5 +27,14 @@ PUT state/home body `{rev, schema_version, data}`; `rev` must equal the server's
 
 Restore on a new device = put the token on that device. There is no UI for this yet (a token in a link would be a credential in a URL).
 
+## Daily streak (0.6.39)
+Rules: `src/lib/streak.ts` (shared), storage: `worker/streak.ts`, token: `worker/streakToken.ts`, Thai GDD: `docs/gdd/core.md` §9.3.
+
+- A win is a verified `POST /api/runs` with `score > 0` (counted once per `sessionId`), or `POST /api/players/me/streak/win` `{game, streakToken}` (Bearer) for story/practice puzzles. Both answer with `streak: {view, token, check, counted, refilled}`.
+- `GET /api/players/me/streak` (Bearer, optional header `x-streak-token`) → the same `streak` object. Read-only: missed days are projected, not written.
+- Days are Bangkok calendar days from **server** time. The streak moves at most once per day; `totalWins` moves on every win (≤100/day). Missed days spend batteries (max 2); not enough batteries → count 0. Every 7th streak day returns one battery. A new streak starts with 2.
+- D1 `player_streak (playerId, record_json, streak_count, best, last_day, rev, updated_at)`, optimistic `rev`. The Worker runs `CREATE TABLE IF NOT EXISTS` on first use; `worker/migrations/003_streak.sql` is the same SQL.
+- Token: `st1.<iv>.<ciphertext>`, AES-256-GCM with a key derived (SHA-256) from the Worker secret `STREAK_TOKEN_KEY`; payload `{v, pid, streakCount, date}`. The client stores it in `nesg.streak.v1` and sends it back as `streakToken`. `check` is `ok | stale | invalid | missing | nokey`; the server record always wins and nothing about the token is logged. Without the secret the streak still counts and `token` is `null`.
+
 ## Caveats
 - The run tag salt is in the client, so a determined player can forge tokens with any plausible score. Next step: server-signed runs (issue a signed seed/session at start, verify elapsed time server-side) and Cloudflare Turnstile on register/submit.
