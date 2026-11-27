@@ -98,7 +98,8 @@ export function startJigsaw(label: string | null | undefined, opts?: { seed?: nu
       const id = row * cols + col;
       const targetX = col + 0.5;
       const targetY = row + 0.5;
-      const at = scatterPoint(rng, cols, rows, scatterPadding, targetX, targetY);
+      const scattered = scatterPoint(rng, cols, rows, scatterPadding, targetX, targetY);
+      const at = clampPieceCenter(scattered.x, scattered.y, cols, rows);
       pieces.push({
         id,
         col,
@@ -160,10 +161,18 @@ export function selectPiece(state: JigBoard, id: number | null): JigBoard {
   return { ...state, sel: id };
 }
 
+export function clampPieceCenter(x: number, y: number, cols: number, rows: number): { x: number; y: number } {
+  return {
+    x: Math.min(Math.max(x, 0), cols),
+    y: Math.min(Math.max(y, 0), rows),
+  };
+}
+
 export function movePiece(state: JigBoard, id: number, x: number, y: number): JigBoard {
+  const at = clampPieceCenter(x, y, state.cols, state.rows);
   const pieces = state.pieces.map((piece) => {
     if (piece.id !== id || piece.locked) return piece;
-    return { ...piece, x, y };
+    return { ...piece, x: at.x, y: at.y };
   });
   return withPieces(state, pieces, id);
 }

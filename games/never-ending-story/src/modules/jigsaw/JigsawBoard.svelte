@@ -76,6 +76,8 @@
     /** Offset from the piece centre, in cell units. */
     offX: number;
     offY: number;
+    startX: number;
+    startY: number;
     rotated: boolean;
   };
   type Pinch = {
@@ -93,6 +95,7 @@
   let drags = $state<Drag[]>([]);
   let pinch = $state<Pinch | null>(null);
   let handleDrag = $state<{ id: number; pointerId: number } | null>(null);
+  let rightRotate = $state<{ id: number; pointerId: number } | null>(null);
   const pointers = new Map<number, { x: number; y: number; pieceId: number }>();
 
   function toCell(clientX: number, clientY: number): { x: number; y: number } {
@@ -117,17 +120,32 @@
     return board?.pieces.find((item) => item.id === id);
   }
 
+  function angleToward(piece: { x: number; y: number }, clientX: number, clientY: number): number {
+    const cell = toCell(clientX, clientY);
+    return Math.atan2(cell.y - piece.y, cell.x - piece.x) * (180 / Math.PI) + 90;
+  }
+
   function downOnPiece(event: PointerEvent, id: number): void {
     if (!board) return;
     const piece = pieceAt(id);
     if (!piece || piece.locked) return;
+    if (event.button === 2 && board.rotation === 'free') {
+      event.preventDefault();
+      event.stopPropagation();
+      (event.currentTarget as HTMLElement).setPointerCapture?.(event.pointerId);
+      pointers.set(event.pointerId, { x: event.clientX, y: event.clientY, pieceId: id });
+      rightRotate = { id, pointerId: event.pointerId };
+      emit(setPieceAngle(selectPiece(board, id), id, angleToward(piece, event.clientX, event.clientY)));
+      return;
+    }
+    if (event.button !== 0) return;
     event.preventDefault();
     event.stopPropagation();
     const cell = toCell(event.clientX, event.clientY);
     pointers.set(event.pointerId, { x: event.clientX, y: event.clientY, pieceId: id });
     (event.currentTarget as HTMLElement).setPointerCapture?.(event.pointerId);
     const others = [...pointers.entries()].filter(([pid, p]) => pid !== event.pointerId && p.pieceId === id);
-    if (others.length === 1 && board.rotation !== 'none') {
+    if (others.length === 1 && board.rotation === 'free') {
       const other = others[0];
       pinch = {
         pieceId: id,
@@ -148,6 +166,8 @@
       pointerId: event.pointerId,
       offX: cell.x - piece.x,
       offY: cell.y - piece.y,
+      startX: event.clientX,
+      startY: event.clientY,
       rotated: false,
     }];
     emit(selectPiece(board, id));
@@ -191,6 +211,14 @@
       return;
     }
 
+    if (rightRotate && rightRotate.pointerId === event.pointerId && board.rotation === 'free') {
+      const piece = pieceAt(rightRotate.id);
+      if (!piece) return;
+      event.preventDefault();
+      emit(setPieceAngle(board, rightRotate.id, angleToward(piece, event.clientX, event.clientY)));
+      return;
+    }
+
     if (handleDrag && handleDrag.pointerId === event.pointerId && board.rotation === 'free') {
       const piece = pieceAt(handleDrag.id);
       if (!piece) return;
@@ -211,20 +239,21 @@
   function release(event: PointerEvent): void {
     if (!board) return;
     const idFromHandle = handleDrag && handleDrag.pointerId === event.pointerId ? handleDrag.id : null;
+    const idFromRight = rightRotate && rightRotate.pointerId === event.pointerId ? rightRotate.id : null;
     const idFromPinch = pinch && (event.pointerId === pinch.a || event.pointerId === pinch.b) ? pinch.pieceId : null;
     const drag = drags.find((item) => item.pointerId === event.pointerId);
-    const id = idFromHandle ?? idFromPinch ?? drag?.ids[0];
+    const id = idFromHandle ?? idFromRight ?? idFromPinch ?? drag?.ids[0];
 
     let current = isJigBoard(jig) ? jig : board;
-    if (idFromHandle !== null && current.rotation === 'quarter') {
-      const start = pointers.get(event.pointerId);
-      const moved = start ? Math.hypot(event.clientX - start.x, event.clientY - start.y) : 0;
-      if (moved < 10) current = tapRotate(current, idFromHandle, 90);
+    if (drag && current.rotation === 'quarter' && idFromHandle === null && idFromPinch === null) {
+      const moved = Math.hypot(event.clientX - drag.startX, event.clientY - drag.startY);
+      if (moved < 10) current = tapRotate(current, drag.ids[0], 90);
     }
 
     pointers.delete(event.pointerId);
     drags = drags.filter((item) => item.pointerId !== event.pointerId);
     if (handleDrag && handleDrag.pointerId === event.pointerId) handleDrag = null;
+    if (rightRotate && rightRotate.pointerId === event.pointerId) rightRotate = null;
     if (pinch && (event.pointerId === pinch.a || event.pointerId === pinch.b)) pinch = null;
 
     if (id === undefined || id === null) {
@@ -288,6 +317,7 @@
     data-complete={jigComplete(board) ? 'true' : 'false'}
     data-seed={board.seed}
     style="--aspect:{aspect}"
+    oncontextmenu={(event) => event.preventDefault()}
   >
     <div class="frame" bind:this={boardEl} data-testid="jigsaw-frame">
       {#if activeProfile.hint.highlightTarget}
@@ -306,7 +336,7 @@
     </div>
 
     {#each board.pieces as piece (piece.id)}
-      {@const dragging = drags.some((item) => item.ids.includes(piece.id)) || (pinch?.pieceId === piece.id) || handleDrag?.id === piece.id}
+      {@const dragging = drags.some((item) => item.ids.includes(piece.id)) || (pinch?.pieceId === piece.id) || handleDrag?.id === piece.id || rightRotate?.id === piece.id}
       {@const d = piecePath(board.edges[piece.id], cellW, cellH, tab)}
       {@const img = imageAttrs(piece.col, piece.row)}
       {@const clipId = `jig-clip-${board.seed}-${piece.id}`}
@@ -355,15 +385,6 @@
             <path d={d} fill="none" class="edge" />
           </g>
         </svg>
-        {#if !piece.locked && board.rotation !== 'none'}
-          <button
-            type="button"
-            class="rot"
-            data-testid="jigsaw-rotate-{piece.id}"
-            aria-label="หมุนชิ้น {piece.id + 1}"
-            onpointerdown={(event) => downOnHandle(event, piece.id)}
-          ></button>
-        {/if}
       </div>
     {/each}
   </div>
@@ -386,10 +407,14 @@
   .frame {
     position: absolute;
     left: 50%;
-    top: 46%;
-    width: min(78%, 300px);
+    top: 4px;
+    bottom: 8px;
+    width: auto;
+    max-width: 94%;
+    max-height: calc(100% - 12px);
+    height: auto;
     aspect-ratio: var(--aspect, 0.75);
-    transform: translate(-50%, -50%);
+    transform: translateX(-50%);
     background: #efe2c8;
     border: 10px solid #6b4328;
     border-radius: 8px;

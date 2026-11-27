@@ -139,25 +139,22 @@ async function makeUpright(page, id, rotation) {
   const piece = page.locator(`[data-testid="jigsaw-piece-${id}"]`);
   if (rotation === 'none') return;
   if (rotation === 'quarter') {
-    const handle = page.locator(`[data-testid="jigsaw-rotate-${id}"]`);
     for (let i = 0; i < 5; i += 1) {
       const a = ((normAngle(await piece.getAttribute('data-angle')) % 360) + 360) % 360;
       if (a === 0) return;
-      await handle.click({ force: true });
+      await piece.click({ force: true });
       await page.waitForTimeout(80);
     }
     return;
   }
-  const handle = page.locator(`[data-testid="jigsaw-rotate-${id}"]`);
   const box = await piece.boundingBox();
-  const h = await handle.boundingBox();
-  if (!box || !h) return;
+  if (!box) return;
   const cx = box.x + box.width / 2;
   const cy = box.y + box.height / 2;
-  await page.mouse.move(h.x + h.width / 2, h.y + h.height / 2);
-  await page.mouse.down();
+  await page.mouse.move(cx, cy);
+  await page.mouse.down({ button: 'right' });
   await page.mouse.move(cx, cy - Math.max(40, box.height * 0.7), { steps: 10 });
-  await page.mouse.up();
+  await page.mouse.up({ button: 'right' });
   await page.waitForTimeout(80);
 }
 
@@ -210,11 +207,10 @@ for (const diff of DIFFS) {
     assert.ok(!subtitle.includes('ไม่ต้องหมุน'), `${diff.id} must not say no-rotation: ${subtitle}`);
   }
   await shot(page, `${diff.id}-subtitle.png`);
-  if (diff.rotation === 'none') {
-    assert.equal(await page.locator('[data-testid^="jigsaw-rotate-"]').count(), 0, 'easy has no rotate handles');
-  } else {
-    assert.equal(await page.locator('[data-testid^="jigsaw-rotate-"]').count(), diff.count, `${diff.id} rotate handles`);
-  }
+  assert.equal(await page.locator('[data-testid^="jigsaw-rotate-"]').count(), 0, `${diff.id} has no rotate icon`);
+  const hud = await page.locator('.mgbar').innerText();
+  assert.ok(!hud.includes('⭐') && !hud.includes('★') && !hud.includes('☆'), `${diff.id} hides stars at start: ${hud}`);
+  assert.match(hud, /00:00/, `${diff.id} timer starts at 00:00: ${hud}`);
 
   await shot(page, `${diff.id}-scattered.png`);
 
@@ -279,6 +275,18 @@ for (const diff of DIFFS) {
   await page.locator('[data-testid="house-map-btn"]').waitFor({ state: 'visible', timeout: 8000 });
   await ctx.close();
   console.log('ok standing-best');
+}
+
+// Per-difficulty isolation: a medium record must not appear on an easy HUD.
+{
+  const { ctx, page } = await openJigsaw('ง่าย', {
+    best: JSON.stringify({ 'jig:medium': { timeMs: 1234, stars: 3 }, 'jig:ปานกลาง': { timeMs: 1234, stars: 3 } }),
+  });
+  const best = (await page.locator('[data-testid="minigame-hud-best"]').innerText()).trim();
+  assert.equal(best, '—', `easy HUD ignores a medium best, got ${best}`);
+  await shot(page, 'easy-isolated-best.png');
+  await ctx.close();
+  console.log('ok difficulty-isolation');
 }
 
 await browser.close();

@@ -4,6 +4,7 @@ import {
   canSnap,
   jigComplete,
   lockPiece,
+  clampPieceCenter,
   movePiece,
   setPieceAngle,
   snapQuarter,
@@ -165,6 +166,23 @@ test('locking every piece completes the puzzle and practice can pre-lock some', 
   const practice = startPracticeJig('ปานกลาง', 3, { seed: 2, version: '1.1.0' });
   eq(practice.placed.length, 3, 'pre-locked');
   eq(practice.pieces.filter((piece) => !piece.locked).length, 9, 'free');
+});
+
+test('clampPieceCenter keeps the centre on the board, and movePiece uses it', () => {
+  const at = clampPieceCenter(-2, 99, 3, 4);
+  ok(at.x === 0 && at.y === 4, 'clamp extremes');
+  const mid = clampPieceCenter(1.5, 2.5, 3, 4);
+  ok(mid.x === 1.5 && mid.y === 2.5, 'inside stays');
+  const board = startJigsaw('ยาก', { seed: 7, version: '1.1.0' });
+  const free = board.pieces.find((piece) => !piece.locked)!;
+  const moved = movePiece(board, free.id, -8, 40);
+  const piece = moved.pieces.find((item) => item.id === free.id)!;
+  ok(piece.x >= 0 && piece.x <= moved.cols, 'x clamped');
+  ok(piece.y >= 0 && piece.y <= moved.rows, 'y clamped');
+  for (const item of board.pieces) {
+    if (item.locked) continue;
+    ok(item.x >= 0 && item.x <= board.cols && item.y >= 0 && item.y <= board.rows, `scattered ${item.id} stays on the board`);
+  }
 });
 
 if (failed) process.exitCode = 1;
