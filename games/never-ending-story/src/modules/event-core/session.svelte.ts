@@ -325,8 +325,11 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
           context = 'hub';
           practiceRun = false;
         }
-        if (report.talkSlug && screen === navScreen) {
-          queueMicrotask(() => openDialogue(report.talkSlug!));
+        if (screen === navScreen) {
+          queueMicrotask(() => {
+            if (report.talkSlug) openDialogue(report.talkSlug);
+            else enter(navScreen);
+          });
         }
       }
     }

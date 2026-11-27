@@ -73,7 +73,7 @@ const header = await page.locator('header.hud').boundingBox();
 const badge = await page.locator('.version-badge, [data-testid="version-badge"]').boundingBox().catch(() => null);
 const back = await page.locator('button.back').boundingBox();
 const bag = await page.locator('[data-testid="bag-btn"]').boundingBox();
-const notebook = await page.locator('[data-testid="notebook-btn"]').boundingBox();
+const notebook = await page.locator('[data-testid="case-notebook"]').boundingBox();
 const firstSection = await page.locator('.deduce section').first().boundingBox();
 const flowSub = await page.locator('.flow-sub').count();
 

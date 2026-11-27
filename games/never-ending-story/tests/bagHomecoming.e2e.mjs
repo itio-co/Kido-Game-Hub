@@ -21,8 +21,8 @@ function save(flowExtra, screen, history) {
       textSize: 'md',
       soundEnabled: false,
       calendarTheme: null,
-      decor: {},
-      room: { calendar: 'original' },
+      decor: { '6bb33448-6b61-4564-91e1-125bae9cf57c': '📷 รูปปู่' },
+      room: { calendar: 'original', grandpaPhoto: 'shelf' },
     },
     knowledge: { evidence: ['E01'], solvedCaseIds: [], exploreHints: 0 },
     caseState: { facts: {} },
@@ -77,7 +77,7 @@ async function shot(page, name) {
 }
 
 async function activate(page, label) {
-  const spot = page.locator(`[role="button"][aria-label="${label}"]`);
+  const spot = page.getByRole('button', { name: label });
   await spot.click();
   await page.waitForTimeout(200);
   await spot.click();

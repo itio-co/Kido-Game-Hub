@@ -239,6 +239,8 @@
     !showTutor
       && !showPrologue
       && session.ready
+      && session.overlay !== 'trip-summary'
+      && session.overlay !== 'storage'
       && shouldPlayPhotoPlacement({
         placed: photoPlaced(save.player.decor),
         screen: session.screen,
@@ -421,7 +423,7 @@
           onMiss={() => (selectedId = null)}
         />
       </div>
-      {#if session.ready && session.screen !== 'player-room'}
+      {#if session.ready && (session.screen !== 'player-room' || session.overlay === 'trip-summary' || session.overlay === 'storage' || session.overlay === 'bag')}
         <FlowView {session} />
       {/if}
       {#if placingPhoto}
