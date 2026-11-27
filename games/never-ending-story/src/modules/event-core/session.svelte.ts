@@ -1018,7 +1018,7 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
     if (screen === 'practice') return '';
     if (screen === 'level-map') return practice ? '' : 'ผ่านด่านเพื่อปลดล็อกด่านถัดไป';
     if (screen === 'notebook') return t('hud.evidence', { n: countedEvidence(catalogCodes(flow), evidence).length, total: catalogCodes(flow).length || 4 });
-    if (screen === 'case-board') return 'ตอบ 3 ข้อ แล้วเลือกหลักฐานยืนยัน';
+    if (screen === 'case-board') return '';
     if (screen === 'crossword' || screen === 'jigsaw' || screen === 'slide') {
       if (practice) return '';
       if (screen === 'jigsaw') {

@@ -243,7 +243,8 @@
       {/if}
     </div>
   {:else if session.screen === 'case-board'}
-    <div class="deduce">
+    <div class="deduce" data-testid="case-board">
+      <div class="deduce-scroll">
       {#each session.flow?.questions ?? [] as question, index (question.id)}
         <section class:ok={session.marks[index] === 1} class:bad={session.marks[index] === -1}>
           <h2>{question.prompt} {session.marks[index] === 1 ? 'ถูก' : ''}</h2>
@@ -283,7 +284,11 @@
           </div>
         </section>
       {/each}
-      <button type="button" class="mgbtn" onclick={() => session.gradeCase()}>ยืนยันข้อสรุป</button>
+      </div>
+      <div class="deduce-footer" data-testid="case-board-footer">
+        <p class="deduce-hint" data-testid="case-board-hint">{t('case.confirmHint')}</p>
+        <button type="button" class="mgbtn" data-testid="case-board-confirm" onclick={() => session.gradeCase()}>ยืนยันข้อสรุป</button>
+      </div>
     </div>
   {:else if session.screen === 'crossword' || session.screen === 'jigsaw' || session.screen === 'slide'}
     <Minigames {session} />
@@ -412,7 +417,7 @@
     font-weight: 800;
     pointer-events: none;
   }
-  .evlist, .pgrid, .note-list, .deduce, .pick, .lvwrap { position: absolute; inset: 0; overflow: auto; overscroll-behavior-y: contain; padding: 78px 12px 96px; }
+  .evlist, .pgrid, .note-list, .pick, .lvwrap { position: absolute; inset: 0; overflow: auto; overscroll-behavior-y: contain; padding: 78px 12px 96px; }
   .evlist { background: linear-gradient(170deg, #2a2440, #3a2f2a); display: flex; flex-direction: column; gap: 12px; }
   .evh, .pick p, .note-list p { text-align: center; margin: 0; }
   .evcard { position: relative; border: 0; border-radius: 16px; overflow: hidden; min-height: 150px; background: #1a1a22; text-align: left; padding: 0; color: #fff; }
@@ -457,7 +462,25 @@
   .note-list li { margin: 8px 0; padding: 8px 10px; border-radius: 10px; background: rgba(255, 255, 255, 0.06); opacity: 0.55; }
   .note-list li.have { opacity: 1; }
   .note-list li span, .deduce p { display: block; font-size: var(--fs-sm); margin-top: 4px; }
-  .deduce { display: flex; flex-direction: column; gap: 8px; }
+  .deduce {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    overflow: hidden;
+    /* Start the scroll area below the HUD + version badge; padding here does not scroll away. */
+    padding: 96px 12px 0;
+    box-sizing: border-box;
+  }
+  .deduce-scroll { flex: 1 1 auto; min-height: 0; overflow: auto; overscroll-behavior-y: contain; display: flex; flex-direction: column; gap: 8px; padding: 0 0 12px; }
+  .deduce-footer {
+    flex: 0 0 auto;
+    padding: 8px 4px calc(var(--hud-btn-bottom, 14px) + var(--hud-btn-size, 64px) + 12px);
+    background: linear-gradient(180deg, transparent, rgba(16, 36, 51, 0.96) 18%);
+  }
+  .deduce-hint { margin: 0 0 8px; text-align: center; color: #eaf6ff; font-size: var(--fs-sm); }
+  .deduce-footer .mgbtn { display: block; width: 100%; }
   .deduce section { background: rgba(6, 24, 40, 0.93); border: 1px solid #39e0ff; border-radius: 12px; padding: 8px 10px; }
   .deduce section.ok { border-color: #5fd38a; }
   .deduce section.bad { border-color: #ff8a7a; }

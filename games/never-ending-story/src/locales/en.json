@@ -431,5 +431,6 @@
   "storage.title": "Storage box",
   "storage.empty": "The storage box is empty",
   "storage.close": "Close",
-  "toast.stickerKept": "The sticker is in your bag"
+  "toast.stickerKept": "The sticker is in your bag",
+  "case.confirmHint": "Answer all 3 questions, then pick evidence to confirm"
 }

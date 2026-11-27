@@ -451,7 +451,7 @@
       onHint={onHint}
       onSettings={() => { void openSettings(); }}
     />
-    {#if session.subtitle && !session.talk && !(session.toastText && session.toastLow) && (session.showCaseUi || session.screen === 'cutscene' || session.screen === 'ending-comic' || session.screen === 'difficulty')}
+    {#if session.subtitle && session.screen !== 'case-board' && !session.talk && !(session.toastText && session.toastLow) && (session.showCaseUi || session.screen === 'cutscene' || session.screen === 'ending-comic' || session.screen === 'difficulty')}
       <p class="flow-sub">{session.subtitle}</p>
     {/if}
 

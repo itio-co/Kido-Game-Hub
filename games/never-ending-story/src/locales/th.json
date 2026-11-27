@@ -431,5 +431,6 @@
   "storage.title": "กล่องเก็บของ",
   "storage.empty": "กล่องยังว่างอยู่",
   "storage.close": "ปิด",
-  "toast.stickerKept": "เก็บสติกเกอร์ใส่กระเป๋าแล้ว"
+  "toast.stickerKept": "เก็บสติกเกอร์ใส่กระเป๋าแล้ว",
+  "case.confirmHint": "ตอบ 3 ข้อ แล้วเลือกหลักฐานยืนยัน"
 }
