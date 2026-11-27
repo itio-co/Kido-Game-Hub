@@ -432,5 +432,8 @@
   "storage.empty": "กล่องยังว่างอยู่",
   "storage.close": "ปิด",
   "toast.stickerKept": "เก็บสติกเกอร์ใส่กระเป๋าแล้ว",
-  "case.confirmHint": "ตอบ 3 ข้อ แล้วเลือกหลักฐานยืนยัน"
+  "case.confirmHint": "ตอบ 3 ข้อ แล้วเลือกหลักฐานยืนยัน",
+  "god.player.prev": "ก่อนหน้า",
+  "god.player.next": "ถัดไป",
+  "god.player.page": "หน้า {page}/{pages} · {total} คน"
 }

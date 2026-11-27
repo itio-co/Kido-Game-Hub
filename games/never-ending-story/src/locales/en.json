@@ -432,5 +432,8 @@
   "storage.empty": "The storage box is empty",
   "storage.close": "Close",
   "toast.stickerKept": "The sticker is in your bag",
-  "case.confirmHint": "Answer all 3 questions, then pick evidence to confirm"
+  "case.confirmHint": "Answer all 3 questions, then pick evidence to confirm",
+  "god.player.prev": "Previous",
+  "god.player.next": "Next",
+  "god.player.page": "Page {page}/{pages} · {total} players"
 }

@@ -30,6 +30,7 @@
   let detail = $state<Row | null>(null);
   let loadError = $state('');
   let query = $state('');
+  let playerPage = $state(1);
   let boardGame = $state('cross');
   let boardDiff = $state('easy');
   let board = $state<Row[] | null>(null);
@@ -102,7 +103,7 @@
       if (section === 'dashboard') data = await god<Row>('dashboard');
       else if (section === 'players') {
         if (playerId) { detail = await god<Row>(`players/${encodeURIComponent(playerId)}`); renameTo = String(detail.player?.nickname ?? ''); confirmText = ''; }
-        else data = await god<Row>(`players?q=${encodeURIComponent(query)}`);
+        else data = await god<Row>(`players?q=${encodeURIComponent(query)}&page=${playerPage}`);
       } else if (subId) { data = null; }
       else if (section === 'games') { data = await god<Row>('games'); await loadBoard(); }
       else if (section === 'events') data = await god<Row>('events');
@@ -213,7 +214,7 @@
         </div>
         <p class="note">{t('god.dash.note', { at: fmtDate(data.now) })}</p>
       {:else if section === 'players' && !playerId}
-        <form class="search" onsubmit={(e) => { e.preventDefault(); void load(); }}>
+        <form class="search" onsubmit={(e) => { e.preventDefault(); playerPage = 1; void load(); }}>
           <input type="search" placeholder={t('god.player.search')} bind:value={query} />
           <button type="submit">{t('god.player.searchBtn')}</button>
         </form>
@@ -222,6 +223,14 @@
             <tbody>{#each data.players as p (p.playerId)}
               <tr><td><a href="#/players/{encodeURIComponent(p.playerId)}">{p.nickname || t('god.noName')}</a>{#if !p.registered}<span class="tag">{t('god.player.unclaimed')}</span>{/if}</td><td><code>{short(p.playerId)}</code></td><td>{fmtDate(p.created_at)}</td><td>{fmtDate(p.last_seen)}</td><td>{p.runs}</td><td>{p.best ?? '–'}</td><td>{p.events ? String(p.events).split(',').map((s) => { const [id, st] = s.split(':'); return `${id} ${t(`god.status.${st}`)}`; }).join(', ') : '–'}</td></tr>
             {:else}<tr><td colspan="7">{t('god.empty')}</td></tr>{/each}</tbody></table>
+          {@const total = Number(data.total ?? 0)}
+          {@const pageSize = Number(data.pageSize ?? 20)}
+          {@const pages = Math.max(1, Math.ceil(total / pageSize))}
+          <nav class="pager" data-testid="player-pager">
+            <button type="button" class="page-btn" data-testid="player-prev" disabled={playerPage <= 1} onclick={() => { playerPage = Math.max(1, playerPage - 1); void load(); }}>{t('god.player.prev')}</button>
+            <span data-testid="player-page-info">{t('god.player.page', { page: playerPage, pages, total })}</span>
+            <button type="button" class="page-btn" data-testid="player-next" disabled={playerPage >= pages} onclick={() => { playerPage = Math.min(pages, playerPage + 1); void load(); }}>{t('god.player.next')}</button>
+          </nav>
         {/if}
       {:else if section === 'players' && detail}
         <a href="#/players" class="gback">← {t('god.player.back')}</a>
@@ -393,6 +402,9 @@
   .note { opacity: 0.6; font-size: 0.85em; }
   .search { display: flex; gap: 8px; margin: 8px 0 16px; flex-wrap: wrap; }
   .search input { flex: 1; min-width: 160px; }
+  .pager { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 16px 0 8px; }
+  .page-btn { min-height: 44px; min-width: 88px; padding: 8px 14px; }
+  .pager span { font-size: 0.95em; }
   .bad { color: #ff9a9a; }
   .tag.kind { background: #12324a; color: var(--cyan); margin: 0; }
   .chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0 16px; }
