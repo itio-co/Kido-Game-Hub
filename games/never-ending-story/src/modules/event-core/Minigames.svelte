@@ -3,20 +3,31 @@
   import { artworkFile } from '../cutscene';
   import { jigComplete } from '../jigsaw';
   import JigsawBoard from '../jigsaw/JigsawBoard.svelte';
-  import { CROSS_GRID, CROSS_KEYS, CROSS_NUM, FAKE_TIME } from './puzzles';
+  import { formatTime } from '../minigame-core/result';
+  import WinResultDialog from '../minigame-core/WinResultDialog.svelte';
+  import { CROSS_GRID, CROSS_KEYS, CROSS_NUM } from './puzzles';
   import type { FlowSession } from './session.svelte';
 
   let { session }: { session: FlowSession } = $props();
 
-  const time = $derived(
-    session.screen === 'slide' ? FAKE_TIME.slide : session.screen === 'jigsaw' ? FAKE_TIME.jigsaw : FAKE_TIME.crossword,
-  );
+  let now = $state(Date.now());
+  $effect(() => {
+    if (session.winResult) return;
+    now = Date.now();
+    const timer = window.setInterval(() => { now = Date.now(); }, 250);
+    return () => window.clearInterval(timer);
+  });
+
+  const elapsed = $derived(formatTime(session.puzzleElapsedMs(now)));
+  const best = $derived(session.puzzleBestMs());
+  const bestText = $derived(best != null ? formatTime(best) : '—');
+  const difficultyLabel = $derived(session.practice ? `ด่าน ${session.lvN}` : session.difficulty);
 </script>
 
 <div class="mg">
   <div class="mgbar">
     {#if session.practice}<span class="prac">ฝึก · ด่าน {session.lvN}</span>{/if}
-    <span class="t">⏱ {time.elapsed} · 🏆 {time.best} <small>({session.practice ? `ด่าน ${session.lvN}` : session.difficulty})</small></span>
+    <span class="t">⏱ {elapsed} · 🏆 {bestText} <small>({difficultyLabel})</small></span>
     <span class="stars">{session.starText()}</span>
     <button type="button" class="mgbtn" onclick={() => session.puzzleHint()}>คำใบ้</button>
   </div>
@@ -65,7 +76,7 @@
       onUpdate={(next) => session.setJig(next)}
       onComplete={() => session.finishJigsaw()}
     />
-    {#if session.practice || jigComplete(session.jig)}
+    {#if (session.practice || jigComplete(session.jig)) && !session.winResult}
       <button type="button" class="mgbtn done" data-testid="jigsaw-done" onclick={() => session.finishJigsaw()}>
         {session.practice ? `ผ่านด่าน ${session.lvN}` : 'เสร็จ'}
       </button>
@@ -93,6 +104,10 @@
     <p class="slide-note">แตะบล็อกเพื่อเลื่อน · A แนวตั้ง · B และ K แนวนอน · ไม่มีจำกัดเวลา</p>
   {/if}
 </div>
+
+{#if session.winResult}
+  <WinResultDialog result={session.winResult} onContinue={() => void session.confirmWin()} />
+{/if}
 
 <style>
   .mg { position: absolute; inset: 0; z-index: 1; padding: 78px 12px 96px; display: flex; flex-direction: column; gap: 10px; overflow: auto; background: linear-gradient(160deg, #1d3346, #2c4a5e); }

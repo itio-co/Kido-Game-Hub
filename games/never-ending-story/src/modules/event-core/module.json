@@ -11,7 +11,7 @@
   ],
   "dependsOn": {
     "core": ">=0.6.24",
-    "minigame-core": "^1.0.0",
+    "minigame-core": "^1.1.0",
     "character": "^1.0.0",
     "cutscene": "^1.0.0",
     "crossword": "^1.0.0",
