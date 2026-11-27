@@ -226,11 +226,11 @@
           {@const total = Number(data.total ?? 0)}
           {@const pageSize = Number(data.pageSize ?? 20)}
           {@const pages = Math.max(1, Math.ceil(total / pageSize))}
-          <nav class="pager" data-testid="player-pager">
+          <div class="pager" data-testid="player-pager" role="navigation">
             <button type="button" class="page-btn" data-testid="player-prev" disabled={playerPage <= 1} onclick={() => { playerPage = Math.max(1, playerPage - 1); void load(); }}>{t('god.player.prev')}</button>
             <span data-testid="player-page-info">{t('god.player.page', { page: playerPage, pages, total })}</span>
             <button type="button" class="page-btn" data-testid="player-next" disabled={playerPage >= pages} onclick={() => { playerPage = Math.min(pages, playerPage + 1); void load(); }}>{t('god.player.next')}</button>
-          </nav>
+          </div>
         {/if}
       {:else if section === 'players' && detail}
         <a href="#/players" class="gback">← {t('god.player.back')}</a>
@@ -434,6 +434,7 @@
     .content { grid-column: 1; padding: 12px; }
     .two { grid-template-columns: 1fr; }
     nav { position: fixed; top: 0; left: 0; bottom: 0; width: 240px; z-index: 30; transform: translateX(-100%); transition: transform 0.2s; }
+    .pager { position: static; transform: none; width: auto; z-index: auto; background: transparent; border: 0; padding: 0; flex-direction: row; }
     nav.open { transform: none; }
     .scrim-god { display: block; position: fixed; inset: 0; z-index: 29; background: rgba(0, 0, 0, 0.5); border: 0; border-radius: 0; }
     table.wide { display: block; overflow-x: auto; overscroll-behavior: contain; white-space: nowrap; }
