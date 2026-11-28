@@ -36,5 +36,15 @@ Rules: `src/lib/streak.ts` (shared), storage: `worker/streak.ts`, token: `worker
 - D1 `player_streak (playerId, record_json, streak_count, best, last_day, rev, updated_at)`, optimistic `rev`. The Worker runs `CREATE TABLE IF NOT EXISTS` on first use; `worker/migrations/003_streak.sql` is the same SQL.
 - Token: `st1.<iv>.<ciphertext>`, AES-256-GCM with a key derived (SHA-256) from the Worker secret `STREAK_TOKEN_KEY`; payload `{v, pid, streakCount, date}`. The client stores it in `nesg.streak.v1` and sends it back as `streakToken`. `check` is `ok | stale | invalid | missing | nokey`; the server record always wins and nothing about the token is logged. Without the secret the streak still counts and `token` is `null`.
 
+## Player roles (0.6.40, unreleased)
+Policy and D1 helpers: `src/lib/roles.ts`. Gate: `requireRole(req, env, min)` exported from `src/modules/god/server.ts`. Thai GDD: `src/modules/god/GDD.md` (roles section) and `docs/gdd/core.md` §9.4.
+
+- Roles: `player` (default) < `god` < `super_god`, stored in `players.role` (+ `role_updated_at`, `role_updated_by`). The role is always read from D1; nothing a client sends can set it. `POST /players/register`, `PATCH /players/:id` and `POST /runs` never touch it.
+- `GET /api/players/me` (Bearer) → `{ok, playerId, role}`. 401 without a valid token.
+- A God admin password session acts as `super_god`. A player's Bearer token acts as the stored role. `GET /api/god/me` → `{ok, role, via: 'password' | 'token'}` (needs `god`); `POST /api/god/snapshots` needs `god`; every other `/api/god/*` endpoint needs `super_god`. No credentials → 401, valid but too low → 403 `forbidden`.
+- `POST /api/god/players/:id/role` `{role, confirmSuperGod?}` (super god only): the player must be registered; granting or removing `super_god` needs the password session (`password-required`); a token cannot change its own role (`self-change`); demoting a `super_god` needs `confirmSuperGod: true` (`confirm-required`); compare-and-swap on the old role (`conflict`).
+- For a new feature: `const who = await requireRole(req, env, 'god'); if (who instanceof Response) return who;` then use `who.role`, `who.via`, `who.playerId`.
+- Migration: `worker/migrations/004_roles.sql` (SQLite has no `ADD COLUMN IF NOT EXISTS`, so a second run errors with "duplicate column" and changes nothing). The Worker also adds the columns itself the first time it reads a role, so deploying the Worker alone is safe. No new secret.
+
 ## Caveats
 - The run tag salt is in the client, so a determined player can forge tokens with any plausible score. Next step: server-signed runs (issue a signed seed/session at start, verify elapsed time server-side) and Cloudflare Turnstile on register/submit.

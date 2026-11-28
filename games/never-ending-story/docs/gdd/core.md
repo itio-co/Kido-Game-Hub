@@ -73,8 +73,13 @@ Prologue, Hub, FlowView, Settings, Leaderboard. god admin อยู่ในโ�
 - เซิร์ฟเวอร์ส่ง token เข้ารหัสกลับมาด้วย ข้างในมี `{streakCount, date}` ของสตรีคล่าสุด เครื่องเก็บไว้ใน `nesg.streak.v1` พร้อมข้อมูลบอร์ดล่าสุด แล้วส่งกลับไปทุกครั้งที่ส่งผล เซิร์ฟเวอร์ถอดแล้วเทียบกับข้อมูลของตัวเอง ถ้าไม่ตรงหรือถูกแก้ ยังยึดข้อมูลบนเซิร์ฟเวอร์เสมอ และไม่บันทึก token ลง log
 - ยังไม่เคยเชื่อมต่อเซิร์ฟเวอร์ บอร์ดเป็น 0 พร้อมข้อความว่าเชื่อมต่อไม่ได้ ตัวเลขบนเครื่องไม่เคยคิดเอง
 
+### 9.4 บทบาทผู้เล่น (ยังไม่ปล่อย; ปล่อยพร้อม god 2.2.0 และ god-mode 1.3.0)
+- ทุกผู้เล่นมีบทบาท `player` (ค่าเริ่มต้น) `god` หรือ `super_god` เก็บที่ `players.role` (กติกาและโค้ดตัดสินใจ: `src/lib/roles.ts`) ผู้เล่นเปลี่ยนบทบาทตัวเองไม่ได้ ไม่มี API ฝั่งผู้เล่นสำหรับเรื่องนี้ การเลื่อน/ลดทำที่หน้าแอดมิน (`/never/god`) ด้วยรหัสผ่านแอดมินเท่านั้น (ดู GDD ของ `god`)
+- `GET /api/players/me` (Bearer) ตอบ `{ok, playerId, role}` ไคลเอนต์ใช้ (`fetchMyRole` ใน `cloudSync.ts`) เพื่อแสดงปุ่ม GOD ให้ผู้เล่น god / super_god ไม่ใช่เพื่อกำหนดสิทธิ์ สิทธิ์จริงตรวจที่เซิร์ฟเวอร์ทุกครั้ง
+- ฟีเจอร์ฝั่งเซิร์ฟเวอร์ที่ต้องจำกัดสิทธิ์ใช้ `requireRole(req, env, 'god' | 'super_god')` จาก `src/modules/god/server.ts` (Worker import ได้) ไม่เขียนเช็กบทบาทเอง
+
 ## 10. Data & telemetry (ฟิลด์บนเซิร์ฟเวอร์)
-D1: `players`, `player_state`, `player_events`, `player_home`, `runs` (มีคอลัมน์ `ruleset`), `player_streak` (0.6.39: `record_json` สตรีค ถ่าน วันล่าสุด ชนะทั้งหมด และประวัติ 14 วัน), `god_login` · localStorage เซฟหลัก, `nesg.streak.v1` (token สตรีคที่เข้ารหัสและบอร์ดล่าสุด), `nesg.streakPending.v1` (ชัยชนะที่ยังส่งไม่ได้ของวันนี้) · Worker secret `STREAK_TOKEN_KEY` ใช้เข้ารหัส token (AES-GCM) ถ้าไม่ได้ตั้ง สตรีคยังนับได้แต่ไม่มี token
+D1: `players`, `player_state`, `player_events`, `player_home`, `runs` (มีคอลัมน์ `ruleset`), `players` มีคอลัมน์ `role`, `role_updated_at`, `role_updated_by` (ยังไม่ปล่อย; `worker/migrations/004_roles.sql`), `player_streak` (0.6.39: `record_json` สตรีค ถ่าน วันล่าสุด ชนะทั้งหมด และประวัติ 14 วัน), `god_login` · localStorage เซฟหลัก, `nesg.streak.v1` (token สตรีคที่เข้ารหัสและบอร์ดล่าสุด), `nesg.streakPending.v1` (ชัยชนะที่ยังส่งไม่ได้ของวันนี้) · Worker secret `STREAK_TOKEN_KEY` ใช้เข้ารหัส token (AES-GCM) ถ้าไม่ได้ตั้ง สตรีคยังนับได้แต่ไม่มี token
 
 ## 11. Dependencies + เวอร์ชัน
 ใช้ minigame-core, event-core, crossword, jigsaw, slide, stirfry, challenge, event-01, god, god-mode (ดู `module.json`)

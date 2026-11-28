@@ -2,8 +2,8 @@
   "id": "god",
   "name": "God admin",
   "kind": "admin",
-  "version": "2.1.1",
-  "description": "Admin console at /never/god and /never/api/god. Password session, players, games, events, and the module registry.",
+  "version": "2.2.0",
+  "description": "Admin console at /never/god and /never/api/god. Password session, players with roles (promote / demote), games, events, and the module registry.",
   "entry": "src/modules/god/index.ts",
   "publicEntries": [
     "src/modules/god/index.ts",
@@ -12,7 +12,7 @@
     "src/modules/god/version.ts"
   ],
   "dependsOn": {
-    "core": ">=0.6.23",
+    "core": ">=0.6.39",
     "character": "^1.0.0",
     "cutscene": "^1.0.0"
   },

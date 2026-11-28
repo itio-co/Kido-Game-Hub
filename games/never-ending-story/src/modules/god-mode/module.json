@@ -2,16 +2,16 @@
   "id": "god-mode",
   "name": "God Mode",
   "kind": "feature",
-  "version": "1.2.0",
-  "description": "In-game GOD float for a signed-in admin: Settings toggle, draggable bubble, Admin and Inspect menu, and a redacted JSON view of the current page.",
+  "version": "1.3.0",
+  "description": "In-game GOD float for an admin session or a god / super_god player: Settings toggle, draggable bubble, Admin and Inspect menu, and a redacted JSON view of the current page.",
   "entry": "src/modules/god-mode/index.ts",
   "publicEntries": [
     "src/modules/god-mode/index.ts",
     "src/modules/god-mode/version.ts"
   ],
   "dependsOn": {
-    "core": ">=0.6.23",
-    "god": "^2.1.0"
+    "core": ">=0.6.39",
+    "god": "^2.2.0"
   },
   "gdd": "src/modules/god-mode/GDD.md"
 }
