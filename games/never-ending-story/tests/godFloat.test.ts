@@ -1,4 +1,4 @@
-import { floatDragged, godAdminLinkVisible, godWishVisible, godAdminUrl, godButtonVisible, godFloatVisible, loadFloatPrefs, nextFloatPosition, parseFloatPrefs, saveFloatPrefs, FLOAT_TAP_SLOP_PX, GOD_FLOAT_KEY } from '../src/modules/god-mode/floatState.ts';
+import { floatDragged, godAdminLinkVisible, godWishVisible, godAdminUrl, leftoverMenuClick, godButtonVisible, godFloatVisible, loadFloatPrefs, nextFloatPosition, parseFloatPrefs, saveFloatPrefs, FLOAT_TAP_SLOP_PX, GOD_FLOAT_KEY } from '../src/modules/god-mode/floatState.ts';
 import { inspectDocument, inspectText, redact } from '../src/modules/god-mode/inspect.ts';
 
 declare const process: { exitCode?: number };
@@ -121,6 +121,14 @@ test('inspect redacts tokens and passwords and keeps game flags', () => {
   ok(text.includes('"mapUnlocked": true'), 'flag remains in the copy');
   const cookie = redact({ cookie: 'nes_god=1' }) as { cookie: string };
   ok(cookie.cookie === '[redacted]', 'cookie');
+});
+
+
+test('a leftover click from the same tap does not activate a menu item', () => {
+  ok(leftoverMenuClick(true, false) === true, 'click with no new pointerdown is leftover');
+  ok(leftoverMenuClick(true, true) === false, 'a later pointerdown on the menu may choose an item');
+  ok(leftoverMenuClick(false, false) === false, 'menu was not just opened by this gesture');
+  ok(leftoverMenuClick(false, true) === false, 'an already-armed menu accepts a click');
 });
 
 if (failed) process.exitCode = 1;

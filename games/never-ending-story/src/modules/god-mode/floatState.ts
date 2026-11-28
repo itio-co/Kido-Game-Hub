@@ -95,3 +95,14 @@ export function godAdminUrl(origin: string, base: string): string {
   const root = base.endsWith('/') ? base : `${base}/`;
   return new URL('god', `${origin}${root}`).href;
 }
+
+/**
+ * True when a menu-item click is the leftover click of the gesture that just
+ * opened the menu. A short tap opens the menu on pointerup; the following
+ * click must not activate an item. A later pointerdown on the menu is a new
+ * gesture and may choose an item immediately. A long press typically has no
+ * leftover click, and the menu stays open (there is no separate long-press action).
+ */
+export function leftoverMenuClick(openedByThisGesture: boolean, itemSawPointerDown: boolean): boolean {
+  return openedByThisGesture === true && itemSawPointerDown !== true;
+}

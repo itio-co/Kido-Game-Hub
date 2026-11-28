@@ -42,6 +42,8 @@
   let startY = 0;
   let originX = 0;
   let originY = 0;
+  /** True after a tap opens the menu, until a new pointerdown arrives on the menu. */
+  let suppressItemClick = false;
 
   $effect(() => {
     if (!dragging) {
@@ -90,7 +92,30 @@
     if (!dragging) return;
     dragging = false;
     onPrefs({ on: true, x, y });
-    if (!moved) menu = !menu;
+    if (!moved) {
+      menu = !menu;
+      suppressItemClick = menu;
+    }
+  }
+
+  function onMenuPointerDown(): void {
+    suppressItemClick = false;
+  }
+
+  function choose(action: () => void): (event: MouseEvent) => void {
+    return (event: MouseEvent) => {
+      // A leftover click has no new pointerdown on the menu, so the suppress flag is still set.
+      if (suppressItemClick) {
+        event.preventDefault();
+        event.stopPropagation();
+        return;
+      }
+      action();
+    };
+  }
+
+  function onBubbleContextMenu(event: MouseEvent): void {
+    event.preventDefault();
   }
 
   function openAdmin(): void {
@@ -147,10 +172,10 @@
 <div class="god-float" class:capturing data-wish-skip bind:this={root} style="left:{x * 100}%;top:{y * 100}%">
   {#if menu}
     <div class="menu" data-testid="god-float-menu">
-      {#if godAdminLinkVisible(role)}<button type="button" data-testid="god-float-admin" onclick={openAdmin}>{t('god.float.admin')}</button>{/if}
-      <button type="button" data-testid="god-float-inspect" onclick={openInspect}>{t('god.float.inspect')}</button>
-      {#if godWishVisible(role)}<button type="button" data-testid="god-float-wishes" onclick={openWishList}>{t('god.float.wishList')}</button>{/if}
-      {#if godWishVisible(role)}<button type="button" data-testid="god-float-wish" onclick={openWish}>{t('god.float.wish')}</button>{/if}
+      {#if godAdminLinkVisible(role)}<button type="button" data-testid="god-float-admin" onpointerdown={onMenuPointerDown} onclick={choose(openAdmin)}>{t('god.float.admin')}</button>{/if}
+      <button type="button" data-testid="god-float-inspect" onpointerdown={onMenuPointerDown} onclick={choose(openInspect)}>{t('god.float.inspect')}</button>
+      {#if godWishVisible(role)}<button type="button" data-testid="god-float-wishes" onpointerdown={onMenuPointerDown} onclick={choose(openWishList)}>{t('god.float.wishList')}</button>{/if}
+      {#if godWishVisible(role)}<button type="button" data-testid="god-float-wish" onpointerdown={onMenuPointerDown} onclick={choose(openWish)}>{t('god.float.wish')}</button>{/if}
     </div>
   {/if}
   <button
@@ -163,6 +188,7 @@
     onpointermove={onMove}
     onpointerup={onUp}
     onpointercancel={onUp}
+    oncontextmenu={onBubbleContextMenu}
   >{t('god.float.toggle')}</button>
 </div>
 
@@ -187,7 +213,7 @@
         </select>
       </label>
       <button type="button" data-testid="god-inspect-share" disabled={sharing} onclick={shareLink}>{t('god.float.share')}</button>
-      <button type="button" onclick={() => (inspect = false)}>{t('god.float.close')}</button>
+      <button type="button" data-testid="god-inspect-close" onclick={() => (inspect = false)}>{t('god.float.close')}</button>
       {#if shareUrl}
         <p class="share" data-testid="god-share-url"><a href={shareUrl}>{shareUrl}</a>
           <button type="button" onclick={copyLink}>{t('god.float.copyLink')}</button>
@@ -209,10 +235,9 @@
     position: absolute;
     z-index: 12;
     transform: translate(-50%, -50%);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 6px;
+    /* Size to the bubble so opening the menu does not shift the icon under the finger. */
+    width: 64px;
+    height: 64px;
   }
   .god-float.capturing { visibility: hidden; }
   .bubble {
@@ -229,10 +254,15 @@
     cursor: grab;
   }
   .menu {
+    position: absolute;
+    left: 50%;
+    bottom: calc(100% + 6px);
+    transform: translateX(-50%);
     display: flex;
     flex-direction: column;
     gap: 6px;
     min-width: 168px;
+    z-index: 1;
   }
   .menu button, .inspect header button {
     min-height: 40px;
