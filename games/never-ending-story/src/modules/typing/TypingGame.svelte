@@ -9,13 +9,16 @@
   import { readPrefs, writePrefs } from './prefs';
   import type { TypingPrefs } from './store';
   import { SourceError, sourceById, TYPIST_SOURCES, type Drill, type Lesson } from './sources';
+  import { cardForDrill, type QuoteCard } from './quote';
+  import { findPortrait } from './portrait';
+  import Portrait from './Portrait.svelte';
 
   let { onExit }: { onExit: () => void } = $props();
   const c = gameCopy('typing');
   const rs = typingRuleset(manifest.version)!;
 
   type Screen = 'menu' | 'typist' | 'play';
-  type Run = { game: string; label: string; instruction: string; text: string; back: 'menu' | 'typist' };
+  type Run = { game: string; label: string; instruction: string; text: string; back: 'menu' | 'typist'; card: QuoteCard | null };
 
   let prefs = $state<TypingPrefs>(readPrefs());
   let screen = $state<Screen>('menu');
@@ -52,6 +55,25 @@
             : c('hint.noback')
           : '\u00a0',
   );
+
+
+  const quoteWords = $derived.by(() => {
+    const card = run?.card;
+    if (!card) return [];
+    return wordsOf(cells.filter((cell) => cell.from < card.authorFrom));
+  });
+  const authorWords = $derived.by(() => {
+    const card = run?.card;
+    if (!card) return [];
+    return wordsOf(cells.filter((cell) => cell.from >= card.authorFrom));
+  });
+  const photoCredit = $derived.by(() => {
+    const author = run?.card?.author;
+    if (!author) return '';
+    const ent = findPortrait(author);
+    if (!ent) return '';
+    return c('typist.photoCredit', { artist: ent.artist, license: ent.license });
+  });
 
   function savePrefs(next: TypingPrefs): void {
     prefs = next;
@@ -98,17 +120,19 @@
   function startSet(): void {
     const set = setById(prefs.set);
     const plays = prefs.plays[set.id] ?? 0;
-    void beginRun({ game: `typing-${set.id}`, label: `${c('title')} · ${c(`set.${set.id}`)}`, instruction: c(`set.${set.id}.desc`), text: exerciseFor(set, plays, c), back: 'menu' });
+    void beginRun({ game: `typing-${set.id}`, label: `${c('title')} · ${c(`set.${set.id}`)}`, instruction: c(`set.${set.id}.desc`), text: exerciseFor(set, plays, c), back: 'menu', card: null });
   }
 
   function startDrill(lesson: Lesson, drill: Drill): void {
     const kind = c(`typist.kind.${drill.kind}`);
+    const card = cardForDrill(drill);
     void beginRun({
       game: `typist-${prefs.source}-${drill.id}`,
       label: `${c('typist.title')} · ${lesson.title}`,
       instruction: drill.instruction || kind,
-      text: drill.text,
+      text: card?.text ?? drill.text,
       back: 'typist',
+      card,
     });
   }
 
@@ -288,6 +312,8 @@
   data-set={prefs.set}
   data-source={prefs.source}
   data-load={loadState}
+  data-card={run?.card ? 'quote' : 'plain'}
+  data-author={run?.card?.author ?? ''}
   data-version={manifest.version}
 >
   <header class="top">
@@ -405,6 +431,31 @@
         </section>
       </main>
     {/if}
+  {:else if run?.card}
+    <div class="quote-card" data-testid="typing-quote-card">
+      <div
+        class="quote-col"
+        bind:this={textEl}
+        data-testid="typing-text"
+        data-pos={st.typed.length}
+        data-len={st.target.length}
+        data-errors={errorsLeft}
+        data-started={started ? '1' : '0'}
+        role="textbox"
+        aria-readonly="true"
+        aria-label={c('textAria')}
+        tabindex="-1"
+        onclick={() => inputEl?.focus()}
+        onkeydown={() => undefined}
+      >
+        <p class="q" data-testid="typing-quote">{#each quoteWords as w, wi (wi)}<span class="w">{#each w as cell (cell.from)}<span class="ch {cellMark(st, cell)}" data-mark={cellMark(st, cell)}>{cell.text === ' ' ? '\u00a0' : cell.text}</span>{/each}</span>{/each}</p>
+        <p class="a" data-testid="typing-author">{#each authorWords as w, wi ('a'+wi)}<span class="w">{#each w as cell (cell.from)}<span class="ch {cellMark(st, cell)}" data-mark={cellMark(st, cell)}>{cell.text === ' ' ? '\u00a0' : cell.text}</span>{/each}</span>{/each}</p>
+      </div>
+      <aside class="portrait-col">
+        <Portrait author={run.card.author} />
+        {#if photoCredit}<p class="photo-credit" data-testid="typing-photo-credit">{photoCredit}</p>{/if}
+      </aside>
+    </div>
   {:else}
     <p class="instr" data-testid="typing-instruction">{run?.instruction ?? ''}</p>
     <div
@@ -514,6 +565,57 @@
   .list .row small { font-weight: 500; opacity: 0.7; font-size: 11px; }
   .intro { font-style: italic; }
   .instr { margin: 0; flex: none; font-size: 13px; opacity: 0.85; min-height: 18px; overflow-wrap: anywhere; }
+
+  .quote-card {
+    flex: 1;
+    min-height: 0;
+    display: grid;
+    grid-template-columns: minmax(0, 1.25fr) minmax(160px, 0.7fr);
+    gap: 28px;
+    align-items: center;
+    padding: 8px 12px 4px;
+    background: linear-gradient(180deg, #f6efe2 0%, #efe4d0 100%);
+    border-radius: 16px;
+    color: #1c140c;
+    cursor: text;
+  }
+  .quote-col {
+    min-width: 0;
+    min-height: 0;
+    overflow: auto;
+    overscroll-behavior: contain;
+    padding: 8px 4px 8px 12px;
+  }
+  .q {
+    margin: 0;
+    font-family: Georgia, 'Palatino Linotype', Palatino, 'Times New Roman', serif;
+    font-style: italic;
+    font-size: clamp(22px, 3.2vw, 42px);
+    line-height: 1.45;
+    font-weight: 400;
+  }
+  .a {
+    margin: 18px 0 0;
+    font-family: Itim, 'Segoe Script', 'Apple Chancery', 'Snell Roundhand', cursive;
+    font-size: clamp(22px, 2.6vw, 36px);
+    line-height: 1.3;
+    color: #2a1c10;
+  }
+  .quote-card .ch.todo { color: #5c4e3d; }
+  .quote-card .ch.ok { color: #1e7a48; }
+  .quote-card .ch.bad { color: #fff; background: #d12b45; }
+  .quote-card .ch.cursor { color: #1c140c; background: #7ee0ff; }
+  .portrait-col { min-width: 0; display: flex; flex-direction: column; gap: 8px; align-items: center; padding-right: 8px; }
+  .photo-credit { margin: 0; font-size: 10px; line-height: 1.3; text-align: center; color: #5c4e3d; max-width: 100%; overflow-wrap: anywhere; }
+  @media (max-height: 480px) {
+    .quote-card { grid-template-columns: minmax(0, 1fr) minmax(110px, 160px); gap: 12px; padding: 4px 8px; }
+    .q { font-size: clamp(16px, 4.4vh, 26px); }
+    .a { margin-top: 8px; font-size: clamp(16px, 3.6vh, 22px); }
+  }
+  @media (max-width: 700px) and (orientation: portrait) {
+    .quote-card { grid-template-columns: 1fr; justify-items: center; }
+    .portrait-col { max-width: 180px; }
+  }
   .txt {
     position: relative;
     flex: 1;

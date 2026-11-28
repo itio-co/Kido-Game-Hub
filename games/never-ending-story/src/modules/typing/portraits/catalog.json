@@ -1,0 +1,41 @@
+[
+  {
+    "author": "Linus Torvalds",
+    "aliases": [],
+    "qid": "Q34253",
+    "file": "/img/typing/portraits/linus-torvalds.jpg",
+    "sourceFile": "LinuxCon Europe Linus Torvalds 03 (cropped).jpg",
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:LinuxCon_Europe_Linus_Torvalds_03_(cropped).jpg",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "artist": "Krd (photo), Von Sprat (crop/extraction)",
+    "attributionRequired": true
+  },
+  {
+    "author": "Donald Knuth",
+    "aliases": [
+      "Donald E. Knuth",
+      "Donald Ervin Knuth"
+    ],
+    "qid": "Q17457",
+    "file": "/img/typing/portraits/donald-knuth.jpg",
+    "sourceFile": "Donald Ervin Knuth (cropped).jpg",
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Donald_Ervin_Knuth_(cropped).jpg",
+    "license": "CC BY-SA 2.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/2.0",
+    "artist": "Alex Handy",
+    "attributionRequired": true
+  },
+  {
+    "author": "Bjarne Stroustrup",
+    "aliases": [],
+    "qid": "Q92620",
+    "file": "/img/typing/portraits/bjarne-stroustrup.jpg",
+    "sourceFile": "Bjarne Stroustrup (2013).jpg",
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Bjarne_Stroustrup_(2013).jpg",
+    "license": "CC BY 2.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by/2.0",
+    "artist": "ICPCNews",
+    "attributionRequired": true
+  }
+]

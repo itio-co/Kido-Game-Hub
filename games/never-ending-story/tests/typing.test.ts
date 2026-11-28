@@ -7,6 +7,8 @@ import { defaultPrefs, parsePrefs } from '../src/modules/typing/store.ts';
 import { normalizeForTyping, parseTypist, tokenize } from '../src/modules/typing/sources/typParser.ts';
 import { createTypTextSource, createTypUrlSource, quotesSource, SourceError, TYPIST_QUOTES_URL, TYPIST_SOURCES } from '../src/modules/typing/sources/typist.ts';
 import { SAMPLE_TYP } from '../src/modules/typing/sources/sample.ts';
+import { authorFromInstruction, buildQuoteCard, looksLikePersonName, wrapQuote } from '../src/modules/typing/quote.ts';
+import { findPortrait, initialsOf } from '../src/modules/typing/portrait.ts';
 import { MINI_TYP } from './fixtures/typistMini.ts';
 
 declare const process: { exitCode?: number; env: Record<string, string | undefined> };
@@ -277,6 +279,51 @@ test('real course file (optional): every drill is typable text', async () => {
   ok(drills.every((d) => /^[\x20-\x7e]+$/.test(d.text)), 'all text is plain ASCII after normalization');
   ok(new Set(drills.map((d) => d.id)).size === drills.length, 'unique ids');
   ok(r.warnings.length === 0, `warnings: ${r.warnings.slice(0, 3)}`);
+});
+
+
+// ---- quote cards ----
+test('authorFromInstruction: strip index, split name and work', () => {
+  const a = authorFromInstruction('[14] Donald E. Knuth, "Selected Papers on Computer Science"');
+  ok(!!a && a.author === 'Donald E. Knuth' && a.work.includes('Selected Papers'), JSON.stringify(a));
+  ok(authorFromInstruction('[10] Linus Torvalds')?.author === 'Linus Torvalds', 'plain name');
+  ok(authorFromInstruction('[3] Olin Shivers')?.author === 'Olin Shivers', 'olin');
+  ok(authorFromInstruction('Home row') === null, 'hint is not a name');
+  ok(authorFromInstruction('[1] Keep names clear') === null, 'imperative title is not a name');
+});
+
+test('looksLikePersonName accepts initials and particles', () => {
+  ok(looksLikePersonName('C.A.R Hoare') && looksLikePersonName('Frederick P. Brooks Jr.') && looksLikePersonName('Abelson & Sussman'), 'names');
+  ok(!looksLikePersonName('Read the error message first'), 'sentence');
+});
+
+test('buildQuoteCard wraps the quote in ASCII quotes and appends a typable author line; every shown character is in text', () => {
+  const c = buildQuoteCard({ text: 'Talk is cheap.  Show me the code.', instruction: '[10] Linus Torvalds' })!;
+  ok(c.author === 'Linus Torvalds' && c.quote === '"Talk is cheap. Show me the code."', c.quote);
+  ok(c.authorLine === '- Linus Torvalds', c.authorLine);
+  ok(c.text === '"Talk is cheap. Show me the code." - Linus Torvalds', c.text);
+  ok(c.text.slice(c.authorFrom) === '- Linus Torvalds', 'authorFrom');
+  ok(c.text === `${c.quote} ${c.authorLine}`, 'text is quote, space, author line');
+  const already = buildQuoteCard({ text: '"Hello."', instruction: 'Ada' })!;
+  ok(already.quote === '"Hello."' && already.text === '"Hello." - Ada', already.text);
+  const trailing = buildQuoteCard({ text: 'Hello world -- Jane Doe' })!;
+  ok(trailing.author === 'Jane Doe' && trailing.quote === '"Hello world"', trailing.quote);
+  ok(buildQuoteCard({ text: 'asdf jkl;', instruction: 'Home row' }) === null, 'no card for drills without an author');
+});
+
+test('wrapQuote is ASCII-only and does not double-wrap', () => {
+  ok(wrapQuote('Hello') === '"Hello"', 'adds quotes');
+  ok(wrapQuote('"already"') === '"already"', 'no double wrap');
+});
+
+test('portrait catalog: three preview authors resolve; unknown names fall back', () => {
+  const linus = findPortrait('Linus Torvalds');
+  const knuth = findPortrait('Donald E. Knuth');
+  const bjarne = findPortrait('Bjarne Stroustrup');
+  ok(!!linus && linus.license.startsWith('CC BY') && linus.file.includes('linus-torvalds'), JSON.stringify(linus));
+  ok(!!knuth && knuth.author === 'Donald Knuth' && knuth.license.startsWith('CC BY'), 'alias Donald E. Knuth');
+  ok(!!bjarne && bjarne.artist === 'ICPCNews', 'stroustrup');
+  ok(findPortrait('A Completely Unknown Person') === null && initialsOf('Linus Torvalds') === 'LT', 'fallback initials');
 });
 
 await Promise.all(pending);

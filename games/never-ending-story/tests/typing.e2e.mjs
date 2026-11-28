@@ -23,11 +23,11 @@ M:"Lessons"
 B:Alpha banner
 
 *:A_1
-I:[1] First quote
+I:[1] Ada Lovelace
 S:Keep it simple and keep it small.
 
 *:A_2
-I:[2] Second quote
+I:[2] Alan Turing
 S:Short drills build fast fingers.
 Q:Do you want to continue to next lesson [Y/N] ?
 N:MENU
@@ -36,7 +36,7 @@ N:MENU
 B:Beta banner
 
 *:B_1
-I:[3] Third quote
+I:[3] Grace Hopper
 S:Read the error message first.
 G:MENU
 `;
@@ -260,11 +260,14 @@ const ok = (msg) => console.log(`ok ${++step} ${msg}`);
   const drillId = real ? 'G_3' : 'A_1';
   await q(page, `typing-drill-${drillId}`).click();
   assert.equal(await root(page, 'data-screen'), 'play');
-  const instr = await text(page, 'typing-instruction');
-  assert.match(instr, /\[\d+\]/, 'instruction (credit line) shown above the text');
+  assert.equal(await root(page, 'data-card'), 'quote');
+  assert.equal(await root(page, 'data-author'), real ? 'Olin Shivers' : 'Ada Lovelace');
+  assert.equal(await page.locator('[data-testid="typing-instruction"]').count(), 0, 'instruction is not shown on the quote card (it is not typable)');
+  assert.ok(await q(page, 'typing-quote-card').count());
   const typed = (await page.locator('[data-testid="typing-text"] .ch').allTextContents()).join('').replaceAll('\u00a0', ' ');
   assert.ok(typed.length > 10 && !typed.includes('\n'));
-  if (real) assert.equal(typed, 'I object to doing things that computers can do.');
+  const expected = real ? '"I object to doing things that computers can do." - Olin Shivers' : '"Keep it simple and keep it small." - Ada Lovelace';
+  assert.equal(typed, expected);
   await typeSlow(page, typed.slice(0, Math.floor(typed.length / 2)), 110);
   await page.keyboard.type('#');
   await shot(page, '06-typist-drill-midrun-desktop.png');

@@ -12,6 +12,8 @@ export const typingGame = defineMinigame({
 export { default as TypingGame } from './TypingGame.svelte';
 export { TYPING_DIFFICULTIES, TYPING_RULESETS, TYPING_VERSION, typingRuleset, type TypingDifficulty, type TypingRuleset } from './ruleset.ts';
 export { SETS, type SetId } from './content.ts';
+export { buildQuoteCard, cardForDrill, type QuoteCard } from './quote.ts';
+export { findPortrait, type PortraitEntry } from './portrait.ts';
 export { TYPIST_QUOTES_URL, TYPIST_SOURCES, parseTypist, type Lesson, type LessonSource } from './sources/index.ts';
 
 /** Stars earned over every built-in set and level, for the practice card. */
