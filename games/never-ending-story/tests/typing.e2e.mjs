@@ -1,9 +1,11 @@
 // Typing minigame in a real browser: menu, error marks, backspace/hard mode, soft-keyboard style input, result dialog,
 // Typist lessons (online file, failure UI, bundled fallback), tablet + phone landscape, reduced motion.
 // Not in `npm test` (needs a browser and a static server):
-//   BASE=http://127.0.0.1:4177/ CHROME=/usr/bin/google-chrome-stable SHOTS=/workspace/nes-typing-shots \
+//   BASE=http://127.0.0.1:4177/never/ CHROME=/usr/bin/google-chrome-stable SHOTS=/workspace/nes-typing-shots \
 //     TYPIST_FILE=/path/to/programming_quotes.typ node tests/typing.e2e.mjs
-// TYPIST_FILE is optional; without it a small inline lesson file stands in for the online course.
+// Serve the preview build under /never/ (same path prefix as production) so root-absolute
+// /img/... portrait URLs would 404. TYPIST_FILE is optional; without it a small inline
+// lesson file stands in for the online course.
 import assert from 'node:assert/strict';
 import { existsSync, mkdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -121,6 +123,28 @@ async function typableText(page) {
   return (await page.locator('[data-testid="typing-text"] .ch').allTextContents()).join('').replaceAll(' ', ' ');
 }
 
+/** Portrait <img> must be under the app base (not a root-absolute /img/...) and actually decode. */
+async function assertPortraitLoaded(page, author) {
+  const img = page.locator('[data-testid="typing-portrait"] img');
+  await img.waitFor({ state: 'visible', timeout: 10000 });
+  const src = await img.getAttribute('src');
+  assert.ok(src, `${author}: missing portrait src`);
+  assert.ok(!src.startsWith('/img/'), `${author}: portrait src is root-absolute ${src}`);
+  const abs = new URL(src, page.url());
+  const basePath = new URL(BASE).pathname.endsWith('/') ? new URL(BASE).pathname : new URL(BASE).pathname + '/';
+  const expectedPrefix = basePath + 'img/typing/portraits/';
+  assert.ok(
+    abs.pathname.startsWith(expectedPrefix),
+    `${author}: resolved path ${abs.pathname} should start with ${expectedPrefix} (src=${src})`,
+  );
+  await img.evaluate((el) => (el.complete ? null : new Promise((resolve, reject) => {
+    el.addEventListener('load', resolve, { once: true });
+    el.addEventListener('error', () => reject(new Error('portrait image error ' + el.src)), { once: true });
+  })));
+  const naturalWidth = await img.evaluate((el) => el.naturalWidth);
+  assert.ok(naturalWidth > 0, `${author}: portrait did not load (naturalWidth=${naturalWidth}, src=${src}, resolved=${abs.href})`);
+}
+
 async function assertSideBySide(page, where) {
   const card = await q(page, 'typing-quote-card').boundingBox();
   const quote = await q(page, 'typing-quote').boundingBox();
@@ -143,7 +167,7 @@ async function assertSideBySide(page, where) {
   assert.match(await text(page, 'typing-levelhelp'), /97/, 'hard help changes');
   await q(page, 'typing-diff-easy').click();
   await shot(page, '01-menu-desktop.png');
-  const flow = await page.evaluate(() => fetch('/data/case-flow.json').then((r) => r.json()));
+  const flow = await page.evaluate((base) => fetch(new URL('data/case-flow.json', base).href).then((r) => r.json()), BASE);
   const card = flow.practice.find((g) => g.game === 'typing');
   assert.ok(card && card.route === '#/play/typing' && card.group === 'ฝีมือ' && card.future === false, 'practice card present');
   assert.equal(new Set(flow.practice.map((g) => g.id)).size, flow.practice.length, 'practice ids unique');
@@ -328,6 +352,7 @@ async function assertSideBySide(page, where) {
   await openAuthorDrill(page, author, false);
   assert.equal(await root(page, 'data-card'), 'quote');
   assert.equal(await q(page, 'typing-portrait').getAttribute('data-kind'), 'photo', author + ' uses a catalog photo');
+  await assertPortraitLoaded(page, author);
   await assertSideBySide(page, 'desktop');
   await q(page, 'typing-text').click();
   await shot(page, 'quote-desktop.png');

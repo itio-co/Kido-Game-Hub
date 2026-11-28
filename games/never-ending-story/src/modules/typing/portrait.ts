@@ -1,4 +1,5 @@
 /** Local author-portrait catalog (free-licensed stills) plus a faceless silhouette fallback. */
+import { imageUrl } from '../../lib/imageUrl.ts';
 import catalog from './portraits/catalog.json' with { type: 'json' };
 
 export type PortraitEntry = {
@@ -28,6 +29,15 @@ export const portraitCatalog: readonly PortraitEntry[] = ENTRIES;
 
 export function findPortrait(author: string): PortraitEntry | null {
   return byName.get(norm(author)) ?? null;
+}
+
+/**
+ * Public URL for a catalog still, valid under a non-root app base such as /never/.
+ * Accepts catalog paths of the form `/img/typing/portraits/x.webp` or `typing/portraits/x.webp`.
+ */
+export function portraitSrc(file: string): string {
+  const rel = file.replace(/^\/+/, '').replace(/^img\//, '');
+  return imageUrl(rel);
 }
 
 /** Initials for the silhouette fallback (up to 3). */

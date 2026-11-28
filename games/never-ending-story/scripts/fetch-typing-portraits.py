@@ -545,6 +545,7 @@ def main() -> int:
             "author": label,
             "aliases": [],
             "qid": qid,
+            # Stored path; the game resolves this through portraitSrc() / imageUrl() so it works under /never/.
             "file": f"/img/typing/portraits/{dest.name}",
             "sourceFile": info["file"],
             "sourceUrl": "https://commons.wikimedia.org/wiki/File:" + info["file"].replace(" ", "_"),
