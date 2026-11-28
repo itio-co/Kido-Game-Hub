@@ -326,7 +326,7 @@ async function postWish(req: Request, env: GodEnv, secret: string, who: Principa
   return json(result.body, result.status);
 }
 
-/** Read or mark wishes. The caller already passed the super_god gate. */
+/** Read wishes (god and above) or mark them read (super_god only; the caller must already have passed that gate). */
 async function readWishes(req: Request, env: GodEnv, path: string): Promise<Response> {
   const origin = new URL(req.url).origin;
   const appBase = normalizeAppBase(env.APP_BASE);
@@ -361,7 +361,7 @@ export async function godApi(req: Request, env: GodEnv, path: string): Promise<R
     if (!result.ok) return fail(result.error === 'bad-token' ? 401 : 410, result.error);
     return json({ ok: true, title: result.title, expiresAt: result.expiresAt, document: result.document });
   }
-  // Every endpoint below needs at least `god`. A god caller may also POST /wishes and POST /snapshots; reading wishes and every other route is super god only.
+  // Every endpoint below needs at least `god`. A god caller may POST /wishes, POST /snapshots, and GET the wish inbox; mark-read and every other route is super god only.
   const who = await requireRole(req, env, 'god');
   if (who instanceof Response) return who;
   if (path === '/me' && req.method === 'GET') return json({ ok: true, role: who.role, via: who.via });
@@ -374,8 +374,9 @@ export async function godApi(req: Request, env: GodEnv, path: string): Promise<R
     return json({ ok: true, id: made.id, expiresAt: made.expiresAt, url });
   }
   if (path === '/wishes' && req.method === 'POST') return postWish(req, env, secret, who);
+  if ((path === '/wishes' || path.startsWith('/wishes/')) && req.method === 'GET') return readWishes(req, env, path);
   if (!atLeast(who.role, 'super_god')) return fail(403, 'forbidden');
-  if (path === '/wishes' || path.startsWith('/wishes/')) return readWishes(req, env, path);
+  if (path === '/wishes/mark-read' && req.method === 'POST') return readWishes(req, env, path);
   if (path === '/dashboard' && req.method === 'GET') return dashboard(env);
   if (path === '/players' && req.method === 'GET') return playerList(env, new URL(req.url));
   let m = /^\/players\/([^/]+)$/.exec(path);

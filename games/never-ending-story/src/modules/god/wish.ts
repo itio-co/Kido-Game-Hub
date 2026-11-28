@@ -227,19 +227,21 @@ export async function createWish(opts: CreateOpts, input: WishInput): Promise<Wi
   return { status: 200, body: { ok: true, wish: wishView(row ?? {}, opts.base) } };
 }
 
-/** `since` is inclusive (created_at >= since). Oldest first so a puller works in order; `order=desc` is for the admin page. */
+/** `since` is inclusive (created_at >= since). Oldest first so a puller works in order; `order=desc` is for the in-game list and the admin page. `page` is 1-based (default 1). */
 export async function listWishes(db: WishDb, query: URLSearchParams, base: string): Promise<WishResult> {
   const since = parseSince(query.get('since'));
   if (since == null) return bad(400, 'bad-since');
   const unread = ['1', 'true', 'yes'].includes((query.get('unread') ?? '').toLowerCase());
   const limit = Math.min(WISH_LIST_MAX, Math.max(1, Number(query.get('limit')) || WISH_LIST_DEFAULT));
+  const page = Math.max(1, Math.floor(Number(query.get('page')) || 1) || 1);
   const dir = query.get('order') === 'desc' ? 'DESC' : 'ASC';
+  const offset = (page - 1) * limit;
   await ensureWishTable(db);
   const { results } = await db.prepare(
-    `SELECT ${LIST_COLUMNS} FROM god_wishes WHERE created_at>=? ${unread ? 'AND read_at IS NULL' : ''} ORDER BY created_at ${dir}, id ${dir} LIMIT ?`,
-  ).bind(since, limit).all<Row>();
+    `SELECT ${LIST_COLUMNS} FROM god_wishes WHERE created_at>=? ${unread ? 'AND read_at IS NULL' : ''} ORDER BY created_at ${dir}, id ${dir} LIMIT ? OFFSET ?`,
+  ).bind(since, limit, offset).all<Row>();
   const total = await db.prepare(`SELECT count(*) AS n FROM god_wishes WHERE created_at>=? ${unread ? 'AND read_at IS NULL' : ''}`).bind(since).first<{ n: number }>();
-  return { status: 200, body: { ok: true, since: since ? new Date(since).toISOString() : null, unread, count: results.length, total: total?.n ?? results.length, wishes: results.map((r) => wishView(r, base)) } };
+  return { status: 200, body: { ok: true, since: since ? new Date(since).toISOString() : null, unread, count: results.length, total: total?.n ?? results.length, page, pageSize: limit, wishes: results.map((r) => wishView(r, base)) } };
 }
 
 export async function readWish(db: WishDb, id: string, base: string): Promise<WishResult> {

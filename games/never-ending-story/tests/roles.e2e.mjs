@@ -1,5 +1,5 @@
 // Roles in the browser at 390x844: God admin players list with role badges, the promote/demote confirmation,
-// and who sees the in-game GOD float (player: never; god: Inspect and Wish; super god / admin session: Admin too).
+// and who sees the in-game GOD float (player: never; god: Inspect, Wish list and Wish; super god / admin session: Admin too).
 // The API is mocked; nothing reaches a server. Not in `npm test` (needs a browser and a static server):
 //   BASE=http://127.0.0.1:4173/ CHROME=/usr/bin/google-chrome-stable SHOTS=/workspace/nes-roles-shots node tests/roles.e2e.mjs
 import assert from 'node:assert/strict';
@@ -174,6 +174,7 @@ const FAB = '[data-testid="god-float"]';
   await page.locator('[data-testid="god-float-menu"]').waitFor();
   assert.equal(await page.locator('[data-testid="god-float-inspect"]').count(), 1, 'Inspect is offered');
   assert.equal(await page.locator('[data-testid="god-float-wish"]').count(), 1, 'Wish is offered to a god player');
+  assert.equal(await page.locator('[data-testid="god-float-wishes"]').count(), 1, 'Wish list is offered to a god player');
   assert.equal(await page.locator('[data-testid="god-float-admin"]').count(), 0, 'the admin page needs the password, so a god player is not offered it');
   await shot(page, 'fab-god-player.png');
   await page.locator('[data-testid="god-float-inspect"]').click();
@@ -190,6 +191,7 @@ const FAB = '[data-testid="god-float"]';
   assert.equal(await page.locator('[data-testid="god-float-admin"]').count(), 1);
   assert.equal(await page.locator('[data-testid="god-float-inspect"]').count(), 1);
   assert.equal(await page.locator('[data-testid="god-float-wish"]').count(), 1, 'Wish is offered to a super god');
+  assert.equal(await page.locator('[data-testid="god-float-wishes"]').count(), 1, 'Wish list is offered to a super god');
   await ctx.close();
 }
 // The existing password unlock keeps working: an accepted admin session acts as super god even for a plain player.
@@ -199,6 +201,7 @@ const FAB = '[data-testid="god-float"]';
   await page.locator(FAB).click();
   assert.equal(await page.locator('[data-testid="god-float-admin"]').count(), 1, 'admin session is super god');
   assert.equal(await page.locator('[data-testid="god-float-wish"]').count(), 1, 'Wish is offered on an admin session');
+  assert.equal(await page.locator('[data-testid="god-float-wishes"]').count(), 1, 'Wish list is offered on an admin session');
   await shot(page, 'fab-admin-session.png');
   await ctx.close();
 }

@@ -524,5 +524,18 @@
   "god.wishes.inspect": "Inspect",
   "god.wishes.markRead": "Mark as read",
   "god.wishes.read": "Read",
-  "god.wishes.unread": "New"
+  "god.wishes.unread": "New",
+  "god.float.wishList": "Wish list",
+  "god.wish.listTitle": "Wish list",
+  "god.wish.detailTitle": "Wish",
+  "god.wish.listEmpty": "No wishes yet",
+  "god.wish.listLoading": "Loading…",
+  "god.wish.listError": "Could not load the list",
+  "god.wish.listRetry": "Try again",
+  "god.wish.listPage": "Page {page}/{pages} · {total} wishes",
+  "god.wish.sender": "From",
+  "god.wish.senderAdmin": "Admin",
+  "god.wish.backToList": "Back to list",
+  "god.wish.enlarge": "Enlarge image",
+  "god.wish.closeShot": "Close image"
 }

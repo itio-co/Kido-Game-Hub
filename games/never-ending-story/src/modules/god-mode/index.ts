@@ -20,5 +20,5 @@ export {
   type FloatPrefs,
 } from './floatState';
 export { inspectDocument, inspectText, redact, type InspectPage } from './inspect';
-export { failureOf, sendWish, stampText, wishPayload, wishProblem, WISH_MAX_TEXT, type WishFailure, type WishPayload, type WishSent } from './wish';
+export { failureOf, fetchWishPage, fetchWishShotUrl, sendWish, stampText, wishPayload, wishProblem, WISH_MAX_TEXT, WISH_PAGE_SIZE, type WishFailure, type WishPage, type WishPayload, type WishRow, type WishSent } from './wish';
 export { captureElement, dataUrlBytes, SHOT_MAX_BYTES } from './capture';

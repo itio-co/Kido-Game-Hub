@@ -1,5 +1,5 @@
 // God Mode Wish: validation helpers plus the Worker endpoints against a real SQLite (node:sqlite) standing in for D1.
-// Role gate: a player is 403, a god can post but not read, a super god (or the admin password session) can read and mark-read.
+// Role gate: a player is 403; a god can post, list and read, but not mark-read; a super god (or the admin password session) can also mark-read.
 // Run by `npm test`. Uses a test-only password and tokens; never a real secret.
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
@@ -108,9 +108,11 @@ assert.equal(asGod.status, 200, 'a god player can post');
 const godWish = await asGod.json();
 assert.equal(godWish.wish.playerId, IDS.god);
 assert.equal(godWish.wish.role, 'god');
-assert.equal((await get('/api/god/wishes', bearer('god'))).status, 403, 'a god player cannot list wishes');
-assert.equal((await get(`/api/god/wishes/${godWish.wish.id}`, bearer('god'))).status, 403, 'a god player cannot read a wish');
-assert.equal((await get(`/api/god/wishes/${godWish.wish.id}/screenshot`, bearer('god'))).status, 403, 'a god player cannot fetch the screenshot');
+const listedByGod = await get('/api/god/wishes', bearer('god'));
+assert.equal(listedByGod.status, 200, 'a god player can list wishes');
+assert.equal((await listedByGod.json()).wishes[0].playerId, IDS.god);
+assert.equal((await get(`/api/god/wishes/${godWish.wish.id}`, bearer('god'))).status, 200, 'a god player can read a wish');
+assert.equal((await get(`/api/god/wishes/${godWish.wish.id}/screenshot`, bearer('god'))).status, 404, 'this god-posted wish has no screenshot, but the endpoint is allowed');
 assert.equal((await worker.fetch(req('/api/god/wishes/mark-read', { method: 'POST', headers: j(bearer('god')), body: JSON.stringify({ ids: [godWish.wish.id] }) }), env)).status, 403, 'a god player cannot mark-read');
 
 assert.equal((await get('/api/god/wishes', bearer('super_god'))).status, 200, 'a super god token can list');
@@ -191,6 +193,14 @@ assert.equal((await get('/api/god/wishes?since=nope')).status, 400);
 assert.equal((await list('?since=2026-11-26T10:00:00Z&limit=2')).wishes.length, 2);
 assert.equal((await list('?since=2026-11-26T10:00:00Z&limit=2')).total, 3);
 assert.deepEqual((await list('?since=2026-11-26T10:00:00Z&order=desc')).wishes.map((w) => w.id), [...ids].reverse(), 'order=desc is newest first (admin page)');
+const page1 = await list('?since=2026-11-26T10:00:00Z&limit=2&page=1');
+assert.equal(page1.page, 1);
+assert.equal(page1.pageSize, 2);
+assert.deepEqual(page1.wishes.map((w) => w.id), ids.slice(0, 2), 'page 1 is the first two (oldest first)');
+assert.equal(page1.total, 3);
+const page2 = await list('?since=2026-11-26T10:00:00Z&limit=2&page=2');
+assert.equal(page2.page, 2);
+assert.deepEqual(page2.wishes.map((w) => w.id), ids.slice(2), 'page 2 is the remainder');
 
 // mark-read
 assert.equal((await worker.fetch(req('/api/god/wishes/mark-read', { method: 'POST', headers: j({ cookie }), body: '{}' }), env)).status, 400);
@@ -223,4 +233,4 @@ Date.now = () => Date.parse('2027-01-01T00:10:01Z');
 assert.equal((await postLate({ text: 'window passed' })).status, 200, 'the window slides');
 Date.now = realNow;
 
-console.log('wish helpers, roles (player 403, god posts, super god reads), validation, redaction, since/unread, mark-read and rate limit passed');
+console.log('wish helpers, roles (player 403, god lists/reads, mark-read is super god), paging, validation, redaction, since/unread and rate limit passed');

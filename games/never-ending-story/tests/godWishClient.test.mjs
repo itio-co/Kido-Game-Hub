@@ -67,4 +67,24 @@ assert.equal(called, false, 'an empty wish never reaches the network');
 
 assert.equal(capture.dataUrlBytes('data:image/jpeg;base64,QUJD'), 3);
 assert.equal(capture.dataUrlBytes('data:image/jpeg;base64,QUI='), 2);
+
+// fetchWishPage asks for newest-first pages of 20 and maps the rows
+const listed = await wish.fetchWishPage(2, async (url, init) => {
+  seen = { url, init };
+  return new Response(JSON.stringify({
+    ok: true, total: 21, page: 2, pageSize: 20,
+    wishes: [{ id: 'w2', createdAt: '2026-11-28T01:00:00.000Z', createdMs: 1, dayBangkok: '2026-11-28', text: 'hello', playerId: 'wish-god-00000001', role: 'god', inspectUrl: 'https://x/y', screenshotUrl: 'https://x/s', readAt: null }],
+  }), { status: 200 });
+}, { authorization: 'Bearer test-only-player-token' }, 'https://games.itio.space', '/never');
+assert.match(seen.url, /api\/god\/wishes\?order=desc&limit=20&page=2/);
+assert.equal(seen.init.credentials, 'same-origin');
+assert.equal(seen.init.headers.authorization, 'Bearer test-only-player-token');
+assert.equal(listed.ok, true);
+assert.equal(listed.page.total, 21);
+assert.equal(listed.page.wishes[0].playerId, 'wish-god-00000001');
+assert.equal(listed.page.wishes[0].text, 'hello');
+const missed = await wish.fetchWishPage(1, async () => new Response('{"ok":false,"error":"forbidden"}', { status: 403 }));
+assert.deepEqual(missed, { ok: false, failure: 'forbidden' });
+
 console.log('god wish client helpers passed');
+

@@ -524,5 +524,18 @@
   "god.wishes.inspect": "ตรวจข้อมูล",
   "god.wishes.markRead": "ทำเครื่องหมายว่าอ่านแล้ว",
   "god.wishes.read": "อ่านแล้ว",
-  "god.wishes.unread": "ใหม่"
+  "god.wishes.unread": "ใหม่",
+  "god.float.wishList": "รายการคำขอ",
+  "god.wish.listTitle": "รายการคำขอ (Wish)",
+  "god.wish.detailTitle": "คำขอ",
+  "god.wish.listEmpty": "ยังไม่มีคำขอ",
+  "god.wish.listLoading": "กำลังโหลด…",
+  "god.wish.listError": "โหลดรายการไม่ได้",
+  "god.wish.listRetry": "ลองอีกครั้ง",
+  "god.wish.listPage": "หน้า {page}/{pages} · {total} รายการ",
+  "god.wish.sender": "ผู้ส่ง",
+  "god.wish.senderAdmin": "แอดมิน",
+  "god.wish.backToList": "กลับไปรายการ",
+  "god.wish.enlarge": "ขยายภาพ",
+  "god.wish.closeShot": "ปิดภาพ"
 }

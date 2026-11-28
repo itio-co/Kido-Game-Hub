@@ -5,6 +5,7 @@
   import { tick } from 'svelte';
   import { playerAuthHeaders } from '../../lib/cloudSync';
   import { captureElement } from './capture';
+  import WishList from './WishList.svelte';
   import WishSheet from './WishSheet.svelte';
   import type { Role } from '../../lib/roles';
   import { floatDragged, godAdminLinkVisible, godWishVisible, godAdminUrl, nextFloatPosition, type FloatPrefs } from './floatState';
@@ -32,6 +33,7 @@
   let dragging = $state(false);
   let capturing = $state(false);
   let wish = $state<{ shot: string | null } | null>(null);
+  let wishList = $state(false);
   let root = $state<HTMLDivElement>();
   let x = $state(0.78);
   let y = $state(0.62);
@@ -103,6 +105,11 @@
   }
 
   /** Hide the float, photograph the phone, then open the wish sheet. A failed capture still opens it without an image. */
+  function openWishList(): void {
+    menu = false;
+    wishList = true;
+  }
+
   async function openWish(): Promise<void> {
     menu = false;
     capturing = true;
@@ -142,6 +149,7 @@
     <div class="menu" data-testid="god-float-menu">
       {#if godAdminLinkVisible(role)}<button type="button" data-testid="god-float-admin" onclick={openAdmin}>{t('god.float.admin')}</button>{/if}
       <button type="button" data-testid="god-float-inspect" onclick={openInspect}>{t('god.float.inspect')}</button>
+      {#if godWishVisible(role)}<button type="button" data-testid="god-float-wishes" onclick={openWishList}>{t('god.float.wishList')}</button>{/if}
       {#if godWishVisible(role)}<button type="button" data-testid="god-float-wish" onclick={openWish}>{t('god.float.wish')}</button>{/if}
     </div>
   {/if}
@@ -161,6 +169,11 @@
 {#if wish}
   <WishSheet {page} shot={wish.shot} onClose={() => (wish = null)} />
 {/if}
+
+{#if wishList}
+  <WishList onClose={() => (wishList = false)} />
+{/if}
+
 
 {#if inspect}
   <section class="inspect" data-testid="god-inspect" aria-label={t('god.float.inspectTitle')}>
@@ -219,7 +232,7 @@
     display: flex;
     flex-direction: column;
     gap: 6px;
-    min-width: 132px;
+    min-width: 168px;
   }
   .menu button, .inspect header button {
     min-height: 40px;
