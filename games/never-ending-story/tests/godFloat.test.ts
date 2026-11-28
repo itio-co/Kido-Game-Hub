@@ -1,4 +1,4 @@
-import { floatDragged, godAdminLinkVisible, godAdminUrl, godButtonVisible, godFloatVisible, loadFloatPrefs, nextFloatPosition, parseFloatPrefs, saveFloatPrefs, FLOAT_TAP_SLOP_PX, GOD_FLOAT_KEY } from '../src/modules/god-mode/floatState.ts';
+import { floatDragged, godAdminLinkVisible, godWishVisible, godAdminUrl, godButtonVisible, godFloatVisible, loadFloatPrefs, nextFloatPosition, parseFloatPrefs, saveFloatPrefs, FLOAT_TAP_SLOP_PX, GOD_FLOAT_KEY } from '../src/modules/god-mode/floatState.ts';
 import { inspectDocument, inspectText, redact } from '../src/modules/god-mode/inspect.ts';
 
 declare const process: { exitCode?: number };
@@ -29,6 +29,13 @@ test('the Admin menu entry is for a super god only', () => {
   ok(godAdminLinkVisible('god') === false, 'god player has no admin page');
   ok(godAdminLinkVisible('player') === false, 'player');
   ok(godAdminLinkVisible(null) === false, 'nobody');
+
+test('Wish is offered to a god or super god, including the admin session', () => {
+  ok(godWishVisible('god') === true, 'god');
+  ok(godWishVisible('super_god') === true, 'super god / admin session');
+  ok(godWishVisible('player') === false, 'player');
+  ok(godWishVisible(null) === false, 'nobody');
+});
 });
 
 test('the float toggle and position persist locally', () => {

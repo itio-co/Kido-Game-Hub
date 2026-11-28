@@ -10,6 +10,7 @@ export {
   GOD_FLOAT_KEY,
   defaultFloatPrefs,
   godAdminLinkVisible,
+  godWishVisible,
   godAdminUrl,
   godButtonVisible,
   godFloatVisible,
@@ -19,3 +20,5 @@ export {
   type FloatPrefs,
 } from './floatState';
 export { inspectDocument, inspectText, redact, type InspectPage } from './inspect';
+export { failureOf, sendWish, stampText, wishPayload, wishProblem, WISH_MAX_TEXT, type WishFailure, type WishPayload, type WishSent } from './wish';
+export { captureElement, dataUrlBytes, SHOT_MAX_BYTES } from './capture';

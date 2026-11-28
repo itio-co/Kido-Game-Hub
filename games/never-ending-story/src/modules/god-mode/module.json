@@ -3,7 +3,7 @@
   "name": "God Mode",
   "kind": "feature",
   "version": "1.3.0",
-  "description": "In-game GOD float for an admin session or a god / super_god player: Settings toggle, draggable bubble, Admin and Inspect menu, and a redacted JSON view of the current page.",
+  "description": "In-game GOD float for an admin session or a god / super_god player: Settings toggle, draggable bubble, Admin, Inspect and Wish menu, and a redacted JSON view of the current page. Wish sends a screenshot, redacted state and a request text to the server.",
   "entry": "src/modules/god-mode/index.ts",
   "publicEntries": [
     "src/modules/god-mode/index.ts",

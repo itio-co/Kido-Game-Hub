@@ -44,6 +44,11 @@ export function godAdminLinkVisible(role: string | null): boolean {
   return role === 'super_god';
 }
 
+/** Wish is for a god or super_god player, and for the admin password session (which acts as super_god). */
+export function godWishVisible(role: string | null): boolean {
+  return role === 'god' || role === 'super_god';
+}
+
 /** Settings shows the GOD control only while this device has God access: an admin session, or a god / super_god player. */
 export function godButtonVisible(hasSession: boolean): boolean {
   return hasSession === true;

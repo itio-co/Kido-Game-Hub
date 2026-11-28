@@ -2,9 +2,12 @@
   import { appBase } from '../../lib/deployment';
   import { t } from '../../lib/i18n';
   import { ApiError, god } from '../god/api';
+  import { tick } from 'svelte';
   import { playerAuthHeaders } from '../../lib/cloudSync';
+  import { captureElement } from './capture';
+  import WishSheet from './WishSheet.svelte';
   import type { Role } from '../../lib/roles';
-  import { floatDragged, godAdminLinkVisible, godAdminUrl, nextFloatPosition, type FloatPrefs } from './floatState';
+  import { floatDragged, godAdminLinkVisible, godWishVisible, godAdminUrl, nextFloatPosition, type FloatPrefs } from './floatState';
   import { inspectDocument, type InspectPage } from './inspect';
 
   let {
@@ -16,7 +19,7 @@
     page: InspectPage;
     prefs: FloatPrefs;
     onPrefs: (next: FloatPrefs) => void;
-    /** Server-confirmed role. A god player gets «Inspect» only; the admin page needs the password session. */
+    /** Server-confirmed role. A god player gets Inspect and Wish; Admin is only for a super god / admin session. */
     role?: Role | null;
   } = $props();
 
@@ -27,6 +30,8 @@
   let shareError = $state('');
   let sharing = $state(false);
   let dragging = $state(false);
+  let capturing = $state(false);
+  let wish = $state<{ shot: string | null } | null>(null);
   let root = $state<HTMLDivElement>();
   let x = $state(0.78);
   let y = $state(0.62);
@@ -97,6 +102,18 @@
     shareError = '';
   }
 
+  /** Hide the float, photograph the phone, then open the wish sheet. A failed capture still opens it without an image. */
+  async function openWish(): Promise<void> {
+    menu = false;
+    capturing = true;
+    await tick();
+    await new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+    const stage = root?.offsetParent as HTMLElement | null;
+    const shot = stage ? await captureElement(stage) : null;
+    capturing = false;
+    wish = { shot };
+  }
+
   async function shareLink(): Promise<void> {
     sharing = true;
     shareError = '';
@@ -120,11 +137,12 @@
   }
 </script>
 
-<div class="god-float" bind:this={root} style="left:{x * 100}%;top:{y * 100}%">
+<div class="god-float" class:capturing data-wish-skip bind:this={root} style="left:{x * 100}%;top:{y * 100}%">
   {#if menu}
     <div class="menu" data-testid="god-float-menu">
       {#if godAdminLinkVisible(role)}<button type="button" data-testid="god-float-admin" onclick={openAdmin}>{t('god.float.admin')}</button>{/if}
       <button type="button" data-testid="god-float-inspect" onclick={openInspect}>{t('god.float.inspect')}</button>
+      {#if godWishVisible(role)}<button type="button" data-testid="god-float-wish" onclick={openWish}>{t('god.float.wish')}</button>{/if}
     </div>
   {/if}
   <button
@@ -139,6 +157,10 @@
     onpointercancel={onUp}
   >{t('god.float.toggle')}</button>
 </div>
+
+{#if wish}
+  <WishSheet {page} shot={wish.shot} onClose={() => (wish = null)} />
+{/if}
 
 {#if inspect}
   <section class="inspect" data-testid="god-inspect" aria-label={t('god.float.inspectTitle')}>
@@ -179,6 +201,7 @@
     align-items: center;
     gap: 6px;
   }
+  .god-float.capturing { visibility: hidden; }
   .bubble {
     width: 64px;
     height: 64px;
