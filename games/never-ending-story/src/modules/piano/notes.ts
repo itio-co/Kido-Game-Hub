@@ -9,14 +9,41 @@ export const noteName = (midi: number): string => `${NAMES[((midi % 12) + 12) % 
 /** MIDI number of the C that starts `octave` (C4 = 60). */
 export const octaveStart = (octave: number): number => (octave + 1) * 12;
 
-/** Octave range the player can reach: C3 through C6. */
-export const MIN_OCTAVE = 3;
+/** Playable range: C2 through C6. Wide enough for a 4-octave tablet view. */
+export const MIN_OCTAVE = 2;
 export const MAX_TOP_OCTAVE = 6;
+/** Fewest octaves on a narrow phone; most that still fit inside C2–C6. */
+export const MIN_SPAN = 1;
+export const MAX_SPAN = MAX_TOP_OCTAVE - MIN_OCTAVE;
+/** Minimum CSS-pixel width of a white key so a finger can hit it. */
+export const MIN_WHITE_PX = 60;
+
+export const whitesForSpan = (span: number): number => 7 * Math.max(1, Math.round(span)) + 1;
 
 /** Highest start octave that still keeps the top C inside C6. */
 export const maxStartOctave = (span: number): number => MAX_TOP_OCTAVE - span;
+export const clampSpan = (span: number): number =>
+  Math.max(MIN_SPAN, Math.min(MAX_SPAN, Math.round(span)));
 export const clampOctave = (octave: number, span: number): number =>
-  Math.max(MIN_OCTAVE, Math.min(maxStartOctave(span), Math.round(octave)));
+  Math.max(MIN_OCTAVE, Math.min(maxStartOctave(clampSpan(span)), Math.round(octave)));
+
+/**
+ * How many octaves fit in `widthPx` without white keys shrinking below `minWhitePx`.
+ * A phone-width landscape row stays at 1; a tablet grows to 2–4.
+ */
+export function spanForWidth(widthPx: number, minWhitePx = MIN_WHITE_PX): number {
+  const whites = Math.floor(Math.max(0, widthPx) / Math.max(1, minWhitePx));
+  return clampSpan(Math.floor((whites - 1) / 7));
+}
+
+/**
+ * Start octave that keeps the song's C..(C+1) in view and as centred as possible.
+ * span 1 → the song octave; span 3 → one octave on each side (when the range allows).
+ */
+export function songStartOctave(songOctave: number, span: number): number {
+  const s = clampSpan(span);
+  return clampOctave(songOctave - Math.floor((s - 1) / 2), s);
+}
 
 export type KeyDef = {
   midi: number;
@@ -33,8 +60,9 @@ export type KeyDef = {
 
 /** Keys from `startMidi` (a C) up to and including the C `span` octaves higher. */
 export function buildKeys(startMidi: number, span: number): { keys: KeyDef[]; whites: number } {
-  const top = startMidi + 12 * span;
-  const whites = 7 * span + 1;
+  const s = clampSpan(span);
+  const top = startMidi + 12 * s;
+  const whites = whitesForSpan(s);
   const w = 100 / whites;
   const bw = w * 0.62;
   const keys: KeyDef[] = [];

@@ -1,7 +1,7 @@
 // Piano rules: pitch math, key layout, keyboard map, songs, chart, judging, scoring, prefs.
 import { accuracy, buildChart, createRun, isFinished, maxScore, press, starsFor, sweep } from '../src/modules/piano/engine.ts';
 import { labelForMidi, midiForCode, isPianoCode, LOWER_CODES, UPPER_CODES } from '../src/modules/piano/keymap.ts';
-import { buildKeys, clampOctave, isBlack, midiFreq, noteName, octaveStart } from '../src/modules/piano/notes.ts';
+import { buildKeys, clampOctave, clampSpan, isBlack, midiFreq, MIN_WHITE_PX, noteName, octaveStart, songStartOctave, spanForWidth, whitesForSpan } from '../src/modules/piano/notes.ts';
 import { PIANO_RULESETS, PIANO_VERSION, pianoRuleset } from '../src/modules/piano/ruleset.ts';
 import { degreeSemitones, SONGS } from '../src/modules/piano/songs.ts';
 import { parsePrefs } from '../src/modules/piano/store.ts';
@@ -45,9 +45,36 @@ test('one-octave view has 8 white and 5 black keys; two octaves 15 and 10', () =
   ok(cs.black && cs.center > first.center && cs.center < one.keys[2].center, 'C# sits between C and D');
 });
 
-test('octave range is C3..C6', () => {
-  ok(clampOctave(0, 1) === 3 && clampOctave(99, 1) === 5, 'one octave: C3..C6');
-  ok(clampOctave(99, 2) === 4, 'two octaves top out at C6');
+test('octave range is C2..C6', () => {
+  ok(clampOctave(0, 1) === 2 && clampOctave(99, 1) === 5, 'one octave: C2..C6');
+  ok(clampOctave(99, 2) === 4 && clampOctave(99, 3) === 3 && clampOctave(99, 4) === 2, 'wider spans still end at C6');
+  ok(clampSpan(0) === 1 && clampSpan(9) === 4, 'span 1..4');
+});
+
+test('spanForWidth grows with the board and keeps white keys at least MIN_WHITE_PX', () => {
+  // Board width is the keyboard row (viewport minus padding). These viewports use 20 px of padding.
+  const cases: [number, number, number][] = [
+    [824, 1, 844],   // phone landscape
+    [1004, 2, 1024], // tablet
+    [1160, 2, 1180],
+    [1346, 3, 1366],
+    [1420, 3, 1440], // desktop
+  ];
+  for (const [board, expect, viewport] of cases) {
+    const span = spanForWidth(board);
+    ok(span === expect, `${viewport}px (board ${board}) → ${span}, want ${expect}`);
+    const whites = whitesForSpan(span);
+    ok(board / whites >= MIN_WHITE_PX, `${viewport}px white keys ${board / whites}px`);
+  }
+  ok(spanForWidth(0) === 1 && spanForWidth(200) === 1, 'tiny widths stay at one octave');
+  ok(spanForWidth(1004) === spanForWidth(1004, MIN_WHITE_PX), 'default min width');
+});
+
+test('songStartOctave keeps C4–C5 in view and centres it when the span allows', () => {
+  ok(songStartOctave(4, 1) === 4, 'phone: just the song octave');
+  ok(songStartOctave(4, 2) === 4, 'two octaves start at the song (C4–C6)');
+  ok(songStartOctave(4, 3) === 3, 'three octaves centre on C4 (C3–C6)');
+  ok(songStartOctave(4, 4) === 2, 'four octaves fill C2–C6 and still include C4–C5');
 });
 
 test('keyboard map: two rows, one octave each, I is the top C', () => {
