@@ -34,12 +34,13 @@
     GodLogin,
     godButtonVisible,
     godFloatVisible,
-    godSessionActive,
+    godAccessRole,
     loadFloatPrefs,
     saveFloatPrefs,
     type FloatPrefs,
     type InspectPage,
   } from './modules/god-mode';
+  import type { Role } from './lib/roles';
   import type { CalendarEntity, PlayerRoom, SaveV1, TextSize } from './lib/types';
 
   let room = $state<PlayerRoom | null>(null);
@@ -66,7 +67,9 @@
   let hintTimer = 0;
   let hintTier = 0;
   let route = $state(window.location.hash);
-  let godReady = $state(false);
+  /** This device's God access, asked of the server: super_god (admin session), god / super_god player, or null. */
+  let godRole = $state<Role | null>(null);
+  const godReady = $derived(godRole !== null);
   let showGodLogin = $state(false);
   let floatPrefs = $state<FloatPrefs>(loadFloatPrefs((key) => appStorage.getItem(key)));
   // Prologue only on a plain home entry, never for deep links (challenge, practice, leaderboard...).
@@ -311,13 +314,14 @@
     setFloat({ ...floatPrefs, on: !floatPrefs.on });
   }
 
-  function showGodBubble(): void {
-    godReady = true;
+  function showGodBubble(role: Role): void {
+    godRole = role;
     setFloat({ ...floatPrefs, on: true });
   }
 
   async function onVersionUnlock(): Promise<void> {
-    if (await godSessionActive()) showGodBubble();
+    const role = await godAccessRole();
+    if (role) showGodBubble(role);
     else showGodLogin = true;
   }
 
@@ -326,7 +330,7 @@
       overlay = null;
       return;
     }
-    godReady = await godSessionActive();
+    godRole = await godAccessRole();
     overlay = 'settings';
   }
 
@@ -363,8 +367,8 @@
 
   onMount(() => {
     const ac = new AbortController();
-    void godSessionActive().then((ok) => {
-      if (!ac.signal.aborted) godReady = ok;
+    void godAccessRole().then((role) => {
+      if (!ac.signal.aborted) godRole = role;
     });
     loadPlayerRoom()
       .then((loaded) => {
@@ -409,7 +413,7 @@
 <div class="phone" class:wide={editing || browsing} data-text={save.player.textSize}>
   {#if !editing && !browsing && !fullscreenGame}<VersionBadge onUnlock={onVersionUnlock} />{/if}
   {#if showGodLogin}
-    <GodLogin onSuccess={() => { showGodLogin = false; showGodBubble(); }} onClose={() => (showGodLogin = false)} />
+    <GodLogin onSuccess={() => { showGodLogin = false; showGodBubble('super_god'); }} onClose={() => (showGodLogin = false)} />
   {/if}
   {#if browsing}
     <AssetBrowser />
@@ -622,7 +626,7 @@
     {/if}
   {/if}
   {#if godFloatVisible(godReady, floatPrefs.on) && !editing && !browsing && overlay !== 'settings'}
-    <GodFloat page={inspectPage} prefs={floatPrefs} onPrefs={setFloat} />
+    <GodFloat page={inspectPage} prefs={floatPrefs} onPrefs={setFloat} role={godRole} />
   {/if}
   {#if session.loading}
     <LoadingDialog title={t('loading.title')} body={t('loading.body')} />

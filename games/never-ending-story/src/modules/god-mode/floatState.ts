@@ -39,12 +39,17 @@ export function saveFloatPrefs(write: (key: string, value: string) => void, pref
   write(GOD_FLOAT_KEY, JSON.stringify(next));
 }
 
-/** Settings shows the GOD control only while this device has a God admin session. */
+/** The «Admin» entry opens the password-protected admin page, so only a super god (admin session) is offered it. */
+export function godAdminLinkVisible(role: string | null): boolean {
+  return role === 'super_god';
+}
+
+/** Settings shows the GOD control only while this device has God access: an admin session, or a god / super_god player. */
 export function godButtonVisible(hasSession: boolean): boolean {
   return hasSession === true;
 }
 
-/** The pet bubble is on only when the session is valid and the player turned it on. */
+/** The pet bubble is on only when God access is valid and the player turned it on. */
 export function godFloatVisible(hasSession: boolean, on: boolean): boolean {
   return hasSession === true && on === true;
 }

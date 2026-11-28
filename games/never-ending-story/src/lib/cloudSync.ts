@@ -6,6 +6,7 @@ import { appStorage, appBase } from './deployment';
  */
 import { readPlayerId } from './playerId';
 import { bangkokDay, dayLabel, type StreakView } from './streak';
+import { normalizeRole, type Role } from './roles';
 
 const TOKEN_KEY = 'nesg.playerToken.v1';
 const RUNQ_KEY = 'nesg.runQueue.v1';
@@ -56,6 +57,24 @@ async function call(path: string, init: RequestInit = {}, auth = true): Promise<
   } catch {
     return null;
   }
+}
+
+/** This device's role from the server (GET /players/me). Null when offline, not registered, or the token is rejected. */
+export async function fetchMyRole(): Promise<Role | null> {
+  if (!appStorage.getItem(TOKEN_KEY)) return null;
+  const res = await call('players/me');
+  if (!res?.ok) return null;
+  try {
+    return normalizeRole(((await res.json()) as { role?: unknown }).role);
+  } catch {
+    return null;
+  }
+}
+
+/** Authorization header for god-level endpoints a god player calls with their own token. Empty when there is no token. */
+export function playerAuthHeaders(): Record<string, string> {
+  const token = appStorage.getItem(TOKEN_KEY);
+  return token ? { authorization: `Bearer ${token}` } : {};
 }
 
 /** Register this device's player once; the server returns a secret token shown only once. */

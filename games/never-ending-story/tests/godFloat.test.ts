@@ -1,4 +1,4 @@
-import { floatDragged, godAdminUrl, godButtonVisible, godFloatVisible, loadFloatPrefs, nextFloatPosition, parseFloatPrefs, saveFloatPrefs, FLOAT_TAP_SLOP_PX, GOD_FLOAT_KEY } from '../src/modules/god-mode/floatState.ts';
+import { floatDragged, godAdminLinkVisible, godAdminUrl, godButtonVisible, godFloatVisible, loadFloatPrefs, nextFloatPosition, parseFloatPrefs, saveFloatPrefs, FLOAT_TAP_SLOP_PX, GOD_FLOAT_KEY } from '../src/modules/god-mode/floatState.ts';
 import { inspectDocument, inspectText, redact } from '../src/modules/god-mode/inspect.ts';
 
 declare const process: { exitCode?: number };
@@ -22,6 +22,13 @@ test('the GOD control is hidden without an admin session', () => {
   ok(godFloatVisible(false, true) === false, 'float stays hidden when the session is gone');
   ok(godFloatVisible(true, false) === false, 'float stays hidden while the toggle is off');
   ok(godFloatVisible(true, true) === true, 'float shows only when both are on');
+});
+
+test('the Admin menu entry is for a super god only', () => {
+  ok(godAdminLinkVisible('super_god') === true, 'super god');
+  ok(godAdminLinkVisible('god') === false, 'god player has no admin page');
+  ok(godAdminLinkVisible('player') === false, 'player');
+  ok(godAdminLinkVisible(null) === false, 'nobody');
 });
 
 test('the float toggle and position persist locally', () => {

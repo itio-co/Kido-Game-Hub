@@ -2,17 +2,22 @@
   import { appBase } from '../../lib/deployment';
   import { t } from '../../lib/i18n';
   import { ApiError, god } from '../god/api';
-  import { floatDragged, godAdminUrl, nextFloatPosition, type FloatPrefs } from './floatState';
+  import { playerAuthHeaders } from '../../lib/cloudSync';
+  import type { Role } from '../../lib/roles';
+  import { floatDragged, godAdminLinkVisible, godAdminUrl, nextFloatPosition, type FloatPrefs } from './floatState';
   import { inspectDocument, type InspectPage } from './inspect';
 
   let {
     page,
     prefs,
     onPrefs,
+    role = 'super_god',
   }: {
     page: InspectPage;
     prefs: FloatPrefs;
     onPrefs: (next: FloatPrefs) => void;
+    /** Server-confirmed role. A god player gets «Inspect» only; the admin page needs the password session. */
+    role?: Role | null;
   } = $props();
 
   let menu = $state(false);
@@ -96,7 +101,7 @@
     sharing = true;
     shareError = '';
     try {
-      const made = await god<{ url: string }>('snapshots', { method: 'POST', body: JSON.stringify({ ttl: shareTtl, document: doc }) });
+      const made = await god<{ url: string }>('snapshots', { method: 'POST', headers: playerAuthHeaders(), body: JSON.stringify({ ttl: shareTtl, document: doc }) });
       shareUrl = made.url;
     } catch (error) {
       shareUrl = '';
@@ -118,7 +123,7 @@
 <div class="god-float" bind:this={root} style="left:{x * 100}%;top:{y * 100}%">
   {#if menu}
     <div class="menu" data-testid="god-float-menu">
-      <button type="button" data-testid="god-float-admin" onclick={openAdmin}>{t('god.float.admin')}</button>
+      {#if godAdminLinkVisible(role)}<button type="button" data-testid="god-float-admin" onclick={openAdmin}>{t('god.float.admin')}</button>{/if}
       <button type="button" data-testid="god-float-inspect" onclick={openInspect}>{t('god.float.inspect')}</button>
     </div>
   {/if}

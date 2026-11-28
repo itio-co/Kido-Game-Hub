@@ -1,11 +1,6 @@
-import { god } from '../god/api';
+import { godAccessRole } from './access';
 
-/** True only when the HttpOnly God cookie is accepted. A missing or rejected session hides the button. */
+/** True when this device may use God mode: an accepted God admin session, or a god / super_god player. */
 export async function godSessionActive(): Promise<boolean> {
-  try {
-    await god('me');
-    return true;
-  } catch {
-    return false;
-  }
+  return (await godAccessRole()) !== null;
 }
