@@ -2,7 +2,7 @@
   "id": "typing",
   "name": "Typing",
   "kind": "minigame",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Typing minigame: type a prompt on a physical or soft keyboard with per-character error marks, live WPM and accuracy, combo score, 1-3 stars by difficulty and local bests. Built-in English sets (home row, words, sentences) and a Thai set, plus the Typist lessons sub-game that reads gtypist (.typ) lessons through a source-adapter layer.",
   "entry": "src/modules/typing/index.ts",
   "publicEntries": [
@@ -10,7 +10,7 @@
     "src/modules/typing/ruleset.ts"
   ],
   "dependsOn": {
-    "core": ">=0.6.43",
+    "core": ">=0.6.44",
     "minigame-core": "^1.3.0"
   },
   "gdd": "src/modules/typing/GDD.md"

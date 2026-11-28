@@ -439,7 +439,7 @@
       </main>
     {/if}
   {:else if run?.card}
-    <div class="quote-card" data-testid="typing-quote-card">
+    <div class="quote-card" data-testid="typing-quote-card" role="presentation" onclick={() => inputEl?.focus()} onkeydown={() => undefined}>
       <div
         class="quote-col"
         bind:this={textEl}
@@ -529,14 +529,22 @@
     overflow: hidden;
     touch-action: manipulation;
   }
-  .top { display: flex; align-items: center; gap: 8px; flex: none; min-height: 42px; }
-  .ttl { min-width: 0; display: flex; flex-direction: column; }
-  .ttl h1 { margin: 0; font-size: 16px; line-height: 1.1; white-space: nowrap; }
+  .top {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto auto;
+    grid-template-areas: "back title stat tools";
+    align-items: center;
+    gap: 8px;
+    flex: none;
+    min-height: 42px;
+  }
+  .top > .ib:first-child { grid-area: back; flex: none; }
+  .ttl { grid-area: title; min-width: 0; display: flex; flex-direction: column; }
+  .ttl h1 { margin: 0; font-size: 16px; line-height: 1.1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .ver { font-size: 10px; opacity: 0.65; white-space: nowrap; }
-  .stat { display: flex; gap: 12px; margin-left: 6px; font-weight: 800; font-size: 13px; flex-wrap: wrap; }
+  .stat { grid-area: stat; display: flex; gap: 12px; margin-left: 6px; font-weight: 800; font-size: 13px; flex-wrap: wrap; }
   .stat b { font-variant-numeric: tabular-nums; color: #7ee0ff; }
-  .tools { margin-left: auto; display: flex; align-items: center; gap: 6px; }
-  .top > .ib:first-child { flex: none; }
+  .tools { grid-area: tools; margin-left: auto; display: flex; align-items: center; gap: 6px; }
   .ib { min-width: 40px; height: 40px; border-radius: 12px; border: 2px solid #5aa8ff; background: rgba(20, 36, 66, 0.9); color: #fff; font-size: 16px; font-weight: 800; padding: 0 6px; }
   .menu { flex: 1; min-height: 0; display: grid; grid-template-columns: 1.25fr 1fr; gap: 14px; overflow: auto; align-items: start; touch-action: pan-y; }
   .col { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
@@ -653,17 +661,87 @@
     overflow-wrap: anywhere;
     pointer-events: none;
   }
-  /* Phone landscape: same two-column split, smaller type. */
-  @media (max-height: 480px) {
+  /* Phone landscape: same two-column split (photo on the right), smaller type. */
+  @media (max-height: 480px) and (orientation: landscape) {
     .quote-card { grid-template-columns: minmax(0, 1.62fr) minmax(0, 1fr); border-radius: 10px; }
     .quote-col { padding: 10px 14px 12px; }
     .q { font-size: clamp(14px, 4.2vh, 22px); max-width: none; }
     .a { margin-top: 10px; font-size: clamp(16px, 4.8vh, 26px); }
     .photo-credit { font-size: 8px; padding: 12px 6px 5px; }
   }
+  /* Narrow portrait: dim full-bleed photo behind a readable quote panel. HUD on its own row. */
   @media (max-width: 700px) and (orientation: portrait) {
-    .quote-card { grid-template-columns: 1fr; grid-template-rows: minmax(0, 1fr) minmax(160px, 38vh); }
-    .portrait-col { min-height: 160px; }
+    .tp[data-screen='play'] .top {
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      grid-template-areas:
+        "back title tools"
+        "stat stat stat";
+      gap: 4px 8px;
+    }
+    .stat {
+      margin: 0;
+      justify-content: space-between;
+      flex-wrap: nowrap;
+      gap: 6px;
+      font-size: 11px;
+      padding: 3px 6px 2px;
+      border-radius: 8px;
+      background: rgba(8, 14, 28, 0.45);
+    }
+    .quote-card {
+      position: relative;
+      grid-template-columns: 1fr;
+      grid-template-rows: minmax(0, 1fr);
+      background: #1a1e24;
+    }
+    .portrait-col {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      min-height: 0;
+      pointer-events: none;
+    }
+    .portrait-col::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      pointer-events: none;
+      background: linear-gradient(180deg, rgba(12, 16, 24, 0.28) 0%, rgba(12, 16, 24, 0.45) 100%);
+    }
+    .portrait-col :global(.photo),
+    .portrait-col :global(.sil) {
+      object-position: center 18%;
+      filter: brightness(0.55) saturate(0.85);
+    }
+    .quote-col {
+      position: relative;
+      z-index: 2;
+      width: calc(100% - 28px);
+      max-height: calc(100% - 28px);
+      margin: auto;
+      background: rgba(243, 245, 247, 0.93);
+      border-radius: 14px;
+      padding: 18px 16px 16px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.28);
+      /* flex-start + spacers: short quotes stay centered, long quotes can scroll to the first line. */
+      justify-content: flex-start;
+    }
+    .quote-col::before,
+    .quote-col::after {
+      content: "";
+      flex: 1 1 0;
+    }
+    .q { font-size: clamp(16px, 4.4vw, 22px); }
+    .a { margin-top: 14px; font-size: clamp(20px, 5.4vw, 28px); }
+    .photo-credit { z-index: 3; }
+  }
+  /* Keyboard-open / short portrait: shrink type and keep the panel scrollable. */
+  @media (max-width: 700px) and (orientation: portrait) and (max-height: 500px) {
+    .stat { font-size: 10px; padding: 2px 6px; }
+    .quote-col { width: calc(100% - 20px); max-height: calc(100% - 40px); margin: 6px auto 32px; padding: 10px 14px; }
+    .q { font-size: clamp(14px, 3.6vh, 18px); line-height: 1.4; }
+    .a { margin-top: 8px; font-size: clamp(16px, 4.2vh, 22px); }
   }
   @media (min-width: 900px) and (min-height: 520px) {
     .quote-col { padding: 36px 48px 40px; }
