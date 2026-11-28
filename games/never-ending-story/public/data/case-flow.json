@@ -1566,6 +1566,18 @@
       "route": "#/play/piano"
     },
     {
+      "id": "a4c0e001-0000-4000-8000-0000000000c1",
+      "kind": "practice-game",
+      "title": "พิมพ์ดีด",
+      "slug": "flow/practice/typing",
+      "game": "typing",
+      "icon": "⌨️",
+      "group": "ฝีมือ",
+      "caseNo": "hub",
+      "future": false,
+      "route": "#/play/typing"
+    },
+    {
       "id": "a4c0e001-0000-4000-8000-000000000079",
       "kind": "practice-game",
       "title": "ครอสเวิร์ด",

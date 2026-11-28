@@ -9,6 +9,7 @@ import { CROSS_VERSION } from '../modules/crossword/ruleset';
 import { JIG_VERSION } from '../modules/jigsaw/ruleset';
 import { PIANO_VERSION } from '../modules/piano/ruleset';
 import { SLIDE_VERSION } from '../modules/slide/ruleset';
+import { TYPING_VERSION } from '../modules/typing/ruleset';
 
 /** App version is the core build. Module versions are the ones this bundle plays. */
 export function buildInfo(): { app: string; build: string; modules: Record<string, string>; rulesets: Record<string, string> } {
@@ -28,6 +29,7 @@ export function buildInfo(): { app: string; build: string; modules: Record<strin
       jigsaw: JIG_VERSION,
       slide: SLIDE_VERSION,
       piano: PIANO_VERSION,
+      typing: TYPING_VERSION,
     },
     rulesets,
   };

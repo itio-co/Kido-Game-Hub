@@ -152,7 +152,7 @@ export type Dialogue = Identity & {
 
 export type PracticeGame = Identity & {
   kind: 'practice-game';
-  game: 'cross' | 'jig' | 'slide' | 'ex' | 'stirfry' | 'piano' | 'fan' | 'photobox';
+  game: 'cross' | 'jig' | 'slide' | 'ex' | 'stirfry' | 'piano' | 'typing' | 'fan' | 'photobox';
   route?: string;
   icon: string;
   group: 'คำ' | 'ภาพ' | 'ตรรกะ' | 'ฝีมือ';

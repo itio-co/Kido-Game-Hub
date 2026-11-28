@@ -8,7 +8,8 @@ The game ships as one bundle but the code is split into modules under `src/modul
 | `minigame-core` | minigame-core | shared minigame framework: lifecycle, play mode, ruleset key, share paths, run token, ruleset HUD shells |
 | `crossword`, `jigsaw`, `slide` | minigame | puzzle rules + board state; depend on `minigame-core` |
 | `rhythm` | engine | rhythm mechanism; depends on `minigame-core` |
-| `piano` | minigame | Piano: landscape on-screen keyboard, falling-note songs, free play, physical keyboard with two hands; depends on `minigame-core` |
+| `piano` | minigame | Piano: landscape keyboard that shows as many octaves as the screen width allows, falling-note songs, free play, physical keyboard with two hands; depends on `minigame-core` |
+| `typing` | minigame | Typing: type-along prompts with per-character errors, WPM/accuracy/combo/stars, physical and soft keyboards, plus the Typist lessons sub-game reading `.typ` lesson files through a source adapter; depends on `minigame-core` |
 | `stirfry` | pack | Stir-fry with Grandma; depends on `rhythm` and `minigame-core` |
 | `challenge` | feature | puzzle challenge mode and leaderboards. Stays its own feature and depends on `minigame-core` (see below) |
 | `event-core` | event-core | shared event framework: cutscenes, stage map, case notebook, event HUD, D1 progress document |
