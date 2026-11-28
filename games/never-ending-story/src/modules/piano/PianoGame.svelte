@@ -5,7 +5,7 @@
   import { PianoAudio } from './audio';
   import { accuracy, buildChart, createRun, isFinished, press, starsFor, sweep, type Run } from './engine';
   import { isPianoCode, labelForMidi, midiForCode, SHIFT_DOWN_CODES, SHIFT_UP_CODES } from './keymap';
-  import { buildKeys, clampOctave, noteName, octaveStart, type KeyDef } from './notes';
+  import { buildKeys, clampOctave, noteName, octaveStart, songStartOctave, spanForWidth, type KeyDef } from './notes';
   import manifest from './module.json';
   import { PIANO_DIFFICULTIES, pianoRuleset, type PianoDifficulty } from './ruleset';
   import { SONGS, songById, type SongId } from './songs';
@@ -24,13 +24,16 @@
   let prefs = $state<PianoPrefs>(readPrefs());
   let screen = $state<'menu' | 'song' | 'free'>('menu');
   let phase = $state<'play' | 'paused' | 'done'>('play');
-  /** Octaves shown in free play (song mode always shows one). Desktop starts with two. */
-  let freeSpan = $state<1 | 2>(finePointer ? 2 : 1);
   let labels = $state(finePointer);
   let kbUsed = $state(false);
+  /** Inner width of the keyboard row, used to pick how many octaves fit. */
+  let boardW = $state(typeof window === 'undefined' ? 824 : Math.max(320, window.innerWidth - 24));
+  let hostEl = $state<HTMLDivElement | undefined>(undefined);
 
-  const span = $derived(screen === 'song' ? 1 : freeSpan);
-  const octave = $derived(screen === 'song' ? SONG_OCTAVE : clampOctave(prefs.octave, span));
+  const span = $derived(spanForWidth(boardW));
+  const octave = $derived(
+    screen === 'song' ? songStartOctave(SONG_OCTAVE, span) : clampOctave(prefs.octave, span),
+  );
   const viewStart = $derived(octaveStart(octave));
   const layout = $derived(buildKeys(viewStart, span));
   const whites = $derived(layout.keys.filter((k) => !k.black));
@@ -58,6 +61,7 @@
   let raf = 0;
   let doneTimer = 0;
   let finishing = false;
+  let resizeObs: ResizeObserver | null = null;
 
   const songTime = (): number => (phase === 'paused' ? pauseStart : performance.now()) - startAt - pausedTotal;
 
@@ -112,9 +116,13 @@
     writePrefs(prefs);
   }
 
-  function setSpan(next: 1 | 2): void {
-    freeSpan = next;
-    prefs = { ...prefs, octave: clampOctave(prefs.octave, next) };
+  function measureBoard(): void {
+    const el = hostEl;
+    if (!el) return;
+    const cs = getComputedStyle(el);
+    const pad = parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight);
+    const next = Math.max(0, el.clientWidth - (Number.isFinite(pad) ? pad : 0));
+    if (Math.abs(next - boardW) >= 1) boardW = next;
   }
 
   function toggleMute(): void {
@@ -238,7 +246,6 @@
     if (!kbUsed) {
       kbUsed = true;
       labels = true;
-      if (screen === 'free' && freeSpan === 1) setSpan(2);
     }
     const midi = midiForCode(e.code, viewStart);
     if (midi !== null) noteDown(`kb:${e.code}`, midi);
@@ -266,6 +273,14 @@
     } catch {
       // Not supported here.
     }
+    measureBoard();
+    requestAnimationFrame(measureBoard);
+    window.addEventListener('resize', measureBoard);
+    window.addEventListener('orientationchange', measureBoard);
+    if (typeof ResizeObserver === 'function' && hostEl) {
+      resizeObs = new ResizeObserver(measureBoard);
+      resizeObs.observe(hostEl);
+    }
     raf = requestAnimationFrame(frame);
   });
 
@@ -277,6 +292,10 @@
     window.removeEventListener('keyup', onKeyUp);
     window.removeEventListener('blur', releaseAll);
     document.removeEventListener('visibilitychange', onHide);
+    window.removeEventListener('resize', measureBoard);
+    window.removeEventListener('orientationchange', measureBoard);
+    resizeObs?.disconnect();
+    resizeObs = null;
     audio.dispose();
   });
 
@@ -329,7 +348,20 @@
   }
 </script>
 
-<div class="pn" data-testid="piano" data-screen={screen} data-phase={phase} data-difficulty={prefs.difficulty} data-song={prefs.song} data-span={span} data-octave={octave} data-labels={labels ? 'on' : 'off'} data-version={manifest.version}>
+<div
+  bind:this={hostEl}
+  class="pn"
+  data-testid="piano"
+  data-screen={screen}
+  data-phase={phase}
+  data-difficulty={prefs.difficulty}
+  data-song={prefs.song}
+  data-span={span}
+  data-octave={octave}
+  data-board={Math.round(boardW)}
+  data-labels={labels ? 'on' : 'off'}
+  data-version={manifest.version}
+>
   <header class="top">
     <button type="button" class="ib" data-testid="piano-exit" aria-label={screen === 'menu' ? c('exit') : c('back')} onclick={screen === 'menu' ? onExit : toMenu}>←</button>
     <div class="ttl">
@@ -346,7 +378,6 @@
           <b class="rng" data-testid="piano-range">{rangeLabel}</b>
           <button type="button" class="ib" data-testid="piano-oct-up" aria-label={c('octaveUp')} disabled={octave >= clampOctave(99, span)} onclick={() => shiftOctave(1)}>▶</button>
         </div>
-        <button type="button" class="ib txt" data-testid="piano-span" aria-label={freeSpan === 1 ? c('spanTwo') : c('spanOne')} onclick={() => setSpan(freeSpan === 1 ? 2 : 1)}>{freeSpan === 1 ? '1×' : '2×'}</button>
       {/if}
       {#if screen !== 'menu'}
         <button type="button" class="ib txt" class:on={labels} data-testid="piano-labels" aria-pressed={labels} aria-label={labels ? c('labelsOn') : c('labelsOff')} onclick={() => (labels = !labels)}>⌨</button>
@@ -508,7 +539,7 @@
   .freehint { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 6px; padding: 8px 18px; text-align: center; }
   .freehint p { margin: 0; font-size: 13px; opacity: 0.85; }
   .held { font-size: 26px !important; font-weight: 900; color: #ffd34d; min-height: 34px; opacity: 1 !important; }
-  .kbd { position: relative; flex: none; height: clamp(120px, 42%, 300px); border-radius: 10px; touch-action: none; }
+  .kbd { position: relative; flex: none; height: clamp(120px, 42%, 46vh); border-radius: 10px; touch-action: none; }
   .key { position: absolute; top: 0; margin: 0; padding: 0; border: 0; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 2px; touch-action: none; transition: background 60ms linear, transform 60ms linear; }
   .key.white { height: 100%; background: linear-gradient(#fdfdfd, #e6e0f0); border: 1px solid #8d7fa8; border-radius: 0 0 8px 8px; color: #2a1a3a; box-sizing: border-box; padding-bottom: 6px; z-index: 1; }
   .key.black { height: 62%; background: linear-gradient(#3a3a46, #0c0a12); border-radius: 0 0 6px 6px; color: #e8dcff; z-index: 2; padding-bottom: 6px; border: 1px solid #000; box-sizing: border-box; }

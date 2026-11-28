@@ -84,7 +84,7 @@ const PHONE_LAND = { width: 844, height: 390 };
 {
   const { ctx, page, errors } = await open('#/play/piano', { viewport: PHONE_LAND });
   assert.equal(await rootAttr(page, 'data-screen'), 'menu');
-  assert.equal(await rootAttr(page, 'data-version'), '1.0.0');
+  assert.equal(await rootAttr(page, 'data-version'), '1.1.0');
   const box = await q(page, 'piano').boundingBox();
   assert.ok(box.width >= 843 && box.height >= 389, `fills the landscape screen ${JSON.stringify(box)}`);
   assert.ok(box.width > box.height, 'landscape');
@@ -168,8 +168,11 @@ const PHONE_LAND = { width: 844, height: 390 };
   assert.equal(await q(page, 'piano-oct-up').isDisabled(), true, 'top of the range is C6');
   await q(page, 'piano-oct-down').click();
   await q(page, 'piano-oct-down').click();
+  await q(page, 'piano-oct-down').click();
+  assert.equal(await q(page, 'piano-range').innerText(), 'C2–C3');
+  assert.equal(await q(page, 'piano-oct-down').isDisabled(), true, 'bottom of the range is C2');
+  await q(page, 'piano-oct-up').click();
   assert.equal(await q(page, 'piano-range').innerText(), 'C3–C4');
-  assert.equal(await q(page, 'piano-oct-down').isDisabled(), true, 'bottom of the range is C3');
   await q(page, 'piano-oct-up').click();
   assert.equal(await q(page, 'piano-range').innerText(), 'C4–C5');
   // two fingers at once
@@ -189,9 +192,9 @@ const PHONE_LAND = { width: 844, height: 390 };
   await shot(page, '4-free-play-shift-controls.png');
   await page.evaluate(([x1, y1, x2, y2]) => { window.__fire(x1, y1, 11, 'pointerup'); window.__fire(x2, y2, 12, 'pointerup'); }, [a.x + a.width / 2, a.y + a.height - 20, b.x + b.width / 2, b.y + b.height - 20]);
   assert.equal(await page.locator('[data-testid="piano-keys"] .key.down').count(), 0, 'released');
-  // first physical key switches to two octaves with letters
+  // a physical key turns letter labels on but does not force more octaves on a narrow phone
   await page.keyboard.down('KeyZ');
-  assert.equal(await rootAttr(page, 'data-span'), '2', 'keyboard use shows two octaves');
+  assert.equal(await rootAttr(page, 'data-span'), '1', 'phone stays at one octave');
   assert.equal(await rootAttr(page, 'data-labels'), 'on');
   await page.keyboard.up('KeyZ');
   assert.deepEqual(errors, [], 'no page errors');
@@ -235,13 +238,17 @@ const PHONE_LAND = { width: 844, height: 390 };
   await page.keyboard.up('KeyE');
   await page.keyboard.up('KeyT');
   assert.equal(await page.locator('[data-testid="piano-keys"] .key.down').count(), 0);
-  // octave shift by keys: ArrowUp / Period up, ArrowDown / Comma down (two octaves: C3-C5, C4-C6)
+  // octave shift by keys: ArrowUp / Period up, ArrowDown / Comma down (two octaves: C2–C4 .. C4–C6)
   assert.equal(await q(page, 'piano-range').innerText(), 'C4–C6');
   await page.keyboard.press('ArrowDown');
   assert.equal(await q(page, 'piano-range').innerText(), 'C3–C5');
   await page.keyboard.press('Comma');
-  assert.equal(await q(page, 'piano-range').innerText(), 'C3–C5', 'clamped at C3');
+  assert.equal(await q(page, 'piano-range').innerText(), 'C2–C4');
+  await page.keyboard.press('Comma');
+  assert.equal(await q(page, 'piano-range').innerText(), 'C2–C4', 'clamped at C2');
   await page.keyboard.press('Period');
+  assert.equal(await q(page, 'piano-range').innerText(), 'C3–C5');
+  await page.keyboard.press('ArrowUp');
   assert.equal(await q(page, 'piano-range').innerText(), 'C4–C6');
   await page.keyboard.press('ArrowUp');
   assert.equal(await q(page, 'piano-range').innerText(), 'C4–C6', 'clamped at C6');
@@ -268,8 +275,10 @@ const PHONE_LAND = { width: 844, height: 390 };
 {
   const { ctx, page } = await open('#/play/piano', { viewport: { width: 1280, height: 640 }, touch: false, mobile: false });
   await q(page, 'piano-start').click();
-  assert.equal(await rootAttr(page, 'data-span'), '1', 'song mode is one octave even on desktop');
-  assert.equal(await page.locator('[data-midi="72"] .lb').innerText(), 'Q', 'high C is Q');
+  assert.equal(await rootAttr(page, 'data-span'), '2', 'wide desktop song mode shows two octaves');
+  assert.equal(await page.locator('[data-midi="72"] .lb').innerText(), 'Q', 'song high C is still Q when the window starts at C4');
+  const whites = await page.locator('[data-testid="piano-keys"] .key.white').count();
+  assert.equal(whites, 15, 'two octaves = 15 white keys');
   await ctx.close();
 }
 
@@ -300,6 +309,52 @@ const PHONE_LAND = { width: 844, height: 390 };
   const dur = await page.locator('[data-midi="60"]').evaluate((el) => getComputedStyle(el).transitionDuration);
   assert.ok(dur === '0s', `no transition under reduced motion (${dur})`);
   await ctx.close();
+}
+
+// ---------------------------------------------------------------- octave count follows width; keys stay finger-sized
+{
+  const sizes = [
+    { name: 'phone-844x390', width: 844, height: 390, span: 1, songStart: 'C4' },
+    { name: 'tablet-1024x768', width: 1024, height: 768, span: 2, songStart: 'C4' },
+    { name: 'tablet-1180x820', width: 1180, height: 820, span: 2, songStart: 'C4' },
+    { name: 'tablet-1366x1024', width: 1366, height: 1024, span: 3, songStart: 'C3' },
+    { name: 'desktop-1440x900', width: 1440, height: 900, span: 3, songStart: 'C3' },
+  ];
+  const MIN_WHITE = 60;
+  for (const size of sizes) {
+    const { ctx, page, errors } = await open('#/play/piano', { viewport: { width: size.width, height: size.height }, touch: size.width < 1200, mobile: size.width < 1200 });
+    await q(page, 'piano-free').click();
+    await page.waitForTimeout(80);
+    assert.equal(await rootAttr(page, 'data-span'), String(size.span), `${size.name} free span`);
+    const whiteCount = 7 * size.span + 1;
+    assert.equal(await page.locator('[data-testid="piano-keys"] .key.white').count(), whiteCount, `${size.name} white keys`);
+    const k0 = await page.locator('[data-testid="piano-keys"] .key.white').first().boundingBox();
+    assert.ok(k0.width >= MIN_WHITE - 0.5, `${size.name} white key ${k0.width}px`);
+    await shot(page, `free-${size.name}.png`);
+    await q(page, 'piano-exit').click();
+    await q(page, 'piano-start').click();
+    await page.waitForTimeout(80);
+    assert.equal(await rootAttr(page, 'data-span'), String(size.span), `${size.name} song span`);
+    assert.equal(await rootAttr(page, 'data-octave'), String({ C2: 2, C3: 3, C4: 4 }[size.songStart]), `${size.name} song start`);
+    assert.equal(await page.locator('[data-midi="60"]').count(), 1, `${size.name} has C4`);
+    assert.equal(await page.locator('[data-midi="72"]').count(), 1, `${size.name} has C5`);
+    await page.waitForTimeout(1800);
+    await shot(page, `song-${size.name}.png`);
+    assert.deepEqual(errors, [], `${size.name} no page errors`);
+    await ctx.close();
+  }
+  // resize: phone → tablet grows the span without a reload
+  {
+    const { ctx, page } = await open('#/play/piano', { viewport: PHONE_LAND });
+    await q(page, 'piano-free').click();
+    assert.equal(await rootAttr(page, 'data-span'), '1', 'start narrow');
+    await page.setViewportSize({ width: 1366, height: 1024 });
+    await page.waitForFunction(() => document.querySelector('[data-testid="piano"]')?.getAttribute('data-span') === '3', null, { timeout: 4000 });
+    assert.equal(await page.locator('[data-testid="piano-keys"] .key.white').count(), 22, 'resized to three octaves');
+    await page.setViewportSize(PHONE_LAND);
+    await page.waitForFunction(() => document.querySelector('[data-testid="piano"]')?.getAttribute('data-span') === '1', null, { timeout: 4000 });
+    await ctx.close();
+  }
 }
 
 // ---------------------------------------------------------------- practice card opens the game; exiting returns to practice
