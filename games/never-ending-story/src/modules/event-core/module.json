@@ -2,7 +2,7 @@
   "id": "event-core",
   "name": "Event framework",
   "kind": "event-core",
-  "version": "1.2.14",
+  "version": "1.2.15",
   "description": "Shared event framework: lifecycle, cutscenes, stage map, case notebook, event HUD, and the D1 progress document. Story packs such as event-01 supply the content.",
   "entry": "src/modules/event-core/index.ts",
   "publicEntries": [
@@ -19,6 +19,7 @@
     "slide": "^1.0.0",
     "stirfry": "^1.1.0",
     "piano": "^1.0.0",
+    "typing": "^1.0.0",
     "item-box": "^1.0.0"
   },
   "gdd": "src/modules/event-core/GDD.md"

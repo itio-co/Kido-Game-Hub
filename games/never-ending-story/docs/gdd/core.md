@@ -3,7 +3,7 @@
 | ฟิลด์ | ค่า |
 |---|---|
 | kind | core |
-| เวอร์ชัน | app (ตาม `package.json`, ตอนนี้ 0.6.41) |
+| เวอร์ชัน | app (ตาม `package.json`, ตอนนี้ 0.6.42) |
 | เทมเพลต | `docs/gdd/TEMPLATE.md` |
 | อ้างอิง | `docs/design/never-ending-story-game-spec-v0.4-th.md` |
 
@@ -83,7 +83,7 @@ Prologue, Hub, FlowView, Settings, Leaderboard. god admin อยู่ในโ�
 D1: `players`, `player_state`, `player_events`, `player_home`, `runs` (มีคอลัมน์ `ruleset`), `players` มีคอลัมน์ `role`, `role_updated_at`, `role_updated_by` (0.6.40; `worker/migrations/004_roles.sql`), `god_wishes` (0.6.40: ข้อความ ภาพหน้าจอ และสถานะอ่านของ Wish; `worker/migrations/005_wishes.sql`), `player_streak` (0.6.39: `record_json` สตรีค ถ่าน วันล่าสุด ชนะทั้งหมด และประวัติ 14 วัน), `god_login` · localStorage เซฟหลัก, `nesg.streak.v1` (token สตรีคที่เข้ารหัสและบอร์ดล่าสุด), `nesg.streakPending.v1` (ชัยชนะที่ยังส่งไม่ได้ของวันนี้), `nesg.streakCelebrate.v1` (วันที่แสดงหน้าฉลองสตรีคแล้วบนเครื่องนี้) · Worker secret `STREAK_TOKEN_KEY` ใช้เข้ารหัส token (AES-GCM) ถ้าไม่ได้ตั้ง สตรีคยังนับได้แต่ไม่มี token
 
 ## 11. Dependencies + เวอร์ชัน
-ใช้ minigame-core, event-core, crossword, jigsaw, slide, stirfry, piano, challenge, event-01, god, god-mode (ดู `module.json`)
+ใช้ minigame-core, event-core, crossword, jigsaw, slide, stirfry, piano, typing, challenge, event-01, god, god-mode (ดู `module.json`)
 
 ## 12. คำถามที่ยังเปิดอยู่ / Backlog
 - **[backlog]** แยก flow engine เป็นโมดูลของตัวเอง
@@ -93,6 +93,7 @@ D1: `players`, `player_state`, `player_events`, `player_home`, `runs` (มีค
 ## 13. Changelog (ผูกกับเวอร์ชันโมดูล)
 | เวอร์ชัน | แอป | การเปลี่ยนแปลง |
 |---|---|---|
+| 0.6.42 | 0.6.42 | เพิ่มมินิเกมพิมพ์ดีด (`typing` 1.0.0) เป็นการ์ดฝึกเล่นกลุ่ม "ฝีมือ" เส้นทาง `#/play/typing` เปิดเต็มจอ หน้า `App.svelte` เพิ่มเส้นทางและขยาย `.phone` เต็มความกว้างตอนเล่นพิมพ์ดีด · `event-core` 1.2.15 รู้จักเกม `typing` ในการ์ดฝึกเล่น |
 | 0.6.41 | 0.6.41 | เพิ่มมินิเกมเปียโน (`piano` 1.0.0) เป็นการ์ดฝึกเล่นกลุ่ม "ฝีมือ" เส้นทาง `#/play/piano` เปิดเต็มจอแนวนอน (จอแนวตั้งหมุนเลย์เอาต์ให้) หน้า `App.svelte` เพิ่มเส้นทางและขยาย `.phone` เต็มความกว้างตอนเล่นเปียโน · `event-core` 1.2.14 รู้จักเกม `piano` ในการ์ดฝึกเล่น · `minigame-core` 1.3.1 ไดอะล็อกผลชนะพอดีจอแนวนอน |
 | 0.6.40 | 0.6.40 | ไดอะล็อกผลชนะร่วมของมินิเกมพร้อมคะแนนดีสุดต่อระดับ (`minigame-core` 1.3.0, `rhythm` 1.1.2, `stirfry` 1.2.1) โหมดท้าเพื่อนเล่นจิ๊กซอว์บนกระดานลาก-หมุนเดียวกับอีเวนต์ (`challenge` 1.2.0, `jigsaw` 1.1.2 ปรับเอกสาร) ซ่อมรอยต่อกระเบื้องห้องครัวอดีต (`event-01` 1.0.13) และบทบาทผู้เล่น player / god / super god พร้อมหน้าโปรโมตใน God (`god` 2.2.0, `god-mode` 1.3.0) ต้องรัน migration `004_roles.sql` · เมื่อทำสตรีควันนี้ได้ แสดงหน้าต่างฉลองพร้อมสถานะล่าสุด (จำนวนวัน สูงสุด แถวสัปดาห์ ถ่าน) และแอนิเมชันเล็ก ๆ เซิร์ฟเวอร์ให้ถ่านคืน 1 ก้อนวันละครั้งถ้ายังไม่เต็ม (แทนกติกาคืนทุก 7 วันของ 0.6.39) ถ้าเต็มแล้วบอกว่าไม่ได้เพิ่ม หน้าต่างฉลองขึ้นครั้งเดียวต่อวันต่อเครื่อง · เมนู Wish และหน้ารายการคำขอสำหรับ god (`god` 2.2.0, `god-mode` 1.3.0) ต้องรัน migration `005_wishes.sql` |
 | 0.6.39 | 0.6.39 | บอร์ดสตรีคในห้องของฉัน: ชนะมินิเกมวันละ 1 เกมนับ 1 วัน (เวลาไทย) ถ่านสำรอง 2 ก้อนแทนวันที่ขาด ครบทุก 7 วันได้ถ่านคืน 1 ก้อน ถ่านหมดแล้วเริ่มใหม่ เซิร์ฟเวอร์นับวันละครั้งตอนส่งผล เก็บใน D1 `player_streak` และส่ง token เข้ารหัส `{streakCount, date}` ให้เครื่องเก็บและส่งกลับมาตรวจ (`minigame-core` 1.2.0, `event-core` 1.2.13) |

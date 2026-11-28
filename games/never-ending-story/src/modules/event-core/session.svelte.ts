@@ -1401,7 +1401,7 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
       if (!card) return;
       context = 'practice';
       practiceRun = true;
-      if (card.game === 'stirfry' || card.game === 'piano') {
+      if (card.game === 'stirfry' || card.game === 'piano' || card.game === 'typing') {
         seen = seen.includes(slug) ? seen : [...seen, slug];
         if (!played.includes(slug)) played = [...played, slug];
         persist();
