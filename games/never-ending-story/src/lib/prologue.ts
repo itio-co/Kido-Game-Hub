@@ -12,19 +12,4 @@ export const PROLOGUE_PAGES: ProloguePage[] = [
   { image: artworkFile('prologue.living-now'), caption: 'prologue.p5.caption', lines: [] },
 ];
 
-export const NICK_MIN = 2;
-export const NICK_MAX = 16;
-const NICK_RE = /^[\p{Script=Thai}A-Za-z0-9 _.-]+$/u;
-
-/** Returns an i18n error key, or null when the nickname is valid. */
-export function nicknameError(raw: string): string | null {
-  const value = raw.trim().replace(/\s+/g, ' ');
-  if ([...value].length < NICK_MIN) return 'prologue.name.errShort';
-  if ([...value].length > NICK_MAX) return 'prologue.name.errLong';
-  if (!NICK_RE.test(value)) return 'prologue.name.errChars';
-  return null;
-}
-
-export function suggestNickname(base: string): string {
-  return `${base}${100 + Math.floor(Math.random() * 900)}`;
-}
+export { NICK_MIN, NICK_MAX, nicknameError } from './nickname';

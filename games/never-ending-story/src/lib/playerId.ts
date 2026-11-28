@@ -1,4 +1,5 @@
 import { appStorage } from './deployment';
+import { NICK_MAX, cleanNickname } from './nickname';
 const KEY = 'nesg.playerId.v1';
 
 export type PlayerIdState = {
@@ -42,7 +43,8 @@ export function readPlayerId(): PlayerIdState {
 
 export function setNickname(nickname: string): PlayerIdState {
   const state = readPlayerId();
-  state.nickname = nickname.trim().slice(0, 24) || null;
+  const clean = [...cleanNickname(nickname)].slice(0, NICK_MAX).join('');
+  state.nickname = clean || null;
   appStorage.setItem(KEY, JSON.stringify(state));
   if (state.nickname) void import('./cloudSync').then((m) => m.pushNickname(state.nickname as string));
   return state;

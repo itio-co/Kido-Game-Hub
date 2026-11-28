@@ -1,15 +1,16 @@
 <script lang="ts">
   import { ComicPanel } from '../modules/event-core';
-  import { t } from '../lib/i18n';
+  import { getLocale, t } from '../lib/i18n';
   import { readPlayerId, setNickname } from '../lib/playerId';
-  import { NICK_MAX, PROLOGUE_PAGES, nicknameError, suggestNickname } from '../lib/prologue';
+  import { NICK_MAX, PROLOGUE_PAGES, nicknameError } from '../lib/prologue';
+  import { randomNickname } from '../lib/nickname';
 
   let { onDone }: { onDone: () => void } = $props();
 
   const profile = readPlayerId();
   let page = $state(0);
   let naming = $state(false);
-  let nick = $state(profile.nickname ?? suggestNickname(t('prologue.name.base')));
+  let nick = $state(profile.nickname ?? randomNickname(getLocale()));
   let touched = $state(false);
   const err = $derived(nicknameError(nick));
   const cut = $derived(PROLOGUE_PAGES[page]);
@@ -54,7 +55,7 @@
         oninput={() => (touched = true)}
       />
       <small class:bad={touched && !!err}>{touched && err ? t(err, { max: NICK_MAX }) : t('prologue.name.hint', { max: NICK_MAX })}</small>
-      <button type="button" class="alt" onclick={() => { nick = suggestNickname(t('prologue.name.base')); touched = true; }}>{t('prologue.name.random')}</button>
+      <button type="button" class="alt" onclick={() => { nick = randomNickname(getLocale(), { avoid: nick }); touched = true; }}>{t('prologue.name.random')}</button>
       <button type="submit" class="go" disabled={!!err}>{t('prologue.name.start')}</button>
     </form>
   {/if}
