@@ -1,17 +1,28 @@
 <script lang="ts">
   import { t } from '../../lib/i18n';
-  import { formatTime, type WinResult } from './result';
+  import { formatScore, formatTime, type WinResult } from './result';
+  import type { Snippet } from 'svelte';
 
   let {
     result,
     onContinue,
+    onReplay,
+    onClose,
+    children,
   }: {
     result: WinResult;
-    onContinue: () => void;
+    onContinue?: () => void;
+    onReplay?: () => void;
+    onClose?: () => void;
+    children?: Snippet;
   } = $props();
 
   let scrim = $state<HTMLDivElement | undefined>(undefined);
   let continueBtn = $state<HTMLButtonElement | undefined>(undefined);
+  const scoreMetric = $derived(result.metric === 'score');
+  const subtitle = $derived(result.subtitle ?? t('minigame.winSubtitle'));
+  const hasActions = $derived(!!onReplay || !!onClose);
+  const bestScoreText = $derived(result.bestScore != null ? formatScore(result.bestScore) : '—');
 
   /** Render on `.phone`, outside any translated event view, matching LeaveEventHost. */
   $effect(() => {
@@ -42,7 +53,7 @@
   >
     <p class="game" data-testid="minigame-win-game">{result.gameLabel}</p>
     <h2 id="minigame-win-title" data-testid="minigame-win-title">{t('minigame.winTitle')}</h2>
-    <p id="minigame-win-subtitle" class="sub" data-testid="minigame-win-subtitle">{t('minigame.winSubtitle')}</p>
+    <p id="minigame-win-subtitle" class="sub" data-testid="minigame-win-subtitle">{subtitle}</p>
     <p class="diff" data-testid="minigame-win-difficulty">{result.difficulty}</p>
 
     <p
@@ -57,33 +68,86 @@
     </p>
 
     <dl class="stats">
-      <div>
-        <dt>{t('minigame.winTimeLabel')}</dt>
-        <dd data-testid="minigame-win-time">{formatTime(result.timeMs)}</dd>
-      </div>
-      <div>
-        <dt>{t('minigame.winBestLabel')}</dt>
-        <dd data-testid="minigame-win-best">{result.bestMs != null ? formatTime(result.bestMs) : '—'}</dd>
-      </div>
+      {#if scoreMetric}
+        <div>
+          <dt>{t('minigame.winScoreLabel')}</dt>
+          <dd data-testid="minigame-win-score">{formatScore(result.score ?? 0)}</dd>
+        </div>
+        <div>
+          <dt>{t('minigame.winBestLabel')}</dt>
+          <dd data-testid="minigame-win-best">{bestScoreText}</dd>
+        </div>
+      {:else}
+        <div>
+          <dt>{t('minigame.winTimeLabel')}</dt>
+          <dd data-testid="minigame-win-time">{formatTime(result.timeMs)}</dd>
+        </div>
+        <div>
+          <dt>{t('minigame.winBestLabel')}</dt>
+          <dd data-testid="minigame-win-best">{result.bestMs != null ? formatTime(result.bestMs) : '—'}</dd>
+        </div>
+      {/if}
     </dl>
+
+    {#if scoreMetric}
+      <p class="time-line" data-testid="minigame-win-time">{t('minigame.winTimeLabel')} {formatTime(result.timeMs)}</p>
+    {/if}
 
     {#if result.isNewRecord}
       <p class="record" data-testid="minigame-win-record">{t('minigame.winNewRecord')}</p>
     {/if}
 
-    <p class="hints" data-testid="minigame-win-hints">
-      {result.hints > 0 ? t('minigame.winHints', { n: result.hints }) : t('minigame.winHintsNone')}
-    </p>
+    {#if result.hints != null}
+      <p class="hints" data-testid="minigame-win-hints">
+        {result.hints > 0 ? t('minigame.winHints', { n: result.hints }) : t('minigame.winHintsNone')}
+      </p>
+    {/if}
 
-    <button
-      bind:this={continueBtn}
-      type="button"
-      class="go"
-      data-testid="minigame-win-continue"
-      onclick={() => onContinue()}
-    >
-      {t('minigame.winContinue')}
-    </button>
+    {#if result.detail}
+      <p class="hints" data-testid="minigame-win-detail">{result.detail}</p>
+    {/if}
+
+    {#if hasActions}
+      <div class="actions">
+        {#if onReplay}
+          <button
+            bind:this={continueBtn}
+            type="button"
+            class="go"
+            data-testid="minigame-win-replay"
+            onclick={() => onReplay?.()}
+          >
+            {t('minigame.winReplay')}
+          </button>
+        {/if}
+        {#if onClose}
+          <button
+            type="button"
+            class="ghost"
+            data-testid="minigame-win-close"
+            onclick={() => onClose?.()}
+          >
+            {t('minigame.winClose')}
+          </button>
+        {/if}
+      </div>
+    {:else if onContinue}
+      <button
+        bind:this={continueBtn}
+        type="button"
+        class="go"
+        data-testid="minigame-win-continue"
+        onclick={() => onContinue()}
+      >
+        {t('minigame.winContinue')}
+      </button>
+    {/if}
+
+    {#if children}
+      <div class="extra">
+        {@render children()}
+      </div>
+    {/if}
   </div>
 </div>
 
@@ -178,6 +242,12 @@
     font-weight: 800;
     font-size: calc(var(--fs) + 4px);
   }
+  .time-line {
+    margin: 0 0 10px;
+    font-size: var(--fs-sm);
+    color: #cfe8f4;
+    font-variant-numeric: tabular-nums;
+  }
   .record {
     display: inline-block;
     margin: 0 0 10px;
@@ -195,16 +265,30 @@
     100% { transform: scale(1); opacity: 1; }
   }
   .hints { margin: 0 0 14px; font-size: var(--fs-sm); color: #cfe8f4; }
-  .go {
+  .actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .actions:has(button:only-child) { grid-template-columns: 1fr; }
+  .go, .ghost {
     min-height: 44px;
     width: 100%;
     border-radius: 10px;
-    border: 1px solid #39e0ff;
-    background: #0d4a66;
-    color: #fff;
     font-weight: 700;
     padding: 8px 14px;
   }
+  .go {
+    border: 1px solid #39e0ff;
+    background: #0d4a66;
+    color: #fff;
+  }
+  .ghost {
+    border: 1px solid #39e0ff;
+    background: transparent;
+    color: #fff;
+  }
+  .extra { margin-top: 10px; }
   @media (prefers-reduced-motion: reduce) {
     .star.on, .record { animation: none; transform: none; opacity: 1; }
   }
