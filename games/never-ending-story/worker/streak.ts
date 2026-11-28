@@ -10,7 +10,7 @@ export interface StreakEnv {
   STREAK_TOKEN_KEY?: string;
 }
 
-export type StreakReply = { view: StreakView; token: string | null; check: TokenCheck; counted: boolean; refilled: boolean };
+export type StreakReply = { view: StreakView; token: string | null; check: TokenCheck; counted: boolean; refilled: boolean; batteryGranted: boolean };
 
 export const STREAK_TABLE_SQL = `CREATE TABLE IF NOT EXISTS player_streak (
   playerId     TEXT PRIMARY KEY,
@@ -48,7 +48,7 @@ async function seal(env: StreakEnv, pid: string, rec: StreakRecord): Promise<str
 export async function streakRead(env: StreakEnv, pid: string, clientToken: unknown, now = Date.now()): Promise<StreakReply> {
   const { rec } = await load(env, pid);
   const check = await checkStreak(env.STREAK_TOKEN_KEY, clientToken, { pid, ...tokenClaim(rec) });
-  return { view: viewOf(rec, bangkokDay(now)), token: await seal(env, pid, rec), check, counted: false, refilled: false };
+  return { view: viewOf(rec, bangkokDay(now)), token: await seal(env, pid, rec), check, counted: false, refilled: false, batteryGranted: false };
 }
 
 /**
@@ -70,7 +70,7 @@ export async function streakWin(env: StreakEnv, pid: string, clientToken: unknow
        WHERE player_streak.rev=?`,
     ).bind(pid, JSON.stringify(next), next.count, next.best, claim.date || null, now, rev).run();
     if ((res.meta?.changes ?? 0) === 0) continue;
-    return { view: viewOf(next, today), token: await seal(env, pid, next), check, counted: out.counted, refilled: out.refilled };
+    return { view: viewOf(next, today), token: await seal(env, pid, next), check, counted: out.counted, refilled: out.batteryGranted, batteryGranted: out.batteryGranted };
   }
   throw new Error('streak busy');
 }

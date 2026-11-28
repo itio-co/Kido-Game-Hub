@@ -18,7 +18,8 @@
   import LoadingDialog from './components/LoadingDialog.svelte';
   import VersionBadge from './components/VersionBadge.svelte';
   import StreakPanel from './components/StreakPanel.svelte';
-  import { readStreak, refreshStreak, STREAK_EVENT, type StreakCache } from './lib/cloudSync';
+  import StreakCelebrateDialog from './components/StreakCelebrateDialog.svelte';
+  import { readStreak, refreshStreak, STREAK_EVENT, takeStreakCelebrate, type StreakCache, type StreakCelebrate } from './lib/cloudSync';
   import { bangkokDay, emptyRecord, viewOf } from './lib/streak';
   import { StirFryGame } from './modules/stirfry';
   import { ChallengeView, LeaderboardView, parseChallengeHash } from './modules/challenge';
@@ -50,6 +51,21 @@
   let streak = $state<StreakCache | null>(readStreak());
   /** Cached server view, or a local empty board until the server answers. Never computed from local wins. */
   const streakView = $derived(streak?.view ?? viewOf(emptyRecord(), bangkokDay(Date.now())));
+  let celebrate = $state<StreakCelebrate | null>(null);
+  let celebrateTimer = 0;
+  function queueCelebrate(offer: StreakCelebrate): void {
+    window.clearTimeout(celebrateTimer);
+    const start = Date.now();
+    const tick = () => {
+      const busy = typeof document !== 'undefined' && document.querySelector('[data-testid="minigame-win-dialog"]');
+      if (!busy || Date.now() - start > 8000) {
+        celebrate = offer;
+        return;
+      }
+      celebrateTimer = window.setTimeout(tick, 200);
+    };
+    celebrateTimer = window.setTimeout(tick, 400);
+  }
   function openStreak(): void {
     overlay = 'streak';
     void refreshStreak().then((next) => {
@@ -381,8 +397,11 @@
       route = window.location.hash;
     };
     window.addEventListener('hashchange', onHash);
-    const onStreak = () => {
+    const onStreak = (event: Event) => {
       streak = readStreak();
+      const detail = (event as CustomEvent<{ counted?: boolean; batteryGranted?: boolean; refilled?: boolean; view?: typeof streakView }>).detail;
+      const offer = takeStreakCelebrate({ ...detail, view: detail?.view ?? streak?.view });
+      if (offer) queueCelebrate(offer);
     };
     window.addEventListener(STREAK_EVENT, onStreak);
     void refreshStreak().then((next) => {
@@ -406,12 +425,20 @@
       window.removeEventListener(STREAK_EVENT, onStreak);
       window.clearTimeout(toastTimer);
       window.clearTimeout(hintTimer);
+      window.clearTimeout(celebrateTimer);
     };
   });
 </script>
 
 <div class="phone" class:wide={editing || browsing} data-text={save.player.textSize}>
   {#if !editing && !browsing && !fullscreenGame}<VersionBadge onUnlock={onVersionUnlock} />{/if}
+  {#if celebrate}
+    <StreakCelebrateDialog
+      view={celebrate.view}
+      batteryGranted={celebrate.batteryGranted}
+      onClose={() => (celebrate = null)}
+    />
+  {/if}
   {#if showGodLogin}
     <GodLogin onSuccess={() => { showGodLogin = false; showGodBubble('super_god'); }} onClose={() => (showGodLogin = false)} />
   {/if}

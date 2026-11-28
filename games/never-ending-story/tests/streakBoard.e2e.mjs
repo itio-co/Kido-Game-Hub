@@ -33,12 +33,16 @@ const VIEWS = {
     days: [{ date: '2026-11-23', kind: 'win' }, { date: '2026-11-24', kind: 'win' }, { date: '2026-11-25', kind: 'win' }, { date: '2026-11-26', kind: 'win' }],
   },
   saved: {
-    count: 5, best: 9, batteries: 1, maxBatteries: 2, totalWins: 14, today: '2026-11-26', state: 'open', refillIn: 2,
+    count: 5, best: 9, batteries: 1, maxBatteries: 2, totalWins: 14, today: '2026-11-26', state: 'open', refillIn: 1,
     days: [{ date: '2026-11-23', kind: 'win' }, { date: '2026-11-24', kind: 'saved' }, { date: '2026-11-25', kind: 'win' }],
   },
   reset: {
     count: 0, best: 12, batteries: 0, maxBatteries: 2, totalWins: 31, today: '2026-11-26', state: 'reset', refillIn: 0,
     days: [{ date: '2026-11-23', kind: 'win' }],
+  },
+  granted: {
+    count: 6, best: 9, batteries: 2, maxBatteries: 2, totalWins: 15, today: '2026-11-26', state: 'done', refillIn: 0,
+    days: [{ date: '2026-11-23', kind: 'win' }, { date: '2026-11-24', kind: 'saved' }, { date: '2026-11-25', kind: 'win' }, { date: '2026-11-26', kind: 'win' }],
   },
 };
 
@@ -63,7 +67,10 @@ async function open({ view = null, bearer = true, nav, difficulty, onWin } = {})
     }
     if (url.pathname.endsWith('/api/players/me/streak/win') && onWin) {
       seen.wins.push(JSON.parse(route.request().postData() ?? '{}'));
-      return json({ ok: true, streak: { view: onWin, token: FAKE_STREAK, check: 'ok', counted: true, refilled: false } });
+      const view = onWin.view ?? onWin;
+      const counted = onWin.counted ?? true;
+      const batteryGranted = onWin.batteryGranted ?? false;
+      return json({ ok: true, streak: { view, token: FAKE_STREAK, check: 'ok', counted, refilled: batteryGranted, batteryGranted } });
     }
     return route.abort();
   });
@@ -125,7 +132,7 @@ const kinds = (page) => page.locator('[data-testid="streak-week"] li').evaluateA
   assert.equal(await page.locator('[data-testid="streak-panel"]').getAttribute('data-state'), 'open');
   assert.deepEqual(await kinds(page), ['win', 'saved', 'win', '', '', '', '']);
   assert.equal(await page.locator('[data-testid="streak-batteries"]').getAttribute('data-count'), '1');
-  assert.ok((await page.locator('[data-testid="streak-refill"]').innerText()).includes('อีก 2 วัน'));
+  assert.ok((await page.locator('[data-testid="streak-refill"]').innerText()).includes('ถ่านคืน'));
   await shot(page, 'streak-battery-saved.png');
   await ctx.close();
 }
@@ -195,6 +202,69 @@ const kinds = (page) => page.locator('[data-testid="streak-week"] li').evaluateA
   assert.equal(seen.wins[0].game, 'jig');
   assert.equal(seen.wins[0].streakToken, FAKE_STREAK, 'stored token sent with the win');
   assert.equal(await page.evaluate(() => localStorage.getItem('nesg.streakPending.v1')), null, 'pending cleared after send');
+  await page.locator('[data-testid="minigame-win-continue"]').click();
+  await page.locator('[data-testid="streak-celebrate-dialog"]').waitFor({ timeout: 8000 });
+  assert.equal(await page.locator('[data-testid="streak-celebrate-dialog"]').getAttribute('data-granted'), '0');
+  assert.ok((await page.locator('[data-testid="streak-celebrate-title"]').innerText()).includes('คุณทำสตรีควันนี้แล้ว'));
+  assert.ok((await page.locator('[data-testid="streak-celebrate-full"]').innerText()).includes('ถ่านเต็ม'));
+  await ctx.close();
+}
+
+async function showCelebrate(page, { view, batteryGranted, freeze } = {}) {
+  await page.evaluate(({ view, batteryGranted, freeze, token }) => {
+    if (freeze) document.documentElement.classList.add('stc-e2e-mid');
+    const prev = JSON.parse(localStorage.getItem('nesg.streak.v1') ?? 'null') ?? {};
+    localStorage.setItem('nesg.streak.v1', JSON.stringify({ token: prev.token ?? token, view, at: Date.now() }));
+    window.dispatchEvent(new CustomEvent('nes-streak', { detail: { counted: true, batteryGranted, refilled: batteryGranted, view } }));
+  }, { view, batteryGranted, freeze: !!freeze, token: FAKE_STREAK });
+  await page.locator('[data-testid="streak-celebrate-dialog"]').waitFor({ timeout: 5000 });
+  await page.waitForTimeout(freeze ? 80 : 800);
+}
+
+// 6. Celebration dialog when a battery was granted.
+{
+  const { ctx, page } = await open({ view: VIEWS.saved });
+  await page.locator('[data-testid="streak-btn"]').waitFor({ timeout: 20000 });
+  await showCelebrate(page, { view: VIEWS.granted, batteryGranted: true });
+  assert.equal(await page.locator('[data-testid="streak-celebrate-dialog"]').getAttribute('data-granted'), '1');
+  assert.equal((await page.locator('[data-testid="streak-celebrate-count"]').innerText()).trim(), '6');
+  assert.equal(await page.locator('[data-testid="streak-celebrate-batteries"]').getAttribute('data-count'), '2');
+  assert.ok((await page.locator('[data-testid="streak-celebrate-grant"]').innerText()).includes('ถ่านสำรองเพิ่ม 1 ก้อน'));
+  assert.ok((await page.locator('[data-testid="streak-celebrate-best"]').innerText()).includes('9 วัน'));
+  await shot(page, 'streak-celebrate-grant.png');
+  await ctx.close();
+}
+
+// 7. Celebration dialog when batteries are already full (no grant). Same day does not show twice.
+{
+  const { ctx, page } = await open({ view: VIEWS.active });
+  await page.locator('[data-testid="streak-btn"]').waitFor({ timeout: 20000 });
+  await showCelebrate(page, { view: VIEWS.active, batteryGranted: false });
+  assert.equal(await page.locator('[data-testid="streak-celebrate-dialog"]').getAttribute('data-granted'), '0');
+  assert.ok((await page.locator('[data-testid="streak-celebrate-full"]').innerText()).includes('ถ่านเต็ม'));
+  await shot(page, 'streak-celebrate-full.png');
+  await page.locator('[data-testid="streak-celebrate-close"]').click();
+  assert.equal(await page.locator('[data-testid="streak-celebrate-dialog"]').count(), 0);
+  await page.evaluate((view) => {
+    window.dispatchEvent(new CustomEvent('nes-streak', { detail: { counted: true, batteryGranted: false, refilled: false, view } }));
+  }, VIEWS.active);
+  await page.waitForTimeout(600);
+  assert.equal(await page.locator('[data-testid="streak-celebrate-dialog"]').count(), 0, 'once per day');
+  await ctx.close();
+}
+
+// 8. Mid-animation frame of the celebration burst.
+{
+  const { ctx, page } = await open({ view: VIEWS.saved });
+  await page.locator('[data-testid="streak-btn"]').waitFor({ timeout: 20000 });
+  await page.addStyleTag({ content: `
+    html.stc-e2e-mid .stc-spark, html.stc-e2e-mid .stc-bolt, html.stc-e2e-mid .st-count, html.stc-e2e-mid .st-battery.fresh {
+      animation-play-state: paused !important;
+      animation-delay: -0.35s !important;
+    }
+  `});
+  await showCelebrate(page, { view: VIEWS.granted, batteryGranted: true, freeze: true });
+  await shot(page, 'streak-celebrate-anim.png');
   await ctx.close();
 }
 

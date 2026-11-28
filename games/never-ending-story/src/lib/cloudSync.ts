@@ -5,7 +5,7 @@ import { appStorage, appBase } from './deployment';
  * See docs/online-leaderboard.md.
  */
 import { readPlayerId } from './playerId';
-import { bangkokDay, dayLabel, type StreakView } from './streak';
+import { bangkokDay, CELEBRATE_STORAGE_KEY, dayLabel, shouldShowCelebrate, type CelebrateMark, type StreakView } from './streak';
 import { normalizeRole, type Role } from './roles';
 
 const TOKEN_KEY = 'nesg.playerToken.v1';
@@ -118,7 +118,9 @@ export async function flushRuns(): Promise<void> {
 }
 
 export type StreakCache = { token: string | null; view: StreakView; at: number };
-type StreakReply = { view: StreakView; token: string | null; counted?: boolean; refilled?: boolean };
+type StreakReply = { view: StreakView; token: string | null; counted?: boolean; refilled?: boolean; batteryGranted?: boolean };
+
+export type StreakCelebrate = { view: StreakView; batteryGranted: boolean };
 
 /** Last streak the server sent, for showing the board offline. */
 export function readStreak(): StreakCache | null {
@@ -134,7 +136,12 @@ function keepStreak(reply: StreakReply | undefined): StreakReply | null {
   if (!reply?.view) return null;
   // Keep the previous token when the server has no key configured (token null): the record is still the server's.
   writeJson(STREAK_KEY, { token: reply.token ?? streakToken(), view: reply.view, at: Date.now() } satisfies StreakCache);
-  try { window.dispatchEvent(new CustomEvent(STREAK_EVENT, { detail: { counted: !!reply.counted, refilled: !!reply.refilled } })); } catch { /* no window in tests */ }
+  const batteryGranted = !!(reply.batteryGranted ?? reply.refilled);
+  try {
+    window.dispatchEvent(new CustomEvent(STREAK_EVENT, {
+      detail: { counted: !!reply.counted, refilled: batteryGranted, batteryGranted, view: reply.view },
+    }));
+  } catch { /* no window in tests */ }
   return reply;
 }
 
@@ -144,6 +151,17 @@ async function keepStreakFrom(res: Response): Promise<void> {
   } catch {
     /* body already consumed or not JSON */
   }
+}
+
+
+/** Consume a counted-day reply and, at most once per Bangkok day on this device, return the celebration payload. */
+export function takeStreakCelebrate(reply: { counted?: boolean; batteryGranted?: boolean; refilled?: boolean; view?: StreakView } | undefined): StreakCelebrate | null {
+  if (!reply?.counted || !reply.view) return null;
+  const prev = readJson<CelebrateMark | null>(CELEBRATE_STORAGE_KEY, null);
+  const { show, next } = shouldShowCelebrate(prev, reply.view.today, true);
+  if (next) writeJson(CELEBRATE_STORAGE_KEY, next);
+  if (!show) return null;
+  return { view: reply.view, batteryGranted: !!(reply.batteryGranted ?? reply.refilled) };
 }
 
 /** Fetch the board from the server (needs this device's player token). Falls back to the cached view. */

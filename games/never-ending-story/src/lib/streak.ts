@@ -2,11 +2,11 @@
  * Daily streak rules, shared by the Worker (authoritative) and the client (display only).
  * A day is a Bangkok calendar day (UTC+7, no DST). A day counts when the player wins one minigame.
  * Each missed day uses one battery; with too few batteries the streak resets.
- * Every 7th streak day gives back one battery, up to MAX_BATTERIES. See docs/gdd/core.md §9.3.
+ * Each counted streak day grants one battery if the pack is not already full (max MAX_BATTERIES).
+ * See docs/gdd/core.md §9.3.
  */
 
 export const MAX_BATTERIES = 2;
-export const REFILL_EVERY = 7;
 /** Wins per day that still raise the total-wins card (the streak itself counts once a day). */
 export const MAX_WINS_PER_DAY = 100;
 /** Day entries kept for the week row. */
@@ -41,7 +41,7 @@ export type StreakView = {
   totalWins: number;
   today: string;
   state: StreakState;
-  /** Streak days still needed before the next battery comes back; 0 when batteries are full. */
+  /** 1 when the next counted streak day will grant a battery; 0 when full or there is no live streak. */
   refillIn: number;
   days: { date: string; kind: DayKind }[];
 };
@@ -97,7 +97,14 @@ export function settle(rec: StreakRecord, today: number): StreakRecord {
   return { ...rec, count: 0, batteries: 0, lastDay: null, days: trimDays(rec.days, today) };
 }
 
-export type WinOutcome = { record: StreakRecord; counted: boolean; refilled: boolean; restarted: boolean };
+export type WinOutcome = {
+  record: StreakRecord;
+  counted: boolean;
+  /** True when this counted day granted +1 battery. Alias of batteryGranted (kept for older clients). */
+  refilled: boolean;
+  batteryGranted: boolean;
+  restarted: boolean;
+};
 
 /** Record one win on `today`. The streak moves at most once per day; total wins move on every win (capped per day). */
 export function applyWin(rec: StreakRecord, today: number): WinOutcome {
@@ -110,14 +117,18 @@ export function applyWin(rec: StreakRecord, today: number): WinOutcome {
     winsDay: today,
     winsToday: winsToday + 1,
   };
-  if (base.lastDay === today) return { record: next, counted: false, refilled: false, restarted: false };
+  if (base.lastDay === today) {
+    return { record: next, counted: false, refilled: false, batteryGranted: false, restarted: false };
+  }
   const restarted = base.count <= 0;
   const count = restarted ? 1 : base.count + 1;
   let batteries = restarted ? MAX_BATTERIES : base.batteries;
-  let refilled = false;
-  if (!restarted && count % REFILL_EVERY === 0 && batteries < MAX_BATTERIES) {
+  // One grant per counted streak day, and only when the pack is not already full.
+  // A new / restarted streak starts full, so that first day does not grant.
+  let batteryGranted = false;
+  if (!restarted && batteries < MAX_BATTERIES) {
     batteries += 1;
-    refilled = true;
+    batteryGranted = true;
   }
   return {
     record: {
@@ -129,7 +140,8 @@ export function applyWin(rec: StreakRecord, today: number): WinOutcome {
       days: trimDays([...base.days, { day: today, kind: 'win' }], today),
     },
     counted: true,
-    refilled,
+    refilled: batteryGranted,
+    batteryGranted,
     restarted,
   };
 }
@@ -139,7 +151,7 @@ export function viewOf(rec: StreakRecord, today: number): StreakView {
   const s = settle(rec, today);
   const broke = rec.count > 0 && s.count === 0;
   const state: StreakState = s.lastDay === today ? 'done' : broke ? 'reset' : s.count > 0 ? 'open' : rec.best > 0 || rec.totalWins > 0 ? 'reset' : 'new';
-  const refillIn = s.batteries >= MAX_BATTERIES || s.count <= 0 ? 0 : REFILL_EVERY - (s.count % REFILL_EVERY);
+  const refillIn = s.batteries >= MAX_BATTERIES || s.count <= 0 ? 0 : 1;
   return {
     count: s.count,
     best: s.best,
@@ -181,6 +193,22 @@ export function readRecord(raw: unknown): StreakRecord {
     winsToday: int(r.winsToday, 0, 1e6, 0),
     days,
   };
+}
+
+
+/** localStorage key for the once-a-day celebration dialog (`{ day: YYYY-MM-DD }`). */
+export const CELEBRATE_STORAGE_KEY = 'nesg.streakCelebrate.v1';
+
+export type CelebrateMark = { day: string };
+
+/**
+ * The celebration dialog shows only when the server counted today's streak, and only once
+ * per Bangkok day on this device. Pure: the caller persists `next`.
+ */
+export function shouldShowCelebrate(prev: CelebrateMark | null, today: string, counted: boolean): { show: boolean; next: CelebrateMark | null } {
+  if (!counted || !today) return { show: false, next: prev };
+  if (prev?.day === today) return { show: false, next: prev };
+  return { show: true, next: { day: today } };
 }
 
 /** The current Monday-to-Sunday week for the board row. */

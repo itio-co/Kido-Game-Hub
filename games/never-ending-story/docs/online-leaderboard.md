@@ -30,9 +30,9 @@ Restore on a new device = put the token on that device. There is no UI for this 
 ## Daily streak (0.6.39)
 Rules: `src/lib/streak.ts` (shared), storage: `worker/streak.ts`, token: `worker/streakToken.ts`, Thai GDD: `docs/gdd/core.md` §9.3.
 
-- A win is a verified `POST /api/runs` with `score > 0` (counted once per `sessionId`), or `POST /api/players/me/streak/win` `{game, streakToken}` (Bearer) for story/practice puzzles. Both answer with `streak: {view, token, check, counted, refilled}`.
+- A win is a verified `POST /api/runs` with `score > 0` (counted once per `sessionId`), or `POST /api/players/me/streak/win` `{game, streakToken}` (Bearer) for story/practice puzzles. Both answer with `streak: {view, token, check, counted, refilled, batteryGranted}` (`refilled` is the same flag as `batteryGranted`).
 - `GET /api/players/me/streak` (Bearer, optional header `x-streak-token`) → the same `streak` object. Read-only: missed days are projected, not written.
-- Days are Bangkok calendar days from **server** time. The streak moves at most once per day; `totalWins` moves on every win (≤100/day). Missed days spend batteries (max 2); not enough batteries → count 0. Every 7th streak day returns one battery. A new streak starts with 2.
+- Days are Bangkok calendar days from **server** time. The streak moves at most once per day; `totalWins` moves on every win (≤100/day). Missed days spend batteries (max 2); not enough batteries → count 0. Each counted streak day grants one battery if the pack is not already full (max 2). A new streak starts with 2, so that first day does not grant. The grant is server-side and happens at most once per Bangkok day (idempotent on replay or reload).
 - D1 `player_streak (playerId, record_json, streak_count, best, last_day, rev, updated_at)`, optimistic `rev`. The Worker runs `CREATE TABLE IF NOT EXISTS` on first use; `worker/migrations/003_streak.sql` is the same SQL.
 - Token: `st1.<iv>.<ciphertext>`, AES-256-GCM with a key derived (SHA-256) from the Worker secret `STREAK_TOKEN_KEY`; payload `{v, pid, streakCount, date}`. The client stores it in `nesg.streak.v1` and sends it back as `streakToken`. `check` is `ok | stale | invalid | missing | nokey`; the server record always wins and nothing about the token is logged. Without the secret the streak still counts and `token` is `null`.
 
