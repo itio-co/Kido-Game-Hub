@@ -2,7 +2,7 @@
   "id": "minigame-core",
   "name": "Minigame framework",
   "kind": "minigame-core",
-  "version": "1.3.0",
+  "version": "1.3.1",
   "description": "Shared minigame framework: run lifecycle, practice/story/challenge mode, ruleset key, share-link paths, run token, result submission, the ruleset HUD shells, the reusable win/result dialog with time or score bests plus replay and close, and the daily-streak win report.",
   "entry": "src/modules/minigame-core/index.ts",
   "publicEntries": [

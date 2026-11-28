@@ -1554,6 +1554,18 @@
       "route": "#/play/stirfry"
     },
     {
+      "id": "a4c0e001-0000-4000-8000-0000000000c0",
+      "kind": "practice-game",
+      "title": "เปียโน",
+      "slug": "flow/practice/piano",
+      "game": "piano",
+      "icon": "🎹",
+      "group": "ฝีมือ",
+      "caseNo": "hub",
+      "future": false,
+      "route": "#/play/piano"
+    },
+    {
       "id": "a4c0e001-0000-4000-8000-000000000079",
       "kind": "practice-game",
       "title": "ครอสเวิร์ด",

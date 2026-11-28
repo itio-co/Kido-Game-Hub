@@ -1,0 +1,12 @@
+{
+  "1.0.0": {
+    "leadInBeats": 3,
+    "difficulties": {
+      "easy": { "beatMs": 750, "perfectMs": 140, "goodMs": 280, "fallMs": 2400, "names": true },
+      "normal": { "beatMs": 600, "perfectMs": 110, "goodMs": 220, "fallMs": 2000, "names": true },
+      "hard": { "beatMs": 450, "perfectMs": 85, "goodMs": 170, "fallMs": 1500, "names": false }
+    },
+    "scoring": { "perfect": 100, "good": 60, "comboBonus": 5, "comboCap": 10, "goodWeight": 0.6 },
+    "stars": [0.5, 0.75, 0.9]
+  }
+}
