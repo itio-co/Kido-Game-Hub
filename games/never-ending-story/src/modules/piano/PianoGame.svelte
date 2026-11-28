@@ -9,7 +9,8 @@
   import manifest from './module.json';
   import { PIANO_DIFFICULTIES, pianoRuleset, type PianoDifficulty } from './ruleset';
   import { SONGS, songById, type SongId } from './songs';
-  import { readPrefs, writePrefs, type PianoPrefs } from './store';
+  import { readPrefs, writePrefs } from './prefs';
+  import type { PianoPrefs } from './store.ts';
 
   let { onExit }: { onExit: () => void } = $props();
   const c = gameCopy('piano');

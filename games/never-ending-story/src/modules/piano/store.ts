@@ -24,19 +24,3 @@ export function parsePrefs(raw: string | null | undefined): PianoPrefs {
     return base;
   }
 }
-
-export function readPrefs(): PianoPrefs {
-  try {
-    return parsePrefs(localStorage.getItem(PIANO_STORAGE_KEY));
-  } catch {
-    return defaultPrefs();
-  }
-}
-
-export function writePrefs(prefs: PianoPrefs): void {
-  try {
-    localStorage.setItem(PIANO_STORAGE_KEY, JSON.stringify(prefs));
-  } catch {
-    // Private mode or a full quota must not break playing.
-  }
-}
