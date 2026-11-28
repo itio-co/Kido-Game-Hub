@@ -72,5 +72,42 @@
       "comboBonus": 1,
       "comboCap": 20
     }
+  },
+  "1.0.2": {
+    "wordChars": 5,
+    "difficulties": {
+      "easy": {
+        "minAccuracy": 0.8,
+        "wpm": [
+          10,
+          20
+        ],
+        "goldAccuracy": 0.9,
+        "backspace": true
+      },
+      "normal": {
+        "minAccuracy": 0.85,
+        "wpm": [
+          20,
+          30
+        ],
+        "goldAccuracy": 0.95,
+        "backspace": true
+      },
+      "hard": {
+        "minAccuracy": 0.92,
+        "wpm": [
+          30,
+          45
+        ],
+        "goldAccuracy": 0.97,
+        "backspace": false
+      }
+    },
+    "scoring": {
+      "hit": 10,
+      "comboBonus": 1,
+      "comboCap": 20
+    }
   }
 }

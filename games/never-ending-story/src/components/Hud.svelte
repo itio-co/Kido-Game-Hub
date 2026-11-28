@@ -41,7 +41,7 @@
   <span class="rule"></span>
   <span class="place">{title}</span>
   <span class="rule"></span>
-  <button type="button" class="icon" aria-label={settingsLabel} onclick={onSettings}>
+  <button type="button" class="icon" data-testid="hud-settings" aria-label={settingsLabel} onclick={onSettings}>
     <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
       <circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="1.7" />
       <path

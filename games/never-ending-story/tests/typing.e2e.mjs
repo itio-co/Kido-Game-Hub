@@ -156,6 +156,35 @@ async function assertSideBySide(page, where) {
   assert.ok(ratio >= 0.28 && ratio <= 0.48, `${where}: portrait should be ~35-40% of the card width, got ${ratio.toFixed(2)} ${JSON.stringify({ card, port })}`);
 }
 
+
+async function assertBackgroundPortrait(page, where) {
+  const card = await q(page, 'typing-quote-card').boundingBox();
+  const panel = await q(page, 'typing-text').boundingBox();
+  const port = await q(page, 'typing-portrait').boundingBox();
+  assert.ok(panel && port && card, `${where}: quote panel and portrait visible`);
+  assert.ok(Math.abs(port.x - card.x) <= 2 && Math.abs(port.width - card.width) <= 4, `${where}: portrait should span the card width ${JSON.stringify({ card, port })}`);
+  assert.ok(port.height >= card.height * 0.9, `${where}: portrait should fill the card height ${JSON.stringify({ card, port })}`);
+  assert.ok(panel.y >= port.y - 1 && panel.y + panel.height <= port.y + port.height + 4, `${where}: quote panel should sit over the portrait ${JSON.stringify({ panel, port })}`);
+  const title = await page.locator('.ttl').boundingBox();
+  const stat = await page.locator('.stat').boundingBox();
+  assert.ok(title && stat && stat.y >= title.y + title.height - 2, `${where}: HUD should sit on its own row under the title ${JSON.stringify({ title, stat })}`);
+}
+
+/** The current caret character must stay inside the visible viewport, below the header and above the footer. */
+async function assertCaretInView(page, where) {
+  const cur = page.locator('[data-testid="typing-text"] .ch.cursor').first();
+  await cur.waitFor({ state: 'visible' });
+  const box = await cur.boundingBox();
+  const header = await page.locator('.top').boundingBox();
+  const foot = await page.locator('.foot').boundingBox();
+  const vp = page.viewportSize();
+  assert.ok(box && vp, `${where}: caret and viewport`);
+  assert.ok(box.y >= 0 && box.y + box.height <= vp.height, `${where}: caret outside viewport ${JSON.stringify({ box, vp })}`);
+  assert.ok(box.x >= 0 && box.x + box.width <= vp.width, `${where}: caret outside viewport x ${JSON.stringify({ box, vp })}`);
+  if (header) assert.ok(box.y + 0.5 >= header.y + header.height, `${where}: caret is under the header ${JSON.stringify({ box, header })}`);
+  if (foot) assert.ok(box.y + box.height <= foot.y + 0.5, `${where}: caret is under the footer ${JSON.stringify({ box, foot })}`);
+}
+
 // ---- 1. menu + practice card data ----
 {
   const { ctx, page, errors } = await open('#/play/typing', { viewport: DESKTOP });
@@ -458,6 +487,66 @@ async function assertSideBySide(page, where) {
   assert.deepEqual(errors, []);
   await ctx.close();
 }
+
+// ---- 9. narrow portrait: background photo + caret stays in view when the keyboard shrinks the viewport ----
+const PORTRAIT_PHONE = { width: 390, height: 844 };
+{
+  const { ctx, page, errors } = await open('#/play/typing', { viewport: PORTRAIT_PHONE, touch: true });
+  await q(page, 'typing-typist').tap();
+  await page.waitForSelector('[data-testid="typing-lessons"]');
+  const firstLesson = real ? 'GENERAL' : 'ALPHA';
+  await q(page, 'typing-lesson-' + firstLesson).tap();
+  await page.locator('[data-testid^="typing-drill-"]').first().tap();
+  await page.waitForSelector('[data-testid="typing-quote-card"]');
+  await page.locator('[data-testid="typing-input"]').evaluate((el) => el.focus());
+  await assertBackgroundPortrait(page, '390x844');
+  await assertCaretInView(page, '390x844');
+  assert.deepEqual(errors, []);
+  await ctx.close();
+}
+for (const vp of [{ width: 390, height: 420, name: '390x420' }, { width: 412, height: 480, name: '412x480' }]) {
+  const { ctx, page, errors } = await open('#/play/typing', { viewport: vp, touch: true });
+  await q(page, 'typing-typist').tap();
+  await page.waitForSelector('[data-testid="typing-lessons"]');
+  await q(page, 'typing-lesson-' + (real ? 'GENERAL' : 'ALPHA')).tap();
+  await page.locator('[data-testid^="typing-drill-"]').first().tap();
+  await page.waitForSelector('[data-testid="typing-quote-card"]');
+  await page.locator('[data-testid="typing-input"]').evaluate((el) => el.focus());
+  await assertBackgroundPortrait(page, vp.name);
+  await assertCaretInView(page, vp.name);
+  assert.deepEqual(errors, []);
+  await ctx.close();
+}
+ok('narrow portrait: background photo, HUD on its own row, caret in view at 390x420 and 412x480');
+
+if (real) {
+  const { ctx, page, errors } = await open('#/play/typing', { viewport: { width: 390, height: 420 }, touch: true });
+  await openAuthorDrill(page, 'Smalltalk Best Practice Patterns', true);
+  await page.locator('[data-testid="typing-input"]').evaluate((el) => el.focus());
+  await assertBackgroundPortrait(page, 'long quote 390x420');
+  await assertCaretInView(page, 'long quote 390x420');
+  const quoteH = await q(page, 'typing-quote').evaluate((el) => el.scrollHeight);
+  assert.ok(quoteH > 200, `long quote should be taller than the short panel, scrollHeight=${quoteH}`);
+  assert.deepEqual(errors, []);
+  await ctx.close();
+  ok('narrow portrait: long quote caret stays in view at 390x420');
+}
+
+
+// wide / landscape keeps the photo on the right (844x390 no-regression)
+{
+  const WIDE = { width: 844, height: 390 };
+  const { ctx, page, errors } = await open('#/play/typing', { viewport: WIDE, touch: true });
+  const author = real ? 'Bjarne Stroustrup' : 'Ada Lovelace';
+  await openAuthorDrill(page, author, true);
+  assert.equal(await root(page, 'data-card'), 'quote');
+  await assertSideBySide(page, '844x390 landscape');
+  await assertCaretInView(page, '844x390 landscape');
+  assert.deepEqual(errors, []);
+  await ctx.close();
+}
+ok('wide landscape 844x390 keeps the photo on the right');
+
 {
   const { ctx, page } = await open('#/play/typing', { viewport: DESKTOP, reduced: true });
   await q(page, 'typing-start').click();
