@@ -11,6 +11,7 @@
   import { readEggs } from '../../lib/eggs';
   import { readStirFry } from '../stirfry';
   import { readPianoStars } from '../piano';
+  import { readTypingStars } from '../typing';
   import { portraitFile } from '../character';
   import { artworkFile } from '../cutscene';
   import { ItemBox } from '../item-box';
@@ -158,7 +159,8 @@
   {:else if session.screen === 'practice'}
     {@const stirBest = readStirFry()}
     {@const pianoStars = readPianoStars()}
-    {@const unlockedCount = (session.flow?.practice ?? []).filter((game) => game.game === 'stirfry' || game.game === 'piano' || (!game.future && session.played.includes(game.slug))).length}
+    {@const typingStars = readTypingStars()}
+    {@const unlockedCount = (session.flow?.practice ?? []).filter((game) => game.game === 'stirfry' || game.game === 'piano' || game.game === 'typing' || (!game.future && session.played.includes(game.slug))).length}
     {@const totalCount = session.flow?.practice.length ?? 0}
     <div class="pgrid">
       <p class="punlock">ปลดล็อกแล้ว {unlockedCount}/{totalCount} · เกมใหม่ปลดล็อกจากคดี</p>
@@ -170,7 +172,7 @@
       </div>
       <div class="cards">
         {#each (session.flow?.practice ?? []).filter((game) => session.category === 'ทั้งหมด' || game.group === session.category) as game (game.id)}
-          {@const unlocked = game.game === 'stirfry' || game.game === 'piano' || (!game.future && session.played.includes(game.slug))}
+          {@const unlocked = game.game === 'stirfry' || game.game === 'piano' || game.game === 'typing' || (!game.future && session.played.includes(game.slug))}
           {@const row = game.game === 'cross' || game.game === 'jig' || game.game === 'slide' ? session.levels[game.game] : []}
           {@const total = row.reduce((sum, value) => sum + (value || 0), 0)}
           <div class="gcardwrap">
@@ -183,6 +185,8 @@
                 <small>⭐ {stirBest.bestStars}/3 · {Math.round(stirBest.bestScore)}</small>
               {:else if game.game === 'piano'}
                 <small>⭐ {pianoStars.stars}/{pianoStars.max}</small>
+              {:else if game.game === 'typing'}
+                <small>⭐ {typingStars.stars}/{typingStars.max}</small>
               {:else if unlocked}
                 <small>⭐ {total}/{3 * LEVEL_COUNT}</small>
               {:else if game.caseNo === 'soon' || game.future}

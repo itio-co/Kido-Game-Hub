@@ -23,6 +23,7 @@
   import { bangkokDay, emptyRecord, viewOf } from './lib/streak';
   import { StirFryGame } from './modules/stirfry';
   import { PianoGame } from './modules/piano';
+  import { TypingGame } from './modules/typing';
   import { ChallengeView, LeaderboardView, parseChallengeHash } from './modules/challenge';
   import { minigameRoute } from './modules/minigame-core';
   import { loadPlayerRoom } from './lib/loadRoom';
@@ -104,9 +105,10 @@
   const mini = $derived(minigameRoute(route));
   const playingStirfry = $derived(mini === 'rhythm' && route.startsWith('#/play/stirfry'));
   const playingPiano = $derived(mini === 'rhythm' && route.startsWith('#/play/piano'));
+  const playingTyping = $derived(mini === 'rhythm' && route.startsWith('#/play/typing'));
   const challenge = $derived(mini === 'challenge' ? parseChallengeHash(route) : null);
   const showingBoard = $derived(mini === 'leaderboard');
-  const fullscreenGame = $derived(playingStirfry || playingPiano || !!challenge || showingBoard);
+  const fullscreenGame = $derived(playingStirfry || playingPiano || playingTyping || !!challenge || showingBoard);
 
   function toPractice(): void {
     window.location.hash = '';
@@ -432,7 +434,7 @@
   });
 </script>
 
-<div class="phone" class:wide={editing || browsing || playingPiano} data-text={save.player.textSize}>
+<div class="phone" class:wide={editing || browsing || playingPiano || playingTyping} data-text={save.player.textSize}>
   {#if !editing && !browsing && !fullscreenGame}<VersionBadge onUnlock={onVersionUnlock} />{/if}
   {#if celebrate}
     <StreakCelebrateDialog
@@ -464,6 +466,8 @@
     <StirFryGame onExit={() => { window.location.hash = ''; route = ''; void session.go('practice'); }} />
   {:else if playingPiano}
     <PianoGame onExit={() => { window.location.hash = ''; route = ''; void session.go('practice'); }} />
+  {:else if playingTyping}
+    <TypingGame onExit={() => { window.location.hash = ''; route = ''; void session.go('practice'); }} />
   {:else}
     <div class="stage" class:is-fading={session.fading}>
       <div class="room-layer" class:hidden={session.screen !== 'player-room'}>
