@@ -30,6 +30,7 @@
   let detail = $state<Row | null>(null);
   let loadError = $state('');
   let query = $state('');
+  let playerPage = $state(1);
   let boardGame = $state('cross');
   let boardDiff = $state('easy');
   let board = $state<Row[] | null>(null);
@@ -102,7 +103,7 @@
       if (section === 'dashboard') data = await god<Row>('dashboard');
       else if (section === 'players') {
         if (playerId) { detail = await god<Row>(`players/${encodeURIComponent(playerId)}`); renameTo = String(detail.player?.nickname ?? ''); confirmText = ''; }
-        else data = await god<Row>(`players?q=${encodeURIComponent(query)}`);
+        else data = await god<Row>(`players?q=${encodeURIComponent(query)}&page=${playerPage}`);
       } else if (subId) { data = null; }
       else if (section === 'games') { data = await god<Row>('games'); await loadBoard(); }
       else if (section === 'events') data = await god<Row>('events');
@@ -213,7 +214,7 @@
         </div>
         <p class="note">{t('god.dash.note', { at: fmtDate(data.now) })}</p>
       {:else if section === 'players' && !playerId}
-        <form class="search" onsubmit={(e) => { e.preventDefault(); void load(); }}>
+        <form class="search" onsubmit={(e) => { e.preventDefault(); playerPage = 1; void load(); }}>
           <input type="search" placeholder={t('god.player.search')} bind:value={query} />
           <button type="submit">{t('god.player.searchBtn')}</button>
         </form>
@@ -222,6 +223,14 @@
             <tbody>{#each data.players as p (p.playerId)}
               <tr><td><a href="#/players/{encodeURIComponent(p.playerId)}">{p.nickname || t('god.noName')}</a>{#if !p.registered}<span class="tag">{t('god.player.unclaimed')}</span>{/if}</td><td><code>{short(p.playerId)}</code></td><td>{fmtDate(p.created_at)}</td><td>{fmtDate(p.last_seen)}</td><td>{p.runs}</td><td>{p.best ?? '–'}</td><td>{p.events ? String(p.events).split(',').map((s) => { const [id, st] = s.split(':'); return `${id} ${t(`god.status.${st}`)}`; }).join(', ') : '–'}</td></tr>
             {:else}<tr><td colspan="7">{t('god.empty')}</td></tr>{/each}</tbody></table>
+          {@const total = Number(data.total ?? 0)}
+          {@const pageSize = Number(data.pageSize ?? 20)}
+          {@const pages = Math.max(1, Math.ceil(total / pageSize))}
+          <div class="pager" data-testid="player-pager" role="navigation">
+            <button type="button" class="page-btn" data-testid="player-prev" disabled={playerPage <= 1} onclick={() => { playerPage = Math.max(1, playerPage - 1); void load(); }}>{t('god.player.prev')}</button>
+            <span data-testid="player-page-info">{t('god.player.page', { page: playerPage, pages, total })}</span>
+            <button type="button" class="page-btn" data-testid="player-next" disabled={playerPage >= pages} onclick={() => { playerPage = Math.min(pages, playerPage + 1); void load(); }}>{t('god.player.next')}</button>
+          </div>
         {/if}
       {:else if section === 'players' && detail}
         <a href="#/players" class="gback">← {t('god.player.back')}</a>
@@ -351,8 +360,9 @@
 {/if}
 
 <style>
+  :global(html), :global(body) { overscroll-behavior-y: none; }
   :global(body) { overflow: auto !important; background: #0d1117; }
-  :global(#god) { min-height: 100vh; }
+  :global(#god) { min-height: 100vh; overscroll-behavior-y: none; }
   .center { text-align: center; padding: 40px; }
   .login { min-height: 100vh; display: grid; place-items: center; padding: 16px; }
   .login form { width: min(360px, 100%); background: var(--hud); border: 2px solid var(--cyan); border-radius: 16px; padding: 24px; display: grid; gap: 12px; }
@@ -371,7 +381,7 @@
   header b { color: var(--cyan); font-size: 1.2em; }
   .crumb { opacity: 0.7; }
   .burger { display: none; order: -1; }
-  .content { grid-column: 2; grid-row: 2; padding: 20px; overflow-x: auto; min-width: 0; }
+  .content { grid-column: 2; grid-row: 2; padding: 20px; overflow-x: auto; min-width: 0; overscroll-behavior-y: contain; }
   nav { grid-column: 1; grid-row: 2; border-right: 1px solid #234; background: #0b1520; padding: 16px 12px; display: flex; flex-direction: column; gap: 6px; }
   nav a { padding: 10px 14px; border-radius: 10px; color: var(--ink); text-decoration: none; }
   nav a.on { background: #12324a; color: var(--cyan); font-weight: 700; }
@@ -392,6 +402,9 @@
   .note { opacity: 0.6; font-size: 0.85em; }
   .search { display: flex; gap: 8px; margin: 8px 0 16px; flex-wrap: wrap; }
   .search input { flex: 1; min-width: 160px; }
+  .pager { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 16px 0 8px; }
+  .page-btn { min-height: 44px; min-width: 88px; padding: 8px 14px; }
+  .pager span { font-size: 0.95em; }
   .bad { color: #ff9a9a; }
   .tag.kind { background: #12324a; color: var(--cyan); margin: 0; }
   .chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0 16px; }
@@ -405,7 +418,7 @@
   dl { display: grid; grid-template-columns: max-content 1fr; gap: 4px 12px; font-size: 0.9em; }
   dt { opacity: 0.7; }
   dd { margin: 0; word-break: break-all; }
-  pre { background: #0b1622; padding: 10px; border-radius: 10px; font-size: 0.8em; overflow: auto; max-height: 260px; }
+  pre { background: #0b1622; padding: 10px; border-radius: 10px; font-size: 0.8em; overflow: auto; max-height: 260px; overscroll-behavior-y: contain; }
   .admin { margin-top: 24px; padding: 16px; border: 1px solid #5a1620; border-radius: 12px; }
   .danger-note { color: #ffb3bb; font-size: 0.9em; }
   .gback { display: inline-block; margin-bottom: 8px; }
@@ -421,9 +434,10 @@
     .content { grid-column: 1; padding: 12px; }
     .two { grid-template-columns: 1fr; }
     nav { position: fixed; top: 0; left: 0; bottom: 0; width: 240px; z-index: 30; transform: translateX(-100%); transition: transform 0.2s; }
+    .pager { position: static; transform: none; width: auto; z-index: auto; background: transparent; border: 0; padding: 0; flex-direction: row; }
     nav.open { transform: none; }
     .scrim-god { display: block; position: fixed; inset: 0; z-index: 29; background: rgba(0, 0, 0, 0.5); border: 0; border-radius: 0; }
-    table.wide { display: block; overflow-x: auto; white-space: nowrap; }
+    table.wide { display: block; overflow-x: auto; overscroll-behavior: contain; white-space: nowrap; }
     .bar { grid-template-columns: 120px 1fr 32px; }
   }
 </style>

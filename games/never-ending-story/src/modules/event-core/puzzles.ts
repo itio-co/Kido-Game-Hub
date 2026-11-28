@@ -67,8 +67,3 @@ export const LEVEL_THEME: Record<PuzzleKey, { name: string; bg: string; path: st
   },
 };
 
-export const FAKE_TIME: Record<string, { elapsed: string; best: string }> = {
-  crossword: { elapsed: '01:12', best: '00:58' },
-  jigsaw: { elapsed: '00:42', best: '00:35' },
-  slide: { elapsed: '01:05', best: '—' },
-};

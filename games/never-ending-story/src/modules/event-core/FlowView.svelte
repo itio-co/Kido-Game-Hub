@@ -6,7 +6,8 @@
   import type { FlowSpot } from './types';
   import { CASE_KEY_ID } from './progress';
   import { endingIdFor, primaryEventId } from './story';
-  import { t } from '../../lib/i18n';
+  import { getLocale, t } from '../../lib/i18n';
+  import { itemCopy, itemForBagId } from '../item';
   import { readEggs } from '../../lib/eggs';
   import { readStirFry } from '../stirfry';
   import { portraitFile } from '../character';
@@ -139,14 +140,14 @@
     >
       {#snippet actions()}
         {#if session.screen === 'ending-comic' || session.cleared}
-          <button type="button" class="skip" data-testid="comic-skip" class:loud={session.cleared && session.screen !== 'ending-comic'} onclick={() => session.skipCutscene()}>
+          <button type="button" class="skip" data-testid="comic-skip" class:loud={session.cleared && session.screen !== 'ending-comic'} disabled={session.loading} aria-busy={session.loading} onclick={() => session.skipCutscene()}>
             {session.screen === 'ending-comic' ? t('ending.skip') : t('skip.intro')}
           </button>
         {/if}
       {/snippet}
     </ComicPanel>
   {:else if session.screen === 'difficulty'}
-    <div class="pick">
+    <div class="pick" data-testid="difficulty-pick">
       <h1>เลือกระดับความยากของคดีนี้</h1>
       <p>เลือกได้ใหม่ทุกครั้งที่เริ่มคดี ไม่มีจำกัดเวลา</p>
       {#each session.flow?.difficulties ?? [] as name (name)}
@@ -242,7 +243,8 @@
       {/if}
     </div>
   {:else if session.screen === 'case-board'}
-    <div class="deduce">
+    <div class="deduce" data-testid="case-board">
+      <div class="deduce-scroll">
       {#each session.flow?.questions ?? [] as question, index (question.id)}
         <section class:ok={session.marks[index] === 1} class:bad={session.marks[index] === -1}>
           <h2>{question.prompt} {session.marks[index] === 1 ? 'ถูก' : ''}</h2>
@@ -282,14 +284,18 @@
           </div>
         </section>
       {/each}
-      <button type="button" class="mgbtn" onclick={() => session.gradeCase()}>ยืนยันข้อสรุป</button>
+      </div>
+      <div class="deduce-footer" data-testid="case-board-footer">
+        <p class="deduce-hint" data-testid="case-board-hint">{t('case.confirmHint')}</p>
+        <button type="button" class="mgbtn" data-testid="case-board-confirm" onclick={() => session.gradeCase()}>ยืนยันข้อสรุป</button>
+      </div>
     </div>
   {:else if session.screen === 'crossword' || session.screen === 'jigsaw' || session.screen === 'slide'}
     <Minigames {session} />
   {/if}
 
   {#if session.note}
-    <NoteInspect note={session.note} onFlip={() => session.flipNote()} onClose={() => session.closeNote()} />
+    <NoteInspect note={session.note} onClose={() => session.closeNote()} />
   {/if}
 
   {#if session.talk}
@@ -317,6 +323,29 @@
       testid="bag-panel"
       onClose={() => session.closeOverlay()}
     />
+  {:else if session.overlay === 'storage'}
+    <ItemBox
+      title={t('storage.title')}
+      ownedIds={session.storage}
+      emptyText={t('storage.empty')}
+      closeLabel={t('storage.close')}
+      testid="storage-panel"
+      onClose={() => session.closeOverlay()}
+    />
+  {:else if session.overlay === 'trip-summary'}
+    <div class="trip" data-testid="trip-summary" role="dialog" aria-label={t('trip.title')}>
+      <div class="trip-card">
+        <h2>{t('trip.title')}</h2>
+        <p>{t('trip.body')}</p>
+        <ul>
+          {#each session.tripLoot as id (id)}
+            {@const item = itemForBagId(id)}
+            <li data-testid="trip-item-{id}">{item ? itemCopy(item, getLocale()).title : id}</li>
+          {/each}
+        </ul>
+        <button type="button" data-testid="trip-continue" onclick={() => session.confirmTrip()}>{t('trip.continue')}</button>
+      </div>
+    </div>
   {:else if session.overlay}
     <div class="time-sheet" data-testid={session.overlay === 'clock' ? 'clock-panel' : session.overlay === 'calendar' ? 'calendar-panel' : 'day-panel'}>
       <button type="button" class="calx" aria-label="ปิด" onclick={() => session.closeOverlay()}>✕</button>
@@ -371,7 +400,7 @@
 </div>
 
 <style>
-  .flow { position: absolute; inset: 0; color: #eaf6ff; font-size: var(--fs); }
+  .flow { position: absolute; inset: 0; color: #eaf6ff; font-size: var(--fs); overscroll-behavior-y: none; }
   .box-state {
     position: absolute;
     z-index: 6;
@@ -388,7 +417,7 @@
     font-weight: 800;
     pointer-events: none;
   }
-  .evlist, .pgrid, .note-list, .deduce, .pick, .lvwrap { position: absolute; inset: 0; overflow: auto; padding: 78px 12px 96px; }
+  .evlist, .pgrid, .note-list, .pick, .lvwrap { position: absolute; inset: 0; overflow: auto; overscroll-behavior-y: contain; padding: 78px 12px 96px; }
   .evlist { background: linear-gradient(170deg, #2a2440, #3a2f2a); display: flex; flex-direction: column; gap: 12px; }
   .evh, .pick p, .note-list p { text-align: center; margin: 0; }
   .evcard { position: relative; border: 0; border-radius: 16px; overflow: hidden; min-height: 150px; background: #1a1a22; text-align: left; padding: 0; color: #fff; }
@@ -433,7 +462,25 @@
   .note-list li { margin: 8px 0; padding: 8px 10px; border-radius: 10px; background: rgba(255, 255, 255, 0.06); opacity: 0.55; }
   .note-list li.have { opacity: 1; }
   .note-list li span, .deduce p { display: block; font-size: var(--fs-sm); margin-top: 4px; }
-  .deduce { display: flex; flex-direction: column; gap: 8px; }
+  .deduce {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    overflow: hidden;
+    /* Start the scroll area below the HUD + version badge; padding here does not scroll away. */
+    padding: 96px 12px 0;
+    box-sizing: border-box;
+  }
+  .deduce-scroll { flex: 1 1 auto; min-height: 0; overflow: auto; overscroll-behavior-y: contain; display: flex; flex-direction: column; gap: 8px; padding: 0 0 12px; }
+  .deduce-footer {
+    flex: 0 0 auto;
+    padding: 8px 4px calc(var(--hud-btn-bottom, 14px) + var(--hud-btn-size, 64px) + 12px);
+    background: linear-gradient(180deg, transparent, rgba(16, 36, 51, 0.96) 18%);
+  }
+  .deduce-hint { margin: 0 0 8px; text-align: center; color: #eaf6ff; font-size: var(--fs-sm); }
+  .deduce-footer .mgbtn { display: block; width: 100%; }
   .deduce section { background: rgba(6, 24, 40, 0.93); border: 1px solid #39e0ff; border-radius: 12px; padding: 8px 10px; }
   .deduce section.ok { border-color: #5fd38a; }
   .deduce section.bad { border-color: #ff8a7a; }
@@ -452,7 +499,7 @@
   .dlg b { color: #7fe9ff; }
   .btns { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
   .btns button { background: #0d4a66; border: 1px solid #39e0ff; color: #fff; border-radius: 8px; padding: 8px 12px; font-size: var(--fs-sm); font-weight: 700; }
-  .time-sheet { position: absolute; inset: 0; z-index: 6; background: rgba(0, 0, 0, 0.55); padding: 72px 14px 96px; overflow: auto; }
+  .time-sheet { position: absolute; inset: 0; z-index: 6; background: rgba(0, 0, 0, 0.55); padding: 72px 14px 96px; overflow: auto; overscroll-behavior-y: contain; }
   .calc { background: repeating-linear-gradient(0deg, #f3e3c3 0 6px, #efdcb8 6px 7px); color: #4a2e18; border: 8px solid #8a5a34; border-radius: 14px; padding: 12px; }
   .calh { display: flex; justify-content: space-between; align-items: center; background: linear-gradient(90deg, #6b3f22, #8a5a34); color: #fff; border-radius: 10px; padding: 8px 10px; font-weight: 800; }
   .calh small { font-weight: 500; font-size: var(--fs-sm); }
@@ -477,4 +524,35 @@
   .egg-card h2 { margin: 0 0 8px; font-size: calc(var(--fs) + 4px); }
   .egg-card p { margin: 0 0 12px; font-size: var(--fs-sm); line-height: 1.4; }
   .egg-card button { min-height: 44px; border-radius: 12px; border: 0; background: #39e0ff; color: #06212f; font-weight: 800; padding: 8px 16px; }
+  .trip {
+    position: absolute;
+    inset: 0;
+    z-index: 9;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px 16px calc(var(--hud-btn-bottom, 14px) + var(--hud-btn-size, 64px) + 16px);
+    background: rgba(8, 14, 22, 0.72);
+  }
+  .trip-card {
+    width: min(92%, 360px);
+    background: #102433;
+    border: 1px solid #39e0ff;
+    border-radius: 16px;
+    padding: 18px 16px 16px;
+    color: #eaf6ff;
+  }
+  .trip-card h2 { margin: 0 0 8px; font-size: calc(var(--fs) + 4px); }
+  .trip-card p { margin: 0 0 12px; font-size: var(--fs-sm); }
+  .trip-card ul { margin: 0 0 16px; padding: 0 0 0 18px; }
+  .trip-card li { margin: 0 0 6px; }
+  .trip-card button {
+    width: 100%;
+    min-height: 48px;
+    border-radius: 12px;
+    border: 1px solid #39e0ff;
+    background: #0d4a66;
+    color: #fff;
+    font-weight: 800;
+  }
 </style>

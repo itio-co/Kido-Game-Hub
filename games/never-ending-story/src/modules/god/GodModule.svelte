@@ -212,12 +212,12 @@
   .gdd :global(h3) { font-size: 1.1em; margin-top: 18px; }
   .gdd :global(table) { margin: 8px 0; }
   .gdd :global(code) { background: #0b1622; padding: 1px 5px; border-radius: 4px; }
-  .gdd :global(pre) { background: #0b1622; padding: 10px; border-radius: 8px; overflow: auto; }
+  .gdd :global(pre) { background: #0b1622; padding: 10px; border-radius: 8px; overflow: auto; overscroll-behavior-y: contain; }
   .gdd :global(blockquote) { border-left: 3px solid var(--cyan); margin: 8px 0; padding-left: 10px; opacity: 0.85; }
   .cast { display: grid; gap: 14px; }
   .castcard { background: #0f1a27; border: 1px solid #234; border-radius: 12px; padding: 12px; }
   .castcard img { width: 100%; max-height: 280px; object-fit: cover; border-radius: 8px; background: #000; }
   .castcard pre { white-space: pre-wrap; overflow-wrap: anywhere; background: #0b1622; padding: 8px; border-radius: 8px; font-size: 0.82em; }
   .castcard h3, .castcard h4 { margin: 10px 0 4px; }
-  @media (max-width: 760px) { table { display: block; overflow-x: auto; white-space: nowrap; } .gdd { padding: 4px 10px 12px; } }
+  @media (max-width: 760px) { table { display: block; overflow-x: auto; overscroll-behavior: contain; white-space: nowrap; } .gdd { padding: 4px 10px 12px; } }
 </style>

@@ -46,6 +46,9 @@ export function defaultFlow(): FlowProgress {
     caseDone: false,
     cleared: false,
     bag: [],
+    storage: [],
+    tripLoot: [],
+    clearedPuzzles: [],
     nav: undefined,
   };
 }
@@ -113,6 +116,9 @@ export function readSave(): SaveV1 {
         cleared: flow.cleared === true || flow.caseDone === true,
         mapUnlocked: flow.mapUnlocked === true,
         bag: Array.isArray(flow.bag) ? flow.bag.filter((id) => typeof id === 'string') : [],
+        storage: Array.isArray(flow.storage) ? flow.storage.filter((id) => typeof id === 'string') : [],
+        tripLoot: Array.isArray(flow.tripLoot) ? flow.tripLoot.filter((id) => typeof id === 'string') : [],
+        clearedPuzzles: Array.isArray(flow.clearedPuzzles) ? flow.clearedPuzzles.filter((id) => typeof id === 'string') : [],
         nav: isRecord(flow.nav)
           ? {
               screen: typeof flow.nav.screen === 'string' ? flow.nav.screen : 'player-room',

@@ -172,7 +172,7 @@ export type SceneObject =
 
 export type Buildable = SceneObject | ShelfRowEntity | BookEntity;
 
-export type HotspotAction = 'event-select' | 'practice' | 'calendar' | 'case-board';
+export type HotspotAction = 'event-select' | 'practice' | 'calendar' | 'case-board' | 'storage';
 
 export type HitBox = { position: Vec3; size: Vec3 };
 
@@ -278,6 +278,13 @@ export type FlowProgress = {
   mapUnlocked?: boolean;
   /** Item ids in the bag. The case key is awarded when the deduction is solved, not as evidence. */
   bag?: string[];
+  /** Keepable items stored in the player's room storage box. Survives a case replay. */
+  storage?: string[];
+  /** Keepable items obtained in the current event trip, still in the bag until homecoming. */
+  tripLoot?: string[];
+  /** Story puzzles won in this event run, e.g. 'crossword'. Reset on replay. */
+  clearedPuzzles?: string[];
+
   /** Restored navigation after refresh. */
   nav?: {
     screen: string;

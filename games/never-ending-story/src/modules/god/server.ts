@@ -1,4 +1,5 @@
 import { normalizeAppBase } from '../../lib/deployment';
+import { playerPageParams } from './playerQuery';
 import { createSnapshot, listSnapshots, readSnapshot, revokeSnapshot, snapshotPath, type SnapshotStore } from './snapshot';
 /**
  * "Game of Dev" admin API under /never/api/god/*.
@@ -148,8 +149,13 @@ async function dashboard(env: GodEnv): Promise<Response> {
   return json({ ok: true, now, counts: { players, runs, active24, active7, new7 }, byGame, recentRuns, recentPlayers });
 }
 
-async function playerList(env: GodEnv, q: string): Promise<Response> {
+async function playerList(env: GodEnv, url: URL): Promise<Response> {
+  const { q, page, pageSize } = playerPageParams(url);
   const like = `%${q.replace(/[%_]/g, '')}%`;
+  const where = `(?='' OR p.nickname LIKE ? OR p.playerId LIKE ?)`;
+  const totalRow = await env.DB.prepare(`SELECT count(*) AS n FROM players p WHERE ${where}`).bind(q, like, like).first<{ n: number }>();
+  const total = Number(totalRow?.n ?? 0);
+  const offset = (page - 1) * pageSize;
   const { results } = await env.DB.prepare(
     `SELECT p.playerId, p.nickname, p.created_at, p.last_seen, (p.token_hash IS NOT NULL) AS registered,
        (SELECT count(*) FROM runs r WHERE r.playerId=p.playerId) AS runs,
@@ -157,9 +163,9 @@ async function playerList(env: GodEnv, q: string): Promise<Response> {
        (SELECT group_concat(e.eventId || ':' || e.status) FROM player_events e WHERE e.playerId=p.playerId) AS events,
        EXISTS(SELECT 1 FROM player_state s WHERE s.playerId=p.playerId) AS hasState,
        EXISTS(SELECT 1 FROM player_home h WHERE h.playerId=p.playerId) AS hasHome
-     FROM players p WHERE (?='' OR p.nickname LIKE ? OR p.playerId LIKE ?) ORDER BY p.last_seen DESC LIMIT 200`,
-  ).bind(q, like, like).all();
-  return json({ ok: true, players: results });
+     FROM players p WHERE ${where} ORDER BY p.created_at DESC LIMIT ? OFFSET ?`,
+  ).bind(q, like, like, pageSize, offset).all();
+  return json({ ok: true, players: results, total, page, pageSize });
 }
 
 function summarizeState(doc: unknown): Record<string, unknown> | null {
@@ -254,7 +260,7 @@ export async function godApi(req: Request, env: GodEnv, path: string): Promise<R
 
   if (path === '/me' && req.method === 'GET') return json({ ok: true });
   if (path === '/dashboard' && req.method === 'GET') return dashboard(env);
-  if (path === '/players' && req.method === 'GET') return playerList(env, (new URL(req.url).searchParams.get('q') ?? '').slice(0, 64));
+  if (path === '/players' && req.method === 'GET') return playerList(env, new URL(req.url));
   let m = /^\/players\/([^/]+)$/.exec(path);
   if (m) {
     const id = decodeURIComponent(m[1]);

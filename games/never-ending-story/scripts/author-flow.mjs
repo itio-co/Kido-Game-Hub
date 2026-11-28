@@ -70,7 +70,7 @@ const scenes = [
     spots: [
       spot('ห้องนั่งเล่น (จุดเริ่ม)', 'flow/house-map/living', 50.2, 41, go('living-room'), { en: 'Living room' }),
       spot('ห้องทำงาน', 'flow/house-map/study', 34.9, 62.3, go('study'), { en: 'Study' }),
-      spot('ครัว (เสริม)', 'flow/house-map/kitchen', 72.5, 62.3, go('kitchen'), { en: 'Kitchen' }),
+      spot('ครัว', 'flow/house-map/kitchen', 72.5, 62.3, go('kitchen'), { en: 'Kitchen' }),
     ],
   }),
   ent('scene', 'ห้องนั่งเล่น', 'flow/scene/living-room', {
@@ -89,7 +89,7 @@ const scenes = [
       spot('นาฬิกา', 'flow/living-room/clock', 13, 12.5, { type: 'clock' }, { en: 'Clock' }),
       spot('ปฏิทินของย่า', 'flow/living-room/calendar', 80, 27, { type: 'calendar' }, { en: 'Grandma calendar' }),
       spot('ถาดชิ้นแผนผัง', 'flow/living-room/tray', 41, 37, go('tray'), { en: 'Map tray', when: 'now', done: 'E04' }),
-      spot('ประตูไปครัว', 'flow/living-room/kitchen-door', 12, 25.3, go('kitchen'), { en: 'Door to the kitchen', when: 'now' }),
+      spot('ประตูไปครัว', 'flow/living-room/kitchen-door', 12, 25.3, go('kitchen'), { en: 'Door to the kitchen', when: 'always' }),
       spot('ประตูไปห้องทำงาน', 'flow/living-room/study-door', 92, 33.8, go('study'), { en: 'Door to the study', when: 'now' }),
       spot('กล่องรูปดาว (ข้างโซฟา)', 'flow/living-room/star-box', 85.3, 70.5, toast('สัญลักษณ์ตรงแล้ว แต่ตำแหน่งนี้ตรงกับผังเก็บภาพถ่ายหรือยัง?'), { en: 'Star box by the sofa', when: 'now' }),
       spot('โต๊ะกลาง', 'flow/living-room/table', 42, 71.1, go('table'), { en: 'Coffee table', when: 'now', done: 'E01' }),
@@ -141,11 +141,12 @@ const scenes = [
     titleEn: 'Kitchen',
     screen: 'kitchen',
     image: 'kitchen-wide.jpg',
+    images: { now: 'kitchen-wide.jpg', afternoon: 'kitchen-wide-past.jpg', yesterday: 'kitchen-wide-past.jpg' },
     map: true,
     hud: 'ไม่บังคับ',
     spots: [
-      spot('ผ้าเปียกบนราว', 'flow/kitchen/cloth', 31.5, 40.5, go('kitchen-close'), { en: 'Wet cloth' }),
-      spot('แจกันเติมน้ำใหม่', 'flow/kitchen/vase', 79.5, 50, go('kitchen-close'), { en: 'Refilled vase' }),
+      spot('ผ้าเปียกบนราว', 'flow/kitchen/cloth', 31.5, 40.5, go('kitchen-close'), { en: 'Wet cloth', when: 'now' }),
+      spot('แจกันเติมน้ำใหม่', 'flow/kitchen/vase', 79.5, 50, go('kitchen-close'), { en: 'Refilled vase', when: 'now' }),
     ],
   }),
   ent('scene', 'ครัวมุมใกล้', 'flow/scene/kitchen-close', {
@@ -155,8 +156,8 @@ const scenes = [
     map: true,
     hud: 'ร่องรอยน้ำหก',
     spots: [
-      spot('ผ้าเปียก', 'flow/kitchen-close/cloth', 28.6, 40, { type: 'evidence', evidence: 'E02', who: 'ผ้าเปียก', text: 'ผ้าที่ใช้เช็ดโต๊ะยังเปียก' }, { en: 'Wet cloth' }),
-      spot('แจกันเติมน้ำใหม่', 'flow/kitchen-close/vase', 68.7, 59.5, toast('แจกันถูกเติมน้ำใหม่ — มีน้ำหกจริง'), { en: 'Refilled vase' }),
+      spot('ผ้าเปียก', 'flow/kitchen-close/cloth', 28.6, 40, { type: 'evidence', evidence: 'E02', who: 'ผ้าเปียก', text: 'ผ้าที่ใช้เช็ดโต๊ะยังเปียก' }, { en: 'Wet cloth', when: 'now' }),
+      spot('แจกันเติมน้ำใหม่', 'flow/kitchen-close/vase', 68.7, 59.5, toast('แจกันถูกเติมน้ำใหม่ — มีน้ำหกจริง'), { en: 'Refilled vase', when: 'now' }),
     ],
   }),
   ent('scene', 'โต๊ะกลาง', 'flow/scene/table', {
@@ -170,7 +171,7 @@ const scenes = [
         type: 'evidence',
         evidence: 'E01',
         who: 'ข้อความ',
-        text: 'ขอย้ายเก็บก่อน — ริน / (ด้านหลัง) เก็บตามผังเดิมนะ โต๊ะยังเปียกอยู่',
+        text: 'ขอย้ายเก็บก่อน\nเก็บตามผังเดิมนะ\nโต๊ะยังเปียกอยู่\n\n— ริน',
       }, { en: "Aunt Rin's note", done: 'E01' }),
       spot('รอยน้ำ', 'flow/table/water', 39.8, 53.3, { type: 'evidence', evidence: 'E02', who: 'รอยน้ำ', text: 'โต๊ะเปียก — น้ำหกจากแจกัน' }, { en: 'Water mark', done: 'E02' }),
       spot('รอยที่อัลบั้มเคยวาง', 'flow/table/album-mark', 70, 64.3, toast('ตรงนี้เคยมีอัลบั้มวางอยู่'), { en: 'Where the album sat' }),
@@ -252,9 +253,9 @@ const dialogues = [
   }),
   ent('dialogue', 'ลุงเมฆเล่า', 'flow/dialogue/mek-open', {
     who: 'ลุงเมฆ',
-    text: 'รินเอาอัลบั้มใส่กล่องที่ติดรูปดาว ลุงเห็นตอนเธอยกผ่านโต๊ะ แต่ไม่ได้มองว่าเอาไปวางที่ไหน',
+    text: 'หนูมาได้ยังไงเนี่ย? ลุงกำลังเติมครอสเวิร์ดอยู่เลย ช่วยลุงหน่อยได้ไหม?',
     choices: [
-      choice('ช่วยเติมครอสเวิร์ด (เสริม)', 'flow/dialogue/mek-open/help', { next: 'flow/dialogue/mek-crossword' }),
+      choice('ช่วยเติมครอสเวิร์ด', 'flow/dialogue/mek-open/help', { next: 'flow/dialogue/mek-crossword' }),
       choice('ปิด', 'flow/dialogue/mek-open/close', {}),
     ],
   }),
@@ -268,7 +269,7 @@ const dialogues = [
   }),
   ent('dialogue', 'ลุงขอบคุณ', 'flow/dialogue/mek-thanks', {
     who: 'ลุงเมฆ',
-    text: 'ครบแล้ว! เดี๋ยวให้ทุกคนลองเล่นกัน ขอบใจมากนะ',
+    text: 'ครบแล้ว! ขอบใจมากนะ รินเอาอัลบั้มใส่กล่องที่ติดรูปดาว ลุงเห็นตอนเธอยกผ่านโต๊ะ แต่ไม่ได้มองว่าเอาไปวางที่ไหน',
     choices: [choice('ปิด', 'flow/dialogue/mek-thanks/close', {})],
   }),
   ent('dialogue', 'เปิดอัลบั้ม', 'flow/dialogue/album-open', {
@@ -426,7 +427,7 @@ const flow = ent('story-flow', 'คดี 01 อัลบั้มครอบ�
   evidence: [
     ent('evidence', 'ข้อความของน้าริน', 'flow/evidence/e01', {
       code: 'E01',
-      text: 'ข้อความของน้าริน: "ขอย้ายเก็บก่อน — ริน / เก็บตามผังเดิมนะ โต๊ะยังเปียกอยู่"',
+      text: 'ข้อความของน้าริน: "ขอย้ายเก็บก่อน เก็บตามผังเดิมนะ โต๊ะยังเปียกอยู่ — ริน"',
     }),
     ent('evidence', 'โต๊ะที่เปียก', 'flow/evidence/e02', {
       code: 'E02',

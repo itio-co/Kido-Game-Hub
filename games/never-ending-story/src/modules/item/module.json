@@ -2,7 +2,7 @@
   "id": "item",
   "name": "Items",
   "kind": "feature",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Reusable item kinds and unique item instances, plus the icon and detail views used in an inventory.",
   "entry": "src/modules/item/index.ts",
   "publicEntries": [

@@ -2,13 +2,15 @@
   "id": "minigame-core",
   "name": "Minigame framework",
   "kind": "minigame-core",
-  "version": "1.0.0",
-  "description": "Shared minigame framework: run lifecycle, practice/story/challenge mode, ruleset key, share-link paths, run token, result submission, and the ruleset HUD shells. Puzzle challenge stays a feature on top of this.",
+  "version": "1.1.0",
+  "description": "Shared minigame framework: run lifecycle, practice/story/challenge mode, ruleset key, share-link paths, run token, result submission, the ruleset HUD shells, and the reusable win/result dialog.",
   "entry": "src/modules/minigame-core/index.ts",
   "publicEntries": [
     "src/modules/minigame-core/index.ts",
     "src/modules/minigame-core/framework.ts",
-    "src/modules/minigame-core/ruleset.ts"
+    "src/modules/minigame-core/ruleset.ts",
+    "src/modules/minigame-core/result.ts",
+    "src/modules/minigame-core/WinResultDialog.svelte"
   ],
   "dependsOn": {
     "core": ">=0.6.12"

@@ -15,6 +15,7 @@
   import ShowcaseView from './components/ShowcaseView.svelte';
   import SettingsPanel from './components/SettingsPanel.svelte';
   import Sheet from './components/Sheet.svelte';
+  import LoadingDialog from './components/LoadingDialog.svelte';
   import VersionBadge from './components/VersionBadge.svelte';
   import { StirFryGame } from './modules/stirfry';
   import { ChallengeView, LeaderboardView, parseChallengeHash } from './modules/challenge';
@@ -139,6 +140,7 @@
       else if (hotspot.action === 'practice') session.enterPractice();
       else if (hotspot.action === 'calendar') overlay = 'calendar';
       else if (hotspot.action === 'case-board') void session.go('notebook');
+      else if (hotspot.action === 'storage') session.openStorage();
       return;
     }
     selectedId = id;
@@ -237,6 +239,8 @@
     !showTutor
       && !showPrologue
       && session.ready
+      && session.overlay !== 'trip-summary'
+      && session.overlay !== 'storage'
       && shouldPlayPhotoPlacement({
         placed: photoPlaced(save.player.decor),
         screen: session.screen,
@@ -419,7 +423,7 @@
           onMiss={() => (selectedId = null)}
         />
       </div>
-      {#if session.ready && session.screen !== 'player-room'}
+      {#if session.ready && (session.screen !== 'player-room' || session.overlay === 'trip-summary' || session.overlay === 'storage' || session.overlay === 'bag')}
         <FlowView {session} />
       {/if}
       {#if placingPhoto}
@@ -449,7 +453,7 @@
       onHint={onHint}
       onSettings={() => { void openSettings(); }}
     />
-    {#if session.subtitle && !session.talk && !(session.toastText && session.toastLow) && (session.showCaseUi || session.screen === 'cutscene' || session.screen === 'ending-comic' || session.screen === 'difficulty')}
+    {#if session.subtitle && session.screen !== 'case-board' && !session.talk && !(session.toastText && session.toastLow) && (session.showCaseUi || session.screen === 'cutscene' || session.screen === 'ending-comic' || session.screen === 'difficulty')}
       <p class="flow-sub">{session.subtitle}</p>
     {/if}
 
@@ -579,6 +583,9 @@
   {/if}
   {#if godFloatVisible(godReady, floatPrefs.on) && !editing && !browsing && overlay !== 'settings'}
     <GodFloat page={inspectPage} prefs={floatPrefs} onPrefs={setFloat} />
+  {/if}
+  {#if session.loading}
+    <LoadingDialog title={t('loading.title')} body={t('loading.body')} />
   {/if}
 </div>
 

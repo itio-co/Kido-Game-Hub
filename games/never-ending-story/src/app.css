@@ -52,7 +52,7 @@
 }
 
 * { box-sizing: border-box; }
-html, body, #app { height: 100%; margin: 0; }
+html, body, #app { height: 100%; margin: 0; overscroll-behavior-y: none; }
 html { touch-action: manipulation; }
 body {
   background: #10141c;
@@ -75,6 +75,7 @@ button { cursor: pointer; -webkit-tap-highlight-color: transparent; }
   height: 100dvh;
   max-height: 100dvh;
   overflow: hidden;
+  overscroll-behavior-y: none;
   background: #e0b48a;
   user-select: none;
 }
@@ -284,6 +285,7 @@ button { cursor: pointer; -webkit-tap-highlight-color: transparent; }
   position: relative;
   max-height: calc(100dvh - 156px);
   overflow: auto;
+  overscroll-behavior-y: contain;
 }
 dialog.sheet::backdrop { display: none; }
 .sheet h2 { margin: 0 0 8px; font-size: calc(var(--fs) + 2px); }

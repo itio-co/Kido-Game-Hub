@@ -77,12 +77,19 @@ let checks = 0;
   await page.screenshot({ path: `${SHOTS}/note-front.png`, type: 'png' });
   const front = await page.locator('[data-testid="rin-note-front"]').innerText();
   assert.match(front, /ขอย้ายเก็บก่อน/);
+  assert.match(front, /เก็บตามผังเดิมนะ/);
+  assert.match(front, /โต๊ะยังเปียกอยู่/);
   assert.match(front, /ริน/);
-  await page.locator('[data-testid="rin-note-front"]').click();
-  await page.waitForTimeout(700);
-  await page.screenshot({ path: `${SHOTS}/note-back.png`, type: 'png' });
-  const back = await page.locator('[data-testid="rin-note-back"]').innerText();
-  assert.match(back, /โต๊ะยังเปียกอยู่/);
+  assert.equal(await page.locator('[data-testid="rin-note-back"]').count(), 0, 'note is single-sided');
+  const hint = await page.locator('.note-layer').innerText();
+  assert.doesNotMatch(hint, /พลิกดูด้านหลัง/);
+  const closeBox = await page.locator('[data-testid="rin-note-close"]').boundingBox();
+  const bagBox = await page.locator('[data-testid="bag-btn"]').boundingBox();
+  if (closeBox && bagBox) {
+    const overlap = closeBox.x < bagBox.x + bagBox.width && closeBox.x + closeBox.width > bagBox.x
+      && closeBox.y < bagBox.y + bagBox.height && closeBox.y + closeBox.height > bagBox.y;
+    assert.equal(overlap, false, 'close button must not overlap the bag FAB');
+  }
   await page.locator('[data-testid="rin-note-close"]').click();
   await page.waitForSelector('[data-testid="bottom-notice"]');
   const notice = await page.locator('[data-testid="bottom-notice"]').innerText();
