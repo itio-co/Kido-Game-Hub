@@ -122,10 +122,14 @@ async function typableText(page) {
 }
 
 async function assertSideBySide(page, where) {
+  const card = await q(page, 'typing-quote-card').boundingBox();
   const quote = await q(page, 'typing-quote').boundingBox();
   const port = await q(page, 'typing-portrait').boundingBox();
-  assert.ok(quote && port, `${where}: quote and portrait visible`);
+  assert.ok(quote && port && card, `${where}: quote and portrait visible`);
   assert.ok(port.x >= quote.x + quote.width - 8, `${where}: portrait should sit to the right of the quote ${JSON.stringify({ quote, port })}`);
+  assert.ok(port.height >= card.height * 0.9, `${where}: portrait fills the card height ${JSON.stringify({ card, port })}`);
+  const ratio = port.width / card.width;
+  assert.ok(ratio >= 0.28 && ratio <= 0.48, `${where}: portrait should be ~35-40% of the card width, got ${ratio.toFixed(2)} ${JSON.stringify({ card, port })}`);
 }
 
 // ---- 1. menu + practice card data ----

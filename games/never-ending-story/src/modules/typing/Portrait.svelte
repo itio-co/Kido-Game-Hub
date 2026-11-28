@@ -9,10 +9,10 @@
 
 <div class="port" data-testid="typing-portrait" data-author={author} data-kind={entry ? 'photo' : 'silhouette'} data-qid={entry?.qid ?? ''}>
   {#if entry}
-    <img class="photo" src={entry.file} alt="" width="400" height="400" />
+    <img class="photo" src={entry.file} alt="" width="400" height="500" />
   {:else}
-    <svg class="sil" viewBox="0 0 200 240" aria-hidden="true">
-      <rect width="200" height="240" fill="#d9d0c3" />
+    <svg class="sil" viewBox="0 0 200 240" preserveAspectRatio="xMidYMin slice" aria-hidden="true">
+      <rect width="200" height="240" fill="#d8dbe0" />
       <ellipse cx="100" cy="250" rx="90" ry="50" fill={style.shirt} />
       <ellipse cx="100" cy="118" rx="44" ry="52" fill={style.skin} />
       {#if style.hairStyle === 0}
@@ -32,7 +32,19 @@
 </div>
 
 <style>
-  .port { position: relative; width: 100%; aspect-ratio: 4 / 5; border-radius: 8px; overflow: hidden; background: #d9d0c3; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.28); }
-  .photo, .sil { display: block; width: 100%; height: 100%; object-fit: cover; object-position: center top; }
-  .sil { object-fit: fill; }
+  .port {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: #d8dbe0;
+  }
+  .photo, .sil {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center top;
+  }
 </style>

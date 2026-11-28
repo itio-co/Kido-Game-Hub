@@ -75,6 +75,13 @@
     return c('typist.photoCredit', { artist: ent.artist, license: ent.license });
   });
 
+  /** The typable author line starts with "- "; show that prefix subtly so the script name reads as a signature. */
+  function isAuthorLead(cell: { from: number; text: string }): boolean {
+    const from = run?.card?.authorFrom;
+    if (from == null) return false;
+    return (cell.from === from && cell.text === '-') || (cell.from === from + 1 && cell.text === ' ');
+  }
+
   function savePrefs(next: TypingPrefs): void {
     prefs = next;
     writePrefs(next);
@@ -449,7 +456,7 @@
         onkeydown={() => undefined}
       >
         <p class="q" data-testid="typing-quote">{#each quoteWords as w, wi (wi)}<span class="w">{#each w as cell (cell.from)}<span class="ch {cellMark(st, cell)}" data-mark={cellMark(st, cell)}>{cell.text === ' ' ? '\u00a0' : cell.text}</span>{/each}</span>{/each}</p>
-        <p class="a" data-testid="typing-author">{#each authorWords as w, wi ('a'+wi)}<span class="w">{#each w as cell (cell.from)}<span class="ch {cellMark(st, cell)}" data-mark={cellMark(st, cell)}>{cell.text === ' ' ? '\u00a0' : cell.text}</span>{/each}</span>{/each}</p>
+        <p class="a" data-testid="typing-author">{#each authorWords as w, wi ('a'+wi)}<span class="w">{#each w as cell (cell.from)}<span class="ch {cellMark(st, cell)}{isAuthorLead(cell) ? ' lead' : ''}" data-mark={cellMark(st, cell)}>{cell.text === ' ' ? '\u00a0' : cell.text}</span>{/each}</span>{/each}</p>
       </div>
       <aside class="portrait-col">
         <Portrait author={run.card.author} />
@@ -572,13 +579,14 @@
     flex: 1;
     min-height: 0;
     display: grid;
-    grid-template-columns: minmax(0, 1.25fr) minmax(160px, 0.7fr);
-    gap: 28px;
-    align-items: center;
-    padding: 8px 12px 4px;
-    background: linear-gradient(180deg, #f6efe2 0%, #efe4d0 100%);
+    grid-template-columns: minmax(0, 1.62fr) minmax(0, 1fr);
+    gap: 0;
+    align-items: stretch;
+    padding: 0;
+    overflow: hidden;
+    background: #f3f5f7;
     border-radius: 16px;
-    color: #1c140c;
+    color: #3a434d;
     cursor: text;
   }
   .quote-col {
@@ -586,44 +594,81 @@
     min-height: 0;
     overflow: auto;
     overscroll-behavior: contain;
-    padding: 8px 4px 8px 12px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 28px 36px 32px;
+    box-sizing: border-box;
   }
   .q {
     margin: 0;
-    font-family: Georgia, 'Palatino Linotype', Palatino, 'Times New Roman', serif;
+    max-width: 22em;
+    font-family: "Noto Sans", "Segoe UI", sans-serif;
     font-style: italic;
-    font-size: clamp(22px, 3.2vw, 42px);
-    line-height: 1.45;
-    font-weight: 400;
+    font-weight: 300;
+    font-size: clamp(20px, 2.6vw, 36px);
+    line-height: 1.55;
+    letter-spacing: 0.01em;
+    color: #4a5560;
   }
   .a {
-    margin: 18px 0 0;
-    font-family: Itim, 'Segoe Script', 'Apple Chancery', 'Snell Roundhand', cursive;
-    font-size: clamp(22px, 2.6vw, 36px);
-    line-height: 1.3;
-    color: #2a1c10;
+    margin: 22px 0 0;
+    max-width: 22em;
+    font-family: "Great Vibes", Itim, cursive;
+    font-weight: 400;
+    font-size: clamp(24px, 3vw, 42px);
+    line-height: 1.35;
+    color: #2c333a;
   }
-  .quote-card .ch.todo { color: #5c4e3d; }
-  .quote-card .ch.ok { color: #1e7a48; }
+  .quote-card .ch.todo { color: #5a6570; }
+  .quote-card .ch.ok { color: #1c7a4a; }
   .quote-card .ch.bad { color: #fff; background: #d12b45; }
   .quote-card .ch.cursor { color: #1c140c; background: #7ee0ff; }
-  .portrait-col { min-width: 0; display: flex; flex-direction: column; gap: 8px; align-items: center; padding-right: 8px; }
-  .photo-credit { margin: 0; font-size: 10px; line-height: 1.3; text-align: center; color: #5c4e3d; max-width: 100%; overflow-wrap: anywhere; }
+  .quote-card .a .ch.lead.todo { color: #e6e8ea; }
+  .quote-card .a .ch.lead.ok { color: #c5cec8; }
+  .portrait-col {
+    position: relative;
+    min-width: 0;
+    min-height: 0;
+    align-self: stretch;
+    padding: 0;
+    overflow: hidden;
+  }
+  .photo-credit {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1;
+    margin: 0;
+    padding: 18px 10px 8px;
+    font-size: 9px;
+    line-height: 1.25;
+    text-align: center;
+    color: rgba(255, 255, 255, 0.92);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.55);
+    background: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.55) 70%);
+    overflow-wrap: anywhere;
+    pointer-events: none;
+  }
+  /* Phone landscape: same two-column split, smaller type. */
   @media (max-height: 480px) {
-    .quote-card { grid-template-columns: minmax(0, 1fr) minmax(110px, 160px); gap: 12px; padding: 4px 8px; }
-    .q { font-size: clamp(16px, 4.4vh, 26px); }
-    .a { margin-top: 8px; font-size: clamp(16px, 3.6vh, 22px); }
+    .quote-card { grid-template-columns: minmax(0, 1.62fr) minmax(0, 1fr); border-radius: 10px; }
+    .quote-col { padding: 10px 14px 12px; }
+    .q { font-size: clamp(14px, 4.2vh, 22px); max-width: none; }
+    .a { margin-top: 10px; font-size: clamp(16px, 4.8vh, 26px); }
+    .photo-credit { font-size: 8px; padding: 12px 6px 5px; }
   }
   @media (max-width: 700px) and (orientation: portrait) {
-    .quote-card { grid-template-columns: 1fr; justify-items: center; }
-    .portrait-col { max-width: 180px; }
+    .quote-card { grid-template-columns: 1fr; grid-template-rows: minmax(0, 1fr) minmax(160px, 38vh); }
+    .portrait-col { min-height: 160px; }
   }
-  /* Tablet / desktop: larger type and a roomy portrait column. */
   @media (min-width: 900px) and (min-height: 520px) {
-    .quote-card { gap: 36px; padding: 16px 28px 12px; }
-    .portrait-col { max-width: 300px; width: 100%; justify-self: end; }
-    .q { font-size: clamp(26px, 3.2vw, 44px); }
-    .a { font-size: clamp(24px, 2.8vw, 38px); }
+    .quote-col { padding: 36px 48px 40px; }
+    .q { font-size: clamp(22px, 2.5vw, 38px); }
+    .a { font-size: clamp(28px, 3.2vw, 44px); }
   }
   .txt {
     position: relative;
