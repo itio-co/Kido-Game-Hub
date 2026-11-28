@@ -17,6 +17,9 @@
   import Sheet from './components/Sheet.svelte';
   import LoadingDialog from './components/LoadingDialog.svelte';
   import VersionBadge from './components/VersionBadge.svelte';
+  import StreakPanel from './components/StreakPanel.svelte';
+  import { readStreak, refreshStreak, STREAK_EVENT, type StreakCache } from './lib/cloudSync';
+  import { bangkokDay, emptyRecord, viewOf } from './lib/streak';
   import { StirFryGame } from './modules/stirfry';
   import { ChallengeView, LeaderboardView, parseChallengeHash } from './modules/challenge';
   import { minigameRoute } from './modules/minigame-core';
@@ -42,7 +45,16 @@
   let room = $state<PlayerRoom | null>(null);
   let save = $state<SaveV1>(readSave());
   let error = $state<string | null>(null);
-  let overlay = $state<null | 'calendar' | 'settings' | 'decor' | 'photo'>(null);
+  let overlay = $state<null | 'calendar' | 'settings' | 'decor' | 'photo' | 'streak'>(null);
+  let streak = $state<StreakCache | null>(readStreak());
+  /** Cached server view, or a local empty board until the server answers. Never computed from local wins. */
+  const streakView = $derived(streak?.view ?? viewOf(emptyRecord(), bangkokDay(Date.now())));
+  function openStreak(): void {
+    overlay = 'streak';
+    void refreshStreak().then((next) => {
+      streak = next;
+    });
+  }
   let decorSlotId = $state<string | null>(null);
   let selectedId = $state<string | null>(null);
   let hintId = $state<string | null>(null);
@@ -365,6 +377,13 @@
       route = window.location.hash;
     };
     window.addEventListener('hashchange', onHash);
+    const onStreak = () => {
+      streak = readStreak();
+    };
+    window.addEventListener(STREAK_EVENT, onStreak);
+    void refreshStreak().then((next) => {
+      if (!ac.signal.aborted) streak = next;
+    });
     loadFlow()
       .then((loaded) => {
         if (ac.signal.aborted) return;
@@ -380,6 +399,7 @@
     return () => {
       ac.abort();
       window.removeEventListener('hashchange', onHash);
+      window.removeEventListener(STREAK_EVENT, onStreak);
       window.clearTimeout(toastTimer);
       window.clearTimeout(hintTimer);
     };
@@ -527,6 +547,24 @@
       </div>
     {/if}
 
+    {#if session.screen === 'player-room' && session.ready && !overlay && !showTutor && !showPrologue && !placingPhoto && !session.overlay}
+      <button
+        type="button"
+        class="streak-chip"
+        class:lit={streakView.state === 'done'}
+        class:cold={streakView.count === 0}
+        data-testid="streak-btn"
+        aria-label={t('streak.button', { n: streakView.count })}
+        title={t('streak.title')}
+        onclick={openStreak}
+      >
+        <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true">
+          <path d="M13.6 2 4.8 13.4h6l-1.4 8.6 8.8-11.4h-6z" fill="currentColor" />
+        </svg>
+        <span class="n" data-testid="streak-btn-count">{streakView.count}</span>
+      </button>
+    {/if}
+
     {#if overlay === 'settings'}
       <SettingsPanel
         textSize={save.player.textSize}
@@ -539,6 +577,8 @@
         godOn={floatPrefs.on}
         onGodToggle={toggleGod}
       />
+    {:else if overlay === 'streak' && session.screen === 'player-room'}
+      <StreakPanel view={streakView} synced={!!streak} onClose={() => (overlay = null)} />
     {:else if overlay === 'calendar' && calendar && session.screen === 'player-room'}
       <CalendarPanel
         calendar={calendar}
@@ -590,6 +630,27 @@
 </div>
 
 <style>
+  .streak-chip {
+    position: absolute;
+    z-index: 5;
+    right: 12px;
+    bottom: calc(var(--hud-btn-bottom) + env(safe-area-inset-bottom));
+    height: 64px;
+    min-width: 64px;
+    padding: 0 16px 0 12px;
+    border-radius: 32px;
+    border: 3px solid var(--cyan);
+    background: var(--hud);
+    color: #ffcf4a;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-family: "Itim", "Noto Sans Thai", sans-serif;
+  }
+  .streak-chip .n { font-size: 26px; line-height: 1; color: #fff3c8; font-variant-numeric: tabular-nums; }
+  .streak-chip.lit { box-shadow: 0 0 12px rgba(255, 207, 74, 0.55); }
+  .streak-chip.cold { color: #7d93a3; }
+  .streak-chip.cold .n { color: #c3d3de; }
   .placement-layer { position: absolute; inset: 0; z-index: 6; }
   .placement-layer :global(.skip) { background: rgba(0, 0, 0, 0.55); color: #fff; border: 0; border-radius: 16px; padding: 8px 14px; font-size: var(--fs-sm); font-weight: 700; white-space: nowrap; }
   .phone.wide { width: 100vw; }

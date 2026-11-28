@@ -5,10 +5,16 @@ import { appStorage, appBase } from './deployment';
  * See docs/online-leaderboard.md.
  */
 import { readPlayerId } from './playerId';
+import { bangkokDay, dayLabel, type StreakView } from './streak';
 
 const TOKEN_KEY = 'nesg.playerToken.v1';
 const RUNQ_KEY = 'nesg.runQueue.v1';
 const META_KEY = 'nesg.sync.v1';
+/** Sealed streak token from the server plus the last board view. Not part of the cloud save. */
+const STREAK_KEY = 'nesg.streak.v1';
+/** A story/practice win made offline today, sent when the API is reachable again the same Bangkok day. */
+const STREAK_PENDING_KEY = 'nesg.streakPending.v1';
+export const STREAK_EVENT = 'nes-streak';
 const STATE_KEYS = ['nesg.player.v1', 'nesg.stirfry.v1', 'nesg.eggs.v1'] as const;
 import { EVENT_ID } from '../modules/event-01';
 import { eventProgressBody } from '../modules/event-core/progress';
@@ -80,14 +86,77 @@ export async function flushRuns(): Promise<void> {
   try {
     for (const item of readJson<QueuedRun[]>(RUNQ_KEY, [])) {
       if (item.mine && !(await ensureToken())) break;
-      const res = await call('runs', { method: 'POST', body: JSON.stringify({ token: item.token }) }, item.mine);
+      const runBody = item.mine ? { token: item.token, streakToken: streakToken() } : { token: item.token };
+      const res = await call('runs', { method: 'POST', body: JSON.stringify(runBody) }, item.mine);
       if (!res || res.status >= 500 || res.status === 429) break; // offline: keep for later
+      if (res.ok && item.mine) await keepStreakFrom(res);
       // 2xx done; 4xx is permanent (tampered, implausible, unauthorized) — drop it.
       writeJson(RUNQ_KEY, readJson<QueuedRun[]>(RUNQ_KEY, []).filter((r) => r.token !== item.token));
     }
   } finally {
     flushing = false;
   }
+}
+
+export type StreakCache = { token: string | null; view: StreakView; at: number };
+type StreakReply = { view: StreakView; token: string | null; counted?: boolean; refilled?: boolean };
+
+/** Last streak the server sent, for showing the board offline. */
+export function readStreak(): StreakCache | null {
+  const c = readJson<StreakCache | null>(STREAK_KEY, null);
+  return c && c.view && typeof c.view.count === 'number' ? c : null;
+}
+
+function streakToken(): string | null {
+  return readStreak()?.token ?? null;
+}
+
+function keepStreak(reply: StreakReply | undefined): StreakReply | null {
+  if (!reply?.view) return null;
+  // Keep the previous token when the server has no key configured (token null): the record is still the server's.
+  writeJson(STREAK_KEY, { token: reply.token ?? streakToken(), view: reply.view, at: Date.now() } satisfies StreakCache);
+  try { window.dispatchEvent(new CustomEvent(STREAK_EVENT, { detail: { counted: !!reply.counted, refilled: !!reply.refilled } })); } catch { /* no window in tests */ }
+  return reply;
+}
+
+async function keepStreakFrom(res: Response): Promise<void> {
+  try {
+    keepStreak(((await res.json()) as { streak?: StreakReply }).streak);
+  } catch {
+    /* body already consumed or not JSON */
+  }
+}
+
+/** Fetch the board from the server (needs this device's player token). Falls back to the cached view. */
+export async function refreshStreak(): Promise<StreakCache | null> {
+  if (!appStorage.getItem(TOKEN_KEY)) return readStreak();
+  const tok = streakToken();
+  const res = await call('players/me/streak', tok ? { headers: { 'x-streak-token': tok } } : {});
+  if (res?.ok) keepStreak(((await res.json()) as { streak?: StreakReply }).streak);
+  return readStreak();
+}
+
+/**
+ * A story or practice minigame was won. The server counts the streak at most once per Bangkok day;
+ * ranked runs count through POST /runs instead. Offline wins retry later the same day only.
+ */
+export async function reportStreakWin(game: string): Promise<void> {
+  writeJson(STREAK_PENDING_KEY, { day: dayLabel(bangkokDay(Date.now())), game });
+  await flushStreakWin();
+}
+
+async function flushStreakWin(): Promise<void> {
+  const pending = readJson<{ day: string; game: string } | null>(STREAK_PENDING_KEY, null);
+  if (!pending) return;
+  if (pending.day !== dayLabel(bangkokDay(Date.now()))) {
+    appStorage.removeItem(STREAK_PENDING_KEY);
+    return;
+  }
+  if (!(await ensureToken())) return;
+  const res = await call('players/me/streak/win', { method: 'POST', body: JSON.stringify({ game: pending.game, streakToken: streakToken() }) });
+  if (!res || res.status >= 500 || res.status === 429) return;
+  appStorage.removeItem(STREAK_PENDING_KEY);
+  if (res.ok) keepStreak(((await res.json()) as { streak?: StreakReply }).streak);
 }
 
 export type OnlineRow = { playerId: string; nickname: string; score: number; timeMs: number };
@@ -189,9 +258,11 @@ export async function pullOnStartup(timeoutMs = 1500): Promise<void> {
 
 export function startBackgroundSync(): void {
   void flushRuns();
+  void flushStreakWin();
   if (meta().dirty) void pushAll();
   window.addEventListener('online', () => {
     void flushRuns();
+    void flushStreakWin();
     void pushAll();
   });
   document.addEventListener('visibilitychange', () => {

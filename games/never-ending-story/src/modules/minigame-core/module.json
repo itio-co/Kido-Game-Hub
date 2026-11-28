@@ -2,15 +2,16 @@
   "id": "minigame-core",
   "name": "Minigame framework",
   "kind": "minigame-core",
-  "version": "1.1.0",
-  "description": "Shared minigame framework: run lifecycle, practice/story/challenge mode, ruleset key, share-link paths, run token, result submission, the ruleset HUD shells, and the reusable win/result dialog.",
+  "version": "1.2.0",
+  "description": "Shared minigame framework: run lifecycle, practice/story/challenge mode, ruleset key, share-link paths, run token, result submission, the ruleset HUD shells, and the reusable win/result dialog, and the daily-streak win report.",
   "entry": "src/modules/minigame-core/index.ts",
   "publicEntries": [
     "src/modules/minigame-core/index.ts",
     "src/modules/minigame-core/framework.ts",
     "src/modules/minigame-core/ruleset.ts",
     "src/modules/minigame-core/result.ts",
-    "src/modules/minigame-core/WinResultDialog.svelte"
+    "src/modules/minigame-core/WinResultDialog.svelte",
+    "src/modules/minigame-core/report.ts"
   ],
   "dependsOn": {
     "core": ">=0.6.12"
