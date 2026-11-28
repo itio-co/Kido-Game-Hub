@@ -18,7 +18,8 @@
   import LoadingDialog from './components/LoadingDialog.svelte';
   import VersionBadge from './components/VersionBadge.svelte';
   import StreakPanel from './components/StreakPanel.svelte';
-  import { readStreak, refreshStreak, STREAK_EVENT, type StreakCache } from './lib/cloudSync';
+  import StreakCelebrateDialog from './components/StreakCelebrateDialog.svelte';
+  import { readStreak, refreshStreak, STREAK_EVENT, takeStreakCelebrate, type StreakCache, type StreakCelebrate } from './lib/cloudSync';
   import { bangkokDay, emptyRecord, viewOf } from './lib/streak';
   import { StirFryGame } from './modules/stirfry';
   import { ChallengeView, LeaderboardView, parseChallengeHash } from './modules/challenge';
@@ -34,12 +35,13 @@
     GodLogin,
     godButtonVisible,
     godFloatVisible,
-    godSessionActive,
+    godAccessRole,
     loadFloatPrefs,
     saveFloatPrefs,
     type FloatPrefs,
     type InspectPage,
   } from './modules/god-mode';
+  import type { Role } from './lib/roles';
   import type { CalendarEntity, PlayerRoom, SaveV1, TextSize } from './lib/types';
 
   let room = $state<PlayerRoom | null>(null);
@@ -49,6 +51,21 @@
   let streak = $state<StreakCache | null>(readStreak());
   /** Cached server view, or a local empty board until the server answers. Never computed from local wins. */
   const streakView = $derived(streak?.view ?? viewOf(emptyRecord(), bangkokDay(Date.now())));
+  let celebrate = $state<StreakCelebrate | null>(null);
+  let celebrateTimer = 0;
+  function queueCelebrate(offer: StreakCelebrate): void {
+    window.clearTimeout(celebrateTimer);
+    const start = Date.now();
+    const tick = () => {
+      const busy = typeof document !== 'undefined' && document.querySelector('[data-testid="minigame-win-dialog"]');
+      if (!busy || Date.now() - start > 8000) {
+        celebrate = offer;
+        return;
+      }
+      celebrateTimer = window.setTimeout(tick, 200);
+    };
+    celebrateTimer = window.setTimeout(tick, 400);
+  }
   function openStreak(): void {
     overlay = 'streak';
     void refreshStreak().then((next) => {
@@ -66,7 +83,9 @@
   let hintTimer = 0;
   let hintTier = 0;
   let route = $state(window.location.hash);
-  let godReady = $state(false);
+  /** This device's God access, asked of the server: super_god (admin session), god / super_god player, or null. */
+  let godRole = $state<Role | null>(null);
+  const godReady = $derived(godRole !== null);
   let showGodLogin = $state(false);
   let floatPrefs = $state<FloatPrefs>(loadFloatPrefs((key) => appStorage.getItem(key)));
   // Prologue only on a plain home entry, never for deep links (challenge, practice, leaderboard...).
@@ -311,13 +330,14 @@
     setFloat({ ...floatPrefs, on: !floatPrefs.on });
   }
 
-  function showGodBubble(): void {
-    godReady = true;
+  function showGodBubble(role: Role): void {
+    godRole = role;
     setFloat({ ...floatPrefs, on: true });
   }
 
   async function onVersionUnlock(): Promise<void> {
-    if (await godSessionActive()) showGodBubble();
+    const role = await godAccessRole();
+    if (role) showGodBubble(role);
     else showGodLogin = true;
   }
 
@@ -326,7 +346,7 @@
       overlay = null;
       return;
     }
-    godReady = await godSessionActive();
+    godRole = await godAccessRole();
     overlay = 'settings';
   }
 
@@ -363,8 +383,8 @@
 
   onMount(() => {
     const ac = new AbortController();
-    void godSessionActive().then((ok) => {
-      if (!ac.signal.aborted) godReady = ok;
+    void godAccessRole().then((role) => {
+      if (!ac.signal.aborted) godRole = role;
     });
     loadPlayerRoom()
       .then((loaded) => {
@@ -377,8 +397,11 @@
       route = window.location.hash;
     };
     window.addEventListener('hashchange', onHash);
-    const onStreak = () => {
+    const onStreak = (event: Event) => {
       streak = readStreak();
+      const detail = (event as CustomEvent<{ counted?: boolean; batteryGranted?: boolean; refilled?: boolean; view?: typeof streakView }>).detail;
+      const offer = takeStreakCelebrate({ ...detail, view: detail?.view ?? streak?.view });
+      if (offer) queueCelebrate(offer);
     };
     window.addEventListener(STREAK_EVENT, onStreak);
     void refreshStreak().then((next) => {
@@ -402,14 +425,22 @@
       window.removeEventListener(STREAK_EVENT, onStreak);
       window.clearTimeout(toastTimer);
       window.clearTimeout(hintTimer);
+      window.clearTimeout(celebrateTimer);
     };
   });
 </script>
 
 <div class="phone" class:wide={editing || browsing} data-text={save.player.textSize}>
   {#if !editing && !browsing && !fullscreenGame}<VersionBadge onUnlock={onVersionUnlock} />{/if}
+  {#if celebrate}
+    <StreakCelebrateDialog
+      view={celebrate.view}
+      batteryGranted={celebrate.batteryGranted}
+      onClose={() => (celebrate = null)}
+    />
+  {/if}
   {#if showGodLogin}
-    <GodLogin onSuccess={() => { showGodLogin = false; showGodBubble(); }} onClose={() => (showGodLogin = false)} />
+    <GodLogin onSuccess={() => { showGodLogin = false; showGodBubble('super_god'); }} onClose={() => (showGodLogin = false)} />
   {/if}
   {#if browsing}
     <AssetBrowser />
@@ -622,7 +653,7 @@
     {/if}
   {/if}
   {#if godFloatVisible(godReady, floatPrefs.on) && !editing && !browsing && overlay !== 'settings'}
-    <GodFloat page={inspectPage} prefs={floatPrefs} onPrefs={setFloat} />
+    <GodFloat page={inspectPage} prefs={floatPrefs} onPrefs={setFloat} role={godRole} />
   {/if}
   {#if session.loading}
     <LoadingDialog title={t('loading.title')} body={t('loading.body')} />

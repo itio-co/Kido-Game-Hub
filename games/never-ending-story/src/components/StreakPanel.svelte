@@ -96,7 +96,7 @@
       </div>
 
       <p class="st-refill" data-testid="streak-refill">
-        {view.batteries >= view.maxBatteries ? t('streak.refillFull') : view.count > 0 ? t('streak.refill', { n: view.refillIn }) : t('streak.refillRestart')}
+        {view.batteries >= view.maxBatteries ? t('streak.refillFull') : view.count > 0 ? t('streak.refill') : t('streak.refillRestart')}
       </p>
       <p class="st-rules">{t('streak.rules')}</p>
       {#if !synced}<p class="st-offline" data-testid="streak-offline">{t('streak.offline')}</p>{/if}

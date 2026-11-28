@@ -1,5 +1,5 @@
 // Win-result time formatting and per-difficulty local best-time records.
-import { applyBest, bestKey, canonicalBestKey, difficultyId, formatTime, migrateBests, parseBests } from '../src/modules/minigame-core/result.ts';
+import { applyBest, applyBestScore, bestKey, canonicalBestKey, difficultyId, formatScore, formatTime, migrateBests, parseBests, starsFromHints } from '../src/modules/minigame-core/result.ts';
 
 declare const process: { exitCode?: number };
 let failed = 0;
@@ -104,6 +104,48 @@ test('applyBest compares only the same difficulty', () => {
   const skipped = applyBest(hard.store, 'jig', 1, 3);
   ok(!skipped.isNewRecord, 'bare key is not recorded');
   ok(skipped.store['jig:easy'].timeMs === 5_000 && skipped.store['jig:hard'].timeMs === 40_000, 'bare key does not overwrite');
+});
+
+test('formatScore rounds and floors negatives at zero', () => {
+  ok(formatScore(0) === '0', 'zero');
+  ok(formatScore(1420.6) === '1421', 'round');
+  ok(formatScore(-3) === '0', 'negative');
+});
+
+test('starsFromHints is 3 / 2 / 1', () => {
+  ok(starsFromHints(0) === 3, 'none');
+  ok(starsFromHints(1) === 2, 'one');
+  ok(starsFromHints(2) === 1, 'two');
+  ok(starsFromHints(9) === 1, 'many');
+});
+
+test('applyBestScore treats the first finish as a record and keeps the higher score', () => {
+  const first = applyBestScore({}, 'stirfry:easy', 900, 2, 50_000);
+  ok(first.isNewRecord && first.previous === null, 'first record');
+  ok(first.current.score === 900 && first.current.stars === 2 && first.current.timeMs === 50_000, 'first current');
+  ok('stirfry:easy' in first.store, 'canonical key');
+
+  const lower = applyBestScore(first.store, 'stirfry:easy', 800, 3, 40_000);
+  ok(!lower.isNewRecord, 'lower score is not a record');
+  ok(lower.current.score === 900 && lower.current.stars === 3 && lower.current.timeMs === 50_000, 'keeps best score, max stars, and the record run time');
+
+  const higher = applyBestScore(first.store, 'stirfry:normal', 1200, 3, 55_000);
+  ok(higher.isNewRecord, 'first normal finish is a record');
+  ok(higher.store['stirfry:easy'].score === 900, 'easy unchanged');
+  ok(higher.store['stirfry:medium'].score === 1200, 'normal aliases to medium');
+
+  const skipped = applyBestScore(higher.store, 'stirfry', 9999, 3);
+  ok(!skipped.isNewRecord, 'bare key is not recorded');
+  ok(skipped.store['stirfry:easy'].score === 900, 'bare key does not overwrite');
+});
+
+test('parseBests keeps an optional score and migrateBests merges the higher one', () => {
+  eq(parseBests('{"stirfry:easy":{"timeMs":1000,"stars":2,"score":800}}'), { 'stirfry:easy': { timeMs: 1000, stars: 2, score: 800 } }, 'score kept');
+  const migrated = migrateBests({
+    'stirfry:ง่าย': { timeMs: 2000, stars: 1, score: 700 },
+    'stirfry:easy': { timeMs: 1500, stars: 3, score: 900 },
+  });
+  eq(migrated.store['stirfry:easy'], { timeMs: 1500, stars: 3, score: 900 }, 'merged: lower time, max stars, higher score');
 });
 
 console.log(`winResult: ${passed} passed, ${failed} failed`);

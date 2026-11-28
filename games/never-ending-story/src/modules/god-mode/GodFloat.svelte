@@ -2,17 +2,26 @@
   import { appBase } from '../../lib/deployment';
   import { t } from '../../lib/i18n';
   import { ApiError, god } from '../god/api';
-  import { floatDragged, godAdminUrl, nextFloatPosition, type FloatPrefs } from './floatState';
+  import { tick } from 'svelte';
+  import { playerAuthHeaders } from '../../lib/cloudSync';
+  import { captureElement } from './capture';
+  import WishList from './WishList.svelte';
+  import WishSheet from './WishSheet.svelte';
+  import type { Role } from '../../lib/roles';
+  import { floatDragged, godAdminLinkVisible, godWishVisible, godAdminUrl, nextFloatPosition, type FloatPrefs } from './floatState';
   import { inspectDocument, type InspectPage } from './inspect';
 
   let {
     page,
     prefs,
     onPrefs,
+    role = 'super_god',
   }: {
     page: InspectPage;
     prefs: FloatPrefs;
     onPrefs: (next: FloatPrefs) => void;
+    /** Server-confirmed role. A god player gets Inspect and Wish; Admin is only for a super god / admin session. */
+    role?: Role | null;
   } = $props();
 
   let menu = $state(false);
@@ -22,6 +31,9 @@
   let shareError = $state('');
   let sharing = $state(false);
   let dragging = $state(false);
+  let capturing = $state(false);
+  let wish = $state<{ shot: string | null } | null>(null);
+  let wishList = $state(false);
   let root = $state<HTMLDivElement>();
   let x = $state(0.78);
   let y = $state(0.62);
@@ -30,6 +42,8 @@
   let startY = 0;
   let originX = 0;
   let originY = 0;
+  /** True after a tap opens the menu, until a new pointerdown arrives on the menu. */
+  let suppressItemClick = false;
 
   $effect(() => {
     if (!dragging) {
@@ -78,7 +92,30 @@
     if (!dragging) return;
     dragging = false;
     onPrefs({ on: true, x, y });
-    if (!moved) menu = !menu;
+    if (!moved) {
+      menu = !menu;
+      suppressItemClick = menu;
+    }
+  }
+
+  function onMenuPointerDown(): void {
+    suppressItemClick = false;
+  }
+
+  function choose(action: () => void): (event: MouseEvent) => void {
+    return (event: MouseEvent) => {
+      // A leftover click has no new pointerdown on the menu, so the suppress flag is still set.
+      if (suppressItemClick) {
+        event.preventDefault();
+        event.stopPropagation();
+        return;
+      }
+      action();
+    };
+  }
+
+  function onBubbleContextMenu(event: MouseEvent): void {
+    event.preventDefault();
   }
 
   function openAdmin(): void {
@@ -92,11 +129,28 @@
     shareError = '';
   }
 
+  /** Hide the float, photograph the phone, then open the wish sheet. A failed capture still opens it without an image. */
+  function openWishList(): void {
+    menu = false;
+    wishList = true;
+  }
+
+  async function openWish(): Promise<void> {
+    menu = false;
+    capturing = true;
+    await tick();
+    await new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+    const stage = root?.offsetParent as HTMLElement | null;
+    const shot = stage ? await captureElement(stage) : null;
+    capturing = false;
+    wish = { shot };
+  }
+
   async function shareLink(): Promise<void> {
     sharing = true;
     shareError = '';
     try {
-      const made = await god<{ url: string }>('snapshots', { method: 'POST', body: JSON.stringify({ ttl: shareTtl, document: doc }) });
+      const made = await god<{ url: string }>('snapshots', { method: 'POST', headers: playerAuthHeaders(), body: JSON.stringify({ ttl: shareTtl, document: doc }) });
       shareUrl = made.url;
     } catch (error) {
       shareUrl = '';
@@ -115,11 +169,13 @@
   }
 </script>
 
-<div class="god-float" bind:this={root} style="left:{x * 100}%;top:{y * 100}%">
+<div class="god-float" class:capturing data-wish-skip bind:this={root} style="left:{x * 100}%;top:{y * 100}%">
   {#if menu}
     <div class="menu" data-testid="god-float-menu">
-      <button type="button" data-testid="god-float-admin" onclick={openAdmin}>{t('god.float.admin')}</button>
-      <button type="button" data-testid="god-float-inspect" onclick={openInspect}>{t('god.float.inspect')}</button>
+      {#if godAdminLinkVisible(role)}<button type="button" data-testid="god-float-admin" onpointerdown={onMenuPointerDown} onclick={choose(openAdmin)}>{t('god.float.admin')}</button>{/if}
+      <button type="button" data-testid="god-float-inspect" onpointerdown={onMenuPointerDown} onclick={choose(openInspect)}>{t('god.float.inspect')}</button>
+      {#if godWishVisible(role)}<button type="button" data-testid="god-float-wishes" onpointerdown={onMenuPointerDown} onclick={choose(openWishList)}>{t('god.float.wishList')}</button>{/if}
+      {#if godWishVisible(role)}<button type="button" data-testid="god-float-wish" onpointerdown={onMenuPointerDown} onclick={choose(openWish)}>{t('god.float.wish')}</button>{/if}
     </div>
   {/if}
   <button
@@ -132,8 +188,18 @@
     onpointermove={onMove}
     onpointerup={onUp}
     onpointercancel={onUp}
+    oncontextmenu={onBubbleContextMenu}
   >{t('god.float.toggle')}</button>
 </div>
+
+{#if wish}
+  <WishSheet {page} shot={wish.shot} onClose={() => (wish = null)} />
+{/if}
+
+{#if wishList}
+  <WishList onClose={() => (wishList = false)} />
+{/if}
+
 
 {#if inspect}
   <section class="inspect" data-testid="god-inspect" aria-label={t('god.float.inspectTitle')}>
@@ -147,7 +213,7 @@
         </select>
       </label>
       <button type="button" data-testid="god-inspect-share" disabled={sharing} onclick={shareLink}>{t('god.float.share')}</button>
-      <button type="button" onclick={() => (inspect = false)}>{t('god.float.close')}</button>
+      <button type="button" data-testid="god-inspect-close" onclick={() => (inspect = false)}>{t('god.float.close')}</button>
       {#if shareUrl}
         <p class="share" data-testid="god-share-url"><a href={shareUrl}>{shareUrl}</a>
           <button type="button" onclick={copyLink}>{t('god.float.copyLink')}</button>
@@ -169,11 +235,11 @@
     position: absolute;
     z-index: 12;
     transform: translate(-50%, -50%);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 6px;
+    /* Size to the bubble so opening the menu does not shift the icon under the finger. */
+    width: 64px;
+    height: 64px;
   }
+  .god-float.capturing { visibility: hidden; }
   .bubble {
     width: 64px;
     height: 64px;
@@ -188,10 +254,15 @@
     cursor: grab;
   }
   .menu {
+    position: absolute;
+    left: 50%;
+    bottom: calc(100% + 6px);
+    transform: translateX(-50%);
     display: flex;
     flex-direction: column;
     gap: 6px;
-    min-width: 132px;
+    min-width: 168px;
+    z-index: 1;
   }
   .menu button, .inspect header button {
     min-height: 40px;

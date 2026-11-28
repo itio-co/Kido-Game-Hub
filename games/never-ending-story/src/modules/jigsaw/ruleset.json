@@ -128,5 +128,62 @@
         }
       }
     }
+  },
+  "1.1.2": {
+    "grid": {
+      "easy": [
+        3,
+        3
+      ],
+      "medium": [
+        3,
+        4
+      ],
+      "hard": [
+        4,
+        4
+      ]
+    },
+    "profiles": {
+      "easy": {
+        "cols": 3,
+        "rows": 3,
+        "rotation": "none",
+        "snapDistance": 28,
+        "angleTolerance": 15,
+        "scatterPadding": 0.22,
+        "scatterSeed": 1101,
+        "hint": {
+          "highlightTarget": true,
+          "placeOne": true
+        }
+      },
+      "medium": {
+        "cols": 3,
+        "rows": 4,
+        "rotation": "quarter",
+        "snapDistance": 24,
+        "angleTolerance": 14,
+        "scatterPadding": 0.2,
+        "scatterSeed": 2202,
+        "hint": {
+          "highlightTarget": true,
+          "placeOne": true
+        }
+      },
+      "hard": {
+        "cols": 4,
+        "rows": 4,
+        "rotation": "free",
+        "snapDistance": 20,
+        "angleTolerance": 10,
+        "scatterPadding": 0.18,
+        "scatterSeed": 3303,
+        "hint": {
+          "highlightTarget": false,
+          "placeOne": true
+        }
+      }
+    }
   }
 }

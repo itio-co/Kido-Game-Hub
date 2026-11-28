@@ -10,6 +10,7 @@ import {
   parseDayLabel,
   readRecord,
   settle,
+  shouldShowCelebrate,
   tokenClaim,
   viewOf,
   weekRow,
@@ -51,7 +52,7 @@ await test('Bangkok midnight is 17:00 UTC', () => {
 
 await test('first win starts a streak of 1 with full batteries', () => {
   const out = applyWin(emptyRecord(), D);
-  eq([out.record.count, out.record.best, out.record.batteries, out.record.totalWins, out.counted], [1, 1, MAX_BATTERIES, 1, true], 'first win');
+  eq([out.record.count, out.record.best, out.record.batteries, out.record.totalWins, out.counted, out.batteryGranted], [1, 1, MAX_BATTERIES, 1, true, false], 'first win');
   eq(tokenClaim(out.record), { streakCount: 1, date: '2026-11-23' }, 'claim');
 });
 
@@ -76,16 +77,16 @@ await test('total wins stop growing after the daily cap', () => {
   eq(r.totalWins, MAX_WINS_PER_DAY + 1, 'cap resets next day');
 });
 
-await test('one missed day uses one battery and keeps the streak', () => {
+await test('one missed day uses one battery then the counted day grants one back', () => {
   const r = winOn(emptyRecord(), D, D + 1);
   const out = applyWin(r, D + 3);
-  eq([out.record.count, out.record.batteries], [3, 1], 'battery used');
+  eq([out.record.count, out.record.batteries, out.batteryGranted, out.refilled], [3, 2, true, true], 'used then granted');
   eq(out.record.days.map((m) => `${m.day - D}:${m.kind}`), ['0:win', '1:win', '2:saved', '3:win'], 'saved day');
 });
 
-await test('two missed days use both batteries', () => {
+await test('two missed days use both batteries then the counted day grants one', () => {
   const out = applyWin(winOn(emptyRecord(), D), D + 3);
-  eq([out.record.count, out.record.batteries], [2, 0], 'both used');
+  eq([out.record.count, out.record.batteries, out.batteryGranted], [2, 1, true], 'both used then one granted');
 });
 
 await test('three missed days with two batteries reset the streak', () => {
@@ -95,19 +96,46 @@ await test('three missed days with two batteries reset the streak', () => {
 });
 
 await test('with no batteries a single missed day resets', () => {
-  const r = winOn(emptyRecord(), D, D + 3); // both batteries used
+  const r = { ...winOn(emptyRecord(), D), batteries: 0 };
   eq(r.batteries, 0, 'empty');
-  const out = applyWin(r, D + 5);
-  eq([out.record.count, out.restarted], [1, true], 'reset');
+  const out = applyWin(r, D + 2);
+  eq([out.record.count, out.restarted, out.record.batteries, out.batteryGranted], [1, true, 2, false], 'reset then restart full, no grant');
 });
 
-await test('every 7th streak day gives back one battery, up to the max', () => {
-  let r = winOn(emptyRecord(), D, D + 2); // count 2, batteries 1
-  eq(r.batteries, 1, 'one used');
-  for (let d = D + 3; d <= D + 7; d++) r = applyWin(r, d).record;
-  eq([r.count, r.batteries], [7, 2], 'refilled on day 7');
-  for (let d = D + 8; d <= D + 14; d++) r = applyWin(r, d).record;
-  eq([r.count, r.batteries], [14, 2], 'stays at max');
+await test('a counted streak day grants one battery when the pack is not full', () => {
+  const r = winOn(emptyRecord(), D, D + 2); // missed a day: settle spends 1
+  eq(r.batteries, 2, 'granted back on the counted day after the miss');
+  const mid = applyWin(emptyRecord(), D);
+  const spent = { ...mid.record, batteries: 0, lastDay: D }; // mid-streak with an empty pack, no miss
+  const grant = applyWin(spent, D + 1);
+  eq([grant.counted, grant.batteryGranted, grant.record.batteries, grant.record.count], [true, true, 1, 2], 'grant +1');
+});
+
+await test('no grant when batteries are already full, including a new streak', () => {
+  const first = applyWin(emptyRecord(), D);
+  eq([first.counted, first.batteryGranted, first.restarted, first.record.batteries], [true, false, true, 2], 'first day starts full');
+  const next = applyWin(first.record, D + 1);
+  eq([next.counted, next.batteryGranted, next.record.batteries], [true, false, 2], 'already full');
+});
+
+await test('the battery grant is idempotent: a second win the same day does not grant again', () => {
+  const spent = { ...applyWin(emptyRecord(), D).record, batteries: 0, lastDay: D };
+  const first = applyWin(spent, D + 1);
+  eq([first.batteryGranted, first.record.batteries], [true, 1], 'first counted win grants');
+  const again = applyWin(first.record, D + 1);
+  eq([again.counted, again.batteryGranted, again.refilled, again.record.batteries, again.record.count], [false, false, false, 1, 2], 'replay does not grant');
+});
+
+await test('the celebrate dialog is offered once per counted day', () => {
+  const a = shouldShowCelebrate(null, '2026-11-26', true);
+  eq([a.show, a.next], [true, { day: '2026-11-26' }], 'first time');
+  const b = shouldShowCelebrate(a.next, '2026-11-26', true);
+  eq(b.show, false, 'same day again');
+  const c = shouldShowCelebrate(a.next, '2026-11-26', false);
+  eq(c.show, false, 'not counted');
+  const d = shouldShowCelebrate(a.next, '2026-11-27', true);
+  eq([d.show, d.next], [true, { day: '2026-11-27' }], 'next day');
+  eq(shouldShowCelebrate(null, '2026-11-26', false).show, false, 'uncounted first visit');
 });
 
 await test('settle is idempotent and the view projects missed days without writing', () => {

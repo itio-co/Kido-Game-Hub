@@ -185,5 +185,22 @@ test('clampPieceCenter keeps the centre on the board, and movePiece uses it', ()
   }
 });
 
+test('a challenge seed rebuilds the same free-drag board per difficulty', () => {
+  const cases = [
+    ['easy', 3, 3, 'none'],
+    ['medium', 3, 4, 'quarter'],
+    ['hard', 4, 4, 'free'],
+  ] as const;
+  for (const [diff, cols, rows, rotation] of cases) {
+    const a = startJigsaw(diff, { seed: 482913, version: '1.1.1' });
+    const b = startJigsaw(diff, { seed: 482913, version: '1.1.1' });
+    eq(a.cols, cols, `${diff} cols`);
+    eq(a.rows, rows, `${diff} rows`);
+    eq(a.rotation, rotation, `${diff} rotation`);
+    eq(JSON.stringify(a.pieces), JSON.stringify(b.pieces), `${diff} pieces`);
+    eq(JSON.stringify(a.edges), JSON.stringify(b.edges), `${diff} edges`);
+  }
+});
+
 if (failed) process.exitCode = 1;
 else console.log('jigsaw: all tests passed');

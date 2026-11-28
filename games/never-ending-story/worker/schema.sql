@@ -4,7 +4,10 @@ CREATE TABLE IF NOT EXISTS players (
   nickname   TEXT NOT NULL DEFAULT '',
   token_hash TEXT,                 -- SHA-256 (hex) of the player's bearer token; NULL = unclaimed
   created_at INTEGER NOT NULL,
-  last_seen  INTEGER NOT NULL
+  last_seen  INTEGER NOT NULL,
+  role            TEXT NOT NULL DEFAULT 'player', -- player | god | super_god (0.6.40); only God admin changes it
+  role_updated_at INTEGER,                        -- ms, audit of the last role change
+  role_updated_by TEXT                            -- 'password' (God admin) or the super god's playerId
 );
 CREATE TABLE IF NOT EXISTS runs (
   sessionId          TEXT PRIMARY KEY,
@@ -64,3 +67,27 @@ CREATE TABLE IF NOT EXISTS player_streak (
   rev          INTEGER NOT NULL DEFAULT 0,
   updated_at   INTEGER NOT NULL
 );
+-- God Mode wishes: feature requests from the in-game God float. Rules in src/modules/god/wish.ts. The Worker also creates this on first use.
+CREATE TABLE IF NOT EXISTS god_wishes (
+  id           TEXT PRIMARY KEY,
+  created_at   INTEGER NOT NULL,
+  created_iso  TEXT NOT NULL,
+  day_bkk      TEXT NOT NULL,
+  text         TEXT NOT NULL,
+  route        TEXT,
+  screen       TEXT,
+  title        TEXT,
+  app_version  TEXT,
+  modules_json TEXT,
+  user_agent   TEXT,
+  player_id    TEXT,
+  player_role  TEXT,
+  inspect_url  TEXT,
+  inspect_exp  INTEGER,
+  state_json   TEXT,
+  shot_mime    TEXT,
+  shot_b64     TEXT,
+  shot_bytes   INTEGER NOT NULL DEFAULT 0,
+  read_at      INTEGER
+);
+CREATE INDEX IF NOT EXISTS god_wishes_created ON god_wishes (created_at);

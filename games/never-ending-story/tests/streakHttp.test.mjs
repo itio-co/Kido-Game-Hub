@@ -97,6 +97,7 @@ try {
   assert.equal(s.view.today, '2026-11-23');
   assert.equal(s.check, 'missing');
   assert.equal(s.counted, true);
+  assert.equal(s.batteryGranted, false, 'new streak starts full, no grant');
   assert.match(s.token, /^st1\./);
   assert.ok(!s.token.includes('2026'), 'token is not plain text');
 
@@ -104,6 +105,7 @@ try {
   s = await win(s.token);
   assert.equal(s.check, 'ok');
   assert.equal(s.counted, false);
+  assert.equal(s.batteryGranted, false);
   assert.equal(s.view.count, 1);
   assert.equal(s.view.totalWins, 2);
 
@@ -127,8 +129,15 @@ try {
   s = await win(forged);
   assert.equal(s.check, 'invalid');
   assert.equal(s.view.count, 3);
-  assert.equal(s.view.batteries, 1);
+  assert.equal(s.counted, true);
+  assert.equal(s.batteryGranted, true, 'missed one day then grant +1 back to full');
+  assert.equal(s.view.batteries, 2);
   assert.deepEqual(s.view.days.map((d) => d.kind), ['win', 'win', 'saved', 'win']);
+  const replay = await win(s.token);
+  assert.equal(replay.counted, false);
+  assert.equal(replay.batteryGranted, false, 'same-day replay does not grant again');
+  assert.equal(replay.view.batteries, 2);
+  s = replay;
 
   // An old (stale) token is reported as stale.
   at('2026-11-27T03:00:00Z');

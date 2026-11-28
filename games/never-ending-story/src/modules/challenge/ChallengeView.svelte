@@ -4,7 +4,7 @@
   import { t } from '../../lib/i18n';
   import { imageUrl } from '../../lib/imageUrl';
   import { artworkFile } from '../cutscene';
-  import { nextPhase, RulesetBanner, submitFinishedRun, UnsupportedRuleset } from '../minigame-core';
+  import { bestKey, nextPhase, readBest, recordBestScore, RulesetBanner, starsFromHints, submitFinishedRun, UnsupportedRuleset, WinResultDialog, type WinResult } from '../minigame-core';
   import { readPlayerId, setNickname } from '../../lib/playerId';
   import {
     DIFFICULTIES, challengeHash, clearRun, compare, fmtTime, leaderboard, newSeed, readRun,
@@ -13,7 +13,9 @@
   } from './challenge';
   import { challengeScoring, CHALLENGE_VERSION } from './ruleset';
   import { crossRules } from '../crossword/ruleset';
-  import { jigRules } from '../jigsaw/ruleset';
+  import { jigComplete, isJigBoard, placeHint, startJigsaw, type JigBoard } from '../jigsaw';
+  import JigsawBoard from '../jigsaw/JigsawBoard.svelte';
+  import { jigProfile, JIG_VERSION } from '../jigsaw/ruleset';
   import { slideRules } from '../slide/ruleset';
   import { currentRuleset, resolveGame, versionIn } from '../../lib/rulesetCatalog';
   import { appendRun, newSessionId } from './runLog';
@@ -24,7 +26,7 @@
 
   type Board =
     | { kind: 'cross'; words: { tiles: string[]; clue: string }[]; wi: number; filled: number; pool: string[]; used: boolean[] }
-    | { kind: 'jig'; cols: number; rows: number; placed: number[]; tray: number[]; sel: number | null }
+    | ({ kind: 'jig' } & JigBoard)
     | { kind: 'slide'; n: number; cells: number[]; moves: number; scramble: number };
 
   type Run = {
@@ -58,6 +60,14 @@
   const resolution = $derived(resolveGame(params.game, params.ruleset));
   const rulesetKey = $derived(resolution.ok ? resolution.key : currentRuleset(params.game));
   const scoring = $derived(challengeScoring(resolution.ok ? versionIn(resolution, 'challenge') : CHALLENGE_VERSION) ?? challengeScoring(CHALLENGE_VERSION)!);
+  function jigVersion(): string {
+    return resolution.ok ? versionIn(resolution, 'jigsaw') : JIG_VERSION;
+  }
+  if (run.phase === 'play' && run.board?.kind === 'jig' && !isJigBoard(run.board)) {
+    run.board = { kind: 'jig', ...startJigsaw(run.difficulty, { seed: run.seed, version: jigVersion() }) };
+    run.tally = { correct: 0, mistakes: 0, hints: 0, maxCombo: 0 };
+    run.combo = 0;
+  }
   const locked = !!(params.difficulty && params.seed);
   const profile = readPlayerId();
   let nick = $state(profile.nickname ?? '');
@@ -67,6 +77,7 @@
   let timer = 0;
   let verified = $state<null | boolean>(null);
   let lastToken = '';
+  let winResult = $state<WinResult | null>(null);
 
   if (params.runToken && run.from) {
     void unpackRun(params.runToken).then((res) => {
@@ -97,9 +108,7 @@
       return b;
     }
     if (run.game === 'jig') {
-      const gen = jigRules(resolution.ok ? versionIn(resolution, 'jigsaw') : '1.0.0') ?? jigRules('1.0.0')!;
-      const [cols, rows] = gen.grid[run.difficulty];
-      return { kind: 'jig', cols, rows, placed: [], tray: shuffle(Array.from({ length: cols * rows }, (_, i) => i), rand), sel: null };
+      return { kind: 'jig', ...startJigsaw(run.difficulty, { seed: run.seed, version: jigVersion() }) };
     }
     const slideGen = slideRules(resolution.ok ? versionIn(resolution, 'slide') : '1.0.0') ?? slideRules('1.0.0')!;
     const n = slideGen.size[run.difficulty];
@@ -180,6 +189,7 @@
   function hint(): void {
     const b = run.board;
     if (!b) return;
+    if (b.kind === 'jig' && (!isJigBoard(b) || jigComplete(b))) return;
     run.tally.hints += 1;
     run.combo = 0;
     if (b.kind === 'cross') {
@@ -189,26 +199,18 @@
       b.filled += 1;
       advanceCross(b);
     } else if (b.kind === 'jig') {
-      const piece = b.tray[0];
-      b.tray = b.tray.slice(1);
-      b.placed = [...b.placed, piece];
-      b.sel = null;
-      if (!b.tray.length) finish();
+      run.board = { kind: 'jig', ...placeHint(b) };
     }
   }
 
-  function pickPiece(p: number): void {
-    if (run.board?.kind === 'jig') run.board.sel = p;
-  }
-  function dropAt(slot: number): void {
+  function onJigUpdate(next: JigBoard): void {
     const b = run.board;
-    if (b?.kind !== 'jig' || b.sel === null) return;
-    if (b.sel !== slot) return bad();
-    b.placed = [...b.placed, slot];
-    b.tray = b.tray.filter((x) => x !== slot);
-    b.sel = null;
-    good();
-    if (!b.tray.length) finish();
+    if (b?.kind !== 'jig' || !isJigBoard(b)) return;
+    const gained = next.placed.length - b.placed.length;
+    run.board = { kind: 'jig', ...next };
+    if (gained > 0) {
+      for (let i = 0; i < gained; i += 1) good();
+    }
   }
 
   function tapCell(i: number): void {
@@ -226,6 +228,33 @@
     }
   }
 
+  function presentWin(record: boolean): void {
+    const stars = starsFromHints(run.tally.hints);
+    const key = bestKey(`chal-${run.game}`, run.difficulty);
+    const rec = record
+      ? recordBestScore(key, run.score, stars, run.elapsedMs)
+      : (() => {
+          const standing = readBest(key);
+          return { previous: standing, current: standing ?? { timeMs: run.elapsedMs, stars, score: run.score }, isNewRecord: false };
+        })();
+    winResult = {
+      game: `chal-${run.game}`,
+      gameLabel: t(`challenge.game.${run.game}`),
+      difficulty: t(`challenge.diff.${run.difficulty}`),
+      stars,
+      timeMs: run.elapsedMs,
+      bestMs: rec.current.timeMs,
+      previousBestMs: rec.previous?.timeMs ?? null,
+      isNewRecord: rec.isNewRecord,
+      hints: run.tally.hints,
+      metric: 'score',
+      score: run.score,
+      bestScore: rec.current.score ?? run.score,
+      previousBestScore: rec.previous?.score ?? null,
+      detail: t('challenge.detail', { c: run.tally.correct, m: run.tally.mistakes, h: run.tally.hints, combo: run.tally.maxCombo }),
+    };
+  }
+
   async function finish(): Promise<void> {
     if (run.phase !== 'play') return;
     const phase = nextPhase(run.phase, 'end');
@@ -233,6 +262,7 @@
     const time = Math.floor(run.elapsedMs / 1000);
     run.score = scoreFor(run.game, run.difficulty, run.tally, time, scoring);
     run.phase = phase;
+    presentWin(true);
     const me = readPlayerId();
     const base = { game: run.game, difficulty: run.difficulty, seed: run.seed, at: Date.now() };
     await leaderboard.submit({ ...base, nick: me.nickname ?? '?', playerId: me.playerId, score: run.score, time, source: 'me', ruleset: rulesetKey });
@@ -271,6 +301,7 @@
   }
 
   function again(sameSeed: boolean): void {
+    winResult = null;
     if (!sameSeed && !locked) run.seed = newSeed();
     start();
   }
@@ -281,6 +312,7 @@
   }
 
   onMount(() => {
+    if (run.phase === 'result') presentWin(false);
     timer = window.setInterval(() => {
       if (run.phase === 'play' && document.visibilityState === 'visible') run.elapsedMs += 250;
     }, 250);
@@ -349,7 +381,7 @@
       <span>{t('challenge.points')} {liveScore}</span>
       <span>🔥 x{run.combo}</span>
     </div>
-    <div class="body">
+    <div class="body" class:jig-play={run.board.kind === 'jig'}>
       {#if run.board.kind === 'cross'}
         {@const w = run.board.words[run.board.wi]}
         <p class="prog">{t('challenge.wordN', { n: run.board.wi + 1, total: run.board.words.length })}</p>
@@ -364,21 +396,14 @@
         </div>
       {:else if run.board.kind === 'jig'}
         {@const b = run.board}
-        <div class="jgb" style="grid-template-columns:repeat({b.cols},1fr);grid-template-rows:repeat({b.rows},1fr)">
-          {#each Array.from({ length: b.cols * b.rows }, (_, i) => i) as i (i)}
-            {#if b.placed.includes(i)}
-              <div class="pc" style="background-image:url('{imageUrl(artworkFile('prologue.house-map'))}');background-size:{b.cols * 100}% {b.rows * 100}%;background-position:{(i % b.cols) * (100 / (b.cols - 1))}% {Math.floor(i / b.cols) * (100 / (b.rows - 1))}%"></div>
-            {:else}
-              <button type="button" class="hole" aria-label={`slot ${i + 1}`} onclick={() => dropAt(i)}></button>
-            {/if}
-          {/each}
-        </div>
-        <div class="tray">
-          {#each b.tray as p (p)}
-            <button type="button" class="pc tp" class:sel={b.sel === p} aria-label={`piece ${p + 1}`} onclick={() => pickPiece(p)}
-              style="background-image:url('{imageUrl(artworkFile('prologue.house-map'))}');background-size:{b.cols * 100}% {b.rows * 100}%;background-position:{(p % b.cols) * (100 / (b.cols - 1))}% {Math.floor(p / b.cols) * (100 / (b.rows - 1))}%"></button>
-          {/each}
-        </div>
+        <p class="prog" data-testid="challenge-jig-hud">{t('jigsaw.hud', { n: b.cols * b.rows, rotation: t(`jigsaw.rotation.${b.rotation}`), hints: run.tally.hints })}</p>
+        <JigsawBoard
+          jig={b}
+          imageSrc={imageUrl(artworkFile('house.map-2f'))}
+          profile={jigProfile(b.profileId, jigVersion())}
+          onUpdate={onJigUpdate}
+          onComplete={() => { void finish(); }}
+        />
       {:else}
         {@const b = run.board}
         <p class="prog">{t('challenge.moves', { n: b.moves })}</p>
@@ -394,23 +419,23 @@
       {#if run.board.kind !== 'slide'}<button type="button" class="ghost" onclick={hint}>{t('challenge.hint')}</button>{/if}
     </div>
   {:else if resolution.ok}
-    <div class="body center" data-testid="challenge-result">
+    {#if winResult}
+      <WinResultDialog result={winResult} onReplay={() => again(true)} onClose={exit}>
+        {#if run.from && verdict}
+          <div class="win-vs {verdict}" data-testid="challenge-vs">
+            <b>{t(`challenge.${verdict}`, { nick: run.from.nick })}</b>
+            <span>{t('challenge.vsLine', { me: run.score, meT: fmtTime(secs), them: run.from.score, themT: fmtTime(run.from.time), nick: run.from.nick })}</span>
+          </div>
+        {/if}
+        {#if note}<p class="win-extra-note">{note}</p>{/if}
+        <button type="button" class="win-extra-primary" onclick={share}>{run.from ? t('challenge.shareBack') : t('challenge.share')}</button>
+        {#if !locked}<button type="button" class="win-extra-ghost" onclick={() => again(false)}>{t('challenge.newSeed')}</button>{/if}
+        <button type="button" class="win-extra-ghost" onclick={onBoard}>{t('challenge.board')}</button>
+      </WinResultDialog>
+    {/if}
+    <div class="body center" data-testid="challenge-result" hidden={!!winResult}>
       <p class="big">{run.score}</p>
       <p class="sub">{t('challenge.points')} · ⏱ {fmtTime(secs)}</p>
-      <p class="detail">{t('challenge.detail', { c: run.tally.correct, m: run.tally.mistakes, h: run.tally.hints, combo: run.tally.maxCombo })}</p>
-      {#if run.from && verdict}
-        <div class="vs {verdict}">
-          <b>{t(`challenge.${verdict}`, { nick: run.from.nick })}</b>
-          <span>{t('challenge.vsLine', { me: run.score, meT: fmtTime(secs), them: run.from.score, themT: fmtTime(run.from.time), nick: run.from.nick })}</span>
-        </div>
-      {/if}
-      {#if note}<p class="note">{note}</p>{/if}
-    </div>
-    <div class="foot two">
-      <button type="button" class="primary" onclick={share}>{run.from ? t('challenge.shareBack') : t('challenge.share')}</button>
-      <button type="button" class="ghost" onclick={() => again(true)}>{t('challenge.retry')}</button>
-      {#if !locked}<button type="button" class="ghost" onclick={() => again(false)}>{t('challenge.newSeed')}</button>{/if}
-      <button type="button" class="ghost" onclick={onBoard}>{t('challenge.board')}</button>
     </div>
   {/if}
 </div>
@@ -426,6 +451,7 @@
   .banner { flex: none; background: #ffcf4a; color: #3a2a00; border-radius: 12px; padding: 8px 12px; font-weight: 800; text-align: center; font-size: var(--fs-sm); }
   .hud { flex: none; display: flex; justify-content: space-between; background: rgba(6, 30, 48, 0.92); border: 1px solid #39e0ff; border-radius: 12px; padding: 8px 12px; font-weight: 800; font-variant-numeric: tabular-nums; }
   .body { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 10px; overflow: auto; }
+  .body.jig-play { overflow: hidden; gap: 8px; }
   .center { justify-content: center; align-items: center; text-align: center; }
   .lead { margin: 0; font-size: calc(var(--fs) + 1px); font-weight: 700; }
   .rules, .lock, .detail, .prog { margin: 0; font-size: var(--fs-sm); opacity: 0.85; text-align: center; }
@@ -447,12 +473,6 @@
   .pool { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
   .tile { width: 56px; height: 56px; border-radius: 12px; border: 2px solid #39a8d8; background: #fff; color: #13324a; font-size: 26px; font-weight: 800; }
   .tile:disabled { opacity: 0.2; }
-  .jgb { display: grid; gap: 2px; width: min(100%, 300px); aspect-ratio: 3 / 4; margin: 0 auto; background: #efe6d2; border: 6px solid #6b4a2f; border-radius: 8px; flex: none; }
-  .hole { border: 1px dashed rgba(0, 0, 0, 0.3); background: transparent; }
-  .pc { border: 0; padding: 0; border-radius: 3px; background-repeat: no-repeat; }
-  .tray { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; background: #2c3e50; border-radius: 12px; padding: 8px; }
-  .tp { width: 54px; height: 54px; }
-  .tp.sel { outline: 3px solid #ffcf4a; }
   .sg { display: grid; gap: 6px; width: min(100%, 320px); aspect-ratio: 1; margin: 0 auto; background: #2d55a6; padding: 8px; border-radius: 14px; box-sizing: border-box; }
   .st { border: 0; border-radius: 10px; background: #f2b632; color: #3b2412; font-size: 28px; font-weight: 800; box-shadow: 0 3px 0 rgba(0, 0, 0, 0.3); }
   .st.empty { background: rgba(0, 0, 0, 0.2); box-shadow: none; }

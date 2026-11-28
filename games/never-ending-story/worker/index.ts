@@ -7,6 +7,7 @@ import { normalizeAppBase } from '../src/lib/deployment';
 import { godApi } from '../src/modules/god/server';
 import { decodeRun, tagFor, unb64url, type ChallengeRunPb } from '../src/modules/challenge/proto';
 import { acceptRuleset, legacyRuleset, rhythmFor, scoringFor, versionIn, resolveGame } from '../src/lib/rulesetCatalog';
+import { playerRoleByTokenHash } from '../src/lib/roles';
 import { streakRead, streakWin, type StreakReply } from './streak';
 
 interface Env {
@@ -192,6 +193,8 @@ async function meApi(req: Request, env: Env, path: string): Promise<Response> {
 async function api(req: Request, env: Env, path: string): Promise<Response> {
   if (req.method !== 'GET' && !sameOrigin(req)) return err(403, 'cross-origin');
   if (path.startsWith('/god/')) return godApi(req, env, path.slice(4));
+  // God Mode wish: the in-game sheet posts here. godApi enforces requireRole(..., 'god').
+  if (path === '/wishes' && req.method === 'POST') return godApi(req, env, '/wishes');
   const now = Date.now();
 
   if (path === '/players/register' && req.method === 'POST') {
@@ -210,6 +213,13 @@ async function api(req: Request, env: Env, path: string): Promise<Response> {
     ).bind(playerId, nick, h, now, now).run();
     if (!(await tokenOk(env, playerId, token))) return err(409, 'already registered');
     return json({ ok: true, playerId, token });
+  }
+
+  // The caller's own role, so the client can show God mode to god / super_god players. Read from D1, never from the client.
+  if (path === '/players/me' && req.method === 'GET') {
+    const t = bearer(req);
+    const me = t ? await playerRoleByTokenHash(env.DB, await sha256Hex(t)) : null;
+    return me ? json({ ok: true, playerId: me.playerId, role: me.role }) : err(401, 'unauthorized');
   }
 
   if (path.startsWith('/players/me/')) return meApi(req, env, path.slice('/players/me'.length));

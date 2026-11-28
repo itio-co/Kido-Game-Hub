@@ -1,4 +1,4 @@
-// Event jigsaw: per-difficulty piece count and rotation, drag-to-snap, map unlock.
+// Event and challenge jigsaw: per-difficulty piece count and rotation, drag-to-snap, map unlock.
 // Not in `npm test` (needs a browser and a static server):
 //   BASE=http://127.0.0.1:4173/ CHROME=/usr/bin/google-chrome-stable SHOTS=/workspace/nes-jigsaw-shots node tests/jigsaw.e2e.mjs
 import assert from 'node:assert/strict';
@@ -287,6 +287,82 @@ for (const diff of DIFFS) {
   await shot(page, 'easy-isolated-best.png');
   await ctx.close();
   console.log('ok difficulty-isolation');
+}
+
+async function openChallenge(diffId, opts = {}) {
+  const ctx = await browser.newContext({
+    viewport: opts.viewport ?? { width: 390, height: 844 },
+    deviceScaleFactor: opts.deviceScaleFactor ?? 2,
+    hasTouch: opts.hasTouch ?? true,
+  });
+  const page = await ctx.newPage();
+  await page.route('**/api/**', (route) => route.abort());
+  const puzzleSeed = opts.seed ?? 482913;
+  await page.addInitScript(([player, profile]) => {
+    localStorage.setItem('nesg.player.v1', player);
+    localStorage.setItem('nesg.playerId.v1', profile);
+    sessionStorage.setItem('seeded', '1');
+  }, [
+    seed('ง่าย', 'player-room'),
+    JSON.stringify({ playerId: '00000000-0000-4000-8000-000000000001', nickname: 'Tester' }),
+  ]);
+  await page.goto(`${BASE}#/challenge/jig/${diffId}/${puzzleSeed}`, { waitUntil: 'domcontentloaded' });
+  await page.waitForSelector('[data-testid="challenge"]', { timeout: 20000 });
+  await page.getByRole('button', { name: 'เริ่มชาเลนจ์' }).click();
+  await page.waitForSelector('[data-testid="jigsaw-board"]', { timeout: 20000 });
+  await page.waitForTimeout(400);
+  return { ctx, page };
+}
+
+for (const diff of DIFFS) {
+  const { ctx, page } = await openChallenge(diff.id);
+  const board = page.locator('[data-testid="jigsaw-board"]');
+  assert.equal(await board.getAttribute('data-cols'), String(diff.cols), `challenge ${diff.id} cols`);
+  assert.equal(await board.getAttribute('data-rows'), String(diff.rows), `challenge ${diff.id} rows`);
+  assert.equal(await board.getAttribute('data-rotation'), diff.rotation, `challenge ${diff.id} rotation`);
+  assert.equal(await board.getAttribute('data-diff'), diff.id, `challenge ${diff.id} profile`);
+  assert.equal(await page.locator('[data-testid^="jigsaw-piece-"]').count(), diff.count, `challenge ${diff.id} piece count`);
+  assert.equal(await page.locator('[data-testid^="jigsaw-rotate-"]').count(), 0, `challenge ${diff.id} has no rotate icon`);
+  assert.equal(await page.locator('.tray, .jgb, .hole').count(), 0, `challenge ${diff.id} has no old tray board`);
+  const hud = (await page.locator('[data-testid="challenge-jig-hud"]').innerText()).replace(/\s+/g, ' ').trim();
+  assert.ok(hud.includes(`${diff.count} ชิ้น`), `challenge ${diff.id} hud piece count: ${hud}`);
+  assert.ok(hud.includes(diff.rotationText), `challenge ${diff.id} hud rotation: ${hud}`);
+  const topHud = await page.locator('.hud').innerText();
+  assert.ok(!topHud.includes('⭐') && !topHud.includes('★') && !topHud.includes('☆'), `challenge ${diff.id} hides stars at start: ${topHud}`);
+  assert.match(topHud, /00:00/, `challenge ${diff.id} timer starts at 00:00: ${topHud}`);
+  await shot(page, `challenge-${diff.id}-scattered.png`);
+
+  const mid = midCounts[diff.id];
+  for (let id = 0; id < mid; id += 1) {
+    await snapOne(page, id, diff.rotation);
+  }
+  const locked = await lockedCount(page);
+  assert.ok(locked >= 1, `challenge ${diff.id} should snap at least one piece, got ${locked}`);
+  await shot(page, `challenge-${diff.id}-mid.png`);
+
+  if (diff.id === 'easy') {
+    await completeEasy(page);
+    await page.locator('[data-testid="challenge-result"]').waitFor({ state: 'visible', timeout: 15000 });
+    const scoreText = (await page.locator('[data-testid="challenge-result"] .big').innerText()).trim();
+    assert.match(scoreText, /^\d+$/, `challenge result score: ${scoreText}`);
+    assert.ok(Number(scoreText) > 0, 'challenge easy scores above zero');
+    await shot(page, 'challenge-easy-result.png');
+  }
+
+  await ctx.close();
+  console.log(`ok challenge-${diff.id}`);
+}
+
+{
+  const { ctx, page } = await openChallenge('hard', {
+    viewport: { width: 1280, height: 800 },
+    deviceScaleFactor: 1,
+    hasTouch: false,
+  });
+  assert.equal(await page.locator('[data-testid="jigsaw-board"]').getAttribute('data-rotation'), 'free');
+  await shot(page, 'challenge-hard-desktop.png');
+  await ctx.close();
+  console.log('ok challenge-desktop');
 }
 
 await browser.close();

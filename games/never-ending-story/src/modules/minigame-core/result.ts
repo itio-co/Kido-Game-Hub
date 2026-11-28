@@ -15,7 +15,7 @@ const DIFF_ALIASES: Record<string, DifficultyId> = {
   'ยาก': 'hard',
 };
 
-export type BestEntry = { timeMs: number; stars: number };
+export type BestEntry = { timeMs: number; stars: number; score?: number };
 export type BestStore = Record<string, BestEntry>;
 
 export type WinResult = {
@@ -28,7 +28,17 @@ export type WinResult = {
   bestMs: number | null;
   previousBestMs: number | null;
   isNewRecord: boolean;
-  hints: number;
+  /** Omit when the game has no hints, so the dialog hides that row. */
+  hints?: number;
+  /** Default `time` (lower is better). `score` compares a higher score as the record. */
+  metric?: 'time' | 'score';
+  score?: number;
+  bestScore?: number | null;
+  previousBestScore?: number | null;
+  /** Overrides the default "You won" subtitle (for example a time-up line). */
+  subtitle?: string;
+  /** Extra detail line under the stats. */
+  detail?: string;
 };
 
 export function formatTime(ms: number): string {
@@ -36,6 +46,17 @@ export function formatTime(ms: number): string {
   const minutes = Math.floor(total / 60);
   const seconds = total % 60;
   return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+}
+
+export function formatScore(score: number): string {
+  return String(Math.max(0, Math.round(score)));
+}
+
+/** Case-minigame stars: 3 with no hints, 2 with one, 1 with two or more. */
+export function starsFromHints(hints: number): number {
+  if (hints <= 0) return 3;
+  if (hints === 1) return 2;
+  return 1;
 }
 
 /** Map a Thai or English difficulty label to `easy` / `medium` / `hard`. */
@@ -70,16 +91,26 @@ export function canonicalBestKey(key: string): string | null {
   return null;
 }
 
-function clampEntry(timeMs: number, stars: number): BestEntry {
-  return {
+function clampEntry(timeMs: number, stars: number, score?: number): BestEntry {
+  const entry: BestEntry = {
     timeMs: Math.max(0, timeMs),
     stars: Math.max(0, Math.min(3, Math.round(stars))),
   };
+  if (score != null && Number.isFinite(score)) entry.score = Math.max(0, score);
+  return entry;
+}
+
+function withScore(entry: BestEntry, score: number | undefined): BestEntry {
+  if (score == null) return entry;
+  return { ...entry, score };
 }
 
 function mergeEntry(a: BestEntry | undefined, b: BestEntry): BestEntry {
   if (!a) return b;
-  return { timeMs: Math.min(a.timeMs, b.timeMs), stars: Math.max(a.stars, b.stars) };
+  const score = a.score != null || b.score != null
+    ? Math.max(a.score ?? 0, b.score ?? 0)
+    : undefined;
+  return withScore({ timeMs: Math.min(a.timeMs, b.timeMs), stars: Math.max(a.stars, b.stars) }, score);
 }
 
 export function parseBests(raw: string | null | undefined): BestStore {
@@ -93,7 +124,8 @@ export function parseBests(raw: string | null | undefined): BestStore {
       const row = value as Record<string, unknown>;
       if (typeof row.timeMs !== 'number' || !Number.isFinite(row.timeMs)) continue;
       const stars = typeof row.stars === 'number' && Number.isFinite(row.stars) ? row.stars : 0;
-      out[key] = clampEntry(row.timeMs, stars);
+      const score = typeof row.score === 'number' && Number.isFinite(row.score) ? row.score : undefined;
+      out[key] = clampEntry(row.timeMs, stars, score);
     }
     return out;
   } catch {
@@ -120,7 +152,7 @@ export function migrateBests(store: BestStore): { store: BestStore; changed: boo
     || after.some((key) => {
       const prev = store[key];
       const cur = out[key];
-      return !prev || prev.timeMs !== cur.timeMs || prev.stars !== cur.stars;
+      return !prev || prev.timeMs !== cur.timeMs || prev.stars !== cur.stars || prev.score !== cur.score;
     });
   return { store: out, changed };
 }
@@ -139,9 +171,36 @@ export function applyBest(store: BestStore, key: string, timeMs: number, stars: 
   }
   const previous = store[safeKey] ?? null;
   const isNewRecord = previous === null || entry.timeMs < previous.timeMs;
-  const current: BestEntry = isNewRecord
-    ? { timeMs: entry.timeMs, stars: Math.max(entry.stars, previous?.stars ?? 0) }
-    : { timeMs: previous.timeMs, stars: Math.max(entry.stars, previous.stars) };
+  const nextStars = Math.max(entry.stars, previous?.stars ?? 0);
+  const current = withScore(
+    { timeMs: isNewRecord ? entry.timeMs : (previous?.timeMs ?? entry.timeMs), stars: nextStars },
+    previous?.score ?? entry.score,
+  );
+  return { store: { ...store, [safeKey]: current }, previous, current, isNewRecord };
+}
+
+/** Higher score wins. The first finish of a difficulty is a new record. */
+export function applyBestScore(store: BestStore, key: string, score: number, stars: number, timeMs = 0): {
+  store: BestStore;
+  previous: BestEntry | null;
+  current: BestEntry;
+  isNewRecord: boolean;
+} {
+  const safeKey = canonicalBestKey(key) ?? '';
+  const entry = clampEntry(timeMs, stars, score);
+  if (!safeKey) {
+    return { store, previous: null, current: entry, isNewRecord: false };
+  }
+  const previous = store[safeKey] ?? null;
+  const previousScore = previous?.score;
+  const isNewRecord = previous === null || previousScore == null || (entry.score ?? 0) > previousScore;
+  const current = withScore(
+    {
+      timeMs: isNewRecord ? entry.timeMs : previous.timeMs,
+      stars: Math.max(entry.stars, previous?.stars ?? 0),
+    },
+    isNewRecord ? entry.score : previousScore,
+  );
   return { store: { ...store, [safeKey]: current }, previous, current, isNewRecord };
 }
 
@@ -180,6 +239,16 @@ export function recordBest(key: string, timeMs: number, stars: number): {
   isNewRecord: boolean;
 } {
   const applied = applyBest(readBests(), key, timeMs, stars);
+  if (canonicalBestKey(key)) persist(applied.store);
+  return { previous: applied.previous, current: applied.current, isNewRecord: applied.isNewRecord };
+}
+
+export function recordBestScore(key: string, score: number, stars: number, timeMs = 0): {
+  previous: BestEntry | null;
+  current: BestEntry;
+  isNewRecord: boolean;
+} {
+  const applied = applyBestScore(readBests(), key, score, stars, timeMs);
   if (canonicalBestKey(key)) persist(applied.store);
   return { previous: applied.previous, current: applied.current, isNewRecord: applied.isNewRecord };
 }
