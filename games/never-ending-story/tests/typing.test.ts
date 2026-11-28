@@ -8,7 +8,7 @@ import { normalizeForTyping, parseTypist, tokenize } from '../src/modules/typing
 import { createTypTextSource, createTypUrlSource, quotesSource, SourceError, TYPIST_QUOTES_URL, TYPIST_SOURCES } from '../src/modules/typing/sources/typist.ts';
 import { SAMPLE_TYP } from '../src/modules/typing/sources/sample.ts';
 import { authorFromInstruction, buildQuoteCard, looksLikePersonName, wrapQuote } from '../src/modules/typing/quote.ts';
-import { findPortrait, initialsOf } from '../src/modules/typing/portrait.ts';
+import { findPortrait, initialsOf, portraitCatalog } from '../src/modules/typing/portrait.ts';
 import { MINI_TYP } from './fixtures/typistMini.ts';
 
 declare const process: { exitCode?: number; env: Record<string, string | undefined> };
@@ -320,10 +320,25 @@ test('portrait catalog: three preview authors resolve; unknown names fall back',
   const linus = findPortrait('Linus Torvalds');
   const knuth = findPortrait('Donald E. Knuth');
   const bjarne = findPortrait('Bjarne Stroustrup');
-  ok(!!linus && linus.license.startsWith('CC BY') && linus.file.includes('linus-torvalds'), JSON.stringify(linus));
+  ok(!!linus && linus.license.startsWith('CC BY') && linus.file.endsWith('linus-torvalds.webp'), JSON.stringify(linus));
   ok(!!knuth && knuth.author === 'Donald Knuth' && knuth.license.startsWith('CC BY'), 'alias Donald E. Knuth');
-  ok(!!bjarne && bjarne.artist === 'ICPCNews', 'stroustrup');
+  ok(!!bjarne && bjarne.artist === 'ICPCNews' && bjarne.file.endsWith('.webp'), 'stroustrup');
   ok(findPortrait('A Completely Unknown Person') === null && initialsOf('Linus Torvalds') === 'LT', 'fallback initials');
+});
+
+test('portrait catalog: aliases, webp-only stills, and free licenses only', () => {
+  ok(portraitCatalog.length >= 100, `catalog size ${portraitCatalog.length}`);
+  const licenseOk = /^(CC BY(?!-NC)(?!-ND)|CC-BY|CC0|CC Zero|Public domain|PDM)/i;
+  const licenseBad = /fair\s*use|[-\s]nc(?:[-\s]|$)|[-\s]nd(?:[-\s]|$)|noncommercial|gfdl/i;
+  for (const row of portraitCatalog) {
+    ok(row.file.endsWith('.webp') && row.file.startsWith('/img/typing/portraits/'), row.file);
+    ok(licenseOk.test(row.license) && !licenseBad.test(row.license), `${row.author} license ${row.license}`);
+  }
+  ok(findPortrait('G. van Rossum')?.author === 'Guido van Rossum', 'Guido alias');
+  ok(findPortrait('C.A.R Hoare')?.author === 'Tony Hoare', 'Hoare typo/initials');
+  ok(findPortrait('Yoggi Berra')?.author === 'Yogi Berra', 'Berra typo');
+  ok(findPortrait('Ken Thompson')?.qid === 'Q1107006', 'Unix Ken Thompson pin');
+  ok(findPortrait('Anonymous') === null, 'skipped names stay silhouettes');
 });
 
 await Promise.all(pending);

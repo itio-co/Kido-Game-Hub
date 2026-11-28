@@ -98,6 +98,36 @@ const PHONE = { width: 740, height: 360 };
 let step = 0;
 const ok = (msg) => console.log(`ok ${++step} ${msg}`);
 
+/** Open a typist drill whose label contains `name`. */
+async function openAuthorDrill(page, name, useTap = false) {
+  const go = async (loc) => (useTap ? loc.tap() : loc.click());
+  if (await page.locator('[data-testid="typing-typist"]').count()) await go(q(page, 'typing-typist'));
+  await page.waitForSelector('[data-testid="typing-lessons"]', { timeout: 15000 });
+  const lessons = page.locator('[data-testid^="typing-lesson-"]');
+  const n = await lessons.count();
+  for (let i = 0; i < n; i++) {
+    await go(lessons.nth(i));
+    const drill = page.locator('[data-testid^="typing-drill-"]').filter({ hasText: name }).first();
+    if (await drill.count()) {
+      await go(drill);
+      await page.waitForSelector('[data-testid="typing-quote-card"]');
+      return;
+    }
+  }
+  throw new Error('no typist drill for ' + name);
+}
+
+async function typableText(page) {
+  return (await page.locator('[data-testid="typing-text"] .ch').allTextContents()).join('').replaceAll(' ', ' ');
+}
+
+async function assertSideBySide(page, where) {
+  const quote = await q(page, 'typing-quote').boundingBox();
+  const port = await q(page, 'typing-portrait').boundingBox();
+  assert.ok(quote && port, `${where}: quote and portrait visible`);
+  assert.ok(port.x >= quote.x + quote.width - 8, `${where}: portrait should sit to the right of the quote ${JSON.stringify({ quote, port })}`);
+}
+
 // ---- 1. menu + practice card data ----
 {
   const { ctx, page, errors } = await open('#/play/typing', { viewport: DESKTOP });
@@ -268,6 +298,7 @@ const ok = (msg) => console.log(`ok ${++step} ${msg}`);
   assert.ok(typed.length > 10 && !typed.includes('\n'));
   const expected = real ? '"I object to doing things that computers can do." - Olin Shivers' : '"Keep it simple and keep it small." - Ada Lovelace';
   assert.equal(typed, expected);
+  await q(page, 'typing-text').click();
   await typeSlow(page, typed.slice(0, Math.floor(typed.length / 2)), 110);
   await page.keyboard.type('#');
   await shot(page, '06-typist-drill-midrun-desktop.png');
@@ -284,6 +315,28 @@ const ok = (msg) => console.log(`ok ${++step} ${msg}`);
   assert.deepEqual(errors, []);
   await ctx.close();
   ok(`Typist online: ${lessons} lessons, ${drills} drills in the first, drill played and saved`);
+}
+
+// ---- 6b. Quote card desktop (Stroustrup when the real course is present, else Ada Lovelace) ----
+{
+  const { ctx, page, errors } = await open('#/play/typing', { viewport: DESKTOP });
+  const author = real ? 'Bjarne Stroustrup' : 'Ada Lovelace';
+  await openAuthorDrill(page, author, false);
+  assert.equal(await root(page, 'data-card'), 'quote');
+  assert.equal(await q(page, 'typing-portrait').getAttribute('data-kind'), 'photo', author + ' uses a catalog photo');
+  await assertSideBySide(page, 'desktop');
+  await q(page, 'typing-text').click();
+  await shot(page, 'quote-desktop.png');
+  const typed = await typableText(page);
+  const prefix = typed.slice(0, Math.min(28, Math.max(8, Math.floor(typed.length * 0.3))));
+  await typeSlow(page, prefix.slice(0, -1), 20);
+  await page.keyboard.type('#');
+  const marksNow = await marks(page);
+  assert.ok(marksNow.includes('bad'), 'error highlight mid-typing');
+  await shot(page, 'quote-midrun-error.png');
+  assert.deepEqual(errors, []);
+  await ctx.close();
+  ok('quote card desktop + mid-typing error');
 }
 
 // ---- 7. Typist lessons: failure UI, retry, bundled fallback ----
@@ -329,6 +382,12 @@ const ok = (msg) => console.log(`ok ${++step} ${msg}`);
   await q(page, 'typing-typist').tap();
   await page.waitForSelector('[data-testid="typing-lessons"]');
   await shot(page, '10-typist-lessons-tablet-landscape.png');
+  const tabletAuthor = real ? 'Bjarne Stroustrup' : 'Ada Lovelace';
+  await openAuthorDrill(page, tabletAuthor, true);
+  assert.equal(await root(page, 'data-card'), 'quote');
+  await assertSideBySide(page, 'tablet');
+  await q(page, 'typing-text').tap();
+  await shot(page, 'quote-tablet-landscape.png');
   assert.deepEqual(errors, []);
   await ctx.close();
 }
@@ -359,6 +418,14 @@ const ok = (msg) => console.log(`ok ${++step} ${msg}`);
   await page.waitForSelector('[data-testid="typing-lessons"]');
   await q(page, 'typing-lesson-' + (real ? 'GENERAL' : 'ALPHA')).tap();
   await shot(page, '13-typist-lessons-phone-landscape.png');
+  const phoneAuthor = real ? 'Bjarne Stroustrup' : 'Ada Lovelace';
+  await openAuthorDrill(page, phoneAuthor, true);
+  assert.equal(await root(page, 'data-card'), 'quote');
+  await assertSideBySide(page, 'phone landscape');
+  const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+  assert.ok(overflow <= 0, 'quote card has no horizontal overflow on phone');
+  await q(page, 'typing-text').tap();
+  await shot(page, 'quote-phone-landscape.png');
   assert.deepEqual(errors, []);
   await ctx.close();
 }

@@ -1,0 +1,139 @@
+{
+  "_comment": "Manual portrait pins and aliases for the typing Typist catalog. aliasOf maps a drill name onto another key. skip=true leaves the silhouette. file is a Wikimedia Commons filename; qid is a Wikidata id.",
+  "Linus Torvalds": {
+    "qid": "Q34253",
+    "file": "LinuxCon Europe Linus Torvalds 03 (cropped).jpg"
+  },
+  "Donald Knuth": {
+    "qid": "Q17457",
+    "file": "Donald Ervin Knuth (cropped).jpg"
+  },
+  "Donald E. Knuth": {
+    "aliasOf": "Donald Knuth"
+  },
+  "Bjarne Stroustrup": {
+    "qid": "Q92620",
+    "file": "Bjarne Stroustrup (2013).jpg"
+  },
+  "Edsger Dijkstra": {
+    "aliasOf": "Edsger W. Dijkstra"
+  },
+  "Alan Perlis": {
+    "aliasOf": "Alan J. Perlis"
+  },
+  "Frederick P. Brooks": {
+    "aliasOf": "Frederick P. Brooks Jr."
+  },
+  "Frederick P. Brook Jr.": {
+    "aliasOf": "Frederick P. Brooks Jr."
+  },
+  "Dennis M. Ritchie": {
+    "aliasOf": "Dennis Ritchie"
+  },
+  "Guy L. Steele": {
+    "aliasOf": "Guy Steele"
+  },
+  "Gerald M. Weinberg": {
+    "aliasOf": "Gerald Weinberg"
+  },
+  "Richard P. Gabriel": {
+    "aliasOf": "Richard Gabriel"
+  },
+  "S. McConnell": {
+    "aliasOf": "Steve McConnell"
+  },
+  "R. Pattis": {
+    "aliasOf": "Richard Pattis"
+  },
+  "Ricard Pattis": {
+    "aliasOf": "Richard Pattis"
+  },
+  "Michael B. Feldman": {
+    "aliasOf": "Michael Feldman"
+  },
+  "John von Neumann": {
+    "qid": "Q17455"
+  },
+  "J. von Neumann": {
+    "aliasOf": "John von Neumann"
+  },
+  "G. van Rossum": {
+    "search": "Guido van Rossum",
+    "aliasOf": "Guido van Rossum"
+  },
+  "Andrew Tannenbaum": {
+    "search": "Andrew S. Tanenbaum",
+    "aliasOf": "Andrew S. Tanenbaum"
+  },
+  "Antoine de Saint-Exupry": {
+    "search": "Antoine de Saint-Exupéry"
+  },
+  "Yoggi Berra": {
+    "search": "Yogi Berra"
+  },
+  "Bartos Milewski": {
+    "search": "Bartosz Milewski"
+  },
+  "Marry Rose Cook": {
+    "search": "Mary Rose Cook"
+  },
+  "Anonymous": {
+    "skip": true,
+    "reason": "generic attribution"
+  },
+  "Basics of the Unix Philosophy": {
+    "skip": true,
+    "reason": "work title, not a person"
+  },
+  "Elements of Programming Style": {
+    "skip": true,
+    "reason": "work title, not a person"
+  },
+  "The Art of Unix Programming": {
+    "skip": true,
+    "reason": "work title, not a person"
+  },
+  "Eagleson's Law": {
+    "skip": true,
+    "reason": "aphorism, not a person"
+  },
+  "Jargon File": {
+    "skip": true,
+    "reason": "work title, not a person"
+  },
+  "Mosher's Law of Software Engineering": {
+    "skip": true,
+    "reason": "aphorism, not a person"
+  },
+  "Putt's Law": {
+    "skip": true,
+    "reason": "aphorism, not a person"
+  },
+  "Pragmatic Programmer": {
+    "skip": true,
+    "reason": "work title, not a person"
+  },
+  "Wikipedia": {
+    "skip": true,
+    "reason": "organization, not a person"
+  },
+  "Hugo Cabret (Fictional Character)": {
+    "skip": true,
+    "reason": "fictional character"
+  },
+  "C.A.R Hoare": {
+    "search": "C. A. R. Hoare",
+    "aliasOf": "C. A. R. Hoare"
+  },
+  "Yukihiro 'Matz' Matsumoto": {
+    "search": "Yukihiro Matsumoto",
+    "aliasOf": "Yukihiro Matsumoto"
+  },
+  "Augusta Ada King": {
+    "search": "Ada Lovelace",
+    "aliasOf": "Ada Lovelace"
+  },
+  "Ken Thompson": {
+    "qid": "Q1107006"
+  }
+}

@@ -475,6 +475,8 @@
     >
       <div class="line">{#each words as w, wi (wi)}<span class="w">{#each w as cell (cell.from)}<span class="ch {cellMark(st, cell)}" data-mark={cellMark(st, cell)}>{cell.text === ' ' ? '\u00a0' : cell.text}</span>{/each}</span>{/each}</div>
     </div>
+  {/if}
+  {#if screen === 'play'}
     <input
       bind:this={inputEl}
       class="hid"
@@ -615,6 +617,13 @@
   @media (max-width: 700px) and (orientation: portrait) {
     .quote-card { grid-template-columns: 1fr; justify-items: center; }
     .portrait-col { max-width: 180px; }
+  }
+  /* Tablet / desktop: larger type and a roomy portrait column. */
+  @media (min-width: 900px) and (min-height: 520px) {
+    .quote-card { gap: 36px; padding: 16px 28px 12px; }
+    .portrait-col { max-width: 300px; width: 100%; justify-self: end; }
+    .q { font-size: clamp(26px, 3.2vw, 44px); }
+    .a { font-size: clamp(24px, 2.8vw, 38px); }
   }
   .txt {
     position: relative;
