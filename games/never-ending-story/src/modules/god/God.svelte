@@ -37,6 +37,10 @@
   let toast = $state('');
   let renameTo = $state('');
   let confirmText = $state('');
+  type RoleName = 'player' | 'god' | 'super_god';
+  /** Pending role change shown in the confirmation sheet. */
+  let roleAsk = $state<{ id: string; nick: string; from: RoleName; to: RoleName } | null>(null);
+  let roleBusy = $state(false);
   const KIND_ORDER = ['core', 'character', 'cutscene', 'minigame-core', 'engine', 'pack', 'feature', 'minigame', 'event-core', 'event', 'admin'];
   /** Old registries stored kind "edition". Group them with packs. */
   const normalizeKind = (k: string) => (k === 'edition' ? 'pack' : k);
@@ -124,6 +128,28 @@
       flash(t('god.player.renamed')); await load();
     } catch (e) { flash(errText(e)); }
   }
+
+  const roleName = (r: unknown) => t(`god.role.${r === 'god' || r === 'super_god' ? r : 'player'}`);
+  /** Moves an admin can make from a role. SUPER GOD is only ever granted here, behind the admin password. */
+  const roleMoves = (r: unknown): { to: RoleName; label: string }[] =>
+    r === 'super_god' ? [{ to: 'god', label: t('god.role.demoteGod') }]
+    : r === 'god' ? [{ to: 'player', label: t('god.role.demotePlayer') }, { to: 'super_god', label: t('god.role.makeSuper') }]
+    : [{ to: 'god', label: t('god.role.promoteGod') }];
+  const askRole = (p: Row, to: RoleName) => { roleAsk = { id: String(p.playerId), nick: String(p.nickname || t('god.noName')), from: (p.role ?? 'player') as RoleName, to }; };
+  async function applyRole() {
+    const ask = roleAsk;
+    if (!ask || roleBusy) return;
+    roleBusy = true;
+    try {
+      await god(`players/${encodeURIComponent(ask.id)}/role`, { method: 'POST', body: JSON.stringify({ role: ask.to, confirmSuperGod: ask.from === 'super_god' }) });
+      roleAsk = null; flash(t('god.role.changed')); await load();
+    } catch (e) {
+      roleAsk = null;
+      flash(e instanceof ApiError && e.status !== 401 && t(`god.role.err.${e.code}`) !== `god.role.err.${e.code}` ? t(`god.role.err.${e.code}`) : errText(e));
+    } finally { roleBusy = false; }
+  }
+  const roleNote = (a: { from: RoleName; to: RoleName }) =>
+    a.from === 'super_god' ? t('god.role.noteFromSuper') : a.to === 'super_god' ? t('god.role.noteToSuper') : a.to === 'god' ? t('god.role.noteToGod') : t('god.role.noteToPlayer');
 
   async function removePlayer() {
     if (!detail) return;
@@ -219,10 +245,10 @@
           <button type="submit">{t('god.player.searchBtn')}</button>
         </form>
         {#if data}
-          <table class="wide"><thead><tr><th>{t('god.col.nick')}</th><th>ID</th><th>{t('god.col.created')}</th><th>{t('god.col.lastSeen')}</th><th>{t('god.col.runs')}</th><th>{t('god.col.best')}</th><th>{t('god.col.events')}</th></tr></thead>
+          <table class="wide"><thead><tr><th>{t('god.col.nick')}</th><th>ID</th><th>{t('god.col.role')}</th><th>{t('god.col.created')}</th><th>{t('god.col.lastSeen')}</th><th>{t('god.col.runs')}</th><th>{t('god.col.best')}</th><th>{t('god.col.events')}</th></tr></thead>
             <tbody>{#each data.players as p (p.playerId)}
-              <tr><td><a href="#/players/{encodeURIComponent(p.playerId)}">{p.nickname || t('god.noName')}</a>{#if !p.registered}<span class="tag">{t('god.player.unclaimed')}</span>{/if}</td><td><code>{short(p.playerId)}</code></td><td>{fmtDate(p.created_at)}</td><td>{fmtDate(p.last_seen)}</td><td>{p.runs}</td><td>{p.best ?? '–'}</td><td>{p.events ? String(p.events).split(',').map((s) => { const [id, st] = s.split(':'); return `${id} ${t(`god.status.${st}`)}`; }).join(', ') : '–'}</td></tr>
-            {:else}<tr><td colspan="7">{t('god.empty')}</td></tr>{/each}</tbody></table>
+              <tr><td><a href="#/players/{encodeURIComponent(p.playerId)}">{p.nickname || t('god.noName')}</a>{#if !p.registered}<span class="tag">{t('god.player.unclaimed')}</span>{/if}</td><td><code>{short(p.playerId)}</code></td><td><div class="role-cell"><span class="role {p.role}" data-testid="role-badge" data-role={p.role}>{roleName(p.role)}</span>{#if p.registered}{@const move = roleMoves(p.role)[0]}<button type="button" class="sm role-act" data-testid="role-action" onclick={() => askRole(p, move.to)}>{move.label}</button>{:else}<small class="note" title={t('god.role.needRegistered')}>–</small>{/if}</div></td><td>{fmtDate(p.created_at)}</td><td>{fmtDate(p.last_seen)}</td><td>{p.runs}</td><td>{p.best ?? '–'}</td><td>{p.events ? String(p.events).split(',').map((s) => { const [id, st] = s.split(':'); return `${id} ${t(`god.status.${st}`)}`; }).join(', ') : '–'}</td></tr>
+            {:else}<tr><td colspan="8">{t('god.empty')}</td></tr>{/each}</tbody></table>
           {@const total = Number(data.total ?? 0)}
           {@const pageSize = Number(data.pageSize ?? 20)}
           {@const pages = Math.max(1, Math.ceil(total / pageSize))}
@@ -240,7 +266,18 @@
           <div class="card"><small>{t('god.col.lastSeen')}</small><strong class="sm">{fmtDate(detail.player.last_seen)}</strong></div>
           <div class="card"><small>{t('god.col.runs')}</small><strong>{detail.runs.length}</strong></div>
           <div class="card"><small>{t('god.player.registered')}</small><strong class="sm">{detail.player.registered ? t('god.yes') : t('god.no')}</strong></div>
+          <div class="card"><small>{t('god.col.role')}</small><strong class="sm"><span class="role {detail.player.role}" data-testid="role-badge" data-role={detail.player.role}>{roleName(detail.player.role)}</span></strong></div>
         </div>
+        <section class="roles" data-testid="role-panel">
+          <h2>{t('god.role.manage')}</h2>
+          <p class="note">{t('god.role.help')}</p>
+          {#if detail.player.role_updated_at}<p class="note">{t('god.role.updated', { at: fmtDate(detail.player.role_updated_at) })} · {t('god.role.updatedBy', { by: detail.player.role_updated_by === 'password' ? t('god.role.byPassword') : short(detail.player.role_updated_by) })}</p>{/if}
+          <div class="role-row">
+            {#each roleMoves(detail.player.role) as mv (mv.to)}
+              <button type="button" data-testid="role-action-{mv.to}" disabled={!detail.player.registered} onclick={() => askRole(detail!.player, mv.to)}>{mv.label}</button>
+            {/each}
+          </div>
+        </section>
         <div class="two">
           <section><h2>{t('god.player.state')}</h2>
             {#if detail.state}<p class="note">rev {detail.state.rev} · {detail.state.bytes} B · {fmtDate(detail.state.updated_at)}</p>
@@ -355,6 +392,19 @@
       <button type="button" class="logout" onclick={logout}>{t('god.logout')}</button>
       <small class="ver">v{version}</small>
     </nav>
+    {#if roleAsk}
+      <div class="role-scrim" role="presentation" onclick={() => (roleAsk = null)}>
+        <div class="role-sheet" role="alertdialog" aria-modal="true" aria-label={t('god.role.confirmTitle')} data-testid="role-confirm" tabindex="-1" onclick={(e) => e.stopPropagation()} onkeydown={(e) => { if (e.key === 'Escape') roleAsk = null; }}>
+          <h2>{t('god.role.confirmTitle')}</h2>
+          <p data-testid="role-confirm-body">{t('god.role.confirmBody', { nick: roleAsk.nick, from: roleName(roleAsk.from), to: roleName(roleAsk.to) })}</p>
+          <p class="note">{roleNote(roleAsk)}</p>
+          <div class="role-row">
+            <button type="button" class="danger" data-testid="role-confirm-yes" disabled={roleBusy} onclick={applyRole}>{t('god.role.confirm')}</button>
+            <button type="button" data-testid="role-confirm-no" onclick={() => (roleAsk = null)}>{t('god.role.cancel')}</button>
+          </div>
+        </div>
+      </div>
+    {/if}
     {#if toast}<p class="toast-god" role="status">{toast}</p>{/if}
   </div>
 {/if}
@@ -426,6 +476,16 @@
   .bar { display: grid; grid-template-columns: 170px 1fr 40px; align-items: center; gap: 8px; margin: 4px 0; }
   .bar i { display: block; height: 14px; border-radius: 7px; background: linear-gradient(90deg, #39e0ff, #2a8cff); min-width: 2px; }
   .bar b { text-align: right; }
+  .role { display: inline-block; font-size: 0.75em; font-weight: 800; letter-spacing: 0.04em; padding: 2px 8px; border-radius: 999px; background: #1d2b3a; color: #9fb4c8; }
+  .role.god { background: #3a2f0a; color: #ffd479; }
+  .role.super_god { background: #4a1230; color: #ff8fc8; }
+  .role-cell { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
+  .role-act { min-height: 32px; white-space: nowrap; }
+  .roles { margin: 16px 0; padding: 14px; border: 1px solid #234; border-radius: 12px; background: #111e2c; }
+  .role-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+  .role-scrim { position: fixed; inset: 0; z-index: 60; background: rgba(0, 0, 0, 0.6); display: flex; align-items: center; justify-content: center; padding: 16px; }
+  .role-sheet { width: min(420px, 100%); background: #0f1b29; border: 1px solid var(--cyan); border-radius: 16px; padding: 18px; }
+  .role-sheet h2 { margin-top: 0; }
   .toast-god { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--hud); border: 1px solid var(--cyan); padding: 10px 16px; border-radius: 12px; }
   .scrim-god { display: none; }
   @media (max-width: 760px) {
