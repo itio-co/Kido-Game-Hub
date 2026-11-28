@@ -4,7 +4,10 @@ CREATE TABLE IF NOT EXISTS players (
   nickname   TEXT NOT NULL DEFAULT '',
   token_hash TEXT,                 -- SHA-256 (hex) of the player's bearer token; NULL = unclaimed
   created_at INTEGER NOT NULL,
-  last_seen  INTEGER NOT NULL
+  last_seen  INTEGER NOT NULL,
+  role            TEXT NOT NULL DEFAULT 'player', -- player | god | super_god (0.6.40); only God admin changes it
+  role_updated_at INTEGER,                        -- ms, audit of the last role change
+  role_updated_by TEXT                            -- 'password' (God admin) or the super god's playerId
 );
 CREATE TABLE IF NOT EXISTS runs (
   sessionId          TEXT PRIMARY KEY,
