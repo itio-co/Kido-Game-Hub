@@ -58,6 +58,7 @@
 - `#/games` และ `#/games/<moduleId>`: ภาพรวม, กระดาน, GDD, ตารางกติกา (runs / players)
 - `#/events` กรวยคดี
 - `#/modules` จัดกลุ่มตาม kind รวม `admin` และ `pack`
+- `#/wishes` คำขอที่ส่งมาจากโหมด GOD ในเกม ใหม่สุดก่อน กรอง «เฉพาะที่ยังไม่อ่าน» ได้ เปิดภาพหน้าจอและลิงก์ตรวจข้อมูล และกดทำเครื่องหมายว่าอ่านแล้ว (เฉพาะ super god)
 
 ## 10. Data & telemetry (ฟิลด์บนเซิร์ฟเวอร์)
 `server.ts` ตอบใต้ `/never/api/god` (เซสชันรหัสผ่าน หรือ Bearer ของผู้เล่นตามบทบาท):
@@ -74,6 +75,12 @@
 | GET | `/games/:game/board?difficulty=&ruleset=` | กระดาน `ruleset` ว่าง = ทุกรอบ |
 | DELETE | `/runs/:sessionId` | ลบรอบ |
 | GET | `/events` `/modules` | กรวยคดี / registry |
+| POST | `/wishes` (และทางเข้าใช้ในเกม `POST /api/wishes`) | เก็บคำขอ + ภาพหน้าจอ + state ที่กรองความลับแล้ว ต้องมีบทบาท god ขึ้นไป (`requireRole(..., 'god')`) ถ้าส่งด้วย Bearer จะเก็บ playerId และบทบาทด้วย |
+| GET | `/wishes?since=&unread=1&limit=&order=` | รายการคำขอ (เมทาดาทาเท่านั้น) `since` เป็น ISO หรือ `YYYY-MM-DD` ตามเวลากรุงเทพฯ รวมค่าที่เท่ากัน เรียงเก่าไปใหม่ เฉพาะ super god |
+| GET | `/wishes/:id` `/wishes/:id/screenshot` | รายละเอียด + state / ไฟล์ภาพ เฉพาะ super god |
+| POST | `/wishes/mark-read` | `{ids:[…]}` ทำเครื่องหมายว่าอ่านแล้ว (สูงสุด 100) เฉพาะ super god |
+
+รายละเอียดการเก็บ ขีดจำกัด และสคริปต์ดึงคำขอ อยู่ใน `docs/god-wish-th.md`
 
 ## 11. Dependencies + เวอร์ชัน
 core >=0.6.39 (`i18n`, catalog กติกา, `src/lib/roles.ts`) Worker (`worker/index.ts`) เรียก `godApi` จาก public entry `server.ts`
@@ -84,7 +91,7 @@ core >=0.6.39 (`i18n`, catalog กติกา, `src/lib/roles.ts`) Worker (`wor
 ## 13. Changelog (ผูกกับเวอร์ชันโมดูล)
 | เวอร์ชัน | แอป | การเปลี่ยนแปลง |
 |---|---|---|
-| 2.2.0 | 0.6.40 | บทบาทผู้ใช้ player / god / super_god: ป้ายบทบาทและปุ่มเลื่อน/ลดพร้อมกล่องยืนยันในหน้าผู้เล่น `POST /players/:id/role` `GET /me` ตอบบทบาท ผู้เล่นระดับ god เรียก `/me` และ `/snapshots` ด้วย Bearer ได้ ที่เหลือเป็น super god ผ่าน `requireRole` |
+| 2.2.0 | 0.6.40 | บทบาทผู้ใช้ player / god / super_god: ป้ายบทบาทและปุ่มเลื่อน/ลดพร้อมกล่องยืนยันในหน้าผู้เล่น `POST /players/:id/role` `GET /me` ตอบบทบาท ผู้เล่นระดับ god เรียก `/me` `/snapshots` และ `POST /wishes` ด้วย Bearer ได้ ที่เหลือเป็น super god ผ่าน `requireRole` — รวมกล่องคำขอ (Wish): ตาราง D1 `god_wishes` หน้า `#/wishes` ในแอดมิน จำกัด 10 คำขอต่อ 10 นาที ภาพไม่เกิน 400 KB |
 | 2.1.1 | 0.6.38 | ปิด pull-down-to-refresh ของเบราว์เซอร์ใน `/never/god` (`overscroll-behavior-y: none` ที่หน้า, `contain` ที่ตารางและกล่องเลื่อนในหน้า) รายการในหน้ายังเลื่อนได้ตามปกติ รายชื่อผู้เล่นเรียงตามวันที่สมัครล่าสุดก่อน แบ่งหน้าละ 20 คน ใช้คู่กับช่องค้นหาได้ และปุ่มแบ่งหน้ากดง่ายบนมือถือ |
 | 2.1.0 | 0.6.23 | ลิงก์แชร์สถานะเกมใน KV มีอายุ 1 ชั่วโมง 24 ชั่วโมง หรือ 7 วัน เปิดด้วยโทเคนที่ลงนามโดยไม่ต้องล็อกอิน หน้าแอดมินยกเลิกได้ |
 | 2.0.1 | 0.6.19 | กรวยหลักฐานครบของคดี 1 นับที่ 4 ชิ้น ไม่นับ E05 |
