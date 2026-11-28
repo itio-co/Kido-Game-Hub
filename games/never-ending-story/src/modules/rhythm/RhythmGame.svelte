@@ -2,13 +2,13 @@
   import { onDestroy, onMount } from 'svelte';
   import { version } from '../../../package.json';
   import { readPlayerId, setNickname } from '../../lib/playerId';
-  import { clearRun, defaultRun, readRun, recordBest, starsFor, writeRun, type RhythmRun } from './store';
+  import { bestFor, clearRun, defaultRun, readRun, recordBest, starsFor, writeRun, type RhythmRun } from './store';
   import type { Judgement, RhythmPack, StageProps } from './types';
   import manifest from './module.json';
   import { rhythmRuleset } from './ruleset';
   import { buildChart, chartId, isChartSeed, newChartSeed, paramsFor, parseRhythmHash, rhythmHash, RHYTHM_DIFFICULTIES, type RhythmDifficulty, type RhythmLink } from './chart';
   import { currentRuleset, resolveGame, versionIn } from '../../lib/rulesetCatalog';
-  import { gameCopy, nextPhase, RulesetBanner, submitFinishedRun, UnsupportedRuleset } from '../minigame-core';
+  import { bestKey, gameCopy, nextPhase, readBest, recordBestScore, RulesetBanner, submitFinishedRun, UnsupportedRuleset, WinResultDialog, type WinResult } from '../minigame-core';
 
   let { pack, onExit }: { pack: RhythmPack; onExit: () => void } = $props();
   let run = $state<RhythmRun>(defaultRun());
@@ -39,6 +39,7 @@
   let nextIngAt = 0;
   let shareNote = $state('');
   let onlineNote = $state('');
+  let winResult = $state<WinResult | null>(null);
 
   const stageProps = $derived<StageProps>({
     progress: run.progress, pressure: run.heat, pressureZone: P.pressureZone, combo: run.combo,
@@ -63,7 +64,6 @@
     if (token) onlineNote = c('onlineSaved');
   }
 
-  const stars = $derived(starsFor(run.score, run.progress, P.stars));
   const prompt = $derived(
     run.ingredientDue !== null ? c('prompt.add') : c('prompt.stir'),
   );
@@ -103,18 +103,48 @@
   }
 
   function start(): void {
-    const bestScore = run.bestScore;
-    const bestStars = run.bestStars;
     const difficulty = run.difficulty;
+    const standing = bestFor(run.bests, difficulty);
+    const bests = run.bests;
     const seed = isChartSeed(run.seed) ? run.seed : newChartSeed();
     const phase = nextPhase('ready', 'start');
     if (phase !== 'play') return;
-    run = { ...defaultRun(), timeLeft: P.durationSec, phase, startedAt: Date.now(), bestScore, bestStars, difficulty, seed, cue: 0 };
+    winResult = null;
+    run = { ...defaultRun(), timeLeft: P.durationSec, phase, startedAt: Date.now(), bestScore: standing.bestScore, bestStars: standing.bestStars, bests, difficulty, seed, cue: 0 };
     playStart = performance.now();
     nextBeatAt = playStart + P.beatMs;
     nextIngAt = playStart + (chart[0] ?? Infinity);
     persist();
     lastTs = 0;
+  }
+
+  function presentWin(record: boolean, reason: 'done' | 'time' | null): void {
+    const starCount = starsFor(run.score, run.progress, P.stars);
+    const score = Math.round(run.score);
+    const timeMs = Math.round((P.durationSec - run.timeLeft) * 1000);
+    const key = bestKey(pack.leaderboardId, run.difficulty);
+    const rec = record
+      ? recordBestScore(key, score, starCount, timeMs)
+      : (() => {
+          const standing = readBest(key);
+          return { previous: standing, current: standing ?? { timeMs, stars: starCount, score }, isNewRecord: false };
+        })();
+    winResult = {
+      game: pack.leaderboardId,
+      gameLabel: c('title'),
+      difficulty: c(`diff.${run.difficulty}`),
+      stars: starCount,
+      timeMs,
+      bestMs: rec.current.timeMs,
+      previousBestMs: rec.previous?.timeMs ?? null,
+      isNewRecord: rec.isNewRecord,
+      metric: 'score',
+      score,
+      bestScore: rec.current.score ?? score,
+      previousBestScore: rec.previous?.score ?? null,
+      subtitle: reason === 'done' ? c('resultDone') : reason === 'time' ? c('resultTime') : c('resultTitle'),
+      detail: c('resultDetail', { p: Math.round(run.progress), hits: run.ingredientHits, miss: run.ingredientMiss }),
+    };
   }
 
   function finish(reason: 'done' | 'time'): void {
@@ -129,9 +159,11 @@
       timeLeft: reason === 'time' ? 0 : run.timeLeft,
       bestScore: best.bestScore,
       bestStars: best.bestStars,
+      bests: best.bests,
       endReason: reason,
     };
     persist();
+    presentWin(true, reason);
     void submitOnline();
     const profile = readPlayerId();
     needNick = !profile.nickname;
@@ -292,8 +324,9 @@
       const profile = readPlayerId();
       needNick = !profile.nickname;
       nickname = profile.nickname ?? '';
+      presentWin(false, saved.endReason);
     } else {
-      run = { ...defaultRun(), bestScore: saved.bestScore, bestStars: saved.bestStars, difficulty: saved.difficulty, seed: newChartSeed() };
+      run = { ...defaultRun(), bestScore: saved.bestScore, bestStars: saved.bestStars, bests: saved.bests, difficulty: saved.difficulty, seed: newChartSeed() };
     }
     applyLink();
     addEventListener('hashchange', applyLink);
@@ -307,7 +340,7 @@
     const resolved = resolveGame(pack.leaderboardId, link.ruleset);
     if (!resolved.ok || !link.difficulty || !link.seed) return;
     if (run.phase === 'play' && run.difficulty === link.difficulty && run.seed === link.seed) return;
-    if (run.phase === 'play' || run.phase === 'result') run = { ...defaultRun(), bestScore: run.bestScore, bestStars: run.bestStars };
+    if (run.phase === 'play' || run.phase === 'result') run = { ...defaultRun(), bestScore: run.bestScore, bestStars: run.bestStars, bests: run.bests };
     run = { ...run, difficulty: link.difficulty, seed: link.seed };
   }
 
@@ -401,29 +434,21 @@
         >{c('add')}</button>
       </div>
     </div>
-  {:else}
-    <div class="panel result">
-      <p class="banner">{run.endReason === 'done' ? c('resultDone') : c('resultTime')}</p>
-      <p class="stars">{'⭐'.repeat(stars)}</p>
-      <h2>{c('resultTitle')}</h2>
-      <p>{c('resultScore', { n: Math.round(run.score) })}</p>
-      <p class="small">{c('best', { n: Math.round(run.bestScore), stars: '⭐'.repeat(run.bestStars || 0) || '—' })}</p>
-      <p class="small">{c('resultDetail', { p: Math.round(run.progress), hits: run.ingredientHits, miss: run.ingredientMiss })}</p>
+  {:else if winResult}
+    <WinResultDialog result={winResult} onReplay={retry} onClose={onExit}>
       {#if needNick}
-        <label class="nick">
+        <label class="win-nick">
           <span>{c('nickname')}</span>
           <input bind:value={nickname} maxlength="24" placeholder={c('nicknamePh')} />
         </label>
-        <button type="button" class="primary" onclick={saveNick}>{c('saveNick')}</button>
+        <button type="button" class="win-extra-primary" onclick={saveNick}>{c('saveNick')}</button>
       {:else}
-        {#if onlineNote}<p class="small online">🌐 {onlineNote}</p>{/if}
-        <button type="button" class="primary" onclick={retry}>{c('retry')}</button>
-        <button type="button" class="ghost" onclick={() => (window.location.hash = '#/leaderboard')}>{c('board')}</button>
-        <button type="button" class="ghost" onclick={onExit}>{c('backList')}</button>
-        <button type="button" class="ghost" onclick={shareLink}>{c('share')}</button>
-        {#if shareNote}<p class="small">{shareNote}</p>{/if}
+        {#if onlineNote}<p class="win-extra-note">🌐 {onlineNote}</p>{/if}
+        <button type="button" class="win-extra-ghost" onclick={() => (window.location.hash = '#/leaderboard')}>{c('board')}</button>
+        <button type="button" class="win-extra-ghost" onclick={shareLink}>{c('share')}</button>
+        {#if shareNote}<p class="win-extra-note">{shareNote}</p>{/if}
       {/if}
-    </div>
+    </WinResultDialog>
   {/if}
 </div>
 

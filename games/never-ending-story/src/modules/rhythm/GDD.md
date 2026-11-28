@@ -3,7 +3,7 @@
 | ฟิลด์ | ค่า |
 |---|---|
 | kind | engine |
-| เวอร์ชัน | 1.1.0 |
+| เวอร์ชัน | 1.1.2 |
 | เทมเพลต | `docs/gdd/TEMPLATE.md` |
 | อ้างอิง | `docs/design/never-ending-story-game-spec-v0.4-th.md` |
 
@@ -45,7 +45,7 @@
 ระดับ `easy` / `normal` / `hard` (`paramsFor`): easy = จังหวะ ×1.15, หน้าต่างตัดสิน ×1.25, ช่องว่างคิว ×1.2, แรงดันขึ้น ×0.8 · hard = ×0.85, ×0.8, ×0.8, ×1.25 · ค่าตั้งต้นอยู่ใน `DEFAULT_PARAMS`
 
 ## 7. Progression
-ดาว: 2 ดาว ≥ `stars.two` (900), 3 ดาว ≥ `stars.three` (1400) และต้องทำ progress ครบ · บันทึกคะแนนดีสุดต่อ pack
+ดาว: 2 ดาว ≥ `stars.two` (900), 3 ดาว ≥ `stars.three` (1400) และต้องทำ progress ครบ · บันทึกคะแนนดีสุดแยกตามระดับความยากในเครื่อง ทั้งใน `pack.storageKey` (`bests.easy` / `bests.normal` / `bests.hard`) และใน `nesg.minigame-best.v1` คีย์แบบ `stirfry:easy` (ระดับ `normal` เก็บเป็น `medium`) คะแนนเก่าที่ไม่มีระดับไม่ถูกย้ายไปทุกระดับ
 
 ## 8. Content / config surface
 **pack interface** (`src/modules/rhythm/types.ts` → `RhythmPack`):
@@ -56,7 +56,7 @@
 - hooks: `onBeat()`, `onJudge(j)`, `onFinish(score, progress)`
 
 ## 9. UX / หน้าจอ
-intro (เลือกระดับ, ชาร์ต #seed, สุ่มชาร์ตใหม่, แชร์ลิงก์ชาร์ต, ป้ายท้าจากเพื่อน) → play (HUD: เวลา, คะแนน, combo, มาตรแรงดัน, Stage, ปุ่ม) → result (ดาว, คะแนนดีสุด, สถานะส่งออนไลน์, ปุ่มกระดานคะแนน)
+intro (เลือกระดับ, ชาร์ต #seed, สุ่มชาร์ตใหม่, แชร์ลิงก์ชาร์ต, ป้ายท้าจากเพื่อน) → play (HUD: เวลา, คะแนน, combo, มาตรแรงดัน, Stage, ปุ่ม) → ไดอะล็อกผลชนะร่วม (`WinResultDialog`): ดาว คะแนนเทียบสถิติดีที่สุดของระดับนั้น ป้ายสถิติใหม่ เวลา รายละเอียดรอบ ปุ่มเล่นอีกครั้งและปิด พร้อมช่องชื่อ ปุ่มกระดานคะแนน และแชร์เมื่อต้องการ
 
 ## 10. Data & telemetry (ฟิลด์บนเซิร์ฟเวอร์)
 `POST /never/api/runs` (Bearer player token) ด้วย protobuf run token: game = `pack.leaderboardId`, difficulty = ระดับที่เลือก, **seed = seed ของชาร์ต**, score, timeMs, `version` = `<app>;<ruleset>` (แอปไว้ดูอย่างเดียว ไม่ใช้แยกกระดาน), **`ruleset` = `rhythm@<engine>+<pack>@<packVer>`** เช่น `rhythm@1.1.0+stirfry@1.2.0` เก็บในคอลัมน์ `runs.ruleset` · Worker ตรวจว่า ruleset อยู่ใน allowlist, difficulty ∈ easy/normal/hard, seed เป็นจำนวนเต็ม 1..2^31−1, เวลาและคะแนนไม่เกินค่าใน ruleset (`minMs` 3000, `slackSec` 5, `maxScore` 25000)
@@ -64,16 +64,17 @@ intro (เลือกระดับ, ชาร์ต #seed, สุ่มชา
 ลิงก์ท้า: `<pack.route>/<difficulty>/<seed>[/rhythm@1.1.0+<pack>@<ver>][/vs/<nick>?score=&time=]` (`parseRhythmHash` / `rhythmHash`). ไม่มี segment กติกา = กติกาสมัยแอป 0.6.10 (`rhythm@1.1.0` + pack legacy). กติกาที่ไม่มีใน registry แสดงข้อความใน locale แล้วให้เล่นกติกาปัจจุบันแทน
 
 ## 11. Dependencies + เวอร์ชัน
-minigame-core ^1.0.0 (เฟสจบรอบ, ลิงก์, `submitFinishedRun`, ป้ายกติกา), core >=0.6.12
+minigame-core ^1.3.0 (เฟสจบรอบ, ลิงก์, `submitFinishedRun`, ป้ายกติกา, ไดอะล็อกผลชนะและสถิติคะแนนต่อระดับ), core >=0.6.12
 
 ## 12. คำถามที่ยังเปิดอยู่ / Backlog
 - **[backlog]** เซิร์ฟเวอร์ replay ชาร์ตจาก seed เพื่อตรวจคะแนนสูงสุดที่เป็นไปได้
-- **[backlog]** คะแนนดีสุดแยกตามระดับในเครื่อง
+- **[done]** คะแนนดีสุดแยกตามระดับในเครื่อง
 - **[backlog]** เสียง/ดนตรีต่อ pack ผ่าน hook
 
 ## 13. Changelog (ผูกกับเวอร์ชันโมดูล)
 | เวอร์ชัน | แอป | การเปลี่ยนแปลง |
 |---|---|---|
+| 1.1.2 | (ยังไม่ปล่อย) | ใช้ `WinResultDialog` เมื่อจบรอบ และเก็บคะแนนดีสุดแยกตามระดับความยาก ค่ากติกาใน `ruleset.json` เท่า 1.1.1 |
 | 1.1.0 | 0.6.11 | ค่าเกมเท่า 0.6.10 แต่ถูกตรึงใน `ruleset.json` ลิงก์แชร์ติด `rhythm@1.1.0` คู่กับเวอร์ชัน pack กระดานแยกตามกติกานี้ |
 | 1.1.0 | 0.6.10 | ชาร์ตแบบ seed, ระดับ easy/normal/hard, ลิงก์ท้า, seed ใน run token, ป้าย judgement ไม่ค้าง |
 | 1.0.0 | 0.6.9 | แยกจาก stirfry เป็นกลไก white-label |

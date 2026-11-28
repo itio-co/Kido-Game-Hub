@@ -289,6 +289,43 @@
     color: #fff;
   }
   .extra { margin-top: 10px; }
+  .extra :global(.win-extra-note) {
+    margin: 0 0 8px;
+    font-size: var(--fs-sm);
+    opacity: 0.85;
+  }
+  .extra :global(.win-nick) {
+    display: grid;
+    gap: 6px;
+    text-align: left;
+    margin: 0 0 8px;
+  }
+  .extra :global(.win-nick input) {
+    height: 44px;
+    border-radius: 10px;
+    border: 1px solid #39e0ff;
+    background: #082030;
+    color: #fff;
+    padding: 8px 10px;
+  }
+  .extra :global(button) {
+    min-height: 44px;
+    width: 100%;
+    margin-top: 8px;
+    border-radius: 10px;
+    font-weight: 700;
+    padding: 8px 14px;
+  }
+  .extra :global(button.win-extra-primary) {
+    border: 0;
+    background: #39e0ff;
+    color: #06212f;
+  }
+  .extra :global(button.win-extra-ghost) {
+    border: 1px solid #39e0ff;
+    background: transparent;
+    color: #fff;
+  }
   @media (prefers-reduced-motion: reduce) {
     .star.on, .record { animation: none; transform: none; opacity: 1; }
   }

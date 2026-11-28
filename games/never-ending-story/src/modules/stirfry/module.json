@@ -2,7 +2,7 @@
   "id": "stirfry",
   "name": "Stir-fry with Grandma",
   "kind": "pack",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "Stir-fry with Grandma: rhythm pack with photoreal kitchen/wok art, wok frames mapped to cook progress and hits/misses, Thai copy. Gameplay params are versioned in ruleset.json.",
   "entry": "src/modules/stirfry/index.ts",
   "publicEntries": [
@@ -11,8 +11,8 @@
   ],
   "dependsOn": {
     "core": ">=0.6.12",
-    "minigame-core": "^1.0.0",
-    "rhythm": "^1.1.0"
+    "minigame-core": "^1.3.0",
+    "rhythm": "^1.1.2"
   },
   "pack": {
     "mechanism": "rhythm",
@@ -29,7 +29,7 @@
       "normal",
       "hard"
     ],
-    "challengeLink": "#/play/stirfry/<easy|normal|hard>/<seed>/rhythm@1.1.0+stirfry@1.2.0"
+    "challengeLink": "#/play/stirfry/<easy|normal|hard>/<seed>/rhythm@1.1.2+stirfry@1.2.1"
   },
   "gdd": "src/modules/stirfry/GDD.md"
 }

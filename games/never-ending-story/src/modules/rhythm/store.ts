@@ -1,4 +1,6 @@
 import { appStorage } from '../../lib/deployment';
+import { applyPackBest, bestFor, parsePackBests, starsFor, type RhythmBests } from './packBest';
+export { applyPackBest, bestFor, parsePackBests, starsFor, type RhythmBests, type RhythmDifficultyBest, type RhythmDifficultyName } from './packBest';
 /** Generic run/best-score store for a rhythm pack (one localStorage key per pack). */
 export type RhythmRun = {
   phase: 'ready' | 'play' | 'result';
@@ -20,6 +22,8 @@ export type RhythmRun = {
   seed: number;
   /** Next chart cue index. */
   cue: number;
+  /** Per-difficulty local bests. Unscoped bestScore is not copied onto a difficulty. */
+  bests: RhythmBests;
 };
 
 export function defaultRun(): RhythmRun {
@@ -41,6 +45,7 @@ export function defaultRun(): RhythmRun {
     difficulty: 'normal',
     seed: 0,
     cue: 0,
+    bests: {},
   };
 }
 
@@ -73,6 +78,7 @@ export function readRun(KEY: string): RhythmRun {
       difficulty: data.difficulty === 'easy' || data.difficulty === 'hard' ? data.difficulty : 'normal',
       seed: typeof data.seed === 'number' && Number.isInteger(data.seed) && data.seed > 0 ? data.seed : 0,
       cue: typeof data.cue === 'number' ? data.cue : 0,
+      bests: parsePackBests(data.bests),
     };
   } catch {
     return defaultRun();
@@ -85,21 +91,13 @@ export function writeRun(KEY: string, run: RhythmRun): void {
 
 export function clearRun(KEY: string): void {
   const cur = readRun(KEY);
-  writeRun(KEY, { ...defaultRun(), bestScore: cur.bestScore, bestStars: cur.bestStars });
+  writeRun(KEY, { ...defaultRun(), bestScore: cur.bestScore, bestStars: cur.bestStars, bests: cur.bests });
 }
 
-/** Stars from score + progress; thresholds come from the pack params. */
-export function starsFor(score: number, progress: number, stars: { two: number; three: number } = { two: 900, three: 1400 }): 1 | 2 | 3 {
-  if (progress >= 100 && score >= stars.three) return 3;
-  if (progress >= 100 || score >= stars.two) return 2;
-  return 1;
-}
-
-export function recordBest(KEY: string, score: number, progress: number, thresholds?: { two: number; three: number }): { bestScore: number; bestStars: 0 | 1 | 2 | 3 } {
+export function recordBest(KEY: string, score: number, progress: number, thresholds?: { two: number; three: number }): { bestScore: number; bestStars: 0 | 1 | 2 | 3; isNewRecord: boolean; bests: RhythmBests } {
   const cur = readRun(KEY);
   const stars = starsFor(score, progress, thresholds);
-  const bestScore = Math.max(cur.bestScore || 0, score);
-  const bestStars = Math.max(cur.bestStars || 0, stars) as 0 | 1 | 2 | 3;
-  writeRun(KEY, { ...cur, phase: 'result', score, progress, bestScore, bestStars });
-  return { bestScore, bestStars };
+  const applied = applyPackBest(cur.bests, cur.difficulty, score, stars);
+  writeRun(KEY, { ...cur, phase: 'result', score, progress, bestScore: applied.bestScore, bestStars: applied.bestStars, bests: applied.bests });
+  return applied;
 }
