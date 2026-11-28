@@ -67,3 +67,27 @@ CREATE TABLE IF NOT EXISTS player_streak (
   rev          INTEGER NOT NULL DEFAULT 0,
   updated_at   INTEGER NOT NULL
 );
+-- God Mode wishes: feature requests from the in-game God float. Rules in src/modules/god/wish.ts. The Worker also creates this on first use.
+CREATE TABLE IF NOT EXISTS god_wishes (
+  id           TEXT PRIMARY KEY,
+  created_at   INTEGER NOT NULL,
+  created_iso  TEXT NOT NULL,
+  day_bkk      TEXT NOT NULL,
+  text         TEXT NOT NULL,
+  route        TEXT,
+  screen       TEXT,
+  title        TEXT,
+  app_version  TEXT,
+  modules_json TEXT,
+  user_agent   TEXT,
+  player_id    TEXT,
+  player_role  TEXT,
+  inspect_url  TEXT,
+  inspect_exp  INTEGER,
+  state_json   TEXT,
+  shot_mime    TEXT,
+  shot_b64     TEXT,
+  shot_bytes   INTEGER NOT NULL DEFAULT 0,
+  read_at      INTEGER
+);
+CREATE INDEX IF NOT EXISTS god_wishes_created ON god_wishes (created_at);

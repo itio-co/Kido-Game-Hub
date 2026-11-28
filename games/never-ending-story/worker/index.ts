@@ -193,6 +193,8 @@ async function meApi(req: Request, env: Env, path: string): Promise<Response> {
 async function api(req: Request, env: Env, path: string): Promise<Response> {
   if (req.method !== 'GET' && !sameOrigin(req)) return err(403, 'cross-origin');
   if (path.startsWith('/god/')) return godApi(req, env, path.slice(4));
+  // God Mode wish: the in-game sheet posts here. godApi enforces requireRole(..., 'god').
+  if (path === '/wishes' && req.method === 'POST') return godApi(req, env, '/wishes');
   const now = Date.now();
 
   if (path === '/players/register' && req.method === 'POST') {

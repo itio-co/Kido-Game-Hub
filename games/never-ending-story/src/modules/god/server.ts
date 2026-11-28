@@ -2,6 +2,7 @@ import { normalizeAppBase } from '../../lib/deployment';
 import { atLeast, checkRoleChange, normalizeRole, playerRoleByTokenHash, withRoleColumns, type Principal, type Role, type RoleChangeError } from '../../lib/roles';
 import { playerPageParams } from './playerQuery';
 import { createSnapshot, listSnapshots, readSnapshot, revokeSnapshot, snapshotPath, type SnapshotStore } from './snapshot';
+import { WISH_MAX_BODY_BYTES, createWish, listWishes, markWishesRead, parseWish, readWish, readWishShot } from './wish';
 /**
  * "Game of Dev" admin API under /never/api/god/*.
  * Auth: Worker secret GOD_ADMIN_PASSWORD (SHA-256 hex of the password, or the plain password) -> HMAC-signed session cookie (12h).
@@ -297,6 +298,57 @@ function snapStore(kv: GodKv): SnapshotStore {
   };
 }
 
+
+/** Store a Wish. The caller already passed `requireRole(..., 'god')`. */
+async function postWish(req: Request, env: GodEnv, secret: string, who: Principal): Promise<Response> {
+  const origin = new URL(req.url).origin;
+  const appBase = normalizeAppBase(env.APP_BASE);
+  const base = `${origin}${appBase}/api/god`;
+  const length = Number(req.headers.get('content-length') ?? 0);
+  if (length > WISH_MAX_BODY_BYTES) return fail(413, 'too-large');
+  let text = '';
+  try { text = await req.text(); } catch { return fail(400, 'bad-json'); }
+  if (new TextEncoder().encode(text).length > WISH_MAX_BODY_BYTES) return fail(413, 'too-large');
+  let input: unknown = null;
+  try { input = JSON.parse(text); } catch { return fail(400, 'bad-json'); }
+  const parsed = parseWish(input, req.headers.get('user-agent') ?? '', Date.now());
+  if (!('id' in parsed)) return json(parsed.body, parsed.status);
+  const result = await createWish({
+    db: env.DB,
+    base,
+    who,
+    inspect: async (document) => {
+      const made = await createSnapshot(snapStore(env.ASSETS_KV), secret, document, '7d');
+      if ('error' in made) return null;
+      return { url: new URL(snapshotPath(appBase, made.id, made.token), req.url).href, expiresAt: made.expiresAt };
+    },
+  }, parsed);
+  return json(result.body, result.status);
+}
+
+/** Read or mark wishes. The caller already passed the super_god gate. */
+async function readWishes(req: Request, env: GodEnv, path: string): Promise<Response> {
+  const origin = new URL(req.url).origin;
+  const appBase = normalizeAppBase(env.APP_BASE);
+  const base = `${origin}${appBase}/api/god`;
+  const send = (r: { status: number; body: Record<string, unknown> }) => json(r.body, r.status);
+  if (path === '/wishes' && req.method === 'GET') return send(await listWishes(env.DB, new URL(req.url).searchParams, base));
+  if (path === '/wishes/mark-read' && req.method === 'POST') {
+    let input: unknown = null;
+    try { input = await req.json(); } catch { return fail(400, 'bad-json'); }
+    return send(await markWishesRead(env.DB, input, Date.now()));
+  }
+  const shot = /^\/wishes\/([^/]+)\/screenshot$/.exec(path);
+  if (shot && req.method === 'GET') {
+    const found = await readWishShot(env.DB, decodeURIComponent(shot[1]));
+    if (!found) return fail(404, 'not-found');
+    return new Response(found.bytes.buffer as ArrayBuffer, { headers: { 'content-type': found.mime, 'cache-control': 'private, no-store', 'x-content-type-options': 'nosniff', 'x-robots-tag': 'noindex, nofollow' } });
+  }
+  const one = /^\/wishes\/([^/]+)$/.exec(path);
+  if (one && req.method === 'GET') return send(await readWish(env.DB, decodeURIComponent(one[1]), base));
+  return fail(404, 'no-such-endpoint');
+}
+
 export async function godApi(req: Request, env: GodEnv, path: string): Promise<Response> {
   if (path === '/login' && req.method === 'POST') return login(req, env);
   if (path === '/logout' && req.method === 'POST') return json({ ok: true }, 200, { 'set-cookie': cookie('', 0, env) });
@@ -309,7 +361,7 @@ export async function godApi(req: Request, env: GodEnv, path: string): Promise<R
     if (!result.ok) return fail(result.error === 'bad-token' ? 401 : 410, result.error);
     return json({ ok: true, title: result.title, expiresAt: result.expiresAt, document: result.document });
   }
-  // Every endpoint below needs at least `god`. Only the snapshot share link stays open to god; the rest is super god only.
+  // Every endpoint below needs at least `god`. A god caller may also POST /wishes and POST /snapshots; reading wishes and every other route is super god only.
   const who = await requireRole(req, env, 'god');
   if (who instanceof Response) return who;
   if (path === '/me' && req.method === 'GET') return json({ ok: true, role: who.role, via: who.via });
@@ -321,7 +373,9 @@ export async function godApi(req: Request, env: GodEnv, path: string): Promise<R
     const url = new URL(snapshotPath(normalizeAppBase(env.APP_BASE), made.id, made.token), req.url).href;
     return json({ ok: true, id: made.id, expiresAt: made.expiresAt, url });
   }
+  if (path === '/wishes' && req.method === 'POST') return postWish(req, env, secret, who);
   if (!atLeast(who.role, 'super_god')) return fail(403, 'forbidden');
+  if (path === '/wishes' || path.startsWith('/wishes/')) return readWishes(req, env, path);
   if (path === '/dashboard' && req.method === 'GET') return dashboard(env);
   if (path === '/players' && req.method === 'GET') return playerList(env, new URL(req.url));
   let m = /^\/players\/([^/]+)$/.exec(path);
