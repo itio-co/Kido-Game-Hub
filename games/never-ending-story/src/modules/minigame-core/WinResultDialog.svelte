@@ -158,16 +158,18 @@
     z-index: 36;
     background: rgba(0, 0, 0, 0.62);
     display: flex;
-    align-items: center;
     justify-content: center;
     padding: 24px 16px;
     box-sizing: border-box;
+    overflow-y: auto;
+    overscroll-behavior: contain;
   }
   .win-card {
     position: relative;
     width: 100%;
     max-width: 320px;
-    margin: 0;
+    /* auto margins centre the card, and let it scroll from the top when the screen is short */
+    margin: auto 0;
     background: #06212f;
     border: 2px solid #39e0ff;
     border-radius: 16px;
@@ -342,5 +344,20 @@
   }
   @media (prefers-reduced-motion: reduce) {
     .star.on, .record { animation: none; transform: none; opacity: 1; }
+  }
+  /* Landscape phones: keep the whole result on one screen. */
+  @media (max-height: 480px) {
+    .win-scrim { padding: 6px 12px; }
+    .win-card { max-width: 440px; padding: 8px 14px 10px; }
+    .game { margin: 0; }
+    .win-card h2 { font-size: calc(var(--fs) + 4px); }
+    .sub { margin: 2px 0 4px; line-height: 1.25; }
+    .diff { margin: 0 0 4px; }
+    .stars { margin: 0 0 4px; font-size: 24px; }
+    .stats { margin: 0 0 4px; gap: 4px; }
+    .stats dd { font-size: var(--fs); }
+    .time-line, .hints { margin: 0 0 4px; }
+    .record { margin: 0 0 4px; }
+    .go, .ghost { min-height: 38px; padding: 4px 12px; }
   }
 </style>

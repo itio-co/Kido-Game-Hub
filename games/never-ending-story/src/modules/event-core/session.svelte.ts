@@ -1401,11 +1401,11 @@ export function createFlow(onSave: (progress: FlowProgress) => void) {
       if (!card) return;
       context = 'practice';
       practiceRun = true;
-      if (card.game === 'stirfry') {
+      if (card.game === 'stirfry' || card.game === 'piano') {
         seen = seen.includes(slug) ? seen : [...seen, slug];
         if (!played.includes(slug)) played = [...played, slug];
         persist();
-        window.location.hash = card.route ?? '#/play/stirfry';
+        window.location.hash = card.route ?? `#/play/${card.game}`;
         return;
       }
       if (card.future || card.game === 'ex' || card.game === 'fan' || card.game === 'photobox' || !played.includes(slug)) {
