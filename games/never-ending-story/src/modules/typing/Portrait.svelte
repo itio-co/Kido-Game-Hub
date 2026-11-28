@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { findPortrait, initialsOf, silhouetteStyle } from './portrait';
+  import { findPortrait, initialsOf, portraitSrc, silhouetteStyle } from './portrait';
 
   let { author }: { author: string } = $props();
   const entry = $derived(findPortrait(author));
@@ -9,7 +9,7 @@
 
 <div class="port" data-testid="typing-portrait" data-author={author} data-kind={entry ? 'photo' : 'silhouette'} data-qid={entry?.qid ?? ''}>
   {#if entry}
-    <img class="photo" src={entry.file} alt="" width="400" height="500" />
+    <img class="photo" src={portraitSrc(entry.file)} alt="" width="400" height="500" />
   {:else}
     <svg class="sil" viewBox="0 0 200 240" preserveAspectRatio="xMidYMin slice" aria-hidden="true">
       <rect width="200" height="240" fill="#d8dbe0" />
