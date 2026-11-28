@@ -3,7 +3,7 @@
 | ฟิลด์ | ค่า |
 |---|---|
 | kind | feature |
-| เวอร์ชัน | 1.1.0 |
+| เวอร์ชัน | 1.1.2 |
 | เทมเพลต | `docs/gdd/TEMPLATE.md` |
 | อ้างอิง | `docs/design/never-ending-story-game-spec-v0.4-th.md` |
 
@@ -28,19 +28,19 @@
 `scoreFor()` อ่าน `ruleset.json` คีย์ 1.1.0 (`correct` 100, `combo` 20, `mistake` 40, `hint` 150, `timeBonus` 10, `mult`, `par`) · ระดับ easy/medium/hard · จำนวนคำ/กริด/จำนวนสลับของแต่ละเกมอยู่ใน ruleset ของมินิเกมนั้น ไม่ได้อยู่ในไฟล์นี้
 
 ## 7. Progression
-คะแนนดีสุดต่อเกม/ระดับในเครื่อง + อันดับออนไลน์
+คะแนนดีสุดต่อเกม/ระดับในเครื่องที่คีย์ `nesg.minigame-best.v1` แบบ `chal-cross:easy` / `chal-jig:medium` / `chal-slide:hard` (แยกจากสถิติมินิเกมในคดีซึ่งใช้คีย์ `cross:` `jig:` `slide:`) คะแนนที่มากกว่าถือว่าดีกว่า รอบแรกของระดับนั้นนับเป็นสถิติใหม่ ดาวในไดอะล็อกผลชนะมาจากจำนวนคำใบ้ (0 = 3 ดาว, 1 = 2 ดาว, 2 ขึ้นไป = 1 ดาว) · อันดับออนไลน์ยังแยกตามกติกา
 
 ## 8. Content / config surface
 `ruleset.json`, รายชื่อเกมบนกระดาน (`BOARD_GAMES` ใน `LeaderboardView`) รวม pack ของ rhythm (`stirfry`) · ป้ายกระดานแสดงกติกาที่กำลังดู
 
 ## 9. UX / หน้าจอ
-ChallengeView, LeaderboardView (แท็บเกม; stirfry ใช้ระดับ easy/normal/hard) · แบนเนอร์แสดงกติกา · ลิงก์ที่อ้างเวอร์ชันที่ไม่มีใน registry ขึ้นข้อความแล้วให้เล่นกติกาปัจจุบัน
+ChallengeView, LeaderboardView (แท็บเกม; stirfry ใช้ระดับ easy/normal/hard) · แบนเนอร์แสดงกติกา · ลิงก์ที่อ้างเวอร์ชันที่ไม่มีใน registry ขึ้นข้อความแล้วให้เล่นกติกาปัจจุบัน · เมื่อเล่นจบขึ้นไดอะล็อกผลชนะร่วม (`WinResultDialog`): ดาว คะแนนเทียบสถิติดีที่สุดของเกมและระดับนั้น เวลา จำนวนคำใบ้ ปุ่มเล่นอีกครั้งและปิด พร้อมผลเทียบเพื่อน ปุ่มแชร์ สุ่มโจทย์ใหม่ และกระดานคะแนน
 
 ## 10. Data & telemetry (ฟิลด์บนเซิร์ฟเวอร์)
 `POST /never/api/runs`: sessionId, playerId, game, difficulty, seed, score, timeMs, version, **ruleset**, ts, verified, integrity_ok · `GET` leaderboard ต่อ game + difficulty + ruleset (เวอร์ชันแอปไม่แยกกระดาน) · ruleset ว่างในโทเคนเก่า = กติกา 0.6.10
 
 ## 11. Dependencies + เวอร์ชัน
-minigame-core ^1.0.0 (ลิงก์, เฟสจบรอบ, โทเคน, เปลือกกติกา), core, crossword, jigsaw, slide
+minigame-core ^1.3.0 (ลิงก์, เฟสจบรอบ, โทเคน, เปลือกกติกา, ไดอะล็อกผลชนะและสถิติคะแนนต่อระดับ), core, crossword, jigsaw, slide
 
 โหมด challenge ไม่ถูกยุบเข้า minigame-core เพราะกระดานปริศนาและสูตรคะแนนเป็นของฟีเจอร์นี้ rhythm ไม่ควรต้องดึง crossword มาด้วย
 
@@ -50,6 +50,7 @@ minigame-core ^1.0.0 (ลิงก์, เฟสจบรอบ, โทเคน
 ## 13. Changelog (ผูกกับเวอร์ชันโมดูล)
 | เวอร์ชัน | แอป | การเปลี่ยนแปลง |
 |---|---|---|
+| 1.1.2 | (ยังไม่ปล่อย) | ใช้ `WinResultDialog` เมื่อจบรอบ และเก็บคะแนนดีสุดต่อเกม/ระดับในคีย์ `chal-*` สูตรคะแนนใน `ruleset.json` เท่า 1.1.1 |
 | 1.1.0 | 0.6.11 | ตรึงสูตรคะแนน 1.1.0 ใน ruleset.json (ตัวเลขไม่เปลี่ยน), ลิงก์และกระดานติดกติกา |
 | 1.1.0 | 0.6.9 | export `packRun`, กระดานรองรับ stirfry |
 | 1.0.0 | 0.6.5 | แยกเป็นโมดูล |

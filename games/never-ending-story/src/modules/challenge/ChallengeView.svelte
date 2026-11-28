@@ -4,7 +4,7 @@
   import { t } from '../../lib/i18n';
   import { imageUrl } from '../../lib/imageUrl';
   import { artworkFile } from '../cutscene';
-  import { nextPhase, RulesetBanner, submitFinishedRun, UnsupportedRuleset } from '../minigame-core';
+  import { bestKey, nextPhase, readBest, recordBestScore, RulesetBanner, starsFromHints, submitFinishedRun, UnsupportedRuleset, WinResultDialog, type WinResult } from '../minigame-core';
   import { readPlayerId, setNickname } from '../../lib/playerId';
   import {
     DIFFICULTIES, challengeHash, clearRun, compare, fmtTime, leaderboard, newSeed, readRun,
@@ -67,6 +67,7 @@
   let timer = 0;
   let verified = $state<null | boolean>(null);
   let lastToken = '';
+  let winResult = $state<WinResult | null>(null);
 
   if (params.runToken && run.from) {
     void unpackRun(params.runToken).then((res) => {
@@ -226,6 +227,33 @@
     }
   }
 
+  function presentWin(record: boolean): void {
+    const stars = starsFromHints(run.tally.hints);
+    const key = bestKey(`chal-${run.game}`, run.difficulty);
+    const rec = record
+      ? recordBestScore(key, run.score, stars, run.elapsedMs)
+      : (() => {
+          const standing = readBest(key);
+          return { previous: standing, current: standing ?? { timeMs: run.elapsedMs, stars, score: run.score }, isNewRecord: false };
+        })();
+    winResult = {
+      game: `chal-${run.game}`,
+      gameLabel: t(`challenge.game.${run.game}`),
+      difficulty: t(`challenge.diff.${run.difficulty}`),
+      stars,
+      timeMs: run.elapsedMs,
+      bestMs: rec.current.timeMs,
+      previousBestMs: rec.previous?.timeMs ?? null,
+      isNewRecord: rec.isNewRecord,
+      hints: run.tally.hints,
+      metric: 'score',
+      score: run.score,
+      bestScore: rec.current.score ?? run.score,
+      previousBestScore: rec.previous?.score ?? null,
+      detail: t('challenge.detail', { c: run.tally.correct, m: run.tally.mistakes, h: run.tally.hints, combo: run.tally.maxCombo }),
+    };
+  }
+
   async function finish(): Promise<void> {
     if (run.phase !== 'play') return;
     const phase = nextPhase(run.phase, 'end');
@@ -233,6 +261,7 @@
     const time = Math.floor(run.elapsedMs / 1000);
     run.score = scoreFor(run.game, run.difficulty, run.tally, time, scoring);
     run.phase = phase;
+    presentWin(true);
     const me = readPlayerId();
     const base = { game: run.game, difficulty: run.difficulty, seed: run.seed, at: Date.now() };
     await leaderboard.submit({ ...base, nick: me.nickname ?? '?', playerId: me.playerId, score: run.score, time, source: 'me', ruleset: rulesetKey });
@@ -271,6 +300,7 @@
   }
 
   function again(sameSeed: boolean): void {
+    winResult = null;
     if (!sameSeed && !locked) run.seed = newSeed();
     start();
   }
@@ -281,6 +311,7 @@
   }
 
   onMount(() => {
+    if (run.phase === 'result') presentWin(false);
     timer = window.setInterval(() => {
       if (run.phase === 'play' && document.visibilityState === 'visible') run.elapsedMs += 250;
     }, 250);
@@ -394,23 +425,23 @@
       {#if run.board.kind !== 'slide'}<button type="button" class="ghost" onclick={hint}>{t('challenge.hint')}</button>{/if}
     </div>
   {:else if resolution.ok}
-    <div class="body center" data-testid="challenge-result">
+    {#if winResult}
+      <WinResultDialog result={winResult} onReplay={() => again(true)} onClose={exit}>
+        {#if run.from && verdict}
+          <div class="win-vs {verdict}" data-testid="challenge-vs">
+            <b>{t(`challenge.${verdict}`, { nick: run.from.nick })}</b>
+            <span>{t('challenge.vsLine', { me: run.score, meT: fmtTime(secs), them: run.from.score, themT: fmtTime(run.from.time), nick: run.from.nick })}</span>
+          </div>
+        {/if}
+        {#if note}<p class="win-extra-note">{note}</p>{/if}
+        <button type="button" class="win-extra-primary" onclick={share}>{run.from ? t('challenge.shareBack') : t('challenge.share')}</button>
+        {#if !locked}<button type="button" class="win-extra-ghost" onclick={() => again(false)}>{t('challenge.newSeed')}</button>{/if}
+        <button type="button" class="win-extra-ghost" onclick={onBoard}>{t('challenge.board')}</button>
+      </WinResultDialog>
+    {/if}
+    <div class="body center" data-testid="challenge-result" hidden={!!winResult}>
       <p class="big">{run.score}</p>
       <p class="sub">{t('challenge.points')} · ⏱ {fmtTime(secs)}</p>
-      <p class="detail">{t('challenge.detail', { c: run.tally.correct, m: run.tally.mistakes, h: run.tally.hints, combo: run.tally.maxCombo })}</p>
-      {#if run.from && verdict}
-        <div class="vs {verdict}">
-          <b>{t(`challenge.${verdict}`, { nick: run.from.nick })}</b>
-          <span>{t('challenge.vsLine', { me: run.score, meT: fmtTime(secs), them: run.from.score, themT: fmtTime(run.from.time), nick: run.from.nick })}</span>
-        </div>
-      {/if}
-      {#if note}<p class="note">{note}</p>{/if}
-    </div>
-    <div class="foot two">
-      <button type="button" class="primary" onclick={share}>{run.from ? t('challenge.shareBack') : t('challenge.share')}</button>
-      <button type="button" class="ghost" onclick={() => again(true)}>{t('challenge.retry')}</button>
-      {#if !locked}<button type="button" class="ghost" onclick={() => again(false)}>{t('challenge.newSeed')}</button>{/if}
-      <button type="button" class="ghost" onclick={onBoard}>{t('challenge.board')}</button>
     </div>
   {/if}
 </div>

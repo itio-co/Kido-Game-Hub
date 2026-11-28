@@ -321,6 +321,20 @@
     background: #39e0ff;
     color: #06212f;
   }
+  .extra :global(.win-vs) {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 12px;
+    border-radius: 14px;
+    width: 100%;
+    box-sizing: border-box;
+    margin: 0 0 8px;
+    text-align: center;
+  }
+  .extra :global(.win-vs.win) { background: #1f6b3a; }
+  .extra :global(.win-vs.lose) { background: #6b1f2a; }
+  .extra :global(.win-vs.tie) { background: #4a4a6b; }
   .extra :global(button.win-extra-ghost) {
     border: 1px solid #39e0ff;
     background: transparent;
