@@ -8,8 +8,8 @@
   import { version } from '../../../package.json';
 
   type Row = Record<string, any>;
-  type Section = 'dashboard' | 'players' | 'games' | 'events' | 'modules' | 'snapshots';
-  const SECTIONS: Section[] = ['dashboard', 'players', 'games', 'events', 'modules', 'snapshots'];
+  type Section = 'dashboard' | 'players' | 'games' | 'events' | 'modules' | 'snapshots' | 'wishes';
+  const SECTIONS: Section[] = ['dashboard', 'players', 'games', 'events', 'modules', 'snapshots', 'wishes'];
   const DIFFS = ['easy', 'medium', 'hard'];
 
   let authed = $state<boolean | null>(null);
@@ -113,6 +113,7 @@
       else if (section === 'events') data = await god<Row>('events');
       else if (section === 'modules') data = ((await god<Row>('modules')) as Row).registry;
       else if (section === 'snapshots') data = await god<Row>('snapshots');
+      else if (section === 'wishes') data = await god<Row>(`wishes?order=desc&limit=100${wishUnread ? '&unread=1' : ''}`);
     } catch (e) { loadError = errText(e); }
   }
 
@@ -171,6 +172,14 @@
 
   function statFor(game: string, diff: string): Row | undefined {
     return (data?.stats as Row[] | undefined)?.find((s) => s.game === game && s.difficulty === diff);
+  }
+
+  let wishUnread = $state(false);
+  async function markWishRead(id: string) {
+    try {
+      await god('wishes/mark-read', { method: 'POST', body: JSON.stringify({ ids: [id] }) });
+      await load();
+    } catch (e) { flash(errText(e)); }
   }
 
   async function revokeSnapshot(id: string) {
@@ -377,6 +386,30 @@
               </tr>
             {:else}
               <tr><td colspan="3">{t('god.snap.empty')}</td></tr>
+            {/each}
+          </tbody>
+        </table>
+      {:else if section === 'wishes' && data}
+        <h2>{t('god.wishes.title')}</h2>
+        <label class="wish-filter" style="display:flex;gap:8px;align-items:center"><input type="checkbox" data-testid="god-wishes-unread" checked={wishUnread} onchange={(e) => { wishUnread = e.currentTarget.checked; void load(); }} /> {t('god.wishes.unreadOnly')}</label>
+        <table data-testid="god-wishes">
+          <tbody>
+            {#each data.wishes ?? [] as w (w.id)}
+              <tr>
+                <td>
+                  <span class="tag">{w.readAt ? t('god.wishes.read') : t('god.wishes.unread')}</span>
+                  {fmtDate(w.createdMs)} · <code>{short(w.id)}</code>
+                  {#if w.role}<span class="tag">{t(`god.role.${w.role}`)}</span>{/if}
+                  {#if w.playerId}<code>{short(w.playerId)}</code>{/if}<br />
+                  <span style="white-space:pre-wrap">{w.text}</span><br />
+                  <small>{w.title || w.screen || '–'} · v{w.appVersion || '–'}</small><br />
+                  {#if w.screenshotUrl}<a href={w.screenshotUrl} target="_blank" rel="noopener">{t('god.wishes.screenshot')}</a>{/if}
+                  {#if w.inspectUrl} <a href={w.inspectUrl} target="_blank" rel="noopener">{t('god.wishes.inspect')}</a>{/if}
+                </td>
+                <td>{#if !w.readAt}<button type="button" onclick={() => markWishRead(w.id)}>{t('god.wishes.markRead')}</button>{/if}</td>
+              </tr>
+            {:else}
+              <tr><td colspan="2">{t('god.wishes.empty')}</td></tr>
             {/each}
           </tbody>
         </table>
