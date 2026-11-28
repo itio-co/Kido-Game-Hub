@@ -1,10 +1,13 @@
 import { normalizeAppBase } from '../../lib/deployment';
+import { atLeast, checkRoleChange, normalizeRole, playerRoleByTokenHash, withRoleColumns, type Principal, type Role, type RoleChangeError } from '../../lib/roles';
 import { playerPageParams } from './playerQuery';
 import { createSnapshot, listSnapshots, readSnapshot, revokeSnapshot, snapshotPath, type SnapshotStore } from './snapshot';
 /**
  * "Game of Dev" admin API under /never/api/god/*.
  * Auth: Worker secret GOD_ADMIN_PASSWORD (SHA-256 hex of the password, or the plain password) -> HMAC-signed session cookie (12h).
  * Token hashes are never selected or returned.
+ * Roles (player < god < super_god, see src/lib/roles.ts): the password session acts as super_god; a player's bearer token acts as
+ * the role stored in D1 `players.role`. `requireRole` is the one gate for every god-only endpoint, here and in the Worker.
  */
 /** Structural D1/KV shapes so this module typechecks with the app tsconfig (no Workers types). */
 interface GodStatement {
@@ -86,6 +89,28 @@ async function sessionOk(req: Request, secret: string, env: GodEnv): Promise<boo
 const cookie = (value: string, maxAge: number, env: GodEnv) =>
   `${cookieName(env)}=${value}; Path=${normalizeAppBase(env.APP_BASE)}; HttpOnly; Secure; SameSite=Strict; Max-Age=${maxAge}`;
 
+/** Who is calling: the God admin password session (super_god, no player) or a player's bearer token (role from D1). Null = nobody. */
+async function principalOf(req: Request, env: GodEnv): Promise<Principal | null> {
+  const secret = env.GOD_ADMIN_PASSWORD;
+  if (secret && (await sessionOk(req, secret, env))) return { role: 'super_god', via: 'password', playerId: null };
+  const m = /^Bearer\s+(\S+)$/i.exec(req.headers.get('authorization') ?? '');
+  if (!m) return null;
+  const found = await playerRoleByTokenHash(env.DB, hex(await digest(m[1])));
+  return found ? { role: found.role, via: 'token', playerId: found.playerId } : null;
+}
+
+/**
+ * Gate an endpoint on a minimum role. Returns the caller, or a ready 401 (no valid session or token) / 403 (valid, role too low) Response.
+ *   const who = await requireRole(req, env, 'god');
+ *   if (who instanceof Response) return who;
+ * The role always comes from the server (password session cookie or D1), never from anything the client sends.
+ */
+export async function requireRole(req: Request, env: GodEnv, min: Role = 'god'): Promise<Principal | Response> {
+  const who = await principalOf(req, env);
+  if (!who) return fail(401, 'unauthorized');
+  return atLeast(who.role, min) ? who : fail(403, 'forbidden');
+}
+
 async function ensureTables(env: GodEnv): Promise<void> {
   await env.DB.prepare('CREATE TABLE IF NOT EXISTS god_login (ip TEXT PRIMARY KEY, fails INTEGER NOT NULL DEFAULT 0, locked_until INTEGER NOT NULL DEFAULT 0, updated_at INTEGER NOT NULL)').run();
 }
@@ -156,16 +181,43 @@ async function playerList(env: GodEnv, url: URL): Promise<Response> {
   const totalRow = await env.DB.prepare(`SELECT count(*) AS n FROM players p WHERE ${where}`).bind(q, like, like).first<{ n: number }>();
   const total = Number(totalRow?.n ?? 0);
   const offset = (page - 1) * pageSize;
-  const { results } = await env.DB.prepare(
-    `SELECT p.playerId, p.nickname, p.created_at, p.last_seen, (p.token_hash IS NOT NULL) AS registered,
+  const { results } = await withRoleColumns(env.DB, () => env.DB.prepare(
+    `SELECT p.playerId, p.nickname, p.created_at, p.last_seen, (p.token_hash IS NOT NULL) AS registered, p.role, p.role_updated_at,
        (SELECT count(*) FROM runs r WHERE r.playerId=p.playerId) AS runs,
        (SELECT max(score) FROM runs r WHERE r.playerId=p.playerId) AS best,
        (SELECT group_concat(e.eventId || ':' || e.status) FROM player_events e WHERE e.playerId=p.playerId) AS events,
        EXISTS(SELECT 1 FROM player_state s WHERE s.playerId=p.playerId) AS hasState,
        EXISTS(SELECT 1 FROM player_home h WHERE h.playerId=p.playerId) AS hasHome
      FROM players p WHERE ${where} ORDER BY p.created_at DESC LIMIT ? OFFSET ?`,
-  ).bind(q, like, like, pageSize, offset).all();
-  return json({ ok: true, players: results, total, page, pageSize });
+  ).bind(q, like, like, pageSize, offset).all());
+  return json({ ok: true, players: results.map((p) => ({ ...p, role: normalizeRole(p.role) })), total, page, pageSize });
+}
+
+const ROLE_STATUS: Record<RoleChangeError, number> = {
+  'bad-role': 400,
+  'not-allowed': 403,
+  'password-required': 403,
+  'self-change': 403,
+  'not-registered': 409,
+  'confirm-required': 409,
+};
+
+/** POST /players/:id/role {role, confirmSuperGod?}. Caller is already a super god; the policy lives in src/lib/roles.ts. */
+async function setRole(req: Request, env: GodEnv, who: Principal, id: string): Promise<Response> {
+  let body: { role?: unknown; confirmSuperGod?: unknown } = {};
+  try { body = (await req.json()) as typeof body; } catch { return fail(400, 'bad-json'); }
+  const row = await withRoleColumns(env.DB, () => env.DB.prepare('SELECT role, (token_hash IS NOT NULL) AS registered FROM players WHERE playerId=?').bind(id).first<{ role: unknown; registered: number }>());
+  if (!row) return fail(404, 'not-found');
+  const current = normalizeRole(row.role);
+  const verdict = checkRoleChange({ actor: who, target: { playerId: id, role: current, registered: !!row.registered }, next: body.role, confirmSuperGod: body.confirmSuperGod === true });
+  if (!verdict.ok) return fail(ROLE_STATUS[verdict.error], verdict.error);
+  if (!verdict.changed) return json({ ok: true, playerId: id, role: current, changed: false });
+  const now = Date.now();
+  // Compare-and-swap on the role we just read, so two admins cannot overwrite each other unseen.
+  const res = await env.DB.prepare('UPDATE players SET role=?, role_updated_at=?, role_updated_by=? WHERE playerId=? AND role=?')
+    .bind(verdict.next, now, who.via === 'password' ? 'password' : who.playerId, id, current).run();
+  if (!res.meta.changes) return fail(409, 'conflict');
+  return json({ ok: true, playerId: id, role: verdict.next, previous: current, changed: true, role_updated_at: now });
 }
 
 function summarizeState(doc: unknown): Record<string, unknown> | null {
@@ -188,8 +240,9 @@ function summarizeState(doc: unknown): Record<string, unknown> | null {
 }
 
 async function playerDetail(env: GodEnv, id: string): Promise<Response> {
-  const player = await env.DB.prepare('SELECT playerId, nickname, created_at, last_seen, (token_hash IS NOT NULL) AS registered FROM players WHERE playerId=?').bind(id).first();
-  if (!player) return fail(404, 'not-found');
+  const found = await withRoleColumns(env.DB, () => env.DB.prepare('SELECT playerId, nickname, created_at, last_seen, (token_hash IS NOT NULL) AS registered, role, role_updated_at, role_updated_by FROM players WHERE playerId=?').bind(id).first());
+  if (!found) return fail(404, 'not-found');
+  const player = { ...found, role: normalizeRole(found.role) };
   const runs = (await env.DB.prepare('SELECT sessionId, game, difficulty, score, timeMs, verified, integrity_ok, version, ts FROM runs WHERE playerId=? ORDER BY ts DESC LIMIT 100').bind(id).all()).results;
   const events = (await env.DB.prepare('SELECT eventId, status, progress_json, started_at, completed_at, updated_at FROM player_events WHERE playerId=?').bind(id).all<Record<string, unknown>>()).results
     .map((e) => ({ ...e, progress: safeJson(e.progress_json), progress_json: undefined }));
@@ -256,9 +309,19 @@ export async function godApi(req: Request, env: GodEnv, path: string): Promise<R
     if (!result.ok) return fail(result.error === 'bad-token' ? 401 : 410, result.error);
     return json({ ok: true, title: result.title, expiresAt: result.expiresAt, document: result.document });
   }
-  if (!(await sessionOk(req, secret, env))) return fail(401, 'unauthorized');
-
-  if (path === '/me' && req.method === 'GET') return json({ ok: true });
+  // Every endpoint below needs at least `god`. Only the snapshot share link stays open to god; the rest is super god only.
+  const who = await requireRole(req, env, 'god');
+  if (who instanceof Response) return who;
+  if (path === '/me' && req.method === 'GET') return json({ ok: true, role: who.role, via: who.via });
+  if (path === '/snapshots' && req.method === 'POST') {
+    let body: { ttl?: unknown; document?: unknown } = {};
+    try { body = await req.json() as { ttl?: unknown; document?: unknown }; } catch { return fail(400, 'bad-json'); }
+    const made = await createSnapshot(snapStore(env.ASSETS_KV), secret, body.document, typeof body.ttl === 'string' ? body.ttl : '');
+    if ('error' in made) return fail(made.error === 'too-large' ? 413 : 400, made.error);
+    const url = new URL(snapshotPath(normalizeAppBase(env.APP_BASE), made.id, made.token), req.url).href;
+    return json({ ok: true, id: made.id, expiresAt: made.expiresAt, url });
+  }
+  if (!atLeast(who.role, 'super_god')) return fail(403, 'forbidden');
   if (path === '/dashboard' && req.method === 'GET') return dashboard(env);
   if (path === '/players' && req.method === 'GET') return playerList(env, new URL(req.url));
   let m = /^\/players\/([^/]+)$/.exec(path);
@@ -280,6 +343,12 @@ export async function godApi(req: Request, env: GodEnv, path: string): Promise<R
       return json({ ok: true, deleted: res.map((r) => r.meta.changes) });
     }
   }
+  m = /^\/players\/([^/]+)\/role$/.exec(path);
+  if (m && req.method === 'POST') {
+    const id = decodeURIComponent(m[1]);
+    if (!ID_RE.test(id)) return fail(400, 'bad-id');
+    return setRole(req, env, who, id);
+  }
   if (path === '/games' && req.method === 'GET') return games(env);
   m = /^\/games\/([a-z]+)\/board$/.exec(path);
   if (m && req.method === 'GET') return board(env, m[1], new URL(req.url).searchParams.get('difficulty') ?? 'easy', new URL(req.url).searchParams.get('ruleset') ?? '');
@@ -291,14 +360,6 @@ export async function godApi(req: Request, env: GodEnv, path: string): Promise<R
   if (path === '/events' && req.method === 'GET') return events(env);
   if (path === '/snapshots' && req.method === 'GET') {
     return json({ ok: true, snapshots: await listSnapshots(snapStore(env.ASSETS_KV)) });
-  }
-  if (path === '/snapshots' && req.method === 'POST') {
-    let body: { ttl?: unknown; document?: unknown } = {};
-    try { body = await req.json() as { ttl?: unknown; document?: unknown }; } catch { return fail(400, 'bad-json'); }
-    const made = await createSnapshot(snapStore(env.ASSETS_KV), secret, body.document, typeof body.ttl === 'string' ? body.ttl : '');
-    if ('error' in made) return fail(made.error === 'too-large' ? 413 : 400, made.error);
-    const url = new URL(snapshotPath(normalizeAppBase(env.APP_BASE), made.id, made.token), req.url).href;
-    return json({ ok: true, id: made.id, expiresAt: made.expiresAt, url });
   }
   if (snap && req.method === 'DELETE') {
     return (await revokeSnapshot(snapStore(env.ASSETS_KV), snap[1])) ? json({ ok: true }) : fail(404, 'not-found');
