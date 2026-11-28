@@ -571,7 +571,6 @@
     pointer-events: none;
     transition: border-color 40ms linear, box-shadow 40ms linear;
   }
-  .online { color: #7dffb3; }
   .controls {
     display: grid;
     grid-template-columns: 1.25fr 1fr;
@@ -624,17 +623,5 @@
     color: #fff;
     border-radius: 12px;
     font-weight: 700;
-  }
-  .banner { margin: 0 0 6px; font-weight: 800; color: #7dffb3; }
-  .result .stars { font-size: 28px; margin: 0; }
-  .small { font-size: var(--fs-sm); opacity: 0.85; }
-  .nick { display: grid; gap: 6px; text-align: left; margin-top: 12px; }
-  .nick input {
-    height: 44px;
-    border-radius: 10px;
-    border: 1px solid #39e0ff;
-    background: #082030;
-    color: #fff;
-    padding: 8px 10px;
   }
 </style>
